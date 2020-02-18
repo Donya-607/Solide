@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Donya/Vector.h"
+#include "Donya/UseImGui.h"
 
 #include "ObjectBase.h"
 
@@ -17,8 +18,8 @@ public:
 		bool useTrans;
 	};
 private:
-	Donya::Vector3 velocity;
-	Donya::Vector3 gravity;
+	Donya::Vector3	velocity;
+	bool			onGround = false;
 public:
 	void Init();
 	void Uninit();
@@ -28,5 +29,7 @@ public:
 
 	void Draw( const Donya::Vector4x4 &matVP );
 private:
-
+#if USE_IMGUI
+	void UseImGui();
+#endif // USE_IMGUI
 };

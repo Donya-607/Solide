@@ -25,7 +25,8 @@ using namespace DirectX;
 SceneGame::SceneGame() :
 	dirLight(),
 	iCamera(),
-	controller( Donya::Gamepad::PAD_1 )
+	controller( Donya::Gamepad::PAD_1 ),
+	player()
 {}
 SceneGame::~SceneGame() = default;
 
@@ -34,6 +35,8 @@ void SceneGame::Init()
 	Donya::Sound::Play( Music::BGM_Game );
 
 	CameraInit();
+
+	player.Init();
 }
 void SceneGame::Uninit()
 {
@@ -52,18 +55,9 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	CameraUpdate();
 
-#if DEBUG_MODE
-	// Scene Transition Demo.
-	{
-		if ( Donya::Keyboard::Trigger( VK_RETURN ) || controller.Trigger( Donya::Gamepad::Button::A ) || controller.Trigger( Donya::Gamepad::Button::START ) )
-		{
-			if ( !Fader::Get().IsExist() )
-			{
-				StartFade();
-			}
-		}
-	}
-#endif // DEBUG_MODE
+	PlayerUpdate( elapsedTime );
+
+	player.PhysicUpdate( {} );
 
 	return ReturnResult();
 }
@@ -75,9 +69,11 @@ void SceneGame::Draw( float elapsedTime )
 		Donya::ClearViews( BG_COLOR );
 	}
 
-	const Donya::Vector4x4 V = iCamera.CalcViewMatrix();
-	const Donya::Vector4x4 P = iCamera.GetProjectionMatrix();
-	const Donya::Vector4 cameraPos{ iCamera.GetPosition(), 1.0f };
+	const Donya::Vector4x4 V{ iCamera.CalcViewMatrix() };
+	const Donya::Vector4x4 P{ iCamera.GetProjectionMatrix() };
+	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
+
+	player.Draw( V * P );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -149,6 +145,14 @@ void SceneGame::CameraInit()
 	iCamera.SetPosition( { 0.0f, 0.0f, -5.0f } );
 	iCamera.SetFocusPoint( { 0.0f, 0.0f, 0.0f } );
 	iCamera.SetProjectionPerspective();
+
+	// I can setting a configuration,
+	// but current data is not changed immediately.
+	// So update here.
+	Donya::ICamera::Controller moveInitPoint{};
+	moveInitPoint.SetNoOperation();
+	moveInitPoint.slerpPercent = 1.0f;
+	iCamera.Update( moveInitPoint );
 }
 void SceneGame::CameraUpdate()
 {
@@ -232,6 +236,43 @@ void SceneGame::CameraUpdate()
 #endif // DEBUG_MODE
 }
 
+void SceneGame::PlayerUpdate( float elapsedTime )
+{
+	Donya::Vector2	moveVector{};
+	bool useJump	= false;
+	bool useShot	= false;
+	bool useTrans	= false;
+
+	if ( controller.IsConnected() )
+	{
+		using Pad	= Donya::Gamepad;
+
+		moveVector	= controller.LeftStick();
+		useJump		= controller.Trigger( Pad::A );
+		useShot		= controller.Trigger( Pad::B );
+		useTrans	= controller.Trigger( Pad::X );
+	}
+	else
+	{
+		moveVector.x += Donya::Keyboard::Press( VK_RIGHT	) ? +1.0f : 0.0f;
+		moveVector.x += Donya::Keyboard::Press( VK_LEFT		) ? -1.0f : 0.0f;
+		moveVector.y += Donya::Keyboard::Press( VK_UP		) ? +1.0f : 0.0f; // Front is Plus.
+		moveVector.y += Donya::Keyboard::Press( VK_DOWN		) ? -1.0f : 0.0f; // Front is Plus.
+
+		useJump		= Donya::Keyboard::Trigger( 'Z' );
+		useShot		= Donya::Keyboard::Trigger( 'X' );
+		useTrans	= Donya::Keyboard::Trigger( 'C' );
+	}
+
+	Player::Input input{};
+	input.moveVectorXZ	= moveVector.Normalized();
+	input.useJump		= useJump;
+	input.useShot		= useShot;
+	input.useTrans		= useTrans;
+
+	player.Update( elapsedTime, input );
+}
+
 void SceneGame::StartFade() const
 {
 	Fader::Configuration config{};
@@ -245,17 +286,12 @@ Scene::Result SceneGame::ReturnResult()
 {
 #if DEBUG_MODE
 
-	bool pressCtrl =  Donya::Keyboard::Press( VK_LCONTROL ) || Donya::Keyboard::Press( VK_RCONTROL );
-	if ( pressCtrl && Donya::Keyboard::Trigger( VK_RETURN ) && !Fader::Get().IsExist() )
+	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
 	{
 		Donya::Sound::Play( Music::ItemDecision );
 
-		Scene::Result change{};
-		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
-		change.sceneType = Scene::Type::Title;
-		return change;
+		StartFade();
 	}
-	// else
 
 #endif // DEBUG_MODE
 

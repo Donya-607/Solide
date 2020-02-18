@@ -6,6 +6,7 @@
 #include "Donya/UseImGui.h"
 
 #include "Scene.h"
+#include "Player.h"
 
 class SceneGame : public Scene
 {
@@ -19,8 +20,9 @@ private:
 	DirectionalLight	dirLight;
 
 	Donya::ICamera		iCamera;
-
 	Donya::XInput		controller;
+
+	Player				player;
 public:
 	SceneGame();
 	~SceneGame();
@@ -34,6 +36,8 @@ public:
 private:
 	void	CameraInit();
 	void	CameraUpdate();
+
+	void	PlayerUpdate( float elapsedTime );
 
 	void	StartFade() const;
 private:

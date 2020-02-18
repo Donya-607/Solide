@@ -9,18 +9,9 @@
 
 class ParameterBase
 {
-protected:
-	std::string name;
-public:
-	ParameterBase( const std::string &name ) : name( name ) {}
-	virtual ~ParameterBase() = default;
 public:
 	virtual void Init()     = 0;
 	virtual void Uninit()   = 0;
-	std::string GetName() const
-	{
-		return name;
-	}
 protected:
 	virtual void LoadBin()  = 0;
 	virtual void LoadJson() = 0;
@@ -29,6 +20,8 @@ protected:
 public:
 #if USE_IMGUI
 	virtual void UseImGui() = 0;
+
+	static void ShowIONode( ParameterBase *pParam );
 #endif // USE_IMGUI
 };
 
@@ -41,13 +34,13 @@ public:
 	void Reset();
 
 	template<class DerivedParameter>
-	void Register( const std::string &registerName )
+	void Register( std::string registerName )
 	{
 		storage.insert
 		(
 			std::make_pair<std::string, std::unique_ptr<ParameterBase>>
 			(
-				registerName,
+				std::move( registerName ),
 				std::make_unique<DerivedParameter>()
 			)
 		);

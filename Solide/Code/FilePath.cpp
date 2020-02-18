@@ -3,76 +3,11 @@
 #include "Donya/Constant.h"	// Use DEBUG_MODE.
 #include "Donya/Useful.h"	// Use IsExistFile().
 
-std::string GenerateSerializePath( std::string identifier, Donya::Serializer::Extension extension )
+std::string GenerateSerializePath( std::string identifier, bool useBinary )
 {
-	std::string ext{};
-	switch ( extension )
-	{
-	case Donya::Serializer::Extension::BINARY:	ext = ".bin";	break;
-	case Donya::Serializer::Extension::JSON:	ext = ".json";	break;
-	default: return "ERROR_EXTENSION";
-	}
+	const std::string EXT = ( useBinary ) ? ".bin" : ".json";
 
-	return "./Data/Parameters/" + identifier + ext;
-}
-
-int CalcStageCount()
-{
-	constexpr int INITIAL_NO = -1;
-
-	static int stageCount = INITIAL_NO;
-	if ( stageCount != INITIAL_NO ) { return stageCount; }
-	// else
-
-	std::string directory{ "./Data/Stages/" };
-	std::string fileName{ "_Terrain.txt" };
-	std::string findName{};
-
-	for ( int i = 0; true; ++i )
-	{
-		findName = directory + std::to_string( i ) + fileName;
-
-		if ( !Donya::IsExistFile( findName ) )
-		{
-			stageCount = i;
-			break;
-		}
-	}
-
-	return stageCount;
-}
-
-std::string GetTerrainPath( int stageNo )
-{
-	std::string directory{ "./Data/Stages/" };
-
-	std::string fileName = std::to_string( stageNo ) + "_Terrain.txt";
-
-	return directory + fileName;
-}
-std::string GetEnemyPath( int stageNo )
-{
-	std::string directory{ "./Data/Stages/" };
-
-	std::string fileName = std::to_string( stageNo ) + "_Enemy.txt";
-
-	return directory + fileName;
-}
-std::string GetObjectPath( int stageNo )
-{
-	std::string directory{ "./Data/Stages/" };
-
-	std::string fileName = std::to_string( stageNo ) + "_Object.txt";
-
-	return directory + fileName;
-}
-std::string GetConfigPath( int stageNo )
-{
-	std::string directory{ "./Data/Stages/" };
-
-	std::string fileName = std::to_string( stageNo ) + "_Config.txt";
-
-	return directory + fileName;
+	return "./Data/Parameters/" + identifier + EXT;
 }
 
 std::wstring GetSpritePath( SpriteAttribute sprAttribute )
