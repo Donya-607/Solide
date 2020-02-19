@@ -42,6 +42,10 @@ void Solid::Move( const Donya::Vector3 &movement, const std::vector<Actor *> &ac
 	pos += movement;
 }
 
+Donya::Vector3 Solid::GetPosition() const
+{
+	return pos;
+}
 Donya::AABB Solid::GetHitBox() const
 {
 	Donya::AABB tmp = hitBox;
@@ -51,7 +55,7 @@ Donya::AABB Solid::GetHitBox() const
 
 void Solid::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
 {
-	DrawCube( MakeWorldMatrix( hitBox ), VP, color );
+	DrawCube( MakeWorldMatrix( GetHitBox() ), VP, color );
 }
 
 
@@ -72,6 +76,10 @@ bool Actor::IsRiding( const Solid &onto ) const
 	return Donya::AABB::IsHitAABB( myself, onto.GetHitBox() );
 }
 
+Donya::Vector3 Actor::GetPosition() const
+{
+	return pos;
+}
 Donya::AABB Actor::GetHitBox() const
 {
 	Donya::AABB tmp = hitBox;
@@ -81,5 +89,5 @@ Donya::AABB Actor::GetHitBox() const
 
 void Actor::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
 {
-	DrawCube( MakeWorldMatrix( hitBox ), VP, color );
+	DrawCube( MakeWorldMatrix( GetHitBox() ), VP, color );
 }

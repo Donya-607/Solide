@@ -10,6 +10,7 @@
 #include "Donya/Keyboard.h"
 #include "Donya/Mouse.h"
 #include "Donya/Quaternion.h"
+#include "Donya/Serializer.h"
 #include "Donya/Sound.h"
 #include "Donya/Sprite.h"
 #include "Donya/Useful.h"
@@ -18,9 +19,149 @@
 
 #include "Common.h"
 #include "Fader.h"
+#include "FilePath.h"
 #include "Music.h"
+#include "Parameter.h"
 
-using namespace DirectX;
+namespace
+{
+	struct Member
+	{
+		struct
+		{
+			float slerpFactor = 0.2f;
+			float basePosY = 0.0f;		// The Y component of camera position is not related to player position.
+			Donya::Vector3 offsetPos;	// The offset of position from the player position.
+			Donya::Vector3 offsetFocus;	// The offset of focus from the player position.
+		}
+		camera;	// The X and Z component is: player-position + offset. The Y component is:basePosY.
+	public:
+		bool  isValid = true; // Use for validation of dynamic_cast. Do not serialize.
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			if ( version <= 1 )
+			{
+				archive
+				(
+					CEREAL_NVP( camera.basePosY ),
+					CEREAL_NVP( camera.offsetPos ),
+					CEREAL_NVP( camera.offsetFocus )
+				);
+			}
+			if ( version == 1 )
+			{
+				archive
+				(
+					CEREAL_NVP( camera.slerpFactor )
+				);
+			}
+		}
+	};
+}
+CEREAL_CLASS_VERSION( Member, 1 )
+
+class ParamGame : public ParameterBase
+{
+public:
+	static constexpr const char *ID = "Game";
+private:
+	Member m;
+public:
+	void Init()     override
+	{
+	#if DEBUG_MODE
+		LoadJson();
+	#else
+		LoadBin();
+	#endif // DEBUG_MODE
+	}
+	void Uninit()   override {}
+	Member Data()   const { return m; }
+private:
+	void LoadBin()  override
+	{
+		constexpr bool fromBinary = true;
+		Donya::Serializer::Load( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	}
+	void LoadJson() override
+	{
+		constexpr bool fromBinary = false;
+		Donya::Serializer::Load( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	}
+	void SaveBin()  override
+	{
+		constexpr bool fromBinary = true;
+		Donya::Serializer::Save( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	}
+	void SaveJson() override
+	{
+		constexpr bool fromBinary = false;
+		Donya::Serializer::Save( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	}
+public:
+#if USE_IMGUI
+	void UseImGui() override
+	{
+		if ( !ImGui::BeginIfAllowed() ) { return; }
+		// else
+
+		if ( ImGui::TreeNode( u8"ゲームのパラメータ調整" ) )
+		{
+			if ( ImGui::TreeNode( u8"カメラ" ) )
+			{
+				ImGui::Text( u8"カメラ位置：" );
+				ImGui::Text( u8"[Ｘ：自機の座標＋自身の座標]" );
+				ImGui::Text( u8"[Ｙ：自機のＹ座標]" );
+				ImGui::Text( u8"[Ｚ：自機の座標＋自身の座標]" );
+				ImGui::Text( "" );
+
+				ImGui::DragFloat ( u8"補間倍率",						&m.camera.slerpFactor,		0.01f );
+				ImGui::DragFloat ( u8"自身のＹ座標（絶対）",			&m.camera.basePosY,			0.01f );
+				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&m.camera.offsetPos.x,		0.01f );
+				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&m.camera.offsetFocus.x,	0.01f );
+
+				ImGui::TreePop();
+			}
+
+			auto ShowAABB = []( const std::string &prefix, Donya::AABB *p )
+			{
+				ImGui::DragFloat3( ( prefix + u8"：中心のオフセット" ).c_str(),		&p->pos.x,  0.01f );
+				ImGui::DragFloat3( ( prefix + u8"：サイズ（半分を指定）" ).c_str(),	&p->size.x, 0.01f );
+				ImGui::Checkbox  ( ( prefix + u8"：判定を有効にする" ).c_str(),		&p->exist );
+			};
+
+			ParameterBase::ShowIONode( this );
+
+			ImGui::TreePop();
+		}
+
+		ImGui::End();
+	}
+#endif // USE_IMGUI
+};
+
+namespace
+{
+	std::unique_ptr<ParameterBase> *FindHelper()
+	{
+		return ParameterStorage::Get().Find( ParamGame::ID );
+	}
+
+	Member FetchMember()
+	{
+		Member nil{}; nil.isValid = false;
+
+		auto  pBase = FindHelper();
+		if ( !pBase ) { return nil; }
+		// else
+
+		ParamGame *pDerived = dynamic_cast<ParamGame *>( pBase->get() );
+		return ( pDerived ) ? pDerived->Data() : nil;
+	}
+}
 
 SceneGame::SceneGame() :
 	dirLight(),
@@ -34,12 +175,26 @@ void SceneGame::Init()
 {
 	Donya::Sound::Play( Music::BGM_Game );
 
+	if ( !FindHelper() )
+	{
+		ParameterStorage::Get().Register<ParamGame>( ParamGame::ID );
+	}
+	if ( FindHelper() )
+	{
+		( *FindHelper() )->Init();
+	}
+
 	CameraInit();
 
 	player.Init();
 }
 void SceneGame::Uninit()
 {
+	if ( FindHelper() )
+	{
+		( *FindHelper() )->Uninit();
+	}
+
 	Donya::Sound::Stop( Music::BGM_Game );
 }
 
@@ -47,6 +202,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 {
 #if USE_IMGUI
 
+	if ( FindHelper() )
+	{
+		( *FindHelper() )->UseImGui();
+	}
 	UseImGui();
 
 #endif // USE_IMGUI
@@ -142,8 +301,7 @@ void SceneGame::CameraInit()
 	iCamera.SetZRange( 0.1f, 1000.0f );
 	iCamera.SetFOV( ToRadian( 30.0f ) );
 	iCamera.SetScreenSize( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
-	iCamera.SetPosition( { 0.0f, 0.0f, -5.0f } );
-	iCamera.SetFocusPoint( { 0.0f, 0.0f, 0.0f } );
+	AssignCameraPos();
 	iCamera.SetProjectionPerspective();
 
 	// I can setting a configuration,
@@ -154,8 +312,31 @@ void SceneGame::CameraInit()
 	moveInitPoint.slerpPercent = 1.0f;
 	iCamera.Update( moveInitPoint );
 }
+void SceneGame::AssignCameraPos()
+{
+	const auto data = FetchMember();
+	const Donya::Vector3 playerPos = player.GetPosition();
+
+	Donya::Vector3 relativePos = playerPos + data.camera.offsetPos;
+	relativePos.y = data.camera.basePosY;
+
+	iCamera.SetPosition( relativePos );
+	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
+
+}
 void SceneGame::CameraUpdate()
 {
+#if DEBUG_MODE
+	if ( !Donya::Keyboard::Press( VK_MENU ) )
+	{
+		AssignCameraPos();
+	}
+#else
+	AssignCameraPos();
+#endif // DEBUG_MODE
+
+	const auto data = FetchMember();
+
 	auto MakeControlStructWithMouse = []()
 	{
 		constexpr float SLERP_FACTOR = 0.2f;
@@ -223,17 +404,9 @@ void SceneGame::CameraUpdate()
 
 		return ctrl;
 	};
-	iCamera.Update( MakeControlStructWithMouse() );
-
-#if DEBUG_MODE
-	if ( Donya::Keyboard::Press( VK_MENU ) )
-	{
-		if ( Donya::Keyboard::Trigger( 'R' ) )
-		{
-			iCamera.SetPosition( { 0.0f, 0.0f, -5.0f } );
-		}
-	}
-#endif // DEBUG_MODE
+	Donya::ICamera::Controller input = MakeControlStructWithMouse();
+	input.slerpPercent = data.camera.slerpFactor;
+	iCamera.Update( input );
 }
 
 void SceneGame::PlayerUpdate( float elapsedTime )
@@ -324,18 +497,42 @@ Scene::Result SceneGame::ReturnResult()
 
 void SceneGame::UseImGui()
 {
-	if ( ImGui::BeginIfAllowed() )
+	if ( !ImGui::BeginIfAllowed() ) { return; }
+	// else
+	
+	const auto data = FetchMember();
+
+	if ( ImGui::TreeNode( u8"ゲーム・状況" ) )
 	{
-		if ( ImGui::TreeNode( u8"ゲーム・設定" ) )
+		if ( ImGui::TreeNode( u8"カメラ情報" ) )
 		{
-			ImGui::SliderFloat3( u8"方向性ライト・向き", &dirLight.dir.x, -1.0f, 1.0f );
-			ImGui::ColorEdit4( u8"方向性ライト・カラー", &dirLight.color.x );
+			auto ShowVec3 = []( const std::string &prefix, const Donya::Vector3 &v )
+			{
+				ImGui::Text( ( prefix + u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]" ).c_str(), v.x, v.y, v.z );
+			};
+
+			ImGui::Text( u8"「ＡＬＴキー」を押している間のみ，" );
+			ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
+			ImGui::Text( u8"カメラの並行移動ができます。" );
+			ImGui::Text( "" );
+
+			const Donya::Vector3 cameraPos = iCamera.GetPosition();
+			const Donya::Vector3 playerPos = player.GetPosition();
+			ShowVec3( u8"現在位置・絶対：", cameraPos );
+			ShowVec3( u8"現在位置・相対：", cameraPos - playerPos );
+			ImGui::Text( "" );
+
+			const Donya::Vector3 focusPoint = iCamera.GetFocusPoint();
+			ShowVec3( u8"注視点位置・絶対：", focusPoint );
+			ShowVec3( u8"注視点位置・相対：", focusPoint - playerPos );
 
 			ImGui::TreePop();
 		}
 
-		ImGui::End();
+		ImGui::TreePop();
 	}
+	
+	ImGui::End();
 }
 
 #endif // USE_IMGUI

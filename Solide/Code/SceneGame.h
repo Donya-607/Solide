@@ -35,6 +35,7 @@ public:
 	void	Draw( float elapsedTime ) override;
 private:
 	void	CameraInit();
+	void	AssignCameraPos();
 	void	CameraUpdate();
 
 	void	PlayerUpdate( float elapsedTime );

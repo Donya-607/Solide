@@ -20,6 +20,8 @@ public:
 	/// The "relativeActors" will be pushed(or carried) if colliding.
 	/// </summary>
 	void Move( const Donya::Vector3 &wsMovement, const std::vector<Actor *> &relativeActors );
+public:
+	Donya::Vector3 GetPosition() const;
 	/// <summary>
 	/// Returns hit-box of world space.
 	/// </summary>
@@ -45,6 +47,7 @@ public:
 	/// </summary>
 	virtual void Squish() {}
 public:
+	virtual Donya::Vector3 GetPosition() const;
 	virtual Donya::AABB GetHitBox() const;
 public:
 	virtual void DrawHitBox( const Donya::Vector4x4 &matVP, const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;

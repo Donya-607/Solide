@@ -13,6 +13,7 @@ namespace
 		float gravity;		// Positive value.
 		float moveSpeed;	// Positive value.
 		float jumpStrength;	// Positive value.
+		Donya::AABB hitBox;	// The "pos" acts as an offset.
 	public:
 		bool  isValid = true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
@@ -29,9 +30,21 @@ namespace
 					CEREAL_NVP( jumpStrength )
 				);
 			}
+			if ( version == 1 )
+			{
+				archive
+				(
+					CEREAL_NVP( gravity ),
+					CEREAL_NVP( moveSpeed ),
+					CEREAL_NVP( jumpStrength ),
+					CEREAL_NVP( hitBox )
+				);
+			}
 		}
 	};
 }
+CEREAL_CLASS_VERSION( Member, 1 )
+
 class ParamPlayer : public ParameterBase
 {
 public:
@@ -83,6 +96,15 @@ public:
 			ImGui::DragFloat( u8"ジャンプ・初速",		&m.jumpStrength,	0.1f, 0.0f );
 			ImGui::DragFloat( u8"重力",				&m.gravity,			0.1f, 0.0f );
 
+			auto ShowAABB = []( const std::string &prefix, Donya::AABB *p )
+			{
+				ImGui::DragFloat3( ( prefix + u8"：中心のオフセット" ).c_str(),		&p->pos.x,  0.01f );
+				ImGui::DragFloat3( ( prefix + u8"：サイズ（半分を指定）" ).c_str(),	&p->size.x, 0.01f );
+				ImGui::Checkbox  ( ( prefix + u8"：判定を有効にする" ).c_str(),		&p->exist );
+			};
+
+			ShowAABB( u8"当たり判定AABB", &m.hitBox );
+
 			ParameterBase::ShowIONode( this );
 
 			ImGui::TreePop();
@@ -120,10 +142,22 @@ void Player::Init()
 		ParameterStorage::Get().Register<ParamPlayer>( ParamPlayer::ID );
 	}
 
-	velocity = 0.0f;
+	if ( FindHelper() )
+	{
+		( *FindHelper() )->Init();
+	}
+
+	const auto data = FetchMember();
+	velocity	= 0.0f;
+	hitBox		= data.hitBox;
 }
 void Player::Uninit()
-{}
+{
+	if ( FindHelper() )
+	{
+		( *FindHelper() )->Uninit();
+	}
+}
 
 void Player::Update( float elapsedTime, Input input )
 {
@@ -147,11 +181,6 @@ void Player::Update( float elapsedTime, Input input )
 	}
 
 	velocity.y -= data.gravity * elapsedTime;
-
-	// TODO : アクタクラスの都合で当たり判定メンバを更新しないといけない。サイズは定数で良い。
-	// アクタクラスに座標を追加してあるので，そっちを参照するように変更しておく。
-	hitBox.pos = pos;
-	hitBox.size = 0.5f;
 }
 
 void Player::PhysicUpdate( const std::vector<Solid> &collisions )
