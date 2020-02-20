@@ -200,6 +200,8 @@ void SceneGame::Uninit()
 
 Scene::Result SceneGame::Update( float elapsedTime )
 {
+	elapsedTime = 1.0f; // Disable
+
 #if USE_IMGUI
 
 	if ( FindHelper() )
@@ -223,6 +225,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 void SceneGame::Draw( float elapsedTime )
 {
+	elapsedTime = 1.0f; // Disable
+
 	{
 		constexpr FLOAT BG_COLOR[4]{ 0.4f, 0.4f, 0.4f, 1.0f };
 		Donya::ClearViews( BG_COLOR );
@@ -237,6 +241,32 @@ void SceneGame::Draw( float elapsedTime )
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
+		static auto cube = Donya::Geometric::CreateCube();
+
+		static Donya::Vector4 lightDir{ 0.0f,-1.0f, 1.0f, 0.0f };
+
+		// Ground likes.
+		{
+			static Donya::Vector3 pos  { 0.0f, -1.0f, 0.0f };
+			static Donya::Vector3 size { 10.0f, 1.0f, 50.0f };
+			static Donya::Vector4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+			Donya::Vector4x4 W
+			{
+				size.x, 0.0f,   0.0f,   0.0f,
+				0.0f,   size.y, 0.0f,   0.0f,
+				0.0f,   0.0f,   size.z, 0.0f,
+				pos.x,  pos.y,  pos.z,  1.0f
+			};
+
+			cube.Render
+			(
+				nullptr, true, true,
+				W * V * P, W,
+				lightDir, color
+			);
+		}
+
 		// Drawing TextureBoard Demo.
 		{
 			constexpr const wchar_t *texturePath	= L"./Data/Images/Rights/FMOD Logo White - Black Background.png";
@@ -249,7 +279,6 @@ void SceneGame::Draw( float elapsedTime )
 			static float			boardRadian{};
 
 			static Donya::Vector4	boardColor{ 1.0f, 1.0f, 1.0f, 1.0f };
-			static Donya::Vector4	lightDir  { 0.0f,-1.0f, 1.0f, 0.0f };
 
 		#if USE_IMGUI
 

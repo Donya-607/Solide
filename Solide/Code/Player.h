@@ -29,6 +29,12 @@ public:
 
 	void Draw( const Donya::Vector4x4 &matVP );
 private:
+	void Move( float elapsedTime, Input input );
+
+	void Jump( float elapsedTime );
+	void Fall( float elapsedTime );
+	void AssignLanding();
+private:
 #if USE_IMGUI
 	void UseImGui();
 #endif // USE_IMGUI

@@ -10,12 +10,12 @@ namespace
 {
 	struct Member
 	{
-		float gravity;		// Positive value.
-		float moveSpeed;	// Positive value.
-		float jumpStrength;	// Positive value.
-		Donya::AABB hitBox;	// The "pos" acts as an offset.
+		float gravity		= 0.0f;	// Positive value.
+		float moveSpeed		= 0.0f;	// Positive value.
+		float jumpStrength	= 0.0f;	// Positive value.
+		Donya::AABB hitBox{};		// The "pos" acts as an offset.
 	public:
-		bool  isValid = true; // Use for validation of dynamic_cast. Do not serialize.
+		bool  isValid		= true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -169,29 +169,23 @@ void Player::Update( float elapsedTime, Input input )
 	UseImGui();
 #endif // USE_IMGUI
 
-	const auto data = FetchMember();
+	Move( elapsedTime, input );
 
-	velocity.x = input.moveVectorXZ.x * data.moveSpeed * elapsedTime;
-	velocity.z = input.moveVectorXZ.y * data.moveSpeed * elapsedTime;
-
-	if ( input.useJump )
+	if ( input.useJump && onGround )
 	{
-		onGround = false;
-		velocity.y = data.jumpStrength;
+		Jump( elapsedTime );
 	}
 
-	velocity.y -= data.gravity * elapsedTime;
+	Fall( elapsedTime );
 }
 
 void Player::PhysicUpdate( const std::vector<Solid> &collisions )
 {
-	Move( velocity, collisions );
+	Actor::Move( velocity, collisions );
 
-	if ( pos.y <= 0.0f )
+	if ( pos.y <= 0.0f + hitBox.size.y )
 	{
-		pos.y = 0.0f;
-		velocity.y = 0.0f;
-		onGround = true;
+		AssignLanding();
 	}
 }
 
@@ -200,6 +194,34 @@ void Player::Draw( const Donya::Vector4x4 &matVP )
 #if DEBUG_MODE
 	DrawHitBox( matVP, { 0.1f, 1.0f, 0.3f, 1.0f } );
 #endif // DEBUG_MODE
+}
+
+void Player::Move( float elapsedTime, Input input )
+{
+	const auto data = FetchMember();
+
+	velocity.x = input.moveVectorXZ.x * data.moveSpeed * elapsedTime;
+	velocity.z = input.moveVectorXZ.y * data.moveSpeed * elapsedTime;
+}
+
+void Player::Jump( float elapsedTime )
+{
+	const auto data = FetchMember();
+
+	onGround = false;
+	velocity.y = data.jumpStrength * elapsedTime;
+}
+void Player::Fall( float elapsedTime )
+{
+	const auto data = FetchMember();
+
+	velocity.y -= data.gravity * elapsedTime;
+}
+void Player::AssignLanding()
+{
+	onGround	= true;
+	pos.y		= 0.0f + hitBox.size.y;
+	velocity.y	= 0.0f;
 }
 
 #if USE_IMGUI
