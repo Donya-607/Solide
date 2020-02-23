@@ -2,8 +2,9 @@
 
 #include <vector>
 
-#include "Donya/Vector.h"
+#include "Donya/Quaternion.h"
 #include "Donya/UseImGui.h"
+#include "Donya/Vector.h"
 
 #include "ObjectBase.h"
 
@@ -18,8 +19,10 @@ public:
 		bool useTrans;
 	};
 private:
-	Donya::Vector3	velocity;
-	bool			onGround = false;
+	float				speed{};
+	Donya::Quaternion	orientation;
+	Donya::Vector3		velocity;
+	bool				onGround = false;
 public:
 	void Init();
 	void Uninit();

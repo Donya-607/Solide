@@ -10,10 +10,44 @@ namespace
 {
 	struct Member
 	{
-		float gravity		= 0.0f;	// Positive value.
-		float moveSpeed		= 0.0f;	// Positive value.
-		float jumpStrength	= 0.0f;	// Positive value.
-		Donya::AABB hitBox{};		// The "pos" acts as an offset.
+		/// <summary>
+		/// All scalar members are positive value.
+		/// </summary>
+		struct BasicMember
+		{
+			float accel			= 0.01f;
+			float decel			= 0.01f;
+			float maxSpeed		= 0.1f;
+			float gravity		= 0.1f;
+			float jumpStrength	= 0.1f;
+
+			// The "pos" of a hitBox acts as an offset.
+			// That default value is visible and basic.
+
+			Donya::AABB hitBoxStage{ {}, { 0.5f, 0.5f, 0.5f }, true }; // Collide to a stage.
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( accel			),
+					CEREAL_NVP( decel			),
+					CEREAL_NVP( maxSpeed		),
+					CEREAL_NVP( gravity			),
+					CEREAL_NVP( jumpStrength	),
+					CEREAL_NVP( hitBoxStage		)
+				);
+
+				if ( version <= 1 )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+
+		BasicMember normal;
 	public:
 		bool  isValid		= true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
@@ -21,29 +55,20 @@ namespace
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
-			if ( version == 0 )
+			archive
+			(
+				CEREAL_NVP( normal ),
+			);
+
+			if ( version <= 1 )
 			{
-				archive
-				(
-					CEREAL_NVP( gravity ),
-					CEREAL_NVP( moveSpeed ),
-					CEREAL_NVP( jumpStrength )
-				);
-			}
-			if ( version == 1 )
-			{
-				archive
-				(
-					CEREAL_NVP( gravity ),
-					CEREAL_NVP( moveSpeed ),
-					CEREAL_NVP( jumpStrength ),
-					CEREAL_NVP( hitBox )
-				);
+				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 1 )
+CEREAL_CLASS_VERSION( Member,				0 )
+CEREAL_CLASS_VERSION( Member::BasicMember,	0 )
 
 class ParamPlayer : public ParameterBase
 {
@@ -92,18 +117,28 @@ public:
 
 		if ( ImGui::TreeNode( u8"自機のパラメータ調整" ) )
 		{
-			ImGui::DragFloat( u8"移動速度",			&m.moveSpeed,		0.1f, 0.0f );
-			ImGui::DragFloat( u8"ジャンプ・初速",		&m.jumpStrength,	0.1f, 0.0f );
-			ImGui::DragFloat( u8"重力",				&m.gravity,			0.1f, 0.0f );
-
 			auto ShowAABB = []( const std::string &prefix, Donya::AABB *p )
 			{
 				ImGui::DragFloat3( ( prefix + u8"：中心のオフセット" ).c_str(),		&p->pos.x,  0.01f );
 				ImGui::DragFloat3( ( prefix + u8"：サイズ（半分を指定）" ).c_str(),	&p->size.x, 0.01f );
 				ImGui::Checkbox  ( ( prefix + u8"：判定を有効にする" ).c_str(),		&p->exist );
 			};
+			auto ShowBasicNode = [&ShowAABB]( const std::string &prefix, Member::BasicMember *p )
+			{
+				if ( !ImGui::TreeNode( u8"通常時" ) ) { return; }
+				// else
+				
+				ImGui::DragFloat( ( prefix + u8"：加速量"	).c_str(),		&p->accel,			0.1f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：減速量"	).c_str(),		&p->decel,			0.1f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：最高速度"	).c_str(),		&p->maxSpeed,		0.1f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：跳躍力"	).c_str(),		&p->jumpStrength,	0.1f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：重力"		).c_str(),		&p->gravity,		0.1f, 0.0f );
+				ShowAABB( prefix + u8"：当たり判定・ＶＳ地形", &p->hitBoxStage );
 
-			ShowAABB( u8"当たり判定AABB", &m.hitBox );
+				ImGui::TreePop();
+			};
+
+			ShowBasicNode( u8"通常時", &m.normal );
 
 			ParameterBase::ShowIONode( this );
 
@@ -149,7 +184,7 @@ void Player::Init()
 
 	const auto data = FetchMember();
 	velocity	= 0.0f;
-	hitBox		= data.hitBox;
+	hitBox		= data.normal.hitBoxStage;
 }
 void Player::Uninit()
 {
