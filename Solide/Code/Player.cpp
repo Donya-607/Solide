@@ -49,7 +49,7 @@ namespace
 
 		BasicMember normal;
 	public:
-		bool  isValid		= true; // Use for validation of dynamic_cast. Do not serialize.
+		bool isValid = true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -57,7 +57,7 @@ namespace
 		{
 			archive
 			(
-				CEREAL_NVP( normal ),
+				CEREAL_NVP( normal )
 			);
 
 			if ( version <= 1 )
@@ -70,7 +70,7 @@ namespace
 CEREAL_CLASS_VERSION( Member,				0 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	0 )
 
-class ParamPlayer : public ParameterBase
+class ParamPlayer : public ParameterBase<ParamPlayer>
 {
 public:
 	static constexpr const char *ID = "Player";
@@ -117,30 +117,24 @@ public:
 
 		if ( ImGui::TreeNode( u8"自機のパラメータ調整" ) )
 		{
-			auto ShowAABB = []( const std::string &prefix, Donya::AABB *p )
-			{
-				ImGui::DragFloat3( ( prefix + u8"：中心のオフセット" ).c_str(),		&p->pos.x,  0.01f );
-				ImGui::DragFloat3( ( prefix + u8"：サイズ（半分を指定）" ).c_str(),	&p->size.x, 0.01f );
-				ImGui::Checkbox  ( ( prefix + u8"：判定を有効にする" ).c_str(),		&p->exist );
-			};
-			auto ShowBasicNode = [&ShowAABB]( const std::string &prefix, Member::BasicMember *p )
+			auto ShowBasicNode = []( const std::string &prefix, Member::BasicMember *p )
 			{
 				if ( !ImGui::TreeNode( u8"通常時" ) ) { return; }
 				// else
 				
-				ImGui::DragFloat( ( prefix + u8"：加速量"	).c_str(),		&p->accel,			0.1f, 0.0f );
-				ImGui::DragFloat( ( prefix + u8"：減速量"	).c_str(),		&p->decel,			0.1f, 0.0f );
-				ImGui::DragFloat( ( prefix + u8"：最高速度"	).c_str(),		&p->maxSpeed,		0.1f, 0.0f );
-				ImGui::DragFloat( ( prefix + u8"：跳躍力"	).c_str(),		&p->jumpStrength,	0.1f, 0.0f );
-				ImGui::DragFloat( ( prefix + u8"：重力"		).c_str(),		&p->gravity,		0.1f, 0.0f );
-				ShowAABB( prefix + u8"：当たり判定・ＶＳ地形", &p->hitBoxStage );
+				ImGui::DragFloat( ( prefix + u8"：加速量"	).c_str(),		&p->accel,			0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：減速量"	).c_str(),		&p->decel,			0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：最高速度"	).c_str(),		&p->maxSpeed,		0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：跳躍力"	).c_str(),		&p->jumpStrength,	0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：重力"		).c_str(),		&p->gravity,		0.01f, 0.0f );
+				ParameterHelper::ShowAABBNode( prefix + u8"：当たり判定・ＶＳ地形", &p->hitBoxStage );
 
 				ImGui::TreePop();
 			};
 
 			ShowBasicNode( u8"通常時", &m.normal );
 
-			ParameterBase::ShowIONode( this );
+			ShowIONode();
 
 			ImGui::TreePop();
 		}
@@ -152,35 +146,15 @@ public:
 
 namespace
 {
-	std::unique_ptr<ParameterBase> *FindHelper()
-	{
-		return ParameterStorage::Get().Find( ParamPlayer::ID );
-	}
-
 	Member FetchMember()
 	{
-		Member nil{}; nil.isValid = false;
-
-		auto  pBase = FindHelper();
-		if ( !pBase ) { return nil; }
-		// else
-
-		ParamPlayer *pDerived = dynamic_cast<ParamPlayer *>( pBase->get() );
-		return ( pDerived ) ? pDerived->Data() : nil;
+		return ParamPlayer::Get().Data();
 	}
 }
 
 void Player::Init()
 {
-	if ( !FindHelper() )
-	{
-		ParameterStorage::Get().Register<ParamPlayer>( ParamPlayer::ID );
-	}
-
-	if ( FindHelper() )
-	{
-		( *FindHelper() )->Init();
-	}
+	ParamPlayer::Get().Init();
 
 	const auto data = FetchMember();
 	velocity	= 0.0f;
@@ -188,19 +162,13 @@ void Player::Init()
 }
 void Player::Uninit()
 {
-	if ( FindHelper() )
-	{
-		( *FindHelper() )->Uninit();
-	}
+	ParamPlayer::Get().Uninit();
 }
 
 void Player::Update( float elapsedTime, Input input )
 {
 #if USE_IMGUI
-	if ( FindHelper() )
-	{
-		( *FindHelper() )->UseImGui();
-	}
+	ParamPlayer::Get().UseImGui();
 	UseImGui();
 #endif // USE_IMGUI
 
@@ -235,8 +203,8 @@ void Player::Move( float elapsedTime, Input input )
 {
 	const auto data = FetchMember();
 
-	velocity.x = input.moveVectorXZ.x * data.moveSpeed * elapsedTime;
-	velocity.z = input.moveVectorXZ.y * data.moveSpeed * elapsedTime;
+	velocity.x = input.moveVectorXZ.x * data.normal.maxSpeed * elapsedTime;
+	velocity.z = input.moveVectorXZ.y * data.normal.maxSpeed * elapsedTime;
 }
 
 void Player::Jump( float elapsedTime )
@@ -244,13 +212,13 @@ void Player::Jump( float elapsedTime )
 	const auto data = FetchMember();
 
 	onGround = false;
-	velocity.y = data.jumpStrength * elapsedTime;
+	velocity.y = data.normal.jumpStrength * elapsedTime;
 }
 void Player::Fall( float elapsedTime )
 {
 	const auto data = FetchMember();
 
-	velocity.y -= data.gravity * elapsedTime;
+	velocity.y -= data.normal.gravity * elapsedTime;
 }
 void Player::AssignLanding()
 {

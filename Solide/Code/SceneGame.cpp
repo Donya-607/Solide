@@ -63,7 +63,7 @@ namespace
 }
 CEREAL_CLASS_VERSION( Member, 1 )
 
-class ParamGame : public ParameterBase
+class ParamGame : public ParameterBase<ParamGame>
 {
 public:
 	static constexpr const char *ID = "Game";
@@ -126,14 +126,7 @@ public:
 				ImGui::TreePop();
 			}
 
-			auto ShowAABB = []( const std::string &prefix, Donya::AABB *p )
-			{
-				ImGui::DragFloat3( ( prefix + u8"：中心のオフセット" ).c_str(),		&p->pos.x,  0.01f );
-				ImGui::DragFloat3( ( prefix + u8"：サイズ（半分を指定）" ).c_str(),	&p->size.x, 0.01f );
-				ImGui::Checkbox  ( ( prefix + u8"：判定を有効にする" ).c_str(),		&p->exist );
-			};
-
-			ParameterBase::ShowIONode( this );
+			ShowIONode();
 
 			ImGui::TreePop();
 		}
@@ -145,21 +138,9 @@ public:
 
 namespace
 {
-	std::unique_ptr<ParameterBase> *FindHelper()
-	{
-		return ParameterStorage::Get().Find( ParamGame::ID );
-	}
-
 	Member FetchMember()
 	{
-		Member nil{}; nil.isValid = false;
-
-		auto  pBase = FindHelper();
-		if ( !pBase ) { return nil; }
-		// else
-
-		ParamGame *pDerived = dynamic_cast<ParamGame *>( pBase->get() );
-		return ( pDerived ) ? pDerived->Data() : nil;
+		return ParamGame::Get().Data();
 	}
 }
 
@@ -175,14 +156,7 @@ void SceneGame::Init()
 {
 	Donya::Sound::Play( Music::BGM_Game );
 
-	if ( !FindHelper() )
-	{
-		ParameterStorage::Get().Register<ParamGame>( ParamGame::ID );
-	}
-	if ( FindHelper() )
-	{
-		( *FindHelper() )->Init();
-	}
+	ParamGame::Get().Init();
 
 	CameraInit();
 
@@ -190,10 +164,7 @@ void SceneGame::Init()
 }
 void SceneGame::Uninit()
 {
-	if ( FindHelper() )
-	{
-		( *FindHelper() )->Uninit();
-	}
+	ParamGame::Get().Uninit();
 
 	Donya::Sound::Stop( Music::BGM_Game );
 }
@@ -203,13 +174,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	elapsedTime = 1.0f; // Disable
 
 #if USE_IMGUI
-
-	if ( FindHelper() )
-	{
-		( *FindHelper() )->UseImGui();
-	}
+	ParamGame::Get().UseImGui();
 	UseImGui();
-
 #endif // USE_IMGUI
 
 	controller.Update();

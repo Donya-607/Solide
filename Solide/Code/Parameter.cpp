@@ -1,39 +1,18 @@
 #include "Parameter.h"
 
 #if USE_IMGUI
-void ParameterBase::ShowIONode( ParameterBase *pParam )
+namespace ParameterHelper
 {
-	if ( !ImGui::TreeNode( u8"ファイル I/O" ) ) { return; }
-	// else
-
-	static bool isBinary = true;
-	if ( ImGui::RadioButton( "Binary", isBinary ) ) { isBinary = true;  }
-	if ( ImGui::RadioButton( "JSON",  !isBinary ) ) { isBinary = false; }
-
-	std::string loadStr = ( isBinary ) ? u8"Binary" : u8"JSON";
-	loadStr += u8"ファイルから読み込む";
-
-	if ( ImGui::Button( u8"保存" ) )
+	void ShowAABBNode( const std::string &caption, Donya::AABB *p )
 	{
-		pParam->SaveBin();
-		pParam->SaveJson();
-	}
-	if ( ImGui::Button( loadStr.c_str() ) )
-	{
-		( isBinary ) ? pParam->LoadBin() : pParam->LoadJson();
-	}
+		if ( !ImGui::TreeNode( caption.c_str() ) ) { return; }
+		// else
 
-	ImGui::TreePop();
+		ImGui::DragFloat3( u8"：中心のオフセット"	,		&p->pos.x,	0.01f	);
+		ImGui::DragFloat3( u8"：サイズ（半分を指定）",	&p->size.x,	0.01f	);
+		ImGui::Checkbox  ( u8"：判定を有効にする"	,		&p->exist			);
+
+		ImGui::TreePop();
+	}
 }
 #endif // USE_IMGUI
-
-void ParameterStorage::Reset()
-{
-	storage.clear();
-}
-
-std::unique_ptr<ParameterBase> *ParameterStorage::Find( const std::string &keyName )
-{
-	auto find = storage.find( keyName );
-	return ( find == storage.end() ) ? nullptr : &( find->second );
-}
