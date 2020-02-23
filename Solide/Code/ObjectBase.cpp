@@ -6,7 +6,7 @@
 
 namespace
 {
-	Donya::Vector4x4 MakeWorldMatrix( const Donya::AABB &hitBox )
+	Donya::Vector4x4 MakeWorldMatrix( const Donya::AABB &hitBox, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
 	{
 		// The size of hitBox is half-size.
 		// But that will using as scale, so we should multiply to double.
@@ -15,6 +15,7 @@ namespace
 		m._11 = hitBox.size.x * 2.0f;
 		m._22 = hitBox.size.y * 2.0f;
 		m._33 = hitBox.size.z * 2.0f;
+		m    *= rotation.RequireRotationMatrix();
 		m._41 = hitBox.pos.x;
 		m._42 = hitBox.pos.y;
 		m._43 = hitBox.pos.z;
@@ -87,7 +88,7 @@ Donya::AABB Actor::GetHitBox() const
 	return tmp;
 }
 
-void Actor::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
+void Actor::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Quaternion &rotation, const Donya::Vector4 &color ) const
 {
-	DrawCube( MakeWorldMatrix( GetHitBox() ), VP, color );
+	DrawCube( MakeWorldMatrix( GetHitBox(), rotation ), VP, color );
 }

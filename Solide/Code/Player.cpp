@@ -2,6 +2,7 @@
 
 #include "Donya/Constant.h"		// For DEBUG_MODE macro.
 #include "Donya/Serializer.h"
+#include "Donya/Useful.h"		// For ZeroEqual().
 
 #include "FilePath.h"
 #include "Parameter.h"
@@ -158,6 +159,7 @@ void Player::Init()
 
 	const auto data = FetchMember();
 	velocity	= 0.0f;
+	orientation	= Donya::Quaternion::Identity();
 	hitBox		= data.normal.hitBoxStage;
 }
 void Player::Uninit()
@@ -195,16 +197,50 @@ void Player::PhysicUpdate( const std::vector<Solid> &collisions )
 void Player::Draw( const Donya::Vector4x4 &matVP )
 {
 #if DEBUG_MODE
-	DrawHitBox( matVP, { 0.1f, 1.0f, 0.3f, 1.0f } );
+	DrawHitBox( matVP, orientation, { 0.1f, 1.0f, 0.3f, 1.0f } );
 #endif // DEBUG_MODE
+}
+
+void Player::LookToInput( float elapsedTime, Input input )
+{
+	Donya::Vector3 frontXZ = orientation.LocalFront(); frontXZ.y = 0.0f;
+	Donya::Vector3 inputXZ{ input.moveVectorXZ.x, 0.0f, input.moveVectorXZ.y };
+
+	orientation = Donya::Quaternion::LookAt( orientation, inputXZ.Normalized(), Donya::Quaternion::Freeze::Up );
 }
 
 void Player::Move( float elapsedTime, Input input )
 {
 	const auto data = FetchMember();
 
-	velocity.x = input.moveVectorXZ.x * data.normal.maxSpeed * elapsedTime;
-	velocity.z = input.moveVectorXZ.y * data.normal.maxSpeed * elapsedTime;
+	Donya::Vector2 velocityXZ{ velocity.x, velocity.z };
+
+	if ( ZeroEqual( input.moveVectorXZ.Length() ) )
+	{
+		const Donya::Int2 oldSign
+		{
+			Donya::SignBit( velocityXZ.x ),
+			Donya::SignBit( velocityXZ.y )
+		};
+
+		velocityXZ.x -= data.normal.decel * scast<float>( oldSign.x ) * elapsedTime;
+		velocityXZ.y -= data.normal.decel * scast<float>( oldSign.y ) * elapsedTime;
+		if ( Donya::SignBit( velocityXZ.x ) != oldSign.x ) { velocityXZ.x = 0.0f; }
+		if ( Donya::SignBit( velocityXZ.y ) != oldSign.y ) { velocityXZ.y = 0.0f; }
+	}
+	else
+	{
+		velocityXZ += input.moveVectorXZ * data.normal.accel * elapsedTime;
+		if ( data.normal.maxSpeed <= velocityXZ.Length() )
+		{
+			velocityXZ = velocityXZ.Normalized() * data.normal.maxSpeed;
+		}
+
+		LookToInput( elapsedTime, input );
+	}
+
+	velocity.x = velocityXZ.x;
+	velocity.z = velocityXZ.y;
 }
 
 void Player::Jump( float elapsedTime )

@@ -19,9 +19,8 @@ public:
 		bool useTrans;
 	};
 private:
-	float				speed{};
-	Donya::Quaternion	orientation;
 	Donya::Vector3		velocity;
+	Donya::Quaternion	orientation;
 	bool				onGround = false;
 public:
 	void Init();
@@ -32,6 +31,7 @@ public:
 
 	void Draw( const Donya::Vector4x4 &matVP );
 private:
+	void LookToInput( float elapsedTime, Input input );
 	void Move( float elapsedTime, Input input );
 
 	void Jump( float elapsedTime );

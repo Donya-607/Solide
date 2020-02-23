@@ -180,11 +180,11 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	controller.Update();
 
-	CameraUpdate();
-
 	PlayerUpdate( elapsedTime );
 
 	player.PhysicUpdate( {} );
+
+	CameraUpdate();
 
 	return ReturnResult();
 }

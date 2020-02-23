@@ -50,5 +50,5 @@ public:
 	virtual Donya::Vector3 GetPosition() const;
 	virtual Donya::AABB GetHitBox() const;
 public:
-	virtual void DrawHitBox( const Donya::Vector4x4 &matVP, const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+	virtual void DrawHitBox( const Donya::Vector4x4 &matVP, const Donya::Quaternion &rotation = Donya::Quaternion::Identity(), const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 };
