@@ -37,8 +37,9 @@ public:
 		if ( ImGui::RadioButton( "Binary", isBinary ) ) { isBinary = true;  }
 		if ( ImGui::RadioButton( "Json",  !isBinary ) ) { isBinary = false; }
 
-		std::string loadStr = u8"ロード・FROM:";
+		std::string loadStr = u8"ロード（by:";
 		loadStr += ( isBinary ) ? u8"Binary" : u8"Json";
+		loadStr += u8"）";
 
 		if ( ImGui::Button( u8"セーブ" ) )
 		{
