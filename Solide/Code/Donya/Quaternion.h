@@ -169,7 +169,7 @@ namespace Donya
 		constexpr Donya::Vector3 GetAxis() const { return Vector3{ x, y, z }; }
 
 		/// <summary>
-		/// Returns angles are radian.
+		/// Returns angles(radian) that belong local space.
 		/// </summary>
 		Donya::Vector3 GetEulerAngles() const;
 

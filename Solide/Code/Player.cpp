@@ -4,6 +4,10 @@
 #include "Donya/Serializer.h"
 #include "Donya/Useful.h"		// For ZeroEqual().
 
+#if DEBUG_MODE
+#include "Donya/Keyboard.h"
+#endif // DEBUG_MODE
+
 #include "FilePath.h"
 #include "Parameter.h"
 
@@ -155,7 +159,7 @@ public:
 		{
 			auto ShowBasicNode = []( const std::string &prefix, Member::BasicMember *p )
 			{
-				if ( !ImGui::TreeNode( u8"通常時" ) ) { return; }
+				if ( !ImGui::TreeNode( prefix.c_str() ) ) { return; }
 				// else
 				
 				ImGui::DragFloat( ( prefix + u8"：加速量"	).c_str(),		&p->accel,			0.01f, 0.0f );
@@ -194,19 +198,41 @@ public:
 #endif // USE_IMGUI
 };
 
+// INternal utility.
 namespace
 {
 	Member FetchMember()
 	{
 		return ParamPlayer::Get().Data();
 	}
+
+	Donya::Vector2 ToXZVector( const Donya::Vector3 &v )
+	{
+		return Donya::Vector2{ v.x, v.z };
+	}
+	void AssignToXZ( Donya::Vector3 *pDest, const Donya::Vector2 &sourceXZ )
+	{
+		pDest->x = sourceXZ.x;
+		pDest->z = sourceXZ.y;
+	}
+	void AssignToXZ( Donya::Vector3 *pDest, const Donya::Vector3 &source )
+	{
+		pDest->x = source.x;
+		pDest->z = source.z;
+	}
 }
 
+void Player::NormalMover::Init( Player &player )
+{
+	const auto data = FetchMember();
+	player.hitBox = data.normal.hitBoxStage;
+}
+void Player::NormalMover::Uninit( Player &player ) {}
 void Player::NormalMover::Move( Player &player, float elapsedTime, Input input )
 {
 	const auto data = FetchMember();
 
-	Donya::Vector2 velocityXZ{ player.velocity.x, player.velocity.z };
+	Donya::Vector2 velocityXZ = ToXZVector( player.velocity );
 
 	if ( ZeroEqual( input.moveVectorXZ.Length() ) )
 	{
@@ -232,28 +258,118 @@ void Player::NormalMover::Move( Player &player, float elapsedTime, Input input )
 		player.LookToInput( elapsedTime, input );
 	}
 
-	player.velocity.x = velocityXZ.x;
-	player.velocity.z = velocityXZ.y;
+	AssignToXZ( &player.velocity, velocityXZ );
+}
+void Player::NormalMover::Jump( Player &player, float elapsedTime )
+{
+	const auto data = FetchMember();
+	player.velocity.y = data.normal.jumpStrength * elapsedTime;
+}
+void Player::NormalMover::Fall( Player &player, float elapsedTime )
+{
+	const auto data = FetchMember();
+	player.velocity.y -= data.normal.gravity * elapsedTime;
+}
+
+void Player::OilMover::Init( Player &player )
+{
+	tilt = 0.0f;
+
+	const auto data = FetchMember();
+
+	player.hitBox = data.oiled.basic.hitBoxStage;
+
+	Donya::Vector3 initVelocity = player.orientation.LocalFront() * data.oiled.basic.maxSpeed;
+	AssignToXZ( &player.velocity, initVelocity );
+}
+void Player::OilMover::Uninit( Player &player )
+{
+	AssignToXZ( &player.velocity, Donya::Vector2::Zero() );
 }
 void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 {
 	const auto data = FetchMember();
 
-	
+	// Doing untilt only.
+	if ( fabsf( input.moveVectorXZ.x ) < data.oiled.turnThreshold )
+	{
+		int  sign =  Donya::SignBit( tilt );
+		if ( sign == 0 ) { return; }
+		// else
+
+		float subtract = data.oiled.untiltDegree * sign;
+		if ( fabsf( tilt ) <= fabsf( subtract ) )
+		{
+			tilt = 0.0f;
+		}
+		else
+		{
+			tilt -= subtract;
+		}
+
+		return;
+	}
+	// else
+
+	const int sideSign = Donya::SignBit( input.moveVectorXZ.x );
+
+	// Rotation of move-vector.
+	{
+		const float rotRadian = ToRadian( data.oiled.turnDegree ) * sideSign;
+		const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), rotRadian );
+		player.orientation.RotateBy( rotation );
+
+		// Speed that the Y component is excepted.
+		const float currentSpeed = ToXZVector( player.velocity ).Length();
+
+		Donya::Vector3 rotatedVelocity = player.orientation.LocalFront() * currentSpeed;
+		AssignToXZ( &player.velocity, rotatedVelocity );
+	}
+
+	// Tilt the orientation.
+	{
+		float addition = data.oiled.tiltDegree * sideSign;
+		if ( Donya::SignBit( addition ) != Donya::SignBit( tilt ) )
+		{
+			// Tilt to inverse side. So I want to tilt fastly.
+			addition += data.oiled.untiltDegree * sideSign;
+		}
+		
+		tilt += addition;
+		if ( data.oiled.maxTiltDegree < fabsf( tilt ) )
+		{
+			tilt = data.oiled.maxTiltDegree * sideSign;
+		}
+	}
+}
+void Player::OilMover::Jump( Player &player, float elapsedTime )
+{
+	const auto data = FetchMember();
+	player.velocity.y = data.oiled.basic.jumpStrength * elapsedTime;
+}
+void Player::OilMover::Fall( Player &player, float elapsedTime )
+{
+	const auto data = FetchMember();
+	player.velocity.y -= data.oiled.basic.gravity * elapsedTime;
+}
+Donya::Quaternion Player::OilMover::GetExtraRotation() const
+{
+	return Donya::Quaternion::Make( Donya::Vector3::Front(), ToRadian( -tilt ) );
 }
 
 void Player::Init()
 {
 	ParamPlayer::Get().Init();
-
 	const auto data = FetchMember();
+
 	velocity	= 0.0f;
 	orientation	= Donya::Quaternion::Identity();
-	pMover		= std::make_unique<NormalMover>();
-	hitBox		= data.normal.hitBoxStage;
+
+	ResetMover<NormalMover>();
 }
 void Player::Uninit()
 {
+	pMover->Uninit( *this );
 	ParamPlayer::Get().Uninit();
 }
 
@@ -263,6 +379,20 @@ void Player::Update( float elapsedTime, Input input )
 	ParamPlayer::Get().UseImGui();
 	UseImGui();
 #endif // USE_IMGUI
+
+#if DEBUG_MODE
+	{
+		if ( Donya::Keyboard::Trigger( 'N' ) )
+		{
+			ResetMover<NormalMover>();
+		}
+		if ( Donya::Keyboard::Trigger( 'O' ) )
+		{
+			ResetMover<OilMover>();
+		}
+	}
+#endif // DEBUG_MODE
+
 
 	Move( elapsedTime, input );
 
@@ -286,8 +416,9 @@ void Player::PhysicUpdate( const std::vector<Solid> &collisions )
 
 void Player::Draw( const Donya::Vector4x4 &matVP )
 {
+	const Donya::Quaternion actualOrientation = orientation.Rotated( pMover->GetExtraRotation() );
 #if DEBUG_MODE
-	DrawHitBox( matVP, orientation, { 0.1f, 1.0f, 0.3f, 1.0f } );
+	DrawHitBox( matVP, actualOrientation, { 0.1f, 1.0f, 0.3f, 1.0f } );
 #endif // DEBUG_MODE
 }
 
@@ -306,16 +437,12 @@ void Player::Move( float elapsedTime, Input input )
 
 void Player::Jump( float elapsedTime )
 {
-	const auto data = FetchMember();
-
 	onGround = false;
-	velocity.y = data.normal.jumpStrength * elapsedTime;
+	pMover->Jump( *this, elapsedTime );
 }
 void Player::Fall( float elapsedTime )
 {
-	const auto data = FetchMember();
-
-	velocity.y -= data.normal.gravity * elapsedTime;
+	pMover->Fall( *this, elapsedTime );
 }
 void Player::AssignLanding()
 {
@@ -334,7 +461,10 @@ void Player::UseImGui()
 	{
 		ImGui::DragFloat3( u8"座標", &pos.x,			0.01f );
 		ImGui::DragFloat3( u8"速度", &velocity.x,	0.01f );
-		ImGui::Checkbox( u8"地上にいる？", &onGround );
+
+		bool nowOiled = pMover->IsOiled(); // Immutable.
+		ImGui::Checkbox( u8"地上にいる？",	&onGround );
+		ImGui::Checkbox( u8"あぶら状態か？",	&nowOiled );
 
 		ImGui::TreePop();
 	}

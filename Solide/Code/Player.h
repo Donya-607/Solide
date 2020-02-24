@@ -19,26 +19,54 @@ public:
 		bool useOil;
 	};
 private:
-	class IMover
+	class MoverBase
 	{
+	public:
+		virtual void Init( Player &player ) = 0;
+		virtual void Uninit( Player &player ) = 0;
 	public:
 		virtual void Move( Player &player, float elapsedTime, Input input ) = 0;
+		virtual void Jump( Player &player, float elapsedTime ) = 0;
+		virtual void Fall( Player &player, float elapsedTime ) = 0;
+	public:
+		virtual bool IsOiled() const = 0;
+		virtual Donya::Quaternion GetExtraRotation() const
+		{
+			return Donya::Quaternion::Identity();
+		}
 	};
-	class NormalMover : public IMover
+	class NormalMover : public MoverBase
 	{
 	public:
-		void Move( Player &player, float elapsedTime, Input input ) override;
-	};
-	class OilMover : public IMover
-	{
+		void Init( Player &player ) override;
+		void Uninit( Player &player ) override;
 	public:
 		void Move( Player &player, float elapsedTime, Input input ) override;
+		void Jump( Player &player, float elapsedTime ) override;
+		void Fall( Player &player, float elapsedTime ) override;
+	public:
+		bool IsOiled() const override { return false; }
+	};
+	class OilMover : public MoverBase
+	{
+	private:
+		float tilt = 0.0f; // Degree.
+	public:
+		void Init( Player &player ) override;
+		void Uninit( Player &player ) override;
+	public:
+		void Move( Player &player, float elapsedTime, Input input ) override;
+		void Jump( Player &player, float elapsedTime ) override;
+		void Fall( Player &player, float elapsedTime ) override;
+	public:
+		bool IsOiled() const override { return true; }
+		Donya::Quaternion GetExtraRotation() const override;
 	};
 private:
-	Donya::Vector3			velocity;
-	Donya::Quaternion		orientation;
-	std::unique_ptr<IMover>	pMover;
-	bool					onGround = false;
+	Donya::Vector3				velocity;
+	Donya::Quaternion			orientation;
+	std::unique_ptr<MoverBase>	pMover;
+	bool						onGround = false;
 public:
 	void Init();
 	void Uninit();
@@ -48,6 +76,18 @@ public:
 
 	void Draw( const Donya::Vector4x4 &matVP );
 private:
+	template<class Mover>
+	void ResetMover()
+	{
+		if ( pMover )
+		{
+			pMover->Uninit( *this );
+		}
+
+		pMover = std::make_unique<Mover>();
+		pMover->Init( *this );
+	}
+
 	void LookToInput( float elapsedTime, Input input );
 	void Move( float elapsedTime, Input input );
 

@@ -214,7 +214,7 @@ void SceneGame::Draw( float elapsedTime )
 		// Ground likes.
 		{
 			static Donya::Vector3 pos  { 0.0f, -1.0f, 0.0f };
-			static Donya::Vector3 size { 10.0f, 1.0f, 50.0f };
+			static Donya::Vector3 size { 70.0f, 1.0f, 120.0f };
 			static Donya::Vector4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 			Donya::Vector4x4 W
@@ -429,6 +429,75 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 		useJump			=  Donya::Keyboard::Trigger( 'Z' );
 		useOil			=  Donya::Keyboard::Press( 'X' );
 	}
+
+#if DEBUG_MODE
+	// Test of quaternion
+	if ( 0 )
+	{
+		static Donya::Quaternion base{};
+		static bool enableAdd = false;
+		Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( 1.0f ) );
+
+		if ( enableAdd )
+		{
+			base.RotateBy( rotation );
+		}
+
+		if ( Donya::Keyboard::Trigger( 'R' ) )
+		{
+			Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Front(), ToRadian( -45.0f ) );
+			base.RotateBy( rotation );
+		}
+		if ( Donya::Keyboard::Trigger( 'T' ) )
+		{
+			Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Front(), ToRadian( 45.0f ) );
+			base.RotateBy( rotation );
+		}
+		if ( Donya::Keyboard::Trigger( 'F' ) )
+		{
+			Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Right(), ToRadian( -45.0f ) );
+			base.RotateBy( rotation );
+		}
+		if ( Donya::Keyboard::Trigger( 'G' ) )
+		{
+			Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Right(), ToRadian( 45.0f ) );
+			base.RotateBy( rotation );
+		}
+
+		auto nowEuler = base.GetEulerAngles();
+		float x = ToDegree( nowEuler.x );
+		float y = ToDegree( nowEuler.y );
+		float z = ToDegree( nowEuler.z );
+		auto tmp = 0;
+		tmp++;
+
+		auto CalcDifference = []( const Donya::Quaternion &lhs, const Donya::Quaternion &rhs )
+		{
+			// See https://qiita.com/Guvalif/items/767cf45f19c36e242fc6
+			return lhs.Inverse().RotateBy( rhs );
+		};
+		auto diff = CalcDifference( Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( 180.0f ) ), base );
+		auto diffEuler = base.GetEulerAngles();
+		float dx = ToDegree( diffEuler.x );
+		float dy = ToDegree( diffEuler.y );
+		float dz = ToDegree( diffEuler.z );
+
+		ImGui::Begin( u8"élå≥êîÉeÉXÉg" );
+
+		ImGui::Text( u8"ílÅF[X:%5.3f][Y:%5.3f][Z:%5.3f][W:%5.3f]", base.x, base.y, base.z, base.w );
+		ImGui::Text( u8"DegreeäpìxÅF[X:%5.3f][Y:%5.3f][Z:%5.3f]", x, y, z );
+		ImGui::Text( u8"ç∑ï™ÅF[X:%5.3f][Y:%5.3f][Z:%5.3f][W:%5.3f]", diff.x, diff.y, diff.z, diff.w );
+		ImGui::Text( u8"ç∑ï™äpìxÅF[X:%5.3f][Y:%5.3f][Z:%5.3f]", dx, dy, dz );
+		ImGui::Checkbox( u8"ÉCÉìÉNÉäÉÅÉìÉgÇóLå¯Ç…Ç∑ÇÈ", &enableAdd );
+		ImGui::Text( u8"ÇqÅFÇyé≤Ç≈Å[ÇSÇTìxâÒì]" );
+		ImGui::Text( u8"ÇsÅFÇyé≤Ç≈ÇSÇTìxâÒì]" );
+		ImGui::Text( u8"ÇeÅFÇwé≤Ç≈Å[ÇSÇTìxâÒì]" );
+		ImGui::Text( u8"ÇfÅFÇwé≤Ç≈ÇSÇTìxâÒì]" );
+
+		ImGui::End();
+	}
+#endif // DEBUG_MODE
+
 
 	Player::Input input{};
 	input.moveVectorXZ	= moveVector;
