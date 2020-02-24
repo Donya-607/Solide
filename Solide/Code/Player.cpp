@@ -378,8 +378,7 @@ Donya::Quaternion Player::OilMover::GetExtraRotation( Player &player ) const
 {
 	Donya::Quaternion pitching = Donya::Quaternion::Make( player.orientation.LocalRight(), pitch );
 	Donya::Quaternion tilting  = Donya::Quaternion::Make( player.orientation.LocalFront(), ToRadian( -tilt ) );
-	return pitching.Rotated( tilting );
-	// return tilting;
+	return pitching.Rotated( tilting ); // Rotation: First:Pitch, Then:Tilt.
 }
 
 void Player::Init()

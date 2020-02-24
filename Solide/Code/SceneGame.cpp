@@ -438,7 +438,7 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 
 #if DEBUG_MODE
 	// Test
-	if ( 1 )
+	if ( 0 )
 	{
 		static Donya::Quaternion base{};
 		static bool enableAdd = false;
