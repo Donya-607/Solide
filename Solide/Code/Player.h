@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "Donya/Quaternion.h"
@@ -15,13 +16,29 @@ public:
 	{
 		Donya::Vector2 moveVectorXZ;	// Y component will function as Z.
 		bool useJump;
-		bool useShot;
-		bool useTrans;
+		bool useOil;
 	};
 private:
-	Donya::Vector3		velocity;
-	Donya::Quaternion	orientation;
-	bool				onGround = false;
+	class IMover
+	{
+	public:
+		virtual void Move( Player &player, float elapsedTime, Input input ) = 0;
+	};
+	class NormalMover : public IMover
+	{
+	public:
+		void Move( Player &player, float elapsedTime, Input input ) override;
+	};
+	class OilMover : public IMover
+	{
+	public:
+		void Move( Player &player, float elapsedTime, Input input ) override;
+	};
+private:
+	Donya::Vector3			velocity;
+	Donya::Quaternion		orientation;
+	std::unique_ptr<IMover>	pMover;
+	bool					onGround = false;
 public:
 	void Init();
 	void Uninit();

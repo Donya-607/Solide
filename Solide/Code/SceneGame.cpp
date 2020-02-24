@@ -406,37 +406,34 @@ void SceneGame::CameraUpdate()
 
 void SceneGame::PlayerUpdate( float elapsedTime )
 {
-	Donya::Vector2	moveVector{};
-	bool useJump	= false;
-	bool useShot	= false;
-	bool useTrans	= false;
+	Donya::Vector2		moveVector{};
+	bool useJump		= false;
+	bool useOil			= false;
 
 	if ( controller.IsConnected() )
 	{
-		using Pad	= Donya::Gamepad;
+		using Pad		= Donya::Gamepad;
 
-		moveVector	= controller.LeftStick();
-		useJump		= controller.Trigger( Pad::A );
-		useShot		= controller.Trigger( Pad::B );
-		useTrans	= controller.Trigger( Pad::X );
+		moveVector		= controller.LeftStick();
+		useJump			= controller.Trigger( Pad::A );
+		useOil			= controller.Press( Pad::B ) || controller.Press( Pad::Y );
 	}
 	else
 	{
-		moveVector.x += Donya::Keyboard::Press( VK_RIGHT	) ? +1.0f : 0.0f;
-		moveVector.x += Donya::Keyboard::Press( VK_LEFT		) ? -1.0f : 0.0f;
-		moveVector.y += Donya::Keyboard::Press( VK_UP		) ? +1.0f : 0.0f; // Front is Plus.
-		moveVector.y += Donya::Keyboard::Press( VK_DOWN		) ? -1.0f : 0.0f; // Front is Plus.
+		moveVector.x	+= Donya::Keyboard::Press( VK_RIGHT	) ? +1.0f : 0.0f;
+		moveVector.x	+= Donya::Keyboard::Press( VK_LEFT	) ? -1.0f : 0.0f;
+		moveVector.y	+= Donya::Keyboard::Press( VK_UP	) ? +1.0f : 0.0f; // Front is Plus.
+		moveVector.y	+= Donya::Keyboard::Press( VK_DOWN	) ? -1.0f : 0.0f; // Front is Plus.
+		moveVector.Normalize();
 
-		useJump		= Donya::Keyboard::Trigger( 'Z' );
-		useShot		= Donya::Keyboard::Trigger( 'X' );
-		useTrans	= Donya::Keyboard::Trigger( 'C' );
+		useJump			=  Donya::Keyboard::Trigger( 'Z' );
+		useOil			=  Donya::Keyboard::Press( 'X' );
 	}
 
 	Player::Input input{};
-	input.moveVectorXZ	= moveVector.Normalized();
+	input.moveVectorXZ	= moveVector;
 	input.useJump		= useJump;
-	input.useShot		= useShot;
-	input.useTrans		= useTrans;
+	input.useOil		= useOil;
 
 	player.Update( elapsedTime, input );
 }

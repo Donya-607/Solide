@@ -47,8 +47,38 @@ namespace
 				}
 			}
 		};
+		struct OilMember
+		{
+			BasicMember	basic;
+			float		turnDegree		= 1.0f;		// Per frame.
+			float		turnThreshold	= 0.4f;		// 0.0f ~ 1.0f, absolute.
+			float		tiltDegree		= 1.0f;		// Per frame.
+			float		untiltDegree	= 2.0f;		// Per frame.
+			float		maxTiltDegree	= 45.0f;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( basic			),
+					CEREAL_NVP( turnDegree		),
+					CEREAL_NVP( turnThreshold	),
+					CEREAL_NVP( tiltDegree		),
+					CEREAL_NVP( untiltDegree	),
+					CEREAL_NVP( maxTiltDegree	)
+				);
 
-		BasicMember normal;
+				if ( version <= 1 )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+
+		BasicMember	normal;
+		OilMember	oiled;
 	public:
 		bool isValid = true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
@@ -63,13 +93,18 @@ namespace
 
 			if ( version <= 1 )
 			{
+				archive( CEREAL_NVP( oiled ) );
+			}
+			if ( version <= 2 )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				0 )
+CEREAL_CLASS_VERSION( Member,				1 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	0 )
+CEREAL_CLASS_VERSION( Member::OilMember,	0 )
 
 class ParamPlayer : public ParameterBase<ParamPlayer>
 {
@@ -135,6 +170,20 @@ public:
 
 			ShowBasicNode( u8"í èÌéû", &m.normal );
 
+			if ( ImGui::TreeNode( u8"ÉIÉCÉãéû" ) )
+			{
+				ShowBasicNode( u8"ï®óùãììÆ", &m.oiled.basic );
+
+				ImGui::DragFloat( u8"âÒì]Ç≥ÇπÇÈÇµÇ´Ç¢íl",		&m.oiled.turnThreshold,	0.01f, 0.0f, 0.99f	);
+				ImGui::DragFloat( u8"ÇPÇeÇ…ã»Ç™ÇÈäpìx",		&m.oiled.turnDegree,	0.1f, 0.0f, 180.0f	);
+				ImGui::Text( "" );
+				ImGui::DragFloat( u8"ÇPÇeÇ…åXÇØÇÈäpìx",		&m.oiled.tiltDegree,	0.1f, 0.0f, 180.0f	);
+				ImGui::DragFloat( u8"ÇPÇeÇ…åXÇ´ÇñﬂÇ∑äpìx",	&m.oiled.untiltDegree,	0.1f, 0.0f, 180.0f	);
+				ImGui::DragFloat( u8"åXÇ≠äpìxÇÃç≈ëÂ",			&m.oiled.maxTiltDegree, 0.1f, 0.0f, 180.0f	);
+
+				ImGui::TreePop();
+			}
+
 			ShowIONode();
 
 			ImGui::TreePop();
@@ -153,6 +202,46 @@ namespace
 	}
 }
 
+void Player::NormalMover::Move( Player &player, float elapsedTime, Input input )
+{
+	const auto data = FetchMember();
+
+	Donya::Vector2 velocityXZ{ player.velocity.x, player.velocity.z };
+
+	if ( ZeroEqual( input.moveVectorXZ.Length() ) )
+	{
+		const Donya::Int2 oldSign
+		{
+			Donya::SignBit( velocityXZ.x ),
+			Donya::SignBit( velocityXZ.y )
+		};
+
+		velocityXZ.x -= data.normal.decel * scast<float>( oldSign.x ) * elapsedTime;
+		velocityXZ.y -= data.normal.decel * scast<float>( oldSign.y ) * elapsedTime;
+		if ( Donya::SignBit( velocityXZ.x ) != oldSign.x ) { velocityXZ.x = 0.0f; }
+		if ( Donya::SignBit( velocityXZ.y ) != oldSign.y ) { velocityXZ.y = 0.0f; }
+	}
+	else
+	{
+		velocityXZ += input.moveVectorXZ * data.normal.accel * elapsedTime;
+		if ( data.normal.maxSpeed <= velocityXZ.Length() )
+		{
+			velocityXZ = velocityXZ.Normalized() * data.normal.maxSpeed;
+		}
+
+		player.LookToInput( elapsedTime, input );
+	}
+
+	player.velocity.x = velocityXZ.x;
+	player.velocity.z = velocityXZ.y;
+}
+void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
+{
+	const auto data = FetchMember();
+
+	
+}
+
 void Player::Init()
 {
 	ParamPlayer::Get().Init();
@@ -160,6 +249,7 @@ void Player::Init()
 	const auto data = FetchMember();
 	velocity	= 0.0f;
 	orientation	= Donya::Quaternion::Identity();
+	pMover		= std::make_unique<NormalMover>();
 	hitBox		= data.normal.hitBoxStage;
 }
 void Player::Uninit()
@@ -211,36 +301,7 @@ void Player::LookToInput( float elapsedTime, Input input )
 
 void Player::Move( float elapsedTime, Input input )
 {
-	const auto data = FetchMember();
-
-	Donya::Vector2 velocityXZ{ velocity.x, velocity.z };
-
-	if ( ZeroEqual( input.moveVectorXZ.Length() ) )
-	{
-		const Donya::Int2 oldSign
-		{
-			Donya::SignBit( velocityXZ.x ),
-			Donya::SignBit( velocityXZ.y )
-		};
-
-		velocityXZ.x -= data.normal.decel * scast<float>( oldSign.x ) * elapsedTime;
-		velocityXZ.y -= data.normal.decel * scast<float>( oldSign.y ) * elapsedTime;
-		if ( Donya::SignBit( velocityXZ.x ) != oldSign.x ) { velocityXZ.x = 0.0f; }
-		if ( Donya::SignBit( velocityXZ.y ) != oldSign.y ) { velocityXZ.y = 0.0f; }
-	}
-	else
-	{
-		velocityXZ += input.moveVectorXZ * data.normal.accel * elapsedTime;
-		if ( data.normal.maxSpeed <= velocityXZ.Length() )
-		{
-			velocityXZ = velocityXZ.Normalized() * data.normal.maxSpeed;
-		}
-
-		LookToInput( elapsedTime, input );
-	}
-
-	velocity.x = velocityXZ.x;
-	velocity.z = velocityXZ.y;
+	pMover->Move( *this, elapsedTime, input );
 }
 
 void Player::Jump( float elapsedTime )
