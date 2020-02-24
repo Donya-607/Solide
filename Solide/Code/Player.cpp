@@ -382,13 +382,11 @@ void Player::Update( float elapsedTime, Input input )
 
 #if DEBUG_MODE
 	{
-		if ( Donya::Keyboard::Trigger( 'N' ) )
+		if ( input.useOil )
 		{
-			ResetMover<NormalMover>();
-		}
-		if ( Donya::Keyboard::Trigger( 'O' ) )
-		{
-			ResetMover<OilMover>();
+			( pMover->IsOiled() )
+			? ResetMover<NormalMover>()
+			: ResetMover<OilMover>();
 		}
 	}
 #endif // DEBUG_MODE
