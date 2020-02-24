@@ -30,7 +30,7 @@ private:
 		virtual void Fall( Player &player, float elapsedTime ) = 0;
 	public:
 		virtual bool IsOiled() const = 0;
-		virtual Donya::Quaternion GetExtraRotation() const
+		virtual Donya::Quaternion GetExtraRotation( Player &player ) const
 		{
 			return Donya::Quaternion::Identity();
 		}
@@ -50,7 +50,8 @@ private:
 	class OilMover : public MoverBase
 	{
 	private:
-		float tilt = 0.0f; // Degree.
+		float tilt  = 0.0f; // Degree.
+		float pitch = 0.0f; // Radian.
 	public:
 		void Init( Player &player ) override;
 		void Uninit( Player &player ) override;
@@ -60,7 +61,7 @@ private:
 		void Fall( Player &player, float elapsedTime ) override;
 	public:
 		bool IsOiled() const override { return true; }
-		Donya::Quaternion GetExtraRotation() const override;
+		Donya::Quaternion GetExtraRotation( Player &player ) const override;
 	};
 private:
 	Donya::Vector3				velocity;

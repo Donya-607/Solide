@@ -288,6 +288,8 @@ void Player::OilMover::Uninit( Player &player )
 }
 void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 {
+	pitch += ToRadian( 6.0f );
+
 	const auto data = FetchMember();
 
 	// Doing untilt only.
@@ -352,9 +354,12 @@ void Player::OilMover::Fall( Player &player, float elapsedTime )
 	const auto data = FetchMember();
 	player.velocity.y -= data.oiled.basic.gravity * elapsedTime;
 }
-Donya::Quaternion Player::OilMover::GetExtraRotation() const
+Donya::Quaternion Player::OilMover::GetExtraRotation( Player &player ) const
 {
-	return Donya::Quaternion::Make( Donya::Vector3::Front(), ToRadian( -tilt ) );
+	Donya::Quaternion pitching = Donya::Quaternion::Make( player.orientation.LocalRight(), pitch );
+	Donya::Quaternion tilting  = Donya::Quaternion::Make( player.orientation.LocalFront(), ToRadian( -tilt ) );
+	return pitching.Rotated( tilting );
+	// return tilting;
 }
 
 void Player::Init()
@@ -414,7 +419,7 @@ void Player::PhysicUpdate( const std::vector<Solid> &collisions )
 
 void Player::Draw( const Donya::Vector4x4 &matVP )
 {
-	const Donya::Quaternion actualOrientation = orientation.Rotated( pMover->GetExtraRotation() );
+	const Donya::Quaternion actualOrientation = orientation.Rotated( pMover->GetExtraRotation( *this ) );
 #if DEBUG_MODE
 	DrawHitBox( matVP, actualOrientation, { 0.1f, 1.0f, 0.3f, 1.0f } );
 #endif // DEBUG_MODE
