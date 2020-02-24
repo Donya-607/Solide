@@ -1,5 +1,7 @@
 #include "Player.h"
 
+#include <algorithm>			// For std::max(), min()
+
 #include "Donya/Constant.h"		// For DEBUG_MODE macro.
 #include "Donya/Serializer.h"
 #include "Donya/Useful.h"		// For ZeroEqual().
@@ -10,6 +12,9 @@
 
 #include "FilePath.h"
 #include "Parameter.h"
+
+#undef max
+#undef min
 
 namespace
 {
@@ -55,7 +60,7 @@ namespace
 		{
 			BasicMember	basic;
 			float		turnDegree		= 1.0f;		// Per frame.
-			float		turnThreshold	= 0.4f;		// 0.0f ~ 1.0f, absolute.
+			float		turnThreshold	= 0.4f;		// Degree.
 			float		tiltDegree		= 1.0f;		// Per frame.
 			float		untiltDegree	= 2.0f;		// Per frame.
 			float		maxTiltDegree	= 45.0f;
@@ -178,7 +183,7 @@ public:
 			{
 				ShowBasicNode( u8"ï®óùãììÆ", &m.oiled.basic );
 
-				ImGui::DragFloat( u8"âÒì]Ç≥ÇπÇÈÇµÇ´Ç¢íl",		&m.oiled.turnThreshold,	0.01f, 0.0f, 0.99f	);
+				ImGui::DragFloat( u8"ã»Ç∞ÇÈÇµÇ´Ç¢íläpìx",		&m.oiled.turnThreshold,	0.1f, 0.0f, 180.0f	);
 				ImGui::DragFloat( u8"ÇPÇeÇ…ã»Ç™ÇÈäpìx",		&m.oiled.turnDegree,	0.1f, 0.0f, 180.0f	);
 				ImGui::Text( "" );
 				ImGui::DragFloat( u8"ÇPÇeÇ…åXÇØÇÈäpìx",		&m.oiled.tiltDegree,	0.1f, 0.0f, 180.0f	);
@@ -288,12 +293,27 @@ void Player::OilMover::Uninit( Player &player )
 }
 void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 {
+#if DEBUG_MODE
 	pitch += ToRadian( 6.0f );
+#endif // DEBUG_MODE
+
+	input.moveVectorXZ.Normalize();
 
 	const auto data = FetchMember();
 
+	float betweenCross{};
+	float betweenRadian{};
+	{
+		Donya::Vector2 nXZFront = ToXZVector( player.orientation.LocalFront().Normalized() );
+		
+		betweenCross  = Donya::Cross( nXZFront, input.moveVectorXZ );
+		betweenRadian = Donya::Dot  ( nXZFront, input.moveVectorXZ );
+		betweenRadian = std::max( 0.0f, std::min( 1.0f, betweenRadian ) ); // Prevent NaN.
+		betweenRadian = acosf( betweenRadian );
+	}
+
 	// Doing untilt only.
-	if ( fabsf( input.moveVectorXZ.x ) < data.oiled.turnThreshold )
+	if ( input.moveVectorXZ.IsZero() || fabsf( betweenRadian ) < ToRadian( data.oiled.turnThreshold ) )
 	{
 		int  sign =  Donya::SignBit( tilt );
 		if ( sign == 0 ) { return; }
@@ -313,7 +333,7 @@ void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 	}
 	// else
 
-	const int sideSign = Donya::SignBit( input.moveVectorXZ.x );
+	const int sideSign = ( betweenCross < 0.0f ) ? 1 : -1;
 
 	// Rotation of move-vector.
 	{

@@ -16,6 +16,10 @@
 #include "Donya/Useful.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
+#if DEBUG_MODE
+#include "Donya/Random.h"
+#endif // DEBUG_MODE
+
 
 #include "Common.h"
 #include "Fader.h"
@@ -433,8 +437,8 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	}
 
 #if DEBUG_MODE
-	// Test of quaternion
-	if ( 0 )
+	// Test
+	if ( 1 )
 	{
 		static Donya::Quaternion base{};
 		static bool enableAdd = false;
@@ -484,7 +488,7 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 		float dy = ToDegree( diffEuler.y );
 		float dz = ToDegree( diffEuler.z );
 
-		ImGui::Begin( u8"四元数テスト" );
+		ImGui::Begin( u8"テスト" );
 
 		ImGui::Text( u8"値：[X:%5.3f][Y:%5.3f][Z:%5.3f][W:%5.3f]", base.x, base.y, base.z, base.w );
 		ImGui::Text( u8"Degree角度：[X:%5.3f][Y:%5.3f][Z:%5.3f]", x, y, z );
@@ -495,6 +499,34 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 		ImGui::Text( u8"Ｔ：Ｚ軸で４５度回転" );
 		ImGui::Text( u8"Ｆ：Ｘ軸でー４５度回転" );
 		ImGui::Text( u8"Ｇ：Ｘ軸で４５度回転" );
+
+		static Donya::Vector3 front{ 0, 0, 1 };
+		static Donya::Vector3 random{ 1, 0, 0 };
+		if ( ImGui::Button( u8"ランダム生成" ) )
+		{
+			front.x = Donya::Random::GenerateFloat( -1.0f, 1.0f );
+			front.y = 0.0f;
+			front.z = Donya::Random::GenerateFloat( -1.0f, 1.0f );
+			front.Normalize();
+
+			random.x = Donya::Random::GenerateFloat( -1.0f, 1.0f );
+			random.y = 0.0f;
+			random.z = Donya::Random::GenerateFloat( -1.0f, 1.0f );
+			random.Normalize();
+		}
+
+		auto ToXZ = []( const  Donya::Vector3 &v ) { return Donya::Vector2{ v.x, v.z }; };
+
+		Donya::Vector2 xzFront = ToXZ( front );
+		Donya::Vector2 xzRand  = ToXZ( random );
+		ImGui::Text( u8"前方向：[X:%5.3f][Y:%5.3f]",		xzFront.x, xzFront.y );
+		ImGui::Text( u8"ランダム：[X:%5.3f][Y:%5.3f]",	xzRand.x, xzRand.y   );
+		ImGui::Text( u8"外積・前 x ラ：[%5.3f]", Donya::Cross( xzFront, xzRand ) );
+		ImGui::Text( u8"外積・ラ x 前：[%5.3f]", Donya::Cross( xzRand, xzFront ) );
+		ImGui::Text( ( Donya::Cross( xzFront, xzRand ) < 0.0f ) ? u8"ラは右です" : u8"ラは左です" );
+		ImGui::Text( u8"内積：[%5.3f]", Donya::Dot( xzFront, xzRand ) );
+		ImGui::Text( u8"acos：[%5.3f]", acosf( Donya::Dot( xzFront, xzRand ) ) );
+		ImGui::Text( u8"Degree：[%5.3f]", ToDegree( acosf( Donya::Dot( xzFront, xzRand ) ) ) );
 
 		ImGui::End();
 	}
