@@ -409,7 +409,7 @@ void SceneGame::CameraUpdate()
 
 	if ( Donya::Mouse::Press( Donya::Mouse::Kind::LEFT ) )
 	{
-		constexpr float ROT_AMOUNT = ToRadian( 1.0f );
+		constexpr float ROT_AMOUNT = ToRadian( 0.5f );
 		rotation.x = diff.x * ROT_AMOUNT;
 		rotation.y = diff.y * ROT_AMOUNT;
 	}
