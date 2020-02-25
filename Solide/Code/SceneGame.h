@@ -27,6 +27,10 @@ private:
 
 	std::unique_ptr<Terrain>	pTerrain;
 	Player						player;
+
+#if DEBUG_MODE
+	bool nowDebugMode;
+#endif // DEBUG_MODE
 public:
 	SceneGame();
 	~SceneGame();

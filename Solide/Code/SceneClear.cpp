@@ -83,9 +83,7 @@ void SceneClear::StartFade() const
 Scene::Result SceneClear::ReturnResult()
 {
 #if DEBUG_MODE
-
-	bool pressCtrl =  Donya::Keyboard::Press( VK_LCONTROL ) || Donya::Keyboard::Press( VK_RCONTROL );
-	if ( pressCtrl && Donya::Keyboard::Trigger( VK_RETURN ) && !Fader::Get().IsExist() )
+	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
 	{
 		Donya::Sound::Play( Music::ItemDecision );
 
@@ -95,7 +93,6 @@ Scene::Result SceneClear::ReturnResult()
 		return change;
 	}
 	// else
-
 #endif // DEBUG_MODE
 
 	if ( Fader::Get().IsClosed() )
@@ -117,7 +114,7 @@ void SceneClear::UseImGui()
 {
 	if ( ImGui::BeginIfAllowed() )
 	{
-		if ( ImGui::TreeNode( u8"クリア・設定" ) )
+		if ( ImGui::TreeNode( u8"クリア・状況" ) )
 		{
 
 

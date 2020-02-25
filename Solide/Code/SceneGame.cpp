@@ -152,6 +152,11 @@ SceneGame::SceneGame() :
 	controller( Donya::Gamepad::PAD_1 ),
 	pTerrain( nullptr ),
 	player()
+
+#if DEBUG_MODE
+	, nowDebugMode( false )
+#endif // DEBUG_MODE
+
 {}
 SceneGame::~SceneGame() = default;
 
@@ -181,6 +186,22 @@ Scene::Result SceneGame::Update( float elapsedTime )
 {
 	elapsedTime = 1.0f; // Disable
 
+#if DEBUG_MODE
+	if ( Donya::Keyboard::Trigger( VK_F5 ) )
+	{
+		nowDebugMode = !nowDebugMode;
+
+		if ( nowDebugMode )
+		{
+			iCamera.ChangeMode( Donya::ICamera::Mode::Free );
+		}
+		else
+		{
+			iCamera.ChangeMode( Donya::ICamera::Mode::Look );
+		}
+	}
+#endif // DEBUG_MODE
+
 #if USE_IMGUI
 	ParamGame::Get().UseImGui();
 	UseImGui();
@@ -206,9 +227,18 @@ void SceneGame::Draw( float elapsedTime )
 {
 	elapsedTime = 1.0f; // Disable
 
+	// Clear the back-ground.
 	{
 		constexpr FLOAT BG_COLOR[4]{ 0.4f, 0.4f, 0.4f, 1.0f };
 		Donya::ClearViews( BG_COLOR );
+
+	#if DEBUG_MODE
+		if ( nowDebugMode )
+		{
+			constexpr FLOAT DEBUG_COLOR[4]{ 0.7f, 0.8f, 0.1f, 1.0f };
+			Donya::ClearViews( DEBUG_COLOR );
+		}
+	#endif // DEBUG_MODE
 	}
 
 	const Donya::Vector4x4 V{ iCamera.CalcViewMatrix() };
@@ -337,87 +367,72 @@ void SceneGame::AssignCameraPos()
 }
 void SceneGame::CameraUpdate()
 {
-#if DEBUG_MODE
-	if ( !Donya::Keyboard::Press( VK_MENU ) )
+	Donya::ICamera::Controller input{};
+	input.SetNoOperation();
+	input.slerpPercent = FetchMember().camera.slerpFactor;
+
+#if !DEBUG_MODE
+	AssignCameraPos();
+	iCamera.Update( input );
+#else
+	if ( !nowDebugMode )
 	{
 		AssignCameraPos();
+		iCamera.Update( input );
+		return;
 	}
-#else
-	AssignCameraPos();
-#endif // DEBUG_MODE
+	// else
 
-	const auto data = FetchMember();
+	static Donya::Int2 prevMouse{};
+	static Donya::Int2 currMouse{};
 
-	auto MakeControlStructWithMouse = []()
+	prevMouse = currMouse;
+
+	auto nowMouse = Donya::Mouse::Coordinate();
+	currMouse.x = scast<int>( nowMouse.x );
+	currMouse.y = scast<int>( nowMouse.y );
+
+	bool  isInputMouseButton = Donya::Mouse::Press( Donya::Mouse::Kind::LEFT ) || Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) || Donya::Mouse::Press( Donya::Mouse::Kind::RIGHT );
+	bool  isDriveMouse = ( prevMouse != currMouse ) || Donya::Mouse::WheelRot() || isInputMouseButton;
+	if ( !isDriveMouse )
 	{
-		constexpr float SLERP_FACTOR = 0.2f;
+		input.SetNoOperation();
+		iCamera.Update( input );
+		return;
+	}
+	// else
 
-		auto NoOperation = [&SLERP_FACTOR]()
-		{
-			Donya::ICamera::Controller noop{};
-			noop.SetNoOperation();
-			noop.slerpPercent = SLERP_FACTOR;
-			return noop;
-		};
+	const Donya::Vector2 diff = ( currMouse - prevMouse ).Float();
+	
+	Donya::Vector3 movement{};
+	Donya::Vector3 rotation{};
 
-		if ( !Donya::Keyboard::Press( VK_MENU ) ) { return NoOperation(); }
-		// else
+	if ( Donya::Mouse::Press( Donya::Mouse::Kind::LEFT ) )
+	{
+		constexpr float ROT_AMOUNT = ToRadian( 1.0f );
+		rotation.x = diff.x * ROT_AMOUNT;
+		rotation.y = diff.y * ROT_AMOUNT;
+	}
+	else
+	if ( Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) )
+	{
+		constexpr float MOVE_SPEED = 0.1f;
+		movement.x =  diff.x * MOVE_SPEED;
+		movement.y = -diff.y * MOVE_SPEED;
+	}
 
-		static Donya::Int2 prevMouse{};
-		static Donya::Int2 currMouse{};
+	constexpr float FRONT_SPEED = 3.5f;
+	movement.z = FRONT_SPEED * scast<float>( Donya::Mouse::WheelRot() );
 
-		prevMouse = currMouse;
+	input.moveVelocity		= movement;
+	input.yaw				= rotation.x;
+	input.pitch				= rotation.y;
+	input.roll				= 0.0f;
+	input.moveInLocalSpace	= true;
 
-		auto nowMouse = Donya::Mouse::Coordinate();
-		currMouse.x = scast<int>( nowMouse.x );
-		currMouse.y = scast<int>( nowMouse.y );
-
-		bool isInputMouseButton = Donya::Mouse::Press( Donya::Mouse::Kind::LEFT ) || Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) || Donya::Mouse::Press( Donya::Mouse::Kind::RIGHT );
-		bool isDriveMouse = ( prevMouse != currMouse ) || Donya::Mouse::WheelRot() || isInputMouseButton;
-		if ( !isDriveMouse ) { return NoOperation(); }
-		// else
-
-		Donya::Vector3 diff{};
-		{
-			Donya::Vector2 vec2 = ( currMouse - prevMouse ).Float();
-
-			diff.x = vec2.x;
-			diff.y = vec2.y;
-		}
-
-		Donya::Vector3 movement{};
-		Donya::Vector3 rotation{};
-
-		if ( Donya::Mouse::Press( Donya::Mouse::Kind::LEFT ) )
-		{
-			constexpr float ROT_AMOUNT = ToRadian( 1.0f );
-			rotation.x = diff.x * ROT_AMOUNT;
-			rotation.y = diff.y * ROT_AMOUNT;
-		}
-		else
-		if ( Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) )
-		{
-			constexpr float MOVE_SPEED = 0.1f;
-			movement.x = diff.x * MOVE_SPEED;
-			movement.y = -diff.y * MOVE_SPEED;
-		}
-
-		constexpr float FRONT_SPEED = 3.5f;
-		movement.z = FRONT_SPEED * scast<float>( Donya::Mouse::WheelRot() );
-
-		Donya::ICamera::Controller ctrl{};
-		ctrl.moveVelocity		= movement;
-		ctrl.yaw				= rotation.x;
-		ctrl.pitch				= rotation.y;
-		ctrl.roll				= 0.0f;
-		ctrl.slerpPercent		= SLERP_FACTOR;
-		ctrl.moveInLocalSpace	= true;
-
-		return ctrl;
-	};
-	Donya::ICamera::Controller input = MakeControlStructWithMouse();
-	input.slerpPercent = data.camera.slerpFactor;
 	iCamera.Update( input );
+
+#endif // !DEBUG_MODE
 }
 
 void SceneGame::PlayerUpdate( float elapsedTime )
@@ -610,6 +625,10 @@ void SceneGame::UseImGui()
 
 	if ( ImGui::TreeNode( u8"ゲーム・状況" ) )
 	{
+		ImGui::Text( u8"「Ｆ５キー」を押すと，" );
+		ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
+		ImGui::Text( "" );
+
 		if ( ImGui::TreeNode( u8"カメラ情報" ) )
 		{
 			auto ShowVec3 = []( const std::string &prefix, const Donya::Vector3 &v )
@@ -617,7 +636,10 @@ void SceneGame::UseImGui()
 				ImGui::Text( ( prefix + u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]" ).c_str(), v.x, v.y, v.z );
 			};
 
+			ImGui::Text( u8"【デバッグモード時のみ有効】" );
 			ImGui::Text( u8"「ＡＬＴキー」を押している間のみ，" );
+			ImGui::Text( u8"「左クリック」を押しながらマウス移動で，" );
+			ImGui::Text( u8"カメラの回転ができます。" );
 			ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
 			ImGui::Text( u8"カメラの並行移動ができます。" );
 			ImGui::Text( "" );

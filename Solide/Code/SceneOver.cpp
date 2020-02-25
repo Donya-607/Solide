@@ -83,9 +83,7 @@ void SceneOver::StartFade() const
 Scene::Result SceneOver::ReturnResult()
 {
 #if DEBUG_MODE
-
-	bool pressCtrl =  Donya::Keyboard::Press( VK_LCONTROL ) || Donya::Keyboard::Press( VK_RCONTROL );
-	if ( pressCtrl && Donya::Keyboard::Trigger( VK_RETURN ) && !Fader::Get().IsExist() )
+	if ( Donya::Keyboard::Trigger( VK_F5 ) && !Fader::Get().IsExist() )
 	{
 		Donya::Sound::Play( Music::ItemDecision );
 
@@ -95,7 +93,6 @@ Scene::Result SceneOver::ReturnResult()
 		return change;
 	}
 	// else
-
 #endif // DEBUG_MODE
 
 	if ( Fader::Get().IsClosed() )
@@ -117,7 +114,7 @@ void SceneOver::UseImGui()
 {
 	if ( ImGui::BeginIfAllowed() )
 	{
-		if ( ImGui::TreeNode( u8"ゲームオーバー・設定" ) )
+		if ( ImGui::TreeNode( u8"ゲームオーバー・状況" ) )
 		{
 
 

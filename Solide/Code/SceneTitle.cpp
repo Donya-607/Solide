@@ -82,9 +82,7 @@ void SceneTitle::StartFade() const
 Scene::Result SceneTitle::ReturnResult()
 {
 #if DEBUG_MODE
-
-	bool pressCtrl =  Donya::Keyboard::Press( VK_LCONTROL ) || Donya::Keyboard::Press( VK_RCONTROL );
-	if ( pressCtrl && Donya::Keyboard::Trigger( VK_RETURN ) && !Fader::Get().IsExist() )
+	if ( Donya::Keyboard::Trigger( VK_F5 ) && !Fader::Get().IsExist() )
 	{
 		Donya::Sound::Play( Music::ItemDecision );
 
@@ -94,7 +92,6 @@ Scene::Result SceneTitle::ReturnResult()
 		return change;
 	}
 	// else
-
 #endif // DEBUG_MODE
 
 	if ( Fader::Get().IsClosed() )
@@ -116,7 +113,7 @@ void SceneTitle::UseImGui()
 {
 	if ( ImGui::BeginIfAllowed() )
 	{
-		if ( ImGui::TreeNode( u8"タイトル・設定" ) )
+		if ( ImGui::TreeNode( u8"タイトル・状況" ) )
 		{
 
 
