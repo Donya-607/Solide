@@ -125,14 +125,14 @@ void Framework::DebugShowInformation()
 	{
 		ImGui::Text( u8"「Ｆ２キー」を押すと，シーン遷移を行います。" );
 		ImGui::Text( "" );
-		if ( ImGui::TreeNode( "ゲーム情報" ) )
+		if ( ImGui::TreeNode( u8"ゲーム情報" ) )
 		{
 			ImGui::Text( "FPS[%f]", Donya::GetFPS() );
 
 			int x = 0, y = 0;
 			Donya::Mouse::Coordinate( &x, &y );
-			ImGui::Text( "マウス座標[X:%d][Y:%d]", x, y );
-			ImGui::Text( "マウスホイール[%d]", Donya::Mouse::WheelRot() );
+			ImGui::Text( u8"マウス座標[X:%d][Y:%d]", x, y );
+			ImGui::Text( u8"マウスホイール[%d]", Donya::Mouse::WheelRot() );
 
 			int LB = 0, MB = 0, RB = 0;
 			LB = Donya::Mouse::Press( Donya::Mouse::LEFT );
@@ -143,7 +143,7 @@ void Framework::DebugShowInformation()
 			ImGui::TreePop();
 		}
 
-		if ( ImGui::TreeNode( "イージングの確認" ) )
+		if ( ImGui::TreeNode( u8"イージングの確認" ) )
 		{
 			using namespace Donya::Easing;
 
@@ -250,7 +250,7 @@ void Framework::DebugShowInformation()
 			ImGui::TreePop();
 		}
 
-		if ( ImGui::TreeNode( "画面シェイクの確認" ) )
+		if ( ImGui::TreeNode( u8"画面シェイクの確認" ) )
 		{
 			static float power = 20.0f;
 			static float decel = 5.0f;
