@@ -167,7 +167,7 @@ namespace Donya
 		/// This method work in local-space of mesh, so you should transform to local-space the arguments.<para></para>
 		/// If you set true to "enoughOnlyPickFirst", returns intersection-point that found at first. a little fast.
 		/// </summary>
-		RayPickResult RayPick( const Donya::Vector3 &rayStartPosition, const Donya::Vector3 &rayEndPosition, bool enoughOnlyPickFirst = false );
+		RayPickResult RayPick( const Donya::Vector3 &rayStartPosition, const Donya::Vector3 &rayEndPosition, bool enoughOnlyPickFirst = false ) const;
 	};
 }
 

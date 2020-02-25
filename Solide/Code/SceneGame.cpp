@@ -46,21 +46,19 @@ namespace
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
-			if ( version <= 1 )
+			if ( 1 <= version )
 			{
 				archive
 				(
 					CEREAL_NVP( camera.basePosY ),
 					CEREAL_NVP( camera.offsetPos ),
-					CEREAL_NVP( camera.offsetFocus )
-				);
-			}
-			if ( version == 1 )
-			{
-				archive
-				(
+					CEREAL_NVP( camera.offsetFocus ),
 					CEREAL_NVP( camera.slerpFactor )
 				);
+			}
+			if ( 2 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
@@ -152,6 +150,7 @@ SceneGame::SceneGame() :
 	dirLight(),
 	iCamera(),
 	controller( Donya::Gamepad::PAD_1 ),
+	pTerrain( nullptr ),
 	player()
 {}
 SceneGame::~SceneGame() = default;
@@ -164,10 +163,15 @@ void SceneGame::Init()
 
 	CameraInit();
 
+	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin" );
+	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
+
 	player.Init();
 }
 void SceneGame::Uninit()
 {
+	pTerrain.reset();
+
 	ParamGame::Get().Uninit();
 
 	Donya::Sound::Stop( Music::BGM_Game );
@@ -184,9 +188,14 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	controller.Update();
 
+	pTerrain->BuildWorldMatrix();
+
 	PlayerUpdate( elapsedTime );
 
-	player.PhysicUpdate( {} );
+	{
+		const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
+		player.PhysicUpdate( pTerrain->GetMesh().get(), &terrainMatrix );
+	}
 
 	CameraUpdate();
 
@@ -206,6 +215,8 @@ void SceneGame::Draw( float elapsedTime )
 	const Donya::Vector4x4 P{ iCamera.GetProjectionMatrix() };
 	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
 
+	pTerrain->Render( V * P, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
+
 	player.Draw( V * P );
 
 #if DEBUG_MODE
@@ -216,6 +227,7 @@ void SceneGame::Draw( float elapsedTime )
 		static Donya::Vector4 lightDir{ 0.0f,-1.0f, 1.0f, 0.0f };
 
 		// Ground likes.
+		if ( 0 )
 		{
 			static Donya::Vector3 pos  { 0.0f, -1.0f, 0.0f };
 			static Donya::Vector3 size { 70.0f, 1.0f, 120.0f };
@@ -622,6 +634,8 @@ void SceneGame::UseImGui()
 
 			ImGui::TreePop();
 		}
+
+		pTerrain->ShowImGuiNode( u8"ínå`" );
 
 		ImGui::TreePop();
 	}

@@ -3,6 +3,8 @@
 #include <memory>
 
 #include "Donya/GeometricPrimitive.h"
+#include "Donya/StaticMesh.h"
+#include "Donya/Useful.h"
 
 namespace
 {
@@ -61,10 +63,119 @@ void Solid::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color 
 
 
 
-void Actor::Move( const Donya::Vector3 &movement, const std::vector<Solid> &collisions )
+void Actor::Move( const Donya::Vector3 &movement, const Donya::Vector3 &rayOffset, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
-	// TODO : Implement collision resolving process.
-	pos += movement;
+	if ( !pTerrain || !pTerrainMatrix )
+	{
+		pos += movement;
+		return;
+	}
+	// else
+
+	// First, move on XZ plane. Then correct my position by only XZ plane.
+	// Second, move on Y plane.
+
+	const Donya::Vector3 xzMovement{ movement.x,	0.0f,		movement.z	};
+	const Donya::Vector3 yMovement { 0.0f,			movement.y,	0.0f		};
+
+	if ( !xzMovement.IsZero() ) { MoveXZImpl( xzMovement, rayOffset, 0, pTerrain, pTerrainMatrix ); }
+	if ( !yMovement.IsZero()  ) { MoveYImpl ( yMovement,  rayOffset,    pTerrain, pTerrainMatrix ); }
+}
+namespace
+{
+	Donya::Vector3 MakeSizeOffset( const Donya::AABB &hitBox, const Donya::Vector3 &sign )
+	{
+		const Donya::Vector3 sizeOffset
+		{
+			hitBox.size.x * Donya::SignBit( sign.x ),
+			hitBox.size.y * Donya::SignBit( sign.y ),
+			hitBox.size.z * Donya::SignBit( sign.z ),
+		};
+		return sizeOffset;
+	}
+	Donya::Vector3 ToVec3( const Donya::Vector4 &v )
+	{
+		return Donya::Vector3
+		{
+			v.x,	// / v.w,
+			v.y,	// / v.w,
+			v.z,	// / v.w,
+		};
+	}
+	Donya::Vector3 Transform( const Donya::Vector4x4 &M, const Donya::Vector3 &V, float fourthParam )
+	{
+		return ToVec3( M.Mul( V, fourthParam ) );
+	}
+}
+void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const Donya::Vector3 &wsRayOffset, int recursionCount, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+{
+	constexpr int RECURSIVE_LIMIT = 1000;
+	if ( RECURSIVE_LIMIT <= recursionCount )
+	{
+		pos += xzMovement;
+		return;
+	}
+	// else
+
+	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
+	const Donya::Vector4x4	invTerrainMat	=  pTerrainMatrix->Inverse();
+	const Donya::Vector3	xzSizeOffset	=  MakeSizeOffset( hitBox, xzMovement );
+	const Donya::Vector3	wsRayStart		=  pos + wsRayOffset;
+	const Donya::Vector3	wsRayEnd		=  wsRayStart + xzMovement + xzSizeOffset;
+
+	// Terrain space.
+	const Donya::Vector3 tsRayStart	= Transform( invTerrainMat, wsRayStart,	1.0f );
+	const Donya::Vector3 tsRayEnd	= Transform( invTerrainMat, wsRayEnd,	1.0f );
+
+	auto  result = pTerrain->RayPick( tsRayStart, tsRayEnd );
+	// The moving vector(ray) didn't collide to anything, so we can move directly.
+	if ( !result.wasHit )
+	{
+		pos += xzMovement;
+		return;
+	}
+	// else
+
+	// Transform to World space from Terrains pace.
+	const Donya::Vector3 wsIntersection	= Transform( terrainMat, result.intersectionPoint, 1.0f );
+	const Donya::Vector3 wsWallNormal	= Transform( terrainMat, result.normal, 0.0f ).Normalized();
+
+	const Donya::Vector3 internalVec	= wsRayEnd - wsIntersection;
+	const Donya::Vector3 projVelocity	= -wsWallNormal * Dot( internalVec, -wsWallNormal );
+
+	constexpr float ERROR_MAGNI = 1.0f + 0.1f/* EPSILON */;
+	Donya::Vector3 correctedVelocity = xzMovement + ( -projVelocity * ERROR_MAGNI );
+
+	// Move by corrected velocity.
+	// This recursion will stop when the corrected velocity was not collided.
+	MoveXZImpl( correctedVelocity, wsRayOffset, recursionCount + 1, pTerrain, pTerrainMatrix );
+}
+void Actor::MoveYImpl ( const Donya::Vector3 &yMovement,  const Donya::Vector3 &wsRayOffset, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+{
+	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
+	const Donya::Vector4x4	invTerrainMat	=  pTerrainMatrix->Inverse();
+	const Donya::Vector3	ySizeOffset		=  MakeSizeOffset( hitBox, yMovement );
+	const Donya::Vector3	wsRayStart		=  pos + wsRayOffset;
+	const Donya::Vector3	wsRayEnd		=  wsRayStart + yMovement + ySizeOffset;
+
+	// Terrain space.
+	const Donya::Vector3 tsRayStart	= Transform( invTerrainMat, wsRayStart,	1.0f );
+	const Donya::Vector3 tsRayEnd	= Transform( invTerrainMat, wsRayEnd,	1.0f );
+
+	auto  result = pTerrain->RayPick( tsRayStart, tsRayEnd );
+	// The moving vector(ray) didn't collide to anything, so we can move directly.
+	if ( !result.wasHit )
+	{
+		pos += yMovement;
+		return;
+	}
+	// else
+
+	// Transform to World space from Terrain space.
+	const Donya::Vector3 wsIntersection	= Transform( terrainMat, result.intersectionPoint, 1.0f );
+	const Donya::Vector3 wsWallNormal	= Transform( terrainMat, result.normal, 0.0f ).Normalized();
+
+	pos = wsIntersection - ySizeOffset;
 }
 
 bool Actor::IsRiding( const Solid &onto ) const

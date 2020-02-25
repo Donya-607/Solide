@@ -1,12 +1,15 @@
 #pragma once
 
+#include <memory>
+
 #include "Donya/Camera.h"
 #include "Donya/GamepadXInput.h"
 #include "Donya/Vector.h"
 #include "Donya/UseImGui.h"
 
-#include "Scene.h"
 #include "Player.h"
+#include "Scene.h"
+#include "Terrain.h"
 
 class SceneGame : public Scene
 {
@@ -17,12 +20,13 @@ public:
 		Donya::Vector4 dir	{ 0.0f,-1.0f, 1.0f, 0.0f };
 	};
 private:
-	DirectionalLight	dirLight;
+	DirectionalLight			dirLight;
 
-	Donya::ICamera		iCamera;
-	Donya::XInput		controller;
+	Donya::ICamera				iCamera;
+	Donya::XInput				controller;
 
-	Player				player;
+	std::unique_ptr<Terrain>	pTerrain;
+	Player						player;
 public:
 	SceneGame();
 	~SceneGame();

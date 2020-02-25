@@ -50,7 +50,7 @@ namespace
 					CEREAL_NVP( hitBoxStage		)
 				);
 
-				if ( version <= 1 )
+				if ( 1 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -79,15 +79,16 @@ namespace
 					CEREAL_NVP( maxTiltDegree	)
 				);
 
-				if ( version <= 1 )
+				if ( 1 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
 			}
 		};
 
-		BasicMember	normal;
-		OilMember	oiled;
+		BasicMember		normal;
+		OilMember		oiled;
+		Donya::Vector3	raypickOffset;
 	public:
 		bool isValid = true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
@@ -100,18 +101,22 @@ namespace
 				CEREAL_NVP( normal )
 			);
 
-			if ( version <= 1 )
+			if ( 1 <= version )
 			{
 				archive( CEREAL_NVP( oiled ) );
 			}
-			if ( version <= 2 )
+			if ( 2 <= version )
+			{
+				archive( CEREAL_NVP( raypickOffset ) );
+			}
+			if ( 3 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				1 )
+CEREAL_CLASS_VERSION( Member,				2 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	0 )
 CEREAL_CLASS_VERSION( Member::OilMember,	0 )
 
@@ -189,6 +194,13 @@ public:
 				ImGui::DragFloat( u8"‚P‚e‚ÉŒX‚¯‚éŠp“x",		&m.oiled.tiltDegree,	0.1f, 0.0f, 180.0f	);
 				ImGui::DragFloat( u8"‚P‚e‚ÉŒX‚«‚ð–ß‚·Šp“x",	&m.oiled.untiltDegree,	0.1f, 0.0f, 180.0f	);
 				ImGui::DragFloat( u8"ŒX‚­Šp“x‚ÌÅ‘å",			&m.oiled.maxTiltDegree, 0.1f, 0.0f, 180.0f	);
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"‹¤’Ê" ) )
+			{
+				ImGui::DragFloat3( u8"ƒŒƒCƒsƒbƒNŽž‚ÌƒŒƒC‚ÌƒIƒtƒZƒbƒg", &m.raypickOffset.x, 0.1f );
 
 				ImGui::TreePop();
 			}
@@ -426,11 +438,20 @@ void Player::Update( float elapsedTime, Input input )
 	Fall( elapsedTime );
 }
 
-void Player::PhysicUpdate( const std::vector<Solid> &collisions )
+void Player::PhysicUpdate( const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMat )
 {
-	Actor::Move( velocity, collisions );
+	const Donya::Vector3 oldPos = pos;
 
-	if ( pos.y <= 0.0f + hitBox.size.y )
+	const auto data = FetchMember();
+	Actor::Move( velocity, data.raypickOffset, pTerrain, pTerrainMat );
+
+	float diffY = pos.y - oldPos.y;
+	bool  wasLanding = ( fabsf( diffY ) < fabsf( velocity.y ) - 0.001f ); // If the actual movement is lower than velocity, that represents to was landing.
+	if ( !pTerrain || !pTerrainMat ) // If the terrain is nothing, the criteria of landing is 0.0f.
+	{
+		wasLanding = wasLanding || ( pos.y < 0.0f + hitBox.size.y );
+	}
+	if (  wasLanding )
 	{
 		AssignLanding();
 	}
@@ -469,7 +490,6 @@ void Player::Fall( float elapsedTime )
 void Player::AssignLanding()
 {
 	onGround	= true;
-	pos.y		= 0.0f + hitBox.size.y;
 	velocity.y	= 0.0f;
 }
 

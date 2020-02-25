@@ -761,7 +761,7 @@ namespace Donya
 		}
 	}
 
-	StaticMesh::RayPickResult StaticMesh::RayPick( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd, bool enoughOnlyPickFirst )
+	StaticMesh::RayPickResult StaticMesh::RayPick( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd, bool enoughOnlyPickFirst ) const
 	{
 		RayPickResult rpResult{};
 

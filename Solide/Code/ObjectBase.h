@@ -5,6 +5,9 @@
 #include "Donya/Vector.h"
 #include "Donya/Collision.h"
 
+// For ray-pick.
+namespace Donya { class StaticMesh; }
+
 class Actor;
 
 /// <summary>
@@ -40,7 +43,12 @@ protected:
 	Donya::Vector3	pos;
 	Donya::AABB		hitBox;	// The "pos" acts as an offset.
 public:
-	virtual void Move( const Donya::Vector3 &wsMovement, const std::vector<Solid> &collisions );
+	// virtual void Move( const Donya::Vector3 &wsMovement, const std::vector<Solid> &collisions = std::vector<Solid>{}, const Donya::StaticMesh *pTerrain = nullptr );
+	virtual void Move( const Donya::Vector3 &wsMovement, const Donya::Vector3 &wsRayOriginOffset, const Donya::StaticMesh *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+private:
+	void MoveXZImpl( const Donya::Vector3 &xzMovement, const Donya::Vector3 &wsRayOriginOffset, int recursionCount, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+	void MoveYImpl ( const Donya::Vector3 &yMovement,  const Donya::Vector3 &wsRayOriginOffset, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+public:
 	virtual bool IsRiding( const Solid &onto ) const;
 	/// <summary>
 	/// Will call when pushed by Solid.
