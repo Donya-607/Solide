@@ -2,6 +2,8 @@
 
 #include <algorithm>			// For std::max(), min()
 
+#include <cereal/types/vector.hpp>
+
 #include "Donya/Constant.h"		// For DEBUG_MODE macro.
 #include "Donya/Serializer.h"
 #include "Donya/Useful.h"		// For ZeroEqual().
@@ -88,7 +90,7 @@ namespace
 
 		BasicMember		normal;
 		OilMember		oiled;
-		Donya::Vector3	raypickOffset;
+		std::vector<Donya::Vector3>	raypickOffsets;
 	public:
 		bool isValid = true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
@@ -107,7 +109,7 @@ namespace
 			}
 			if ( 2 <= version )
 			{
-				archive( CEREAL_NVP( raypickOffset ) );
+				archive( CEREAL_NVP( raypickOffsets ) );
 			}
 			if ( 3 <= version )
 			{
@@ -200,7 +202,28 @@ public:
 
 			if ( ImGui::TreeNode( u8"共通" ) )
 			{
-				ImGui::DragFloat3( u8"レイピック時のレイのオフセット", &m.raypickOffset.x, 0.1f );
+				if ( ImGui::TreeNode( u8"レイピック時のレイのオフセット" ) )
+				{
+					auto &data = m.raypickOffsets;
+					if ( ImGui::Button( u8"追加" ) )
+					{
+						data.push_back( {} );
+					}
+					if ( 1 <= data.size() && ImGui::Button( u8"末尾を削除" ) )
+					{
+						data.pop_back();
+					}
+
+					std::string caption{};
+					const size_t count = data.size();
+					for ( size_t i = 0; i < count; ++i )
+					{
+						caption = "[" + std::to_string( i ) + "]";
+						ImGui::DragFloat3( caption.c_str(), &data[i].x, 0.1f );
+					}
+
+					ImGui::TreePop();
+				}
 
 				ImGui::TreePop();
 			}
@@ -443,7 +466,7 @@ void Player::PhysicUpdate( const Donya::StaticMesh *pTerrain, const Donya::Vecto
 	const Donya::Vector3 oldPos = pos;
 
 	const auto data = FetchMember();
-	Actor::Move( velocity, data.raypickOffset, pTerrain, pTerrainMat );
+	Actor::Move( velocity, data.raypickOffsets, pTerrain, pTerrainMat );
 
 	float diffY = pos.y - oldPos.y;
 	bool  wasLanding = ( fabsf( diffY ) < fabsf( velocity.y ) - 0.001f ); // If the actual movement is lower than velocity, that represents to was landing.
