@@ -142,6 +142,7 @@
     <ClCompile Include="Code\Donya\Keyboard.cpp" />
     <ClCompile Include="Code\Donya\Loader.cpp" />
     <ClCompile Include="Code\Donya\Looper.cpp" />
+    <ClCompile Include="Code\Donya\Motion.cpp" />
     <ClCompile Include="Code\Donya\Mouse.cpp" />
     <ClCompile Include="Code\Donya\Quaternion.cpp" />
     <ClCompile Include="Code\Donya\Random.cpp" />
@@ -149,6 +150,7 @@
     <ClCompile Include="Code\Donya\Resource.cpp" />
     <ClCompile Include="Code\Donya\ScreenShake.cpp" />
     <ClCompile Include="Code\Donya\Shader.cpp" />
+    <ClCompile Include="Code\Donya\SkinnedMesh.cpp" />
     <ClCompile Include="Code\Donya\Sound.cpp" />
     <ClCompile Include="Code\Donya\Sprite.cpp" />
     <ClCompile Include="Code\Donya\SpriteSheet.cpp" />
@@ -202,6 +204,7 @@
     <ClInclude Include="Code\Donya\Keyboard.h" />
     <ClInclude Include="Code\Donya\Loader.h" />
     <ClInclude Include="Code\Donya\Looper.h" />
+    <ClInclude Include="Code\Donya\Motion.h" />
     <ClInclude Include="Code\Donya\Mouse.h" />
     <ClInclude Include="Code\Donya\Quaternion.h" />
     <ClInclude Include="Code\Donya\Random.h" />
@@ -210,6 +213,7 @@
     <ClInclude Include="Code\Donya\ScreenShake.h" />
     <ClInclude Include="Code\Donya\Serializer.h" />
     <ClInclude Include="Code\Donya\Shader.h" />
+    <ClInclude Include="Code\Donya\SkinnedMesh.h" />
     <ClInclude Include="Code\Donya\Sound.h" />
     <ClInclude Include="Code\Donya\Sprite.h" />
     <ClInclude Include="Code\Donya\SpriteSheet.h" />

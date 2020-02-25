@@ -7,8 +7,8 @@
 #include <fbxsdk.h>
 #endif // USE_FBX_SDK
 
-#include "Constant.h"	// Use scast macro.
-#include "Useful.h"		// Use OutputDebugStr().
+#include "Donya/Constant.h"	// Use scast macro.
+#include "Donya/Useful.h"	// Use OutputDebugStr().
 
 #undef min
 #undef max
@@ -31,7 +31,8 @@ namespace Donya
 {
 	Loader::Loader() :
 		absFilePath(), fileName(), fileDirectory(),
-		meshes(), motions(), collisionFaces()
+		meshes(), motions(), collisionFaces(),
+		sampleFPS( 0.0f )
 	{}
 	Loader::~Loader()
 	{
@@ -162,16 +163,14 @@ namespace Donya
 		auto FetchMatricesFromSkin = []( FBX::FbxTime time, const FBX::FbxMesh *pMesh, const FBX::FbxSkin *pSkin, Loader::Skeletal *pSkeletal )
 		{
 			const int clusterCount = pSkin->GetClusterCount();
-
-		#define APPEND ( false )
-		#if APPEND
+			
+		#if 0 // APPEND // If have a probability to run more than once.
 			const size_t oldSkeletalCount = pSkeletal->size();
-			pSkeletal->resize( scast<size_t>( clusterCount ) + oldSkeletalCount );
+			pSkeletal->resize( oldSkeletalCount + scast<size_t>( clusterCount ) );
 		#else
 			pSkeletal->skeletal.resize( scast<size_t>( clusterCount ) );
 		#endif // APPEND
-		#undef APPEND
-
+		
 			pSkeletal->boneCount = pSkeletal->skeletal.size();
 
 			for ( int i = 0; i < clusterCount; ++i )
@@ -232,7 +231,7 @@ namespace Donya
 	/// If specified mesh("pMesh") has not a motion(animation), returns false.
 	/// "samplingRate" is sampling times per second. if "samplingRate" zero, use FBX data's frame rate.
 	/// </summary>
-	bool FetchMotion( unsigned int samplingRate, const FBX::FbxMesh *pMesh, Loader::Motion *pMotion )
+	bool FetchMotion( float samplingFPS, const FBX::FbxMesh *pMesh, Loader::Motion *pMotion )
 	{
 		// List of all the animation stack. 
 		FBX::FbxArray<FBX::FbxString *> animationStackNames;
@@ -260,9 +259,9 @@ namespace Donya
 		FBX::FbxTime frameTime{};
 		frameTime.SetTime( 0, 0, 0, 1, 0, timeMode );
 
-		pMotion->samplingRate = ( samplingRate <= 0 )
-		? 1.0f / scast<float>( FBX::FbxTime::GetFrameRate( timeMode ) )
-		: 1.0f / samplingRate;
+		pMotion->samplingRate = ( samplingFPS <= 0.0f )
+		? 1.0f / scast<float>( FBX::FbxTime::GetFrameRate( timeMode ) /* Contain FPS */ )
+		: 1.0f / samplingFPS;
 
 		FBX::FbxTime samplingStep;
 		samplingStep.SetTime( 0, 0, 1, 0, 0, timeMode );
@@ -294,6 +293,15 @@ namespace Donya
 		ReleaseAnimationStackNames();
 
 		return true;
+	}
+
+#endif // USE_FBX_SDK
+
+#if USE_FBX_SDK
+
+	void Loader::SetSamplingFPS( float FPS )
+	{
+		sampleFPS = FPS;
 	}
 
 #endif // USE_FBX_SDK
@@ -404,7 +412,8 @@ namespace Donya
 	bool Loader::LoadByFBXSDK( const std::string &filePath, std::string *outputErrorString, bool outputProgress )
 	{
 		fileDirectory	= ExtractFileDirectoryFromFullPath( filePath );
-		fileName		= filePath.substr( fileDirectory.size() );
+		fileName		= filePath.substr( fileDirectory.size() ); // 0x7598C632 で例外がスローされました (Lex.exe 内): Microsoft C++ の例外: std::out_of_range (メモリの場所 0x0EA4E994)。
+		// TODO : Fix this exception that occurred here.
 
 		MakeAbsoluteFilePath( filePath );
 
@@ -510,7 +519,7 @@ namespace Donya
 
 				motions.push_back( {} );
 				Loader::Motion &currentMotion = motions.back();
-				bool hasMotion = FetchMotion( 0, pMesh, &currentMotion );
+				bool hasMotion = FetchMotion( sampleFPS, pMesh, &currentMotion );
 				if ( hasMotion )
 				{
 					currentMotion.meshNo = scast<int>( i );
@@ -824,7 +833,7 @@ namespace Donya
 		{
 			subset.reflection		= 0.0f;
 			subset.transparency		= 0.0f;
-			subset.specular.color	= Donya::Vector4{ 0.0f, 0.0f, 0.0f, 0.0f };
+			subset.specular.color	= Donya::Vector4{ 0.0f, 0.0f, 0.0f, 1.0f };
 		}
 	}
 
