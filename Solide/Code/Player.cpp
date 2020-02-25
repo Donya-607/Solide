@@ -503,6 +503,11 @@ void Player::UseImGui()
 	{
 		ImGui::DragFloat3( u8"座標", &pos.x,			0.01f );
 		ImGui::DragFloat3( u8"速度", &velocity.x,	0.01f );
+		if ( ImGui::Button( u8"Ｙ座標と速度をリセット" ) )
+		{
+			pos.y		= 1.0f;
+			velocity.y	= 0.0f;
+		}
 
 		bool nowOiled = pMover->IsOiled(); // Immutable.
 		ImGui::Checkbox( u8"地上にいる？",	&onGround );
