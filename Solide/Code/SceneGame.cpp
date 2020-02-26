@@ -197,7 +197,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		}
 		else
 		{
-			iCamera.ChangeMode( Donya::ICamera::Mode::Look );
+			iCamera.SetOrientation( Donya::Quaternion::Identity() );
+			iCamera.Init( Donya::ICamera::Mode::Look );
 		}
 	}
 #endif // DEBUG_MODE
