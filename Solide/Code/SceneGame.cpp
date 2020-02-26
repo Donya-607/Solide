@@ -494,18 +494,21 @@ void SceneGame::CameraUpdate()
 	Donya::Vector3 movement{};
 	Donya::Vector3 rotation{};
 
-	if ( Donya::Mouse::Press( Donya::Mouse::Kind::LEFT ) )
+	if ( Donya::Keyboard::Press( VK_MENU ) )
 	{
-		constexpr float ROT_AMOUNT = ToRadian( 0.5f );
-		rotation.x = diff.x * ROT_AMOUNT;
-		rotation.y = diff.y * ROT_AMOUNT;
-	}
-	else
-	if ( Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) )
-	{
-		constexpr float MOVE_SPEED = 0.1f;
-		movement.x =  diff.x * MOVE_SPEED;
-		movement.y = -diff.y * MOVE_SPEED;
+		if ( Donya::Mouse::Press( Donya::Mouse::Kind::LEFT ) )
+		{
+			constexpr float ROT_AMOUNT = ToRadian( 0.5f );
+			rotation.x = diff.x * ROT_AMOUNT;
+			rotation.y = diff.y * ROT_AMOUNT;
+		}
+		else
+		if ( Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) )
+		{
+			constexpr float MOVE_SPEED = 0.1f;
+			movement.x =  diff.x * MOVE_SPEED;
+			movement.y = -diff.y * MOVE_SPEED;
+		}
 	}
 
 	constexpr float FRONT_SPEED = 3.5f;
