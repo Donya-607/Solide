@@ -827,7 +827,7 @@ void SceneGame::UseImGui()
 		}
 		if ( pObstacles )
 		{
-			pObstacles->ShowImGuiNode( u8"áŠQ•¨‚Ì¶E—^’D" );
+			pObstacles->ShowImGuiNode( u8"áŠQ•¨‚Ì¶¬E”jŠü" );
 		}
 
 		ImGui::TreePop();
