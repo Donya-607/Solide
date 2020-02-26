@@ -5,8 +5,12 @@
 
 #include "Donya/Constant.h"
 #include "Donya/Loader.h"
+#include "Donya/Serializer.h"
 #include "Donya/StaticMesh.h"
 #include "Donya/Useful.h"		// MultiByte char -> Wide char
+
+#include "Parameter.h"
+#include "FilePath.h"
 
 namespace
 {
@@ -74,9 +78,24 @@ namespace
 		return succeeded;
 	}
 
-	std::shared_ptr<Donya::StaticMesh> GetModel( Kind kind )
+	bool IsOutOfRange( Kind kind )
 	{
-		if ( kind < 0 || KindCount <= kind )
+		return ( kind < 0 || KindCount <= kind ) ? true : false;
+	}
+	std::string GetModelName( Kind kind )
+	{
+		if ( IsOutOfRange( kind ) )
+		{
+			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
+			return "";
+		}
+		// else
+
+		return std::string{ MODEL_NAMES[kind] };
+	}
+	std::shared_ptr<Donya::StaticMesh> GetModelPtr( Kind kind )
+	{
+		if ( IsOutOfRange( kind ) )
 		{
 			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
 			return nullptr;
@@ -88,7 +107,7 @@ namespace
 
 	void DrawModel( Kind kind, const Donya::Vector4x4 &W, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 	{
-		const auto pModel = GetModel( kind );
+		const auto pModel = GetModelPtr( kind );
 		if ( !pModel ) { return; }
 		// else
 
@@ -101,16 +120,184 @@ namespace
 			lightDir, color
 		);
 	}
+
+	// HACK : This method using switch-case statement.
+	void AssignModel( Kind kind, std::shared_ptr<ObstacleBase> *pOutput )
+	{
+		if ( IsOutOfRange( kind ) )
+		{
+			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
+			pOutput->reset();
+			return;
+		}
+		// else
+
+		switch ( kind )
+		{
+		case Stone:	*pOutput = std::make_shared<::Stone>();		return;
+		case Log:	*pOutput = std::make_shared<::Log>();		return;
+		default: return;
+		}
+	}
+
+	struct Member
+	{
+		std::vector<Donya::AABB> collisions;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( collisions )
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
+	Donya::AABB GetModelHitBox( Kind kind, const Member &data )
+	{
+		if ( IsOutOfRange( kind ) )
+		{
+			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
+			return Donya::AABB::Nil();
+		}
+		// else
+
+		return data.collisions[kind];
+	}
 }
+CEREAL_CLASS_VERSION( Member, 0 )
+
+class ParamObstacle : public ParameterBase<ParamObstacle>
+{
+public:
+	static constexpr const char *ID = "Obstacle";
+private:
+	Member m;
+public:
+	void Init()     override
+	{
+	#if DEBUG_MODE
+		LoadJson();
+	#else
+		LoadBin();
+	#endif // DEBUG_MODE
+	}
+	void Uninit()   override {}
+	Member Data()   const { return m; }
+private:
+	void LoadBin()  override
+	{
+		constexpr bool fromBinary = true;
+		Donya::Serializer::Load( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	}
+	void LoadJson() override
+	{
+		constexpr bool fromBinary = false;
+		Donya::Serializer::Load( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	}
+	void SaveBin()  override
+	{
+		constexpr bool fromBinary = true;
+		Donya::Serializer::Save( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	}
+	void SaveJson() override
+	{
+		constexpr bool fromBinary = false;
+		Donya::Serializer::Save( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	}
+public:
+#if USE_IMGUI
+	void UseImGui() override
+	{
+		if ( !ImGui::BeginIfAllowed() ) { return; }
+		// else
+
+		if ( m.collisions.size() != KIND_COUNT )
+		{
+			m.collisions.resize( KIND_COUNT );
+		}
+
+		if ( ImGui::TreeNode( u8"障害物のパラメータ調整" ) )
+		{
+			if ( ImGui::TreeNode( u8"当たり判定" ) )
+			{
+				auto &data = m.collisions;
+
+				std::string  caption{};
+				const size_t count = data.size();
+				for ( size_t i = 0; i < count; ++i )
+				{
+					caption = GetModelName( scast<Kind>( i ) );
+					ParameterHelper::ShowAABBNode( caption, &data[i] );
+				}
+
+				ImGui::TreePop();
+			}
+
+			ShowIONode();
+
+			ImGui::TreePop();
+		}
+
+		ImGui::End();
+	}
+#endif // USE_IMGUI
+};
 
 bool ObstacleBase::LoadModels()
 {
 	return ::LoadModels();
 }
 
+int  ObstacleBase::GetModelKindCount()
+{
+	return scast<int>( KIND_COUNT );
+}
+std::string ObstacleBase::GetModelName( int modelKind )
+{
+	return ::GetModelName( scast<Kind>( modelKind ) );
+}
+void ObstacleBase::AssignDerivedModel( int modelKind, std::shared_ptr<ObstacleBase> *pOutput )
+{
+	AssignModel( scast<Kind>( modelKind ), pOutput );
+}
+
+void ObstacleBase::UseImGui()
+{
+	ParamObstacle::Get().UseImGui();
+}
+
+#if USE_IMGUI
+void ObstacleBase::ShowImGuiNode( const std::string &nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	ImGui::DragFloat3( u8"ワールド座標", &pos.x, 0.1f );
+	ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
+
+	ImGui::TreePop();
+}
+#endif // USE_IMGUI
+
+void Stone::Update( float elapsedTime )
+{
+	hitBox = GetModelHitBox( Kind::Stone, ParamObstacle::Get().Data() );
+}
 void Stone::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Stone, GetWorldMatrix(), VP, lightDir, color );
+}
+
+void Log::Update( float elapsedTime )
+{
+	hitBox = GetModelHitBox( Kind::Log, ParamObstacle::Get().Data() );
 }
 void Log::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 {

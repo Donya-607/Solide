@@ -94,8 +94,6 @@ namespace
 		OilMember		oiled;
 		std::vector<Donya::Vector3>	raypickOffsets;
 		float			falloutBorderPosY;
-	public:
-		bool isValid = true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -247,7 +245,7 @@ public:
 #endif // USE_IMGUI
 };
 
-// INternal utility.
+// Internal utility.
 namespace
 {
 	Member FetchMember()

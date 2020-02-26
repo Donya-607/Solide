@@ -45,8 +45,6 @@ namespace
 
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
-	public:
-		bool  isValid = true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
 		friend class cereal::access;
 		template<class Archive>

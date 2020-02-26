@@ -1,5 +1,7 @@
 #include "Section.h"
 
+#include "Parameter.h"
+
 namespace
 {
 	static const Donya::AABB DEFAULT_HIT_BOX{ {}, { 0.5f, 0.5f, 0.5f }, true };
@@ -32,10 +34,7 @@ void Section::ShowImGuiNode( const std::string &caption, bool *pShouldErase )
 	}
 
 	ImGui::DragFloat3( u8"ワールド座標", &pos.x, 0.1f );
-
-	ImGui::DragFloat3( u8"当たり判定：オフセット",			&hitBox.pos.x,	0.1f );
-	ImGui::DragFloat3( u8"当たり判定：サイズ（半分を指定）",	&hitBox.size.x,	0.1f );
-	ImGui::Checkbox( u8"当たり判定：有効にする",				&hitBox.exist );
+	ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
 
 	ImGui::TreePop();
 }
