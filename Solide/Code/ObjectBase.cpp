@@ -109,12 +109,10 @@ namespace
 }
 void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
-	constexpr int RECURSIVE_LIMIT = 256;
-	if ( RECURSIVE_LIMIT <= recursionCount )
-	{
-		pos += xzMovement;
-		return;
-	}
+	// If we can't resolve with very small movement, we give-up the moving.
+	constexpr int RECURSIVE_LIMIT = 255;
+	if ( RECURSIVE_LIMIT <= recursionCount ) { return; }
+	if ( xzMovement.Length() < 0.001f/* EPSILON */ ) { return; }
 	// else
 
 	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
@@ -146,14 +144,17 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 
 		// Choose the nearest collided result.
 
-		result.distanceToIP = FLT_MAX;
+		float nearestDistance = FLT_MAX;
+		Donya::Vector3 diff{};
 		for ( const auto &it : temporaryResults )
 		{
 			if ( !it.wasHit ) { continue; }
 			// else
 
-			if ( it.distanceToIP < result.distanceToIP )
+			diff = it.intersectionPoint - tsRayStart;
+			if ( diff.LengthSq() < nearestDistance )
 			{
+				nearestDistance = diff.LengthSq();
 				result = it;
 			}
 		}
