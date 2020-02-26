@@ -494,6 +494,10 @@ void Player::PhysicUpdate( const Donya::StaticMesh *pTerrain, const Donya::Vecto
 	{
 		AssignLanding();
 	}
+	else
+	{
+		onGround = false;
+	}
 
 	if ( IsUnderFalloutBorder() )
 	{
@@ -558,9 +562,13 @@ bool Player::CalcWasLanding( const Donya::Vector3 &oldPos, const Donya::StaticMe
 }
 void Player::AssignLanding()
 {
+	if ( !onGround )
+	{
+		Donya::Sound::Play( Music::PlayerLanding );
+	}
+
 	onGround	= true;
 	velocity.y	= 0.0f;
-	Donya::Sound::Play( Music::PlayerLanding );
 }
 
 void Player::Die()

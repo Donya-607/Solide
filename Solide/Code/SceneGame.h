@@ -11,6 +11,7 @@
 #include "Section.h"
 #include "Scene.h"
 #include "Terrain.h"
+#include "ObstacleContainer.h"
 
 class SceneGame : public Scene
 {
@@ -21,12 +22,13 @@ public:
 		Donya::Vector4 dir	{ 0.0f,-1.0f, 1.0f, 0.0f };
 	};
 private:
-	DirectionalLight			dirLight;
-	Donya::ICamera				iCamera;
-	Donya::XInput				controller;
+	DirectionalLight					dirLight;
+	Donya::ICamera						iCamera;
+	Donya::XInput						controller;
 
-	std::unique_ptr<Terrain>	pTerrain;
-	std::unique_ptr<Player>		pPlayer;
+	std::unique_ptr<Terrain>			pTerrain;
+	std::unique_ptr<Player>				pPlayer;
+	std::unique_ptr<ObstacleContainer>	pObstacles;
 
 #if DEBUG_MODE
 	bool nowDebugMode;
@@ -59,8 +61,6 @@ private:
 	Result	ReturnResult();
 private:
 #if USE_IMGUI
-
 	void	UseImGui();
-
 #endif // USE_IMGUI
 };

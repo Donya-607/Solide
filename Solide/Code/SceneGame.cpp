@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#undef max
+#undef min
 #include <cereal/types/vector.hpp>
 
 #include "Donya/Camera.h"
@@ -19,13 +21,12 @@
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
 
-
 #include "Common.h"
 #include "Fader.h"
 #include "FilePath.h"
 #include "Music.h"
-#include "Parameter.h"
 #include "Obstacles.h"
+#include "Parameter.h"
 
 namespace
 {
@@ -209,7 +210,8 @@ SceneGame::SceneGame() :
 	iCamera(),
 	controller( Donya::Gamepad::PAD_1 ),
 	pTerrain( nullptr ),
-	pPlayer( nullptr )
+	pPlayer( nullptr ),
+	pObstacles( nullptr )
 
 #if DEBUG_MODE
 	, nowDebugMode( false )
@@ -231,12 +233,17 @@ void SceneGame::Init()
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 
 	assert( ObstacleBase::LoadModels() );
+	pObstacles = std::make_unique<ObstacleContainer>();
+	pObstacles->Init();
 
 	PlayerInit();
 }
 void SceneGame::Uninit()
 {
 	pTerrain.reset();
+
+	if ( pObstacles ) { pObstacles->Uninit(); }
+
 	PlayerUninit();
 
 	ParamGame::Get().Uninit();
@@ -268,11 +275,15 @@ Scene::Result SceneGame::Update( float elapsedTime )
 #if USE_IMGUI
 	ParamGame::Get().UseImGui();
 	UseImGui();
+
+	ObstacleBase::UseImGui();
 #endif // USE_IMGUI
 
 	controller.Update();
 
 	pTerrain->BuildWorldMatrix();
+
+	pObstacles->Update( elapsedTime );
 
 	PlayerUpdate( elapsedTime );
 
@@ -313,6 +324,8 @@ void SceneGame::Draw( float elapsedTime )
 	const auto data = FetchMember();
 
 	pTerrain->Render( VP, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
+
+	pObstacles->Draw( VP, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 	PlayerDraw( VP );
 
@@ -764,7 +777,6 @@ Scene::Result SceneGame::ReturnResult()
 }
 
 #if USE_IMGUI
-
 void SceneGame::UseImGui()
 {
 	if ( !ImGui::BeginIfAllowed() ) { return; }
@@ -772,7 +784,7 @@ void SceneGame::UseImGui()
 	
 	const auto data = FetchMember();
 
-	if ( ImGui::TreeNode( u8"ゲーム・状況" ) )
+	if ( ImGui::TreeNode( u8"ゲーム・メンバー" ) )
 	{
 		ImGui::Text( u8"「Ｆ５キー」を押すと，" );
 		ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
@@ -785,14 +797,6 @@ void SceneGame::UseImGui()
 				ImGui::Text( ( prefix + u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]" ).c_str(), v.x, v.y, v.z );
 			};
 
-			ImGui::Text( u8"【デバッグモード時のみ有効】" );
-			ImGui::Text( u8"「ＡＬＴキー」を押している間のみ，" );
-			ImGui::Text( u8"「左クリック」を押しながらマウス移動で，" );
-			ImGui::Text( u8"カメラの回転ができます。" );
-			ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
-			ImGui::Text( u8"カメラの並行移動ができます。" );
-			ImGui::Text( "" );
-
 			const Donya::Vector3 cameraPos = iCamera.GetPosition();
 			const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 			ShowVec3( u8"現在位置・絶対：", cameraPos );
@@ -802,16 +806,31 @@ void SceneGame::UseImGui()
 			const Donya::Vector3 focusPoint = iCamera.GetFocusPoint();
 			ShowVec3( u8"注視点位置・絶対：", focusPoint );
 			ShowVec3( u8"注視点位置・相対：", focusPoint - playerPos );
+			ImGui::Text( "" );
+
+			ImGui::Text( u8"【デバッグモード時のみ有効】" );
+			ImGui::Text( u8"「ＡＬＴキー」を押している間のみ，" );
+			ImGui::Text( u8"「左クリック」を押しながらマウス移動で，" );
+			ImGui::Text( u8"カメラの回転ができます。" );
+			ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
+			ImGui::Text( u8"カメラの並行移動ができます。" );
+			ImGui::Text( "" );
 
 			ImGui::TreePop();
 		}
 
-		pTerrain->ShowImGuiNode( u8"地形" );
+		if ( pTerrain )
+		{
+			pTerrain->ShowImGuiNode( u8"地形" );
+		}
+		if ( pObstacles )
+		{
+			pObstacles->ShowImGuiNode( u8"障害物の生殺与奪" );
+		}
 
 		ImGui::TreePop();
 	}
 	
 	ImGui::End();
 }
-
 #endif // USE_IMGUI

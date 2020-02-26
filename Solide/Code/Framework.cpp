@@ -98,12 +98,12 @@ bool Framework::LoadSounds()
 			{ ID::BGM_Clear,			"./Data/Sounds/BGM/Clear.wav",					true  },
 			{ ID::BGM_Over,				"./Data/Sounds/BGM/Over.wav",					true  },
 			
-			{ ID::PlayerJump,			"./Data/Sounds/Player/Jump.wav",				false  },
-			{ ID::PlayerLanding,		"./Data/Sounds/Player/Landing.wav",				false  },
-			{ ID::PlayerTrans,			"./Data/Sounds/Player/Trans.wav",				false  },
+			{ ID::PlayerJump,			"./Data/Sounds/SE/Player/Jump.wav",				false  },
+			{ ID::PlayerLanding,		"./Data/Sounds/SE/Player/Landing.wav",			false  },
+			{ ID::PlayerTrans,			"./Data/Sounds/SE/Player/Trans.wav",			false  },
 
-			{ ID::ItemChoose,			"./Data/Sounds/SE/UI/ChooseItem.wav",			false },
-			{ ID::ItemDecision,			"./Data/Sounds/SE/UI/DecisionItem.wav",			false },
+			{ ID::ItemChoose,			"./Data/Sounds/SE/DEBUG/ChooseItem.wav",		false },
+			{ ID::ItemDecision,			"./Data/Sounds/SE/DEBUG/DecisionItem.wav",		false },
 		},
 	};
 

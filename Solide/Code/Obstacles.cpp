@@ -274,15 +274,22 @@ void ObstacleBase::UseImGui()
 }
 
 #if USE_IMGUI
-void ObstacleBase::ShowImGuiNode( const std::string &nodeCaption )
+bool ObstacleBase::ShowImGuiNode( const std::string &nodeCaption )
 {
-	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return false; }
 	// else
 
+	bool wantRemove = false;
+	if ( ImGui::Button( ( nodeCaption + u8"ÇçÌèú" ).c_str() ) )
+	{
+		wantRemove = true;
+	}
+	
 	ImGui::DragFloat3( u8"ÉèÅ[ÉãÉhç¿ïW", &pos.x, 0.1f );
 	ParameterHelper::ShowAABBNode( u8"ìñÇΩÇËîªíË", &hitBox );
 
 	ImGui::TreePop();
+	return wantRemove;
 }
 #endif // USE_IMGUI
 
@@ -293,6 +300,13 @@ void Stone::Update( float elapsedTime )
 void Stone::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Stone, GetWorldMatrix(), VP, lightDir, color );
+#if DEBUG_MODE
+	DrawHitBox( VP, color );
+#endif // DEBUG_MODE
+}
+int Stone::GetKind() const
+{
+	return scast<int>( Kind::Stone );
 }
 
 void Log::Update( float elapsedTime )
@@ -302,4 +316,11 @@ void Log::Update( float elapsedTime )
 void Log::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Log, GetWorldMatrix(), VP, lightDir, color );
+#if DEBUG_MODE
+	DrawHitBox( VP, color );
+#endif // DEBUG_MODE
+}
+int Log::GetKind() const
+{
+	return scast<int>( Kind::Log );
 }

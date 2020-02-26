@@ -8,19 +8,19 @@
 
 namespace
 {
-	Donya::Vector4x4 MakeWorldMatrix( const Donya::AABB &hitBox, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
+	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &wsPos, const Donya::Vector3 &halfSize, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
 	{
-		// The size of hitBox is half-size.
+		// The size is half.
 		// But that will using as scale, so we should multiply to double.
 		
 		Donya::Vector4x4 m{};
-		m._11 = hitBox.size.x * 2.0f;
-		m._22 = hitBox.size.y * 2.0f;
-		m._33 = hitBox.size.z * 2.0f;
+		m._11 = halfSize.x * 2.0f;
+		m._22 = halfSize.y * 2.0f;
+		m._33 = halfSize.z * 2.0f;
 		m    *= rotation.RequireRotationMatrix();
-		m._41 = hitBox.pos.x;
-		m._42 = hitBox.pos.y;
-		m._43 = hitBox.pos.z;
+		m._41 = wsPos.x;
+		m._42 = wsPos.y;
+		m._43 = wsPos.z;
 		return m;
 	}
 	void DrawCube( const Donya::Vector4x4 &W, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
@@ -57,12 +57,13 @@ Donya::AABB Solid::GetHitBox() const
 }
 Donya::Vector4x4 Solid::GetWorldMatrix() const
 {
-	return MakeWorldMatrix( GetHitBox() );
+	return MakeWorldMatrix( GetPosition(), { 0.5f, 0.5f, 0.5f } );
 }
 
 void Solid::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
 {
-	DrawCube( GetWorldMatrix(), VP, color );
+	const auto body = GetHitBox();
+	DrawCube( MakeWorldMatrix( body.pos, body.size ), VP, color );
 }
 
 
@@ -235,11 +236,12 @@ Donya::AABB Actor::GetHitBox() const
 	return tmp;
 }
 Donya::Vector4x4 Actor::GetWorldMatrix() const
-{
-	return MakeWorldMatrix( GetHitBox() );
+{	
+	return MakeWorldMatrix( GetPosition(), { 0.5f, 0.5f, 0.5f } );
 }
 
 void Actor::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Quaternion &rotation, const Donya::Vector4 &color ) const
 {
-	DrawCube( MakeWorldMatrix( GetHitBox(), rotation ), VP, color );
+	const auto body = GetHitBox();
+	DrawCube( MakeWorldMatrix( body.pos, body.size, rotation ), VP, color );
 }

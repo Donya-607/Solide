@@ -1,5 +1,58 @@
 #include "ObstacleContainer.h"
 
+#if USE_IMGUI
+#include "Donya/Useful.h" // Convert the character codes.
+#endif // USE_IMGUI
+
+#include "FilePath.h"
+
+void ObstacleContainer::Init()
+{
+	stageNo = 0;
+#if DEBUG_MODE
+	LoadJson( stageNo );
+#else
+	LoadBin( stageNo );
+#endif // DEBUG_MODE
+
+	// If was loaded valid data.
+	for ( auto &pIt : pObstacles )
+	{
+		if ( !pIt ) { continue; }
+		// else
+		pIt->Init( pIt->GetPosition() );
+	}
+}
+void ObstacleContainer::Uninit()
+{
+	for ( auto &pIt : pObstacles )
+	{
+		if ( !pIt ) { continue; }
+		// else
+		pIt->Uninit();
+	}
+}
+
+void ObstacleContainer::Update( float elapsedTime )
+{
+	for ( auto &pIt : pObstacles )
+	{
+		if ( !pIt ) { continue; }
+		// else
+		pIt->Update( elapsedTime );
+	}
+}
+
+void ObstacleContainer::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
+{
+	for ( auto &pIt : pObstacles )
+	{
+		if ( !pIt ) { continue; }
+		// else
+		pIt->Draw( VP, lightDir, color );
+	}
+}
+
 std::vector<Donya::AABB> ObstacleContainer::GetHitBoxes() const
 {
 	std::vector<Donya::AABB> hitBoxes{};
@@ -14,7 +67,27 @@ std::vector<Donya::AABB> ObstacleContainer::GetHitBoxes() const
 	return hitBoxes;
 }
 
+void ObstacleContainer::LoadBin ( int stageNo )
+{
+	constexpr bool fromBinary = true;
+	Donya::Serializer::Load( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+}
+void ObstacleContainer::LoadJson( int stageNo )
+{
+	constexpr bool fromBinary = false;
+	Donya::Serializer::Load( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+}
 #if USE_IMGUI
+void ObstacleContainer::SaveBin( int stageNo )
+{
+	constexpr bool fromBinary = true;
+	Donya::Serializer::Save( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+}
+void ObstacleContainer::SaveJson( int stageNo )
+{
+	constexpr bool fromBinary = false;
+	Donya::Serializer::Save( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+}
 void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
@@ -22,7 +95,7 @@ void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 
 	static int addKind = 0;
 	ImGui::SliderInt( u8"追加する種類", &addKind, 0, ObstacleBase::GetModelKindCount() - 1 );
-	ImGui::Text( u8"種類名：%s", ObstacleBase::GetModelName( addKind ) );
+	ImGui::Text( u8"種類名：%s", Donya::MultiToUTF8( ObstacleBase::GetModelName( addKind ) ).c_str() );
 
 	auto &data = pObstacles;
 	if ( ImGui::Button( u8"追加" ) )
@@ -41,27 +114,59 @@ void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 		data.pop_back();
 	}
 
-	const size_t count = data.size();
-	size_t removeIndex = count;
-	std::string caption{};
-	for ( size_t i = 0; i < count; ++i )
 	{
-		caption = u8"[" + std::to_string( i ) + u8"：" + ObstacleBase::GetModelName( scast<int>( i ) ) + u8"]";
-		if ( ImGui::Button( ( caption + u8"を削除" ).c_str() ) )
+		const size_t count = data.size();
+		size_t removeIndex = count;
+		std::string caption{};
+		for ( size_t i = 0; i < count; ++i )
 		{
-			removeIndex = i;
+			if ( !data[i] ) { continue; }
+			// else
+
+			caption = u8"[" + std::to_string( i ) + u8"：" + ObstacleBase::GetModelName( data[i]->GetKind() ) + u8"]";
+
+			if ( data[i]->ShowImGuiNode( caption ) )
+			{
+				removeIndex = i;
+			}
 		}
 
-		if ( !data[i] ) { continue; }
+		if ( removeIndex != count )
+		{
+			data.erase( data.begin() + removeIndex );
+		}
+	}
+
+	auto ShowIONode = [&]()
+	{
+		if ( !ImGui::TreeNode( u8"ファイル I/O" ) ) { return; }
 		// else
 
-		data[i]->ShowImGuiNode( caption );
-	}
+		const std::string strIndex = u8"[" + std::to_string( stageNo ) + u8"]";
 
-	if ( removeIndex != count )
-	{
-		data.erase( data.begin() + removeIndex );
-	}
+		static bool isBinary = true;
+		if ( ImGui::RadioButton( "Binary", isBinary ) ) { isBinary = true;  }
+		if ( ImGui::RadioButton( "Json",  !isBinary ) ) { isBinary = false; }
+
+		std::string loadStr = u8"ロード" + strIndex;
+		loadStr += u8"（by:";
+		loadStr += ( isBinary ) ? u8"Binary" : u8"Json";
+		loadStr += u8"）";
+
+		if ( ImGui::Button( ( u8"セーブ" + strIndex ).c_str() ) )
+		{
+			SaveBin ( stageNo );
+			SaveJson( stageNo );
+		}
+		if ( ImGui::Button( loadStr.c_str() ) )
+		{
+			( isBinary ) ? LoadBin( stageNo ) : LoadJson( stageNo );
+		}
+
+		ImGui::TreePop();
+	};
+
+	ShowIONode();
 
 	ImGui::TreePop();
 }
