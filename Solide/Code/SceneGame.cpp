@@ -336,7 +336,7 @@ void SceneGame::Draw( float elapsedTime )
 			std::vector<Bundle> drawList
 			{
 				Bundle{ &willAddition,			{ selectColor, selectColor, selectColor, 0.5f } },
-				Bundle{ &data.playerInitialPos,	{ 0.2f, 1.0f, 0.5f, 0.7f } },
+				Bundle{ &data.playerInitialPos,	{ 0.5f, 1.0f, 0.8f, 0.7f } },
 				Bundle{ &data.goalArea,			{ 0.8f, 0.8f, 0.1f, 0.7f } },
 			};
 
