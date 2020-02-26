@@ -530,10 +530,10 @@ void SceneGame::CameraUpdate()
 			movement.x =  diff.x * MOVE_SPEED;
 			movement.y = -diff.y * MOVE_SPEED;
 		}
-	}
 
-	constexpr float FRONT_SPEED = 3.5f;
-	movement.z = FRONT_SPEED * scast<float>( Donya::Mouse::WheelRot() );
+		constexpr float FRONT_SPEED = 3.5f;
+		movement.z = FRONT_SPEED * scast<float>( Donya::Mouse::WheelRot() );
+	}
 
 	input.moveVelocity		= movement;
 	input.yaw				= rotation.x;
