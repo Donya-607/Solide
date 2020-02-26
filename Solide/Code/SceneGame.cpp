@@ -25,6 +25,7 @@
 #include "FilePath.h"
 #include "Music.h"
 #include "Parameter.h"
+#include "Obstacles.h"
 
 namespace
 {
@@ -230,6 +231,8 @@ void SceneGame::Init()
 
 	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin" );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
+
+	assert( ObstacleBase::LoadModels() );
 
 	PlayerInit();
 }

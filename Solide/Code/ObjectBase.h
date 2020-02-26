@@ -29,6 +29,7 @@ public:
 	/// Returns hit-box of world space.
 	/// </summary>
 	Donya::AABB GetHitBox() const;
+	Donya::Vector4x4 GetWorldMatrix() const;
 public:
 	void DrawHitBox( const Donya::Vector4x4 &matVP, const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 };
@@ -57,6 +58,7 @@ public:
 public:
 	virtual Donya::Vector3 GetPosition() const;
 	virtual Donya::AABB GetHitBox() const;
+	virtual Donya::Vector4x4 GetWorldMatrix() const;
 public:
 	virtual void DrawHitBox( const Donya::Vector4x4 &matVP, const Donya::Quaternion &rotation = Donya::Quaternion::Identity(), const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 };

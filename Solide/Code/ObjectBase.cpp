@@ -55,10 +55,14 @@ Donya::AABB Solid::GetHitBox() const
 	tmp.pos += pos;
 	return tmp;
 }
+Donya::Vector4x4 Solid::GetWorldMatrix() const
+{
+	return MakeWorldMatrix( GetHitBox() );
+}
 
 void Solid::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
 {
-	DrawCube( MakeWorldMatrix( GetHitBox() ), VP, color );
+	DrawCube( GetWorldMatrix(), VP, color );
 }
 
 
@@ -229,6 +233,10 @@ Donya::AABB Actor::GetHitBox() const
 	Donya::AABB tmp = hitBox;
 	tmp.pos += pos;
 	return tmp;
+}
+Donya::Vector4x4 Actor::GetWorldMatrix() const
+{
+	return MakeWorldMatrix( GetHitBox() );
 }
 
 void Actor::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Quaternion &rotation, const Donya::Vector4 &color ) const
