@@ -233,6 +233,7 @@ void SceneGame::Init()
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 
 	assert( ObstacleBase::LoadModels() );
+	ObstacleBase::ParameterInit();
 	pObstacles = std::make_unique<ObstacleContainer>();
 	pObstacles->Init();
 
@@ -246,6 +247,7 @@ void SceneGame::Uninit()
 
 	PlayerUninit();
 
+	ObstacleBase::ParameterUninit();
 	ParamGame::Get().Uninit();
 
 	Donya::Sound::Stop( Music::BGM_Game );

@@ -16,6 +16,8 @@ class ObstacleBase : protected Solid
 {
 public:
 	static bool LoadModels();
+	static void ParameterInit();
+	static void ParameterUninit();
 public:
 	static int  GetModelKindCount();
 	static std::string GetModelName( int modelKind );

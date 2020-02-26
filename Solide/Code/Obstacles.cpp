@@ -9,8 +9,9 @@
 #include "Donya/StaticMesh.h"
 #include "Donya/Useful.h"		// MultiByte char -> Wide char
 
-#include "Parameter.h"
+#include "Common.h"
 #include "FilePath.h"
+#include "Parameter.h"
 
 namespace
 {
@@ -254,6 +255,14 @@ bool ObstacleBase::LoadModels()
 {
 	return ::LoadModels();
 }
+void ObstacleBase::ParameterInit()
+{
+	ParamObstacle::Get().Init();
+}
+void ObstacleBase::ParameterUninit()
+{
+	ParamObstacle::Get().Uninit();
+}
 
 int  ObstacleBase::GetModelKindCount()
 {
@@ -301,7 +310,10 @@ void Stone::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, co
 {
 	DrawModel( Kind::Stone, GetWorldMatrix(), VP, lightDir, color );
 #if DEBUG_MODE
-	DrawHitBox( VP, { 0.3f, 0.3f, 0.3f, 0.5f } );
+	if ( Common::IsShowCollision() )
+	{
+		DrawHitBox( VP, { 0.3f, 0.3f, 0.3f, 0.5f } );
+	}
 #endif // DEBUG_MODE
 }
 int Stone::GetKind() const
@@ -317,7 +329,10 @@ void Log::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, cons
 {
 	DrawModel( Kind::Log, GetWorldMatrix(), VP, lightDir, color );
 #if DEBUG_MODE
-	DrawHitBox( VP, { 0.5f, 0.4f, 0.1f, 0.5f } );
+	if ( Common::IsShowCollision() )
+	{
+		DrawHitBox( VP, { 0.5f, 0.4f, 0.1f, 0.5f } );
+	}
 #endif // DEBUG_MODE
 }
 int Log::GetKind() const
