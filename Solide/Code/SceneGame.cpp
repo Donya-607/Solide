@@ -210,7 +210,7 @@ SceneGame::SceneGame() :
 	iCamera(),
 	controller( Donya::Gamepad::PAD_1 ),
 	pTerrain( nullptr ),
-	player()
+	pPlayer( nullptr )
 
 #if DEBUG_MODE
 	, nowDebugMode( false )
@@ -231,11 +231,12 @@ void SceneGame::Init()
 	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin" );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 
-	player.Init( data.playerInitialPos.GetPosition() );
+	PlayerInit();
 }
 void SceneGame::Uninit()
 {
 	pTerrain.reset();
+	PlayerUninit();
 
 	ParamGame::Get().Uninit();
 
@@ -274,10 +275,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	PlayerUpdate( elapsedTime );
 
-	{
-		const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
-		player.PhysicUpdate( pTerrain->GetMesh().get(), &terrainMatrix );
-	}
+	PlayerPhysicUpdate( &pTerrain );
 
 	CameraUpdate();
 
@@ -302,15 +300,15 @@ void SceneGame::Draw( float elapsedTime )
 	#endif // DEBUG_MODE
 	}
 
+	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
 	const Donya::Vector4x4 V{ iCamera.CalcViewMatrix() };
 	const Donya::Vector4x4 P{ iCamera.GetProjectionMatrix() };
 	const Donya::Vector4x4 VP{ V * P };
-	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
 	const auto data = FetchMember();
 
 	pTerrain->Render( VP, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
-	player.Draw( VP );
+	PlayerDraw( VP );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -370,6 +368,7 @@ void SceneGame::Draw( float elapsedTime )
 		}
 
 		// Drawing TextureBoard Demo.
+		if ( 0 )
 		{
 			constexpr const wchar_t *texturePath	= L"./Data/Images/Rights/FMOD Logo White - Black Background.png";
 			static Donya::Geometric::TextureBoard	texBoard = Donya::Geometric::CreateTextureBoard( texturePath );
@@ -418,7 +417,7 @@ void SceneGame::Draw( float elapsedTime )
 				nullptr, // Specify use library's device-context.
 				/* useDefaultShading = */ true,
 				/* isEnableFill      = */ true,
-				( TB_W * V * P ), TB_W,
+				( TB_W * VP ), TB_W,
 				lightDir, boardColor
 			);
 		}
@@ -445,8 +444,11 @@ void SceneGame::CameraInit()
 }
 void SceneGame::AssignCameraPos()
 {
+	if ( !pPlayer ) { return; }
+	// else
+
 	const auto data = FetchMember();
-	const Donya::Vector3   playerPos = player.GetPosition();
+	const Donya::Vector3   playerPos = pPlayer->GetPosition();
 
 	iCamera.SetPosition  ( playerPos + data.camera.offsetPos   );
 	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
@@ -525,8 +527,17 @@ void SceneGame::CameraUpdate()
 #endif // !DEBUG_MODE
 }
 
+void SceneGame::PlayerInit()
+{
+	const auto data = FetchMember();
+	pPlayer = std::make_unique<Player>();
+	pPlayer->Init( data.playerInitialPos.GetPosition() );
+}
 void SceneGame::PlayerUpdate( float elapsedTime )
 {
+	if ( !pPlayer ) { return; }
+	// else
+
 	Donya::Vector2		moveVector{};
 	bool useJump		= false;
 	bool useOil			= false;
@@ -654,7 +665,33 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	input.useJump		= useJump;
 	input.useOil		= useOil;
 
-	player.Update( elapsedTime, input );
+	pPlayer->Update( elapsedTime, input );
+}
+void SceneGame::PlayerPhysicUpdate( const std::unique_ptr<Terrain> *ppTerrain )
+{
+	if ( !pPlayer ) { return; }
+	if ( !ppTerrain ) { return; }
+	// else
+
+	const auto &pTerrain = *ppTerrain;
+	if ( !pTerrain ) { return; }
+	// else
+
+	const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
+	pPlayer->PhysicUpdate( pTerrain->GetMesh().get(), &terrainMatrix );
+}
+void SceneGame::PlayerDraw( const Donya::Vector4x4 &matVP )
+{
+	if ( !pPlayer ) { return; }
+	// else
+	pPlayer->Draw( matVP );
+}
+void SceneGame::PlayerUninit()
+{
+	if ( !pPlayer ) { return; }
+	// else
+	pPlayer->Uninit();
+	pPlayer.reset();
 }
 
 void SceneGame::StartFade() const
@@ -733,7 +770,7 @@ void SceneGame::UseImGui()
 			ImGui::Text( "" );
 
 			const Donya::Vector3 cameraPos = iCamera.GetPosition();
-			const Donya::Vector3 playerPos = player.GetPosition();
+			const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 			ShowVec3( u8"現在位置・絶対：", cameraPos );
 			ShowVec3( u8"現在位置・相対：", cameraPos - playerPos );
 			ImGui::Text( "" );
