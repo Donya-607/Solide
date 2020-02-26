@@ -34,7 +34,6 @@ namespace
 		struct
 		{
 			float slerpFactor = 0.2f;
-			float basePosY = 0.0f;		// The Y component of camera position is not related to player position.
 			Donya::Vector3 offsetPos;	// The offset of position from the player position.
 			Donya::Vector3 offsetFocus;	// The offset of focus from the player position.
 		}
@@ -46,15 +45,16 @@ namespace
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
+			archive
+			(
+				CEREAL_NVP( camera.slerpFactor ),
+				CEREAL_NVP( camera.offsetPos ),
+				CEREAL_NVP( camera.offsetFocus )
+			);
+
 			if ( 1 <= version )
 			{
-				archive
-				(
-					CEREAL_NVP( camera.basePosY ),
-					CEREAL_NVP( camera.offsetPos ),
-					CEREAL_NVP( camera.offsetFocus ),
-					CEREAL_NVP( camera.slerpFactor )
-				);
+				// archive( CEREAL_NVP( x ) );
 			}
 			if ( 2 <= version )
 			{
@@ -63,7 +63,7 @@ namespace
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 1 )
+CEREAL_CLASS_VERSION( Member, 0 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -114,14 +114,7 @@ public:
 		{
 			if ( ImGui::TreeNode( u8"カメラ" ) )
 			{
-				ImGui::Text( u8"カメラ位置：" );
-				ImGui::Text( u8"[Ｘ：自機の座標＋自身の座標]" );
-				ImGui::Text( u8"[Ｙ：自機のＹ座標]" );
-				ImGui::Text( u8"[Ｚ：自機の座標＋自身の座標]" );
-				ImGui::Text( "" );
-
 				ImGui::DragFloat ( u8"補間倍率",						&m.camera.slerpFactor,		0.01f );
-				ImGui::DragFloat ( u8"自身のＹ座標（絶対）",			&m.camera.basePosY,			0.01f );
 				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&m.camera.offsetPos.x,		0.01f );
 				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&m.camera.offsetFocus.x,	0.01f );
 
@@ -357,12 +350,9 @@ void SceneGame::CameraInit()
 void SceneGame::AssignCameraPos()
 {
 	const auto data = FetchMember();
-	const Donya::Vector3 playerPos = player.GetPosition();
+	const Donya::Vector3   playerPos = player.GetPosition();
 
-	Donya::Vector3 relativePos = playerPos + data.camera.offsetPos;
-	relativePos.y += data.camera.basePosY;
-
-	iCamera.SetPosition( relativePos );
+	iCamera.SetPosition  ( playerPos + data.camera.offsetPos   );
 	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
 
 }
@@ -580,14 +570,12 @@ void SceneGame::StartFade() const
 Scene::Result SceneGame::ReturnResult()
 {
 #if DEBUG_MODE
-
 	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
 	{
 		Donya::Sound::Play( Music::ItemDecision );
 
 		StartFade();
 	}
-
 #endif // DEBUG_MODE
 
 	if ( Fader::Get().IsClosed() )

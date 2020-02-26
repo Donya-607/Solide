@@ -49,12 +49,10 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 #if DEBUG_MODE
 	// Scene Transition Demo.
 	{
-		if ( Donya::Keyboard::Trigger( VK_RETURN ) || controller.Trigger( Donya::Gamepad::Button::A ) || controller.Trigger( Donya::Gamepad::Button::START ) )
+		if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
 		{
-			if ( !Fader::Get().IsExist() )
-			{
-				StartFade();
-			}
+			Donya::Sound::Play( Music::ItemDecision );
+			StartFade();
 		}
 	}
 #endif // DEBUG_MODE
@@ -81,19 +79,6 @@ void SceneTitle::StartFade() const
 
 Scene::Result SceneTitle::ReturnResult()
 {
-#if DEBUG_MODE
-	if ( Donya::Keyboard::Trigger( VK_F5 ) && !Fader::Get().IsExist() )
-	{
-		Donya::Sound::Play( Music::ItemDecision );
-
-		Scene::Result change{};
-		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
-		change.sceneType = Scene::Type::Game;
-		return change;
-	}
-	// else
-#endif // DEBUG_MODE
-
 	if ( Fader::Get().IsClosed() )
 	{
 		Scene::Result change{};

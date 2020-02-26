@@ -46,22 +46,22 @@ void Framework::Uninit()
 void Framework::Update( float elapsedTime/*Elapsed seconds from last frame*/ )
 {
 #if DEBUG_MODE
-
-	if ( Donya::Keyboard::Trigger( 'C' ) )
+	if ( Donya::Keyboard::Press( VK_MENU ) )
 	{
-		char debugstopper = 0;
+		if ( Donya::Keyboard::Trigger( 'C' ) )
+		{
+			char debugstopper = 0;
+		}
+		if ( Donya::Keyboard::Trigger( 'T' ) )
+		{
+			Donya::ToggleShowStateOfImGui();
+		}
+		if ( Donya::Keyboard::Trigger( 'H' ) )
+		{
+			Common::ToggleShowCollision();
+		}
 	}
-	if ( Donya::Keyboard::Trigger( 'T' ) )
-	{
-		Donya::ToggleShowStateOfImGui();
-	}
-	if ( Donya::Keyboard::Trigger( 'H' ) )
-	{
-		Common::ToggleShowCollision();
-	}
-
 	DebugShowInformation();
-
 #endif // DEBUG_MODE
 
 	pSceneMng->Update( elapsedTime );
