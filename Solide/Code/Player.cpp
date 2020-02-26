@@ -91,6 +91,7 @@ namespace
 		BasicMember		normal;
 		OilMember		oiled;
 		std::vector<Donya::Vector3>	raypickOffsets;
+		float			falloutBorderPosY;
 	public:
 		bool isValid = true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
@@ -113,12 +114,16 @@ namespace
 			}
 			if ( 3 <= version )
 			{
+				archive( CEREAL_NVP( falloutBorderPosY ) );
+			}
+			if ( 4 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				2 )
+CEREAL_CLASS_VERSION( Member,				3 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	0 )
 CEREAL_CLASS_VERSION( Member::OilMember,	0 )
 
@@ -202,6 +207,8 @@ public:
 
 			if ( ImGui::TreeNode( u8"共通" ) )
 			{
+				ImGui::DragFloat( u8"落下死となるＹ座標しきい値", &m.falloutBorderPosY, 0.1f );
+
 				if ( ImGui::TreeNode( u8"レイピック時のレイのオフセット" ) )
 				{
 					auto &data = m.raypickOffsets;
@@ -416,6 +423,16 @@ Donya::Quaternion Player::OilMover::GetExtraRotation( Player &player ) const
 	return pitching.Rotated( tilting ); // Rotation: First:Pitch, Then:Tilt.
 }
 
+void Player::DeadMover::Init( Player &player )
+{
+	player.velocity = 0.0f;
+	player.hitBox.exist = false;
+}
+void Player::DeadMover::Uninit( Player &player ) {}
+void Player::DeadMover::Move( Player &player, float elapsedTime, Input input ) {}
+void Player::DeadMover::Jump( Player &player, float elapsedTime ) {}
+void Player::DeadMover::Fall( Player &player, float elapsedTime ) {}
+
 void Player::Init( const Donya::Vector3 &wsInitialPos )
 {
 	ParamPlayer::Get().Init();
@@ -440,7 +457,6 @@ void Player::Update( float elapsedTime, Input input )
 	UseImGui();
 #endif // USE_IMGUI
 
-#if DEBUG_MODE
 	{
 		if ( input.useOil )
 		{
@@ -449,8 +465,6 @@ void Player::Update( float elapsedTime, Input input )
 			: ResetMover<OilMover>();
 		}
 	}
-#endif // DEBUG_MODE
-
 
 	Move( elapsedTime, input );
 
@@ -464,20 +478,24 @@ void Player::Update( float elapsedTime, Input input )
 
 void Player::PhysicUpdate( const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMat )
 {
+	if ( pMover->IsDead() ) { return; }
+	// else
+
+	// For judge that to: "was landing?".
 	const Donya::Vector3 oldPos = pos;
 
 	const auto data = FetchMember();
 	Actor::Move( velocity, data.raypickOffsets, pTerrain, pTerrainMat );
 
-	float diffY = pos.y - oldPos.y;
-	bool  wasLanding = ( fabsf( diffY ) < fabsf( velocity.y ) - 0.001f ); // If the actual movement is lower than velocity, that represents to was landing.
-	if ( !pTerrain || !pTerrainMat ) // If the terrain is nothing, the criteria of landing is 0.0f.
-	{
-		wasLanding = wasLanding || ( pos.y < 0.0f + hitBox.size.y );
-	}
-	if (  wasLanding )
+	bool wasLanding = CalcWasLanding( oldPos, pTerrain );
+	if ( wasLanding )
 	{
 		AssignLanding();
+	}
+
+	if ( IsUnderFalloutBorder() )
+	{
+		Die();
 	}
 }
 
@@ -485,7 +503,10 @@ void Player::Draw( const Donya::Vector4x4 &matVP )
 {
 	const Donya::Quaternion actualOrientation = orientation.Rotated( pMover->GetExtraRotation( *this ) );
 #if DEBUG_MODE
-	DrawHitBox( matVP, actualOrientation, { 0.1f, 1.0f, 0.3f, 1.0f } );
+	const Donya::Vector4 color = ( pMover->IsDead() )
+		? Donya::Vector4{ 1.0f, 0.5f, 0.0f, 1.0f }
+		: Donya::Vector4{ 0.1f, 1.0f, 0.3f, 1.0f };
+	DrawHitBox( matVP, actualOrientation, color );
 #endif // DEBUG_MODE
 }
 
@@ -511,10 +532,37 @@ void Player::Fall( float elapsedTime )
 {
 	pMover->Fall( *this, elapsedTime );
 }
+bool Player::IsUnderFalloutBorder() const
+{
+	const auto data = FetchMember();
+	return ( pos.y < data.falloutBorderPosY ) ? true : false;
+}
+
+bool Player::CalcWasLanding( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const
+{
+	const float diffY = pos.y - oldPos.y;
+
+	// If the actual movement is lower than velocity, that represents to was landing.
+	bool wasLanding = ( fabsf( diffY ) < fabsf( velocity.y ) - 0.001f );
+
+	// If the terrain is nothing, the criteria of landing is 0.0f.
+	if ( !pTerrain )
+	{
+		wasLanding = wasLanding || ( pos.y < 0.0f + hitBox.size.y );
+	}
+
+	return wasLanding;
+}
 void Player::AssignLanding()
 {
 	onGround	= true;
 	velocity.y	= 0.0f;
+}
+
+void Player::Die()
+{
+	ResetMover<DeadMover>();
+	onGround = false;
 }
 
 #if USE_IMGUI

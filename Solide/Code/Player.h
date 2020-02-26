@@ -29,7 +29,8 @@ private:
 		virtual void Jump( Player &player, float elapsedTime ) = 0;
 		virtual void Fall( Player &player, float elapsedTime ) = 0;
 	public:
-		virtual bool IsOiled() const = 0;
+		virtual bool IsDead() const { return false; }
+		virtual bool IsOiled() const { return false; }
 		virtual Donya::Quaternion GetExtraRotation( Player &player ) const
 		{
 			return Donya::Quaternion::Identity();
@@ -44,8 +45,6 @@ private:
 		void Move( Player &player, float elapsedTime, Input input ) override;
 		void Jump( Player &player, float elapsedTime ) override;
 		void Fall( Player &player, float elapsedTime ) override;
-	public:
-		bool IsOiled() const override { return false; }
 	};
 	class OilMover : public MoverBase
 	{
@@ -63,6 +62,18 @@ private:
 		bool IsOiled() const override { return true; }
 		Donya::Quaternion GetExtraRotation( Player &player ) const override;
 	};
+	class DeadMover : public MoverBase
+	{
+	public:
+		void Init( Player &player ) override;
+		void Uninit( Player &player ) override;
+	public:
+		void Move( Player &player, float elapsedTime, Input input ) override;
+		void Jump( Player &player, float elapsedTime ) override;
+		void Fall( Player &player, float elapsedTime ) override;
+	public:
+		bool IsDead() const override { return true; }
+	};
 private:
 	Donya::Vector3				velocity;
 	Donya::Quaternion			orientation;
@@ -77,6 +88,11 @@ public:
 	void PhysicUpdate( const Donya::StaticMesh *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
 	void Draw( const Donya::Vector4x4 &matVP );
+public:
+	bool IsDead() const
+	{
+		return pMover->IsDead();
+	}
 private:
 	template<class Mover>
 	void ResetMover()
@@ -95,7 +111,12 @@ private:
 
 	void Jump( float elapsedTime );
 	void Fall( float elapsedTime );
+	bool IsUnderFalloutBorder() const;
+
+	bool CalcWasLanding( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const;
 	void AssignLanding();
+
+	void Die();
 private:
 #if USE_IMGUI
 	void UseImGui();

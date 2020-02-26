@@ -538,6 +538,12 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	if ( !pPlayer ) { return; }
 	// else
 
+	if ( pPlayer->IsDead() )
+	{
+		// Re-generate.
+		PlayerInit();
+	}
+
 	Donya::Vector2		moveVector{};
 	bool useJump		= false;
 	bool useOil			= false;
