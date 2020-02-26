@@ -52,6 +52,8 @@ private:
 	void	PlayerDraw( const Donya::Vector4x4 &matViewProj );
 	void	PlayerUninit();
 
+	bool	NowGoalMoment() const;
+
 	void	StartFade() const;
 private:
 	Result	ReturnResult();

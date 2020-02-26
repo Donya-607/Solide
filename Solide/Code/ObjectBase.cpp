@@ -109,7 +109,7 @@ namespace
 }
 void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
-	constexpr int RECURSIVE_LIMIT = 999;
+	constexpr int RECURSIVE_LIMIT = 256;
 	if ( RECURSIVE_LIMIT <= recursionCount )
 	{
 		pos += xzMovement;

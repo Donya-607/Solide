@@ -279,6 +279,11 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	CameraUpdate();
 
+	if ( NowGoalMoment() && !Fader::Get().IsExist() )
+	{
+		StartFade();
+	}
+
 	return ReturnResult();
 }
 
@@ -698,6 +703,18 @@ void SceneGame::PlayerUninit()
 	// else
 	pPlayer->Uninit();
 	pPlayer.reset();
+}
+
+bool SceneGame::NowGoalMoment() const
+{
+	if ( !pPlayer ) { return false; }
+	if ( Fader::Get().IsExist() ) { return false; }
+	// else
+
+	const Donya::AABB goalArea   = FetchMember().goalArea.GetHitBox();
+	const Donya::AABB playerBody = pPlayer->GetHitBox();
+
+	return Donya::AABB::IsHitAABB( playerBody, goalArea );
 }
 
 void SceneGame::StartFade() const
