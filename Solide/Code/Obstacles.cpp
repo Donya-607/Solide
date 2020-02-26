@@ -301,7 +301,7 @@ void Stone::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, co
 {
 	DrawModel( Kind::Stone, GetWorldMatrix(), VP, lightDir, color );
 #if DEBUG_MODE
-	DrawHitBox( VP, color );
+	DrawHitBox( VP, { 0.3f, 0.3f, 0.3f, 0.5f } );
 #endif // DEBUG_MODE
 }
 int Stone::GetKind() const
@@ -317,7 +317,7 @@ void Log::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, cons
 {
 	DrawModel( Kind::Log, GetWorldMatrix(), VP, lightDir, color );
 #if DEBUG_MODE
-	DrawHitBox( VP, color );
+	DrawHitBox( VP, { 0.5f, 0.4f, 0.1f, 0.5f } );
 #endif // DEBUG_MODE
 }
 int Log::GetKind() const
