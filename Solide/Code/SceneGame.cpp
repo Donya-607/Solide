@@ -360,7 +360,7 @@ void SceneGame::AssignCameraPos()
 	const Donya::Vector3 playerPos = player.GetPosition();
 
 	Donya::Vector3 relativePos = playerPos + data.camera.offsetPos;
-	relativePos.y = data.camera.basePosY;
+	relativePos.y += data.camera.basePosY;
 
 	iCamera.SetPosition( relativePos );
 	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
