@@ -9,6 +9,10 @@ namespace Music
 		BGM_Clear,
 		BGM_Over,
 
+		PlayerJump,
+		PlayerLanding,
+		PlayerTrans,
+
 		ItemChoose,
 		ItemDecision,
 

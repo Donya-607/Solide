@@ -6,6 +6,7 @@
 
 #include "Donya/Constant.h"		// For DEBUG_MODE macro.
 #include "Donya/Serializer.h"
+#include "Donya/Sound.h"
 #include "Donya/Useful.h"		// For ZeroEqual().
 
 #if DEBUG_MODE
@@ -13,6 +14,7 @@
 #endif // DEBUG_MODE
 
 #include "FilePath.h"
+#include "Music.h"
 #include "Parameter.h"
 
 #undef max
@@ -463,6 +465,8 @@ void Player::Update( float elapsedTime, Input input )
 			( pMover->IsOiled() )
 			? ResetMover<NormalMover>()
 			: ResetMover<OilMover>();
+
+			Donya::Sound::Play( Music::PlayerTrans );
 		}
 	}
 
@@ -527,6 +531,7 @@ void Player::Jump( float elapsedTime )
 {
 	onGround = false;
 	pMover->Jump( *this, elapsedTime );
+	Donya::Sound::Play( Music::PlayerJump );
 }
 void Player::Fall( float elapsedTime )
 {
@@ -557,6 +562,7 @@ void Player::AssignLanding()
 {
 	onGround	= true;
 	velocity.y	= 0.0f;
+	Donya::Sound::Play( Music::PlayerLanding );
 }
 
 void Player::Die()
