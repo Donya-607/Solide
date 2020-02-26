@@ -37,9 +37,13 @@ namespace
 			Donya::Vector3 offsetFocus;	// The offset of focus from the player position.
 		}
 		camera;	// The X and Z component is: player-position + offset. The Y component is:basePosY.
-		std::vector<Section> sections;
-	public:
-		Donya::Vector3 addSectionPos; // Does not serialize.
+		Section playerInitialPos;
+		Section goalArea;
+
+		// std::vector<Section> sections;
+
+	public: // Does not serialize members.
+		Donya::Vector3 selectingPos;
 	public:
 		bool  isValid = true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
@@ -56,7 +60,11 @@ namespace
 
 			if ( 1 <= version )
 			{
-				archive( CEREAL_NVP( sections ) );
+				archive
+				(
+					CEREAL_NVP( playerInitialPos ),
+					CEREAL_NVP( goalArea )
+				);
 			}
 			if ( 2 <= version )
 			{
@@ -125,9 +133,28 @@ public:
 
 			if ( ImGui::TreeNode( u8"セクション" ) )
 			{
-				ImGui::DragFloat3( u8"追加位置", &m.addSectionPos.x, 0.1f );
+				ImGui::DragFloat3( u8"選択位置", &m.selectingPos.x, 0.1f );
 				ImGui::Text( "" );
 
+				auto ShowSectionGUI = [&]( const std::string &nodeCaption, Section *pSection )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					if ( ImGui::Button( u8"「選択位置」に設定" ) )
+					{
+						pSection->SetPosition( m.selectingPos );
+					}
+					pSection->ShowImGuiNode( u8"直接変更" );
+
+					ImGui::TreePop();
+				};
+
+				ShowSectionGUI( u8"自機の初期位置",	&m.playerInitialPos	);
+				ShowSectionGUI( u8"ゴール位置",		&m.goalArea			);
+
+				// vector<Section> process.
+				/*
 				auto &data = m.sections;
 				if ( ImGui::Button( u8"追加" ) )
 				{
@@ -146,7 +173,7 @@ public:
 					strIndex = u8"[" + std::to_string( i ) + u8"]";
 
 					bool shouldErase = false;
-					data[i].ShowImGuiNode( ( u8"セクション" + strIndex ).c_str(), shouldErase );
+					data[i].ShowImGuiNode( ( u8"セクション" + strIndex ).c_str(), &shouldErase );
 
 					if ( shouldErase ) { removeIndex = i; }
 				}
@@ -155,6 +182,7 @@ public:
 				{
 					data.erase( data.begin() + removeIndex );
 				}
+				*/
 
 				ImGui::TreePop();
 			}
@@ -196,13 +224,14 @@ void SceneGame::Init()
 	Donya::Sound::Play( Music::BGM_Game );
 
 	ParamGame::Get().Init();
+	const auto data = FetchMember();
 
 	CameraInit();
 
 	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin" );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 
-	player.Init();
+	player.Init( data.playerInitialPos.GetPosition() );
 }
 void SceneGame::Uninit()
 {
@@ -292,13 +321,28 @@ void SceneGame::Draw( float elapsedTime )
 
 		// Sections
 		{
-			// Currently will generate section.
-			Section willAddition{ data.addSectionPos };
+			constexpr float selectColorBase  = 0.6f;
+			constexpr float selectColorRange = 0.2f;
+
+			static int  selectColorTimer{}; selectColorTimer++;
+			float sin = sinf( scast<float>( selectColorTimer ) );
+			float selectColor = selectColorBase + sin * selectColorRange;
+
+			// Currently selecting section.
+			Section willAddition{ data.selectingPos };
 			willAddition.DrawHitBox( VP, { 0.7f, 0.7f, 0.7f, 0.5f } );
 
-			for ( const auto &it : data.sections )
+			struct Bundle { const Section *pSection; Donya::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; };
+			std::vector<Bundle> drawList
 			{
-				it.DrawHitBox( VP, { 1.0f, 1.0f, 1.0f, 0.7f } );
+				Bundle{ &willAddition,			{ selectColor, selectColor, selectColor, 0.5f } },
+				Bundle{ &data.playerInitialPos,	{ 0.2f, 1.0f, 0.5f, 0.7f } },
+				Bundle{ &data.goalArea,			{ 0.8f, 0.8f, 0.1f, 0.7f } },
+			};
+
+			for ( const auto &it : drawList )
+			{
+				it.pSection->DrawHitBox( VP, it.color );
 			}
 		}
 

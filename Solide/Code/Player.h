@@ -69,7 +69,7 @@ private:
 	std::unique_ptr<MoverBase>	pMover;
 	bool						onGround = false;
 public:
-	void Init();
+	void Init( const Donya::Vector3 &wsInitialPos );
 	void Uninit();
 
 	void Update( float elapsedTime, Input input );

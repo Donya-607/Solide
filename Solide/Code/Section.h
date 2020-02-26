@@ -40,6 +40,10 @@ public:
 		Solid::DrawHitBox( matVP, color );
 	}
 public:
+	void SetPosition( const Donya::Vector3 &wsPos )
+	{
+		pos = wsPos;
+	}
 	Donya::Vector3 GetPosition() const
 	{
 		return Solid::GetPosition();
@@ -50,7 +54,7 @@ public:
 	}
 public:
 #if USE_IMGUI
-	void ShowImGuiNode( const std::string &nodeCaption, bool &shouldErase );
+	void ShowImGuiNode( const std::string &nodeCaption, bool *pShouldErase = nullptr );
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( Section, 0 )

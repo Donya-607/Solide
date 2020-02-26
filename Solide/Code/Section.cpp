@@ -21,14 +21,14 @@ Section::Section( const Donya::Vector3 &wsPos, const Donya::AABB &wsHitBox ) : S
 }
 
 #if USE_IMGUI
-void Section::ShowImGuiNode( const std::string &caption, bool &shouldErase )
+void Section::ShowImGuiNode( const std::string &caption, bool *pShouldErase )
 {
 	if ( !ImGui::TreeNode( caption.c_str() ) ) { return; }
 	// else
 
-	if ( ImGui::Button( u8"íœ" ) )
+	if ( pShouldErase && ImGui::Button( u8"íœ" ) )
 	{
-		shouldErase = true;
+		*pShouldErase = true;
 	}
 
 	ImGui::DragFloat3( u8"ƒ[ƒ‹ƒhÀ•W", &pos.x, 0.1f );

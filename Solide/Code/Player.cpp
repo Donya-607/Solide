@@ -416,11 +416,12 @@ Donya::Quaternion Player::OilMover::GetExtraRotation( Player &player ) const
 	return pitching.Rotated( tilting ); // Rotation: First:Pitch, Then:Tilt.
 }
 
-void Player::Init()
+void Player::Init( const Donya::Vector3 &wsInitialPos )
 {
 	ParamPlayer::Get().Init();
 	const auto data = FetchMember();
 
+	pos			= wsInitialPos;
 	velocity	= 0.0f;
 	orientation	= Donya::Quaternion::Identity();
 
