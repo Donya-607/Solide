@@ -4,10 +4,11 @@
 
 #include "Donya/Camera.h"
 #include "Donya/GamepadXInput.h"
-#include "Donya/Vector.h"
 #include "Donya/UseImGui.h"
+#include "Donya/Vector.h"
 
 #include "Player.h"
+#include "Section.h"
 #include "Scene.h"
 #include "Terrain.h"
 
@@ -21,7 +22,6 @@ public:
 	};
 private:
 	DirectionalLight			dirLight;
-
 	Donya::ICamera				iCamera;
 	Donya::XInput				controller;
 

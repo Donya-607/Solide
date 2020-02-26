@@ -2,21 +2,20 @@
 
 #include <vector>
 
+#include <cereal/types/vector.hpp>
+
 #include "Donya/Camera.h"
-#include "Donya/CBuffer.h"
 #include "Donya/Constant.h"
 #include "Donya/Donya.h"		// Use GetFPS().
 #include "Donya/GeometricPrimitive.h"
 #include "Donya/Keyboard.h"
-#include "Donya/Mouse.h"
-#include "Donya/Quaternion.h"
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
-#include "Donya/Sprite.h"
 #include "Donya/Useful.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 #if DEBUG_MODE
+#include "Donya/Mouse.h"
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
 
@@ -38,6 +37,9 @@ namespace
 			Donya::Vector3 offsetFocus;	// The offset of focus from the player position.
 		}
 		camera;	// The X and Z component is: player-position + offset. The Y component is:basePosY.
+		std::vector<Section> sections;
+	public:
+		Donya::Vector3 addSectionPos; // Does not serialize.
 	public:
 		bool  isValid = true; // Use for validation of dynamic_cast. Do not serialize.
 	private:
@@ -54,7 +56,7 @@ namespace
 
 			if ( 1 <= version )
 			{
-				// archive( CEREAL_NVP( x ) );
+				archive( CEREAL_NVP( sections ) );
 			}
 			if ( 2 <= version )
 			{
@@ -63,7 +65,7 @@ namespace
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 0 )
+CEREAL_CLASS_VERSION( Member, 1 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -117,6 +119,42 @@ public:
 				ImGui::DragFloat ( u8"補間倍率",						&m.camera.slerpFactor,		0.01f );
 				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&m.camera.offsetPos.x,		0.01f );
 				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&m.camera.offsetFocus.x,	0.01f );
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"セクション" ) )
+			{
+				ImGui::DragFloat3( u8"追加位置", &m.addSectionPos.x, 0.1f );
+				ImGui::Text( "" );
+
+				auto &data = m.sections;
+				if ( ImGui::Button( u8"追加" ) )
+				{
+					data.push_back( { m.addSectionPos } );
+				}
+				if ( 1 <= data.size() && ImGui::Button( u8"末尾を削除" ) )
+				{
+					data.pop_back();
+				}
+
+				const size_t count = data.size();
+				size_t removeIndex = count;
+				std::string strIndex{};
+				for ( size_t i = 0; i < count; ++i )
+				{
+					strIndex = u8"[" + std::to_string( i ) + u8"]";
+
+					bool shouldErase = false;
+					data[i].ShowImGuiNode( ( u8"セクション" + strIndex ).c_str(), shouldErase );
+
+					if ( shouldErase ) { removeIndex = i; }
+				}
+
+				if ( removeIndex != count )
+				{
+					data.erase( data.begin() + removeIndex );
+				}
 
 				ImGui::TreePop();
 			}
@@ -237,11 +275,13 @@ void SceneGame::Draw( float elapsedTime )
 
 	const Donya::Vector4x4 V{ iCamera.CalcViewMatrix() };
 	const Donya::Vector4x4 P{ iCamera.GetProjectionMatrix() };
+	const Donya::Vector4x4 VP{ V * P };
 	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
+	const auto data = FetchMember();
 
-	pTerrain->Render( V * P, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	pTerrain->Render( VP, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
-	player.Draw( V * P );
+	player.Draw( VP );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -249,6 +289,18 @@ void SceneGame::Draw( float elapsedTime )
 		static auto cube = Donya::Geometric::CreateCube();
 
 		static Donya::Vector4 lightDir{ 0.0f,-1.0f, 1.0f, 0.0f };
+
+		// Sections
+		{
+			// Currently will generate section.
+			Section willAddition{ data.addSectionPos };
+			willAddition.DrawHitBox( VP, { 0.7f, 0.7f, 0.7f, 0.5f } );
+
+			for ( const auto &it : data.sections )
+			{
+				it.DrawHitBox( VP, { 1.0f, 1.0f, 1.0f, 0.7f } );
+			}
+		}
 
 		// Ground likes.
 		if ( 0 )
