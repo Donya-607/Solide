@@ -786,7 +786,7 @@ void SceneGame::UseImGui()
 	
 	const auto data = FetchMember();
 
-	if ( ImGui::TreeNode( u8"ゲーム・メンバー" ) )
+	if ( ImGui::TreeNode( u8"ゲーム・メンバーの調整" ) )
 	{
 		ImGui::Text( u8"「Ｆ５キー」を押すと，" );
 		ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
