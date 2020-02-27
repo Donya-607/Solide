@@ -233,7 +233,7 @@ void SceneGame::Init()
 
 	CameraInit();
 
-	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin" );
+	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin",  "./Data/Models/Terrain/ForCollision/Terrain.bin" );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 
 	assert( ObstacleBase::LoadModels() );
@@ -732,7 +732,7 @@ void SceneGame::PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, cons
 	// else
 
 	const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
-	pPlayer->PhysicUpdate( solids, pTerrain->GetMesh().get(), &terrainMatrix );
+	pPlayer->PhysicUpdate( solids, pTerrain->GetCollisionMesh().get(), &terrainMatrix );
 }
 void SceneGame::PlayerDraw( const Donya::Vector4x4 &matVP )
 {
