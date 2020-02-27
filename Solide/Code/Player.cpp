@@ -547,10 +547,12 @@ bool Player::IsUnderFalloutBorder() const
 
 bool Player::CalcWasLanding( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const
 {
-	const float diffY = pos.y - oldPos.y;
+	const float  diffY = pos.y - oldPos.y;
+	if ( 0.0f <= diffY ) { return false; } // We can not landing to up.
+	// else
 
 	// If the actual movement is lower than velocity, that represents to was landing.
-	bool wasLanding = ( fabsf( diffY ) < fabsf( velocity.y ) - 0.001f );
+	bool wasLanding = ( diffY < fabsf( velocity.y ) - 0.001f );
 
 	// If the terrain is nothing, the criteria of landing is 0.0f.
 	if ( !pTerrain )
@@ -587,7 +589,7 @@ void Player::UseImGui()
 	{
 		ImGui::DragFloat3( u8"座標", &pos.x,			0.01f );
 		ImGui::DragFloat3( u8"速度", &velocity.x,	0.01f );
-		if ( ImGui::Button( u8"Ｙ座標と速度をリセット" ) )
+		if ( ImGui::Button( u8"Ｙ座標と速度をゼロにする" ) )
 		{
 			pos.y		= 1.0f;
 			velocity.y	= 0.0f;
