@@ -49,6 +49,14 @@ public:
 private:
 	void MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOriginOffsets, int recursionCount, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 	void MoveYImpl ( const Donya::Vector3 &yMovement,  const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+
+	struct CalcedRayResult
+	{
+		Donya::Vector3 correctedVelocity;
+		Donya::Vector3 wsIntersection;
+		Donya::Vector3 wsWallNormal;
+	};
+	CalcedRayResult CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const;
 public:
 	virtual bool IsRiding( const Solid &onto ) const;
 	/// <summary>
