@@ -129,6 +129,7 @@ namespace Donya
 		"struct VS_OUT\n"
 		"{\n"
 		"	float4 pos			: SV_POSITION;\n"
+		"	float4 wsPos		: POSITION;\n"
 		"	float4 normal		: NORMAL;\n"
 		"	float2 texCoord		: TEXCOORD0;\n"
 		// "	float4 color		: COLOR;\n"
@@ -151,6 +152,14 @@ namespace Donya
 		"	float4 diffuse;\n"
 		"	float4 specular;\n"
 		"};\n"
+		"cbuffer CB_FOR_SOLIDE : register( b2 )\n"
+		"{\n"
+		"	float4 eyePosition;\n"
+		"	float transNear;\n"
+		"	float transFar;\n"
+		"	float transLower;\n"
+		"	float padding;\n"
+		"};\n"
 		"VS_OUT VSMain( VS_IN vin )\n"
 		"{\n"
 		"	vin.normal.w	= 0;\n"
@@ -159,6 +168,7 @@ namespace Donya
 		"\n"
 		"	VS_OUT vout		= (VS_OUT)( 0 );\n"
 		"	vout.pos		= mul( vin.pos, worldViewProjection );\n"
+		"	vout.wsPos		= mul( vin.pos, world );\n"
 		"\n"
 		// "	vout.eyeVector	= cameraPosition - normalize( vout.pos );\n"
 		"\n"
@@ -166,6 +176,13 @@ namespace Donya
 		"	vout.texCoord	= vin.texCoord;\n"
 		"\n"
 		"	return vout;\n"
+		"}\n"
+		"\n"
+		"float CalcTransparency( float3 pixelPos, float3 eyePos )\n"
+		"{\n"
+		"	float  distance = length( pixelPos - eyePos );\n"
+		"	float  percent  = saturate( ( distance - transNear ) / ( transFar - transNear ) );\n"
+		"	return min( 1.0f, percent + transLower );\n"
 		"}\n"
 		"\n"
 		"Texture2D		diffuseMap			: register( t0 );\n"
@@ -181,7 +198,8 @@ namespace Donya
 		"\n"
 		"	float3	outputColor	= sampleColor.rgb * diffuseColor.rgb;\n"
 		"	float3	light		= lightColor.rgb * lightColor.w;\n"
-		"	return	float4( saturate( outputColor + ambient ) * light, sampleColor.a );\n"
+		"	float   nearTransparency = CalcTransparency( pin.wsPos, eyePosition )\n"
+		"	return	float4( saturate( outputColor + ambient ) * light, sampleColor.a * nearTransparency );\n"
 		"\n"
 		/*
 		"	float4	nNormal		= normalize( pin.normal );\n"
@@ -285,6 +303,7 @@ namespace Donya
 
 	StaticMesh::StaticMesh() :
 		iDefaultCBuffer(), iDefaultMaterialCBuffer(),
+		iCBufferForSolide(),
 		iDefaultInputLayout(), iDefaultVS(), iDefaultPS(),
 		iRasterizerStateSurface(), iRasterizerStateWire(), iDepthStencilState(),
 		meshes(), collisionFaces(),
@@ -321,6 +340,14 @@ namespace Donya
 				iDefaultMaterialCBuffer.GetAddressOf()
 			);
 			_ASSERT_EXPR( SUCCEEDED( hr ), L"Failed : Create Material-Constant-Buffer." );
+			
+			hr = CreateConstantBuffer
+			(
+				pDevice,
+				sizeof( CBForSolide ),
+				iCBufferForSolide.GetAddressOf()
+			);
+			_ASSERT_EXPR( SUCCEEDED( hr ), L"Failed : Create Solide-Constant-Buffer." );
 		}
 
 	#if DEBUG_MODE
@@ -635,7 +662,7 @@ namespace Donya
 		return true;
 	}
 
-	void StaticMesh::Render( ID3D11DeviceContext *pImmediateContext, bool useDefaultShading, bool isEnableFill, const Donya::Vector4x4 &defMatWVP, const Donya::Vector4x4 &defMatW, const Donya::Vector4 &defLightDir, const Donya::Vector4 &defMtlColor ) const
+	void StaticMesh::Render( const Donya::Vector3 &eyePosition, float transNear, float transFar, float transLower, ID3D11DeviceContext *pImmediateContext, bool useDefaultShading, bool isEnableFill, const Donya::Vector4x4 &defMatWVP, const Donya::Vector4x4 &defMatW, const Donya::Vector4 &defLightDir, const Donya::Vector4 &defMtlColor ) const
 	{
 		if ( !wasLoaded ) { return; }
 		// else
@@ -681,6 +708,19 @@ namespace Donya
 			}
 
 			pImmediateContext->OMSetDepthStencilState( iDepthStencilState.Get(), 0xffffffff );
+		}
+
+		// Solide CBuffer.
+		{
+			CBForSolide cb{};
+			cb.eyePosition	= Donya::Vector4{ eyePosition, 1.0f }.XMFloat();
+			cb.transNear	= transNear;
+			cb.transFar		= transFar;
+			cb.transLower	= transLower;
+
+			pImmediateContext->UpdateSubresource( iCBufferForSolide.Get(), 0, nullptr, &cb, 0, 0 );
+			pImmediateContext->VSSetConstantBuffers( 2, 1, iCBufferForSolide.GetAddressOf() );
+			pImmediateContext->PSSetConstantBuffers( 2, 1, iCBufferForSolide.GetAddressOf() );
 		}
 
 		for ( const auto &mesh : meshes )

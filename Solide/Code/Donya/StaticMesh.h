@@ -48,6 +48,14 @@ namespace Donya
 			DirectX::XMFLOAT4	diffuse;
 			DirectX::XMFLOAT4	specular;
 		};
+		struct CBForSolide
+		{
+			DirectX::XMFLOAT4	eyePosition;
+			float				transNear;	// World space.
+			float				transFar;	// World space.
+			float				transLower;	// 0.0f ~ 1.0f
+			float				padding;
+		};
 		struct Material
 		{
 			DirectX::XMFLOAT4 color;	// w channel is used as shininess by only specular.
@@ -106,6 +114,7 @@ namespace Donya
 		template<typename T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 		mutable ComPtr<ID3D11Buffer>			iDefaultCBuffer;
 		mutable ComPtr<ID3D11Buffer>			iDefaultMaterialCBuffer;
+		mutable ComPtr<ID3D11Buffer>			iCBufferForSolide;
 		mutable ComPtr<ID3D11InputLayout>		iDefaultInputLayout;
 		mutable ComPtr<ID3D11VertexShader>		iDefaultVS;
 		mutable ComPtr<ID3D11PixelShader>		iDefaultPS;
@@ -142,6 +151,7 @@ namespace Donya
 		/// </summary>
 		void Render
 		(
+			const Donya::Vector3 &eyePosition, float transNear, float transFar, float transLowerVal,
 			ID3D11DeviceContext		*pImmediateContext = nullptr,
 			bool useDefaultShading	= true,
 			bool isEnableFill		= true,
