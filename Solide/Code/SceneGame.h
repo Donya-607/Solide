@@ -32,6 +32,10 @@ private:
 
 #if DEBUG_MODE
 	bool nowDebugMode;
+	bool isReverseCameraMoveX;
+	bool isReverseCameraMoveY;
+	bool isReverseCameraRotX;
+	bool isReverseCameraRotY;
 #endif // DEBUG_MODE
 public:
 	SceneGame();

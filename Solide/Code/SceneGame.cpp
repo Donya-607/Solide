@@ -214,7 +214,11 @@ SceneGame::SceneGame() :
 	pObstacles( nullptr )
 
 #if DEBUG_MODE
-	, nowDebugMode( false )
+	, nowDebugMode( false ),
+	isReverseCameraMoveX( false ),
+	isReverseCameraMoveY( true  ),
+	isReverseCameraRotX( false ),
+	isReverseCameraRotY( false )
 #endif // DEBUG_MODE
 
 {}
@@ -524,13 +528,19 @@ void SceneGame::CameraUpdate()
 			constexpr float ROT_AMOUNT = ToRadian( 0.5f );
 			rotation.x = diff.x * ROT_AMOUNT;
 			rotation.y = diff.y * ROT_AMOUNT;
+
+			if ( isReverseCameraRotX ) { rotation.x *= -1.0f; }
+			if ( isReverseCameraRotY ) { rotation.y *= -1.0f; }
 		}
 		else
 		if ( Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) )
 		{
 			constexpr float MOVE_SPEED = 0.1f;
-			movement.x =  diff.x * MOVE_SPEED;
-			movement.y = -diff.y * MOVE_SPEED;
+			movement.x = diff.x * MOVE_SPEED;
+			movement.y = diff.y * MOVE_SPEED;
+
+			if ( isReverseCameraMoveX ) { movement.x *= -1.0f; }
+			if ( isReverseCameraMoveY ) { movement.y *= -1.0f; }
 		}
 
 		constexpr float FRONT_SPEED = 3.5f;
@@ -811,6 +821,11 @@ void SceneGame::UseImGui()
 
 		if ( ImGui::TreeNode( u8"ƒJƒƒ‰î•ñ" ) )
 		{
+			ImGui::Checkbox( u8"ˆÚ“®•ûŒü‚ğ”½“]‚·‚éE‚w", &isReverseCameraMoveX );
+			ImGui::Checkbox( u8"ˆÚ“®•ûŒü‚ğ”½“]‚·‚éE‚x", &isReverseCameraMoveY );
+			ImGui::Checkbox( u8"‰ñ“]•ûŒü‚ğ”½“]‚·‚éE‚w", &isReverseCameraRotX );
+			ImGui::Checkbox( u8"‰ñ“]•ûŒü‚ğ”½“]‚·‚éE‚x", &isReverseCameraRotY );
+
 			auto ShowVec3 = []( const std::string &prefix, const Donya::Vector3 &v )
 			{
 				ImGui::Text( ( prefix + u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]" ).c_str(), v.x, v.y, v.z );
