@@ -42,7 +42,7 @@ public:
 
 	void Update( float elapsedTime );
 
-	void Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color );
+	void Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color );
 public:
 	std::vector<Donya::AABB> GetHitBoxes() const;
 private:

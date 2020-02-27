@@ -151,7 +151,7 @@ namespace Donya
 		/// </summary>
 		void Render
 		(
-			const Donya::Vector3 &eyePosition, float transNear, float transFar, float transLowerVal,
+			const Donya::Vector4 &eyePosition, float transNear, float transFar, float transLowerAlpha,
 			ID3D11DeviceContext		*pImmediateContext = nullptr,
 			bool useDefaultShading	= true,
 			bool isEnableFill		= true,

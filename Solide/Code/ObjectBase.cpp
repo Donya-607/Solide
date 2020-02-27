@@ -115,7 +115,7 @@ namespace
 }
 void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
-	constexpr int RECURSIVE_LIMIT = 64;
+	constexpr int RECURSIVE_LIMIT = 32;
 	auto result = CalcCorrectVelocity( xzMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
 	// pos += result.correctedVelocity;

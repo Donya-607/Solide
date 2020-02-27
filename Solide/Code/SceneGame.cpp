@@ -42,6 +42,14 @@ namespace
 		Section playerInitialPos;
 		Section goalArea;
 
+		struct
+		{
+			float enableNear = 1.0f; // World space.
+			float enableFar	 = 2.0f; // World space.
+			float lowerAlpha = 0.0f; // 0.0f ~ 1.0f.
+		}
+		transparency;
+
 		// std::vector<Section> sections;
 
 	public: // Does not serialize members.
@@ -68,12 +76,21 @@ namespace
 			}
 			if ( 2 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( transparency.enableNear ),
+					CEREAL_NVP( transparency.enableFar  ),
+					CEREAL_NVP( transparency.lowerAlpha )
+				);
+			}
+			if ( 3 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 1 )
+CEREAL_CLASS_VERSION( Member, 2 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -127,6 +144,15 @@ public:
 				ImGui::DragFloat ( u8"補間倍率",						&m.camera.slerpFactor,		0.01f );
 				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&m.camera.offsetPos.x,		0.01f );
 				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&m.camera.offsetFocus.x,	0.01f );
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"近くのオブジェクトに適用する透明度" ) )
+			{
+				ImGui::DragFloat( u8"範囲・手前側",	&m.transparency.enableNear,	0.01f, 0.0f );
+				ImGui::DragFloat( u8"範囲・奥側",	&m.transparency.enableFar,	0.01f, 0.0f );
+				ImGui::SliderFloat( u8"最低透明度", &m.transparency.lowerAlpha, 0.0f, 1.0f );
 
 				ImGui::TreePop();
 			}
@@ -328,12 +354,15 @@ void SceneGame::Draw( float elapsedTime )
 	const Donya::Vector4x4 P{ iCamera.GetProjectionMatrix() };
 	const Donya::Vector4x4 VP{ V * P };
 	const auto data = FetchMember();
+	const auto &trans = data.transparency;
 
-	pTerrain->Render( VP, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
-
-	pObstacles->Draw( VP, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	// The drawing priority is determined by the priority of the information.
 
 	PlayerDraw( VP );
+
+	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
+
+	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )

@@ -25,7 +25,7 @@ public:
 	Donya::Vector4x4 GetWorldMatrix() const { return matWorld; }
 	std::shared_ptr<Donya::StaticMesh> GetCollisionMesh() const { return pCollisionMesh; }
 public:
-	void Render( const Donya::Vector4x4 &matVP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color );
+	void Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &matVP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color );
 public:
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption );

@@ -110,7 +110,7 @@ namespace
 		return models[kind];
 	}
 
-	void DrawModel( Kind kind, const Donya::Vector4x4 &W, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
+	void DrawModel( Kind kind, const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &W, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 	{
 		const auto pModel = GetModelPtr( kind );
 		if ( !pModel ) { return; }
@@ -118,6 +118,7 @@ namespace
 
 		pModel->Render
 		(
+			eyePos, transNear, transFar, transLowerAlpha,
 			nullptr,
 			/* useDefaultShading	= */ true,
 			/* isEnableFill			= */ true,
@@ -312,9 +313,9 @@ void Stone::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Stone, ParamObstacle::Get().Data() );
 }
-void Stone::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
+void Stone::Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 {
-	DrawModel( Kind::Stone, GetWorldMatrix(), VP, lightDir, color );
+	DrawModel( Kind::Stone, eyePos, transNear, transFar, transLowerAlpha, GetWorldMatrix(), VP, lightDir, color );
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
@@ -331,9 +332,9 @@ void Log::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Log, ParamObstacle::Get().Data() );
 }
-void Log::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
+void Log::Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 {
-	DrawModel( Kind::Log, GetWorldMatrix(), VP, lightDir, color );
+	DrawModel( Kind::Log, eyePos, transNear, transFar, transLowerAlpha, GetWorldMatrix(), VP, lightDir, color );
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
@@ -350,9 +351,9 @@ void Tree::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Tree, ParamObstacle::Get().Data() );
 }
-void Tree::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
+void Tree::Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 {
-	DrawModel( Kind::Tree, GetWorldMatrix(), VP, lightDir, color );
+	DrawModel( Kind::Tree, eyePos, transNear, transFar, transLowerAlpha, GetWorldMatrix(), VP, lightDir, color );
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
@@ -369,9 +370,9 @@ void Table::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Table, ParamObstacle::Get().Data() );
 }
-void Table::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
+void Table::Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 {
-	DrawModel( Kind::Table, GetWorldMatrix(), VP, lightDir, color );
+	DrawModel( Kind::Table, eyePos, transNear, transFar, transLowerAlpha, GetWorldMatrix(), VP, lightDir, color );
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{

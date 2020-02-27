@@ -198,7 +198,7 @@ namespace Donya
 		"\n"
 		"	float3	outputColor	= sampleColor.rgb * diffuseColor.rgb;\n"
 		"	float3	light		= lightColor.rgb * lightColor.w;\n"
-		"	float   nearTransparency = CalcTransparency( pin.wsPos, eyePosition )\n"
+		"	float   nearTransparency = CalcTransparency( pin.wsPos.xyz, eyePosition.xyz );\n"
 		"	return	float4( saturate( outputColor + ambient ) * light, sampleColor.a * nearTransparency );\n"
 		"\n"
 		/*
@@ -662,7 +662,7 @@ namespace Donya
 		return true;
 	}
 
-	void StaticMesh::Render( const Donya::Vector3 &eyePosition, float transNear, float transFar, float transLower, ID3D11DeviceContext *pImmediateContext, bool useDefaultShading, bool isEnableFill, const Donya::Vector4x4 &defMatWVP, const Donya::Vector4x4 &defMatW, const Donya::Vector4 &defLightDir, const Donya::Vector4 &defMtlColor ) const
+	void StaticMesh::Render( const Donya::Vector4 &eyePosition, float transNear, float transFar, float transLower, ID3D11DeviceContext *pImmediateContext, bool useDefaultShading, bool isEnableFill, const Donya::Vector4x4 &defMatWVP, const Donya::Vector4x4 &defMatW, const Donya::Vector4 &defLightDir, const Donya::Vector4 &defMtlColor ) const
 	{
 		if ( !wasLoaded ) { return; }
 		// else
@@ -713,7 +713,7 @@ namespace Donya
 		// Solide CBuffer.
 		{
 			CBForSolide cb{};
-			cb.eyePosition	= Donya::Vector4{ eyePosition, 1.0f }.XMFloat();
+			cb.eyePosition	= eyePosition.XMFloat();
 			cb.transNear	= transNear;
 			cb.transFar		= transFar;
 			cb.transLower	= transLower;
