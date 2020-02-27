@@ -128,6 +128,9 @@ void Framework::DebugShowInformation()
 	if ( ImGui::BeginIfAllowed() )
 	{
 		ImGui::Text( u8"「Ｆ２キー」を押すと，シーン遷移を行います。" );
+		ImGui::Text( u8"「ＡＬＴキー」を押しながら，" );
+		ImGui::Text( u8"　「Ｈキー」で，当たり判定可視化の有無を，" );
+		ImGui::Text( u8"　「Ｔキー」で，ImGuiの表示の有無を，切り替えます。" );
 		ImGui::Text( "" );
 		if ( ImGui::TreeNode( u8"ゲーム情報" ) )
 		{
