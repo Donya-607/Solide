@@ -592,7 +592,24 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	}
 
 #if DEBUG_MODE
-	// Test
+
+	// Rotate input vector by camera.
+	if ( nowDebugMode )
+	{
+		auto cameraRotation = iCamera.GetOrientation();
+
+		// Disable the rotation of X-axis and Z-axis.
+		cameraRotation.x = 0.0f;
+		cameraRotation.z = 0.0f;
+		cameraRotation.Normalize();
+
+		Donya::Vector3 moveVector3{ moveVector.x, 0.0f, moveVector.y };
+		moveVector3 = cameraRotation.RotateVector( moveVector3 );
+		moveVector.x = moveVector3.x;
+		moveVector.y = moveVector3.z;
+	}
+
+	// Some Test
 	if ( 0 )
 	{
 		static Donya::Quaternion base{};
