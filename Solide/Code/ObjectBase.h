@@ -56,8 +56,8 @@ private:
 	struct CalcedRayResult
 	{
 		Donya::Vector3 correctedVelocity;
-		Donya::Vector3 wsIntersection;
-		Donya::Vector3 wsWallNormal;
+		Donya::Vector3 wsLastIntersection;
+		Donya::Vector3 wsLastWallNormal;
 	};
 	CalcedRayResult CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const;
 public:

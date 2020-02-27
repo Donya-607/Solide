@@ -202,8 +202,14 @@ void Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya
 	constexpr int RECURSIVE_LIMIT = 1;
 	auto result = CalcCorrectVelocity( yMovement, {}, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
-	pos += result.correctedVelocity;
-	MoveInAABB( result.correctedVelocity, solids );
+	const Donya::Vector3 sizeOffset	= MakeSizeOffset( hitBox, yMovement );
+	const Donya::Vector3 destPos	= ( result.wsLastIntersection.IsZero() )
+		? pos + yMovement
+		: result.wsLastIntersection - sizeOffset;
+	
+	// pos += result.correctedVelocity;
+	// MoveInAABB( result.correctedVelocity, solids );
+	MoveInAABB( destPos - pos, solids );
 
 	/*
 	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
@@ -321,6 +327,8 @@ void Actor::MoveInAABB( Donya::Vector3 moveVelocity, const std::vector<Donya::AA
 		penetration	= CalcPenetration( movedBody, moveSign, other );
 		resolver	= CalcResolver( penetration, moveSign );
 
+		// Repulse to the more little(but greater than zero) axis side of penetration.
+
 		enum AXIS { X = 0, Y, Z };
 		auto At = []( Donya::Vector3 &refV, AXIS index )->float &
 		{
@@ -336,9 +344,6 @@ void Actor::MoveInAABB( Donya::Vector3 moveVelocity, const std::vector<Donya::AA
 			// Fail safe.
 			return refV.x;
 		};
-
-		// Repulse to the more little(but greater than zero) axis side of penetration.
-
 		auto CalcLowestAxis = [&At]( const Donya::Vector3 &v )->AXIS
 		{
 			// Fail safe.
@@ -436,9 +441,9 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 
 	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
 	const Donya::Vector4x4	invTerrainMat	=  pTerrainMatrix->Inverse();
-	const Donya::Vector3	xzSizeOffset	=  MakeSizeOffset( hitBox, velocity );
+	const Donya::Vector3	sizeOffset		=  MakeSizeOffset( hitBox, velocity );
 	const Donya::Vector3	wsRayStart		=  pos;
-	const Donya::Vector3	wsRayEnd		=  wsRayStart + velocity + xzSizeOffset;
+	const Donya::Vector3	wsRayEnd		=  wsRayStart + velocity + sizeOffset;
 
 	// Terrain space.
 	const Donya::Vector3	tsRayStart		= Transform( invTerrainMat, wsRayStart,	1.0f );
@@ -501,8 +506,8 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 	const Donya::Vector3 internalVec	= wsRayEnd - wsIntersection;
 	const Donya::Vector3 projVelocity	= -wsWallNormal * Dot( internalVec, -wsWallNormal );
 
-	recursionResult.wsIntersection		= wsIntersection;
-	recursionResult.wsWallNormal		= wsWallNormal;
+	recursionResult.wsLastIntersection	= wsIntersection;
+	recursionResult.wsLastWallNormal	= wsWallNormal;
 
 	constexpr float ERROR_MAGNI = 1.0f + ERROR_ADJUST;
 	Donya::Vector3 correctedVelocity = velocity + ( -projVelocity * ERROR_MAGNI );
