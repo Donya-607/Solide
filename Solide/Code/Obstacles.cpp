@@ -19,6 +19,7 @@ namespace
 	{
 		Stone,
 		Log,
+		Tree,
 
 		KindCount
 	};
@@ -29,6 +30,7 @@ namespace
 	{
 		"Stone",
 		"Log",
+		"Tree",
 	};
 
 	static std::array<std::shared_ptr<Donya::StaticMesh>, KIND_COUNT> models{};
@@ -135,9 +137,10 @@ namespace
 
 		switch ( kind )
 		{
-		case Stone:	*pOutput = std::make_shared<::Stone>();		return;
-		case Log:	*pOutput = std::make_shared<::Log>();		return;
-		default: return;
+		case Stone:	*pOutput = std::make_shared<::Stone>();				return;
+		case Log:	*pOutput = std::make_shared<::Log>();				return;
+		case Tree:	*pOutput = std::make_shared<::Tree>();				return;
+		default: _ASSERT_EXPR( 0, L"Error : Unexpected model kind!" );	return;
 		}
 	}
 
@@ -338,4 +341,23 @@ void Log::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, cons
 int Log::GetKind() const
 {
 	return scast<int>( Kind::Log );
+}
+
+void Tree::Update( float elapsedTime )
+{
+	hitBox = GetModelHitBox( Kind::Tree, ParamObstacle::Get().Data() );
+}
+void Tree::Draw( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
+{
+	DrawModel( Kind::Tree, GetWorldMatrix(), VP, lightDir, color );
+#if DEBUG_MODE
+	if ( Common::IsShowCollision() )
+	{
+		DrawHitBox( VP, { 0.4f, 0.5f, 0.0f, 0.5f } );
+	}
+#endif // DEBUG_MODE
+}
+int Tree::GetKind() const
+{
+	return scast<int>( Kind::Tree );
 }
