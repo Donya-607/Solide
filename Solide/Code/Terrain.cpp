@@ -59,8 +59,7 @@ void Terrain::BuildWorldMatrix()
 void Terrain::Render( const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 {
 	const Donya::Vector4x4 W = GetWorldMatrix();
-	// pDrawMesh->Render
-	pCollisionMesh->Render
+	pDrawMesh->Render
 	(
 		nullptr,
 		true, true,
