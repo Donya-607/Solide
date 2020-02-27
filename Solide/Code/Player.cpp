@@ -478,7 +478,7 @@ void Player::Update( float elapsedTime, Input input )
 	Fall( elapsedTime );
 }
 
-void Player::PhysicUpdate( const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMat )
+void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMat )
 {
 	if ( pMover->IsDead() ) { return; }
 	// else
@@ -487,7 +487,7 @@ void Player::PhysicUpdate( const Donya::StaticMesh *pTerrain, const Donya::Vecto
 	const Donya::Vector3 oldPos = pos;
 
 	const auto data = FetchMember();
-	Actor::Move( velocity, data.raypickOffsets, pTerrain, pTerrainMat );
+	Actor::Move( velocity, data.raypickOffsets, solids, pTerrain, pTerrainMat );
 
 	bool wasLanding = CalcWasLanding( oldPos, pTerrain );
 	if ( wasLanding )

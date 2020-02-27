@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "Donya/Constant.h"
 #include "Donya/GeometricPrimitive.h"
 #include "Donya/StaticMesh.h"
 #include "Donya/Useful.h"
@@ -68,7 +69,7 @@ void Solid::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color 
 
 
 
-void Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vector3> &wsRayOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+void Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	if ( !pTerrain || !pTerrainMatrix )
 	{
@@ -83,8 +84,8 @@ void Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vecto
 	const Donya::Vector3 xzMovement{ movement.x,	0.0f,		movement.z	};
 	const Donya::Vector3 yMovement { 0.0f,			movement.y,	0.0f		};
 
-	if ( !xzMovement.IsZero() ) { MoveXZImpl( xzMovement, wsRayOffsets, 0, pTerrain, pTerrainMatrix ); }
-	if ( !yMovement.IsZero()  ) { MoveYImpl ( yMovement,  pTerrain, pTerrainMatrix ); }
+	if ( !xzMovement.IsZero() ) { MoveXZImpl( xzMovement, wsRayOffsets, 0, solids, pTerrain, pTerrainMatrix ); }
+	if ( !yMovement.IsZero()  ) { MoveYImpl ( yMovement,  solids, pTerrain, pTerrainMatrix ); }
 }
 namespace
 {
@@ -112,12 +113,13 @@ namespace
 		return ToVec3( M.Mul( V, fourthParam ) );
 	}
 }
-void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	constexpr int RECURSIVE_LIMIT = 255;
 	auto result = CalcCorrectVelocity( xzMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
-	pos += result.correctedVelocity;
+	// pos += result.correctedVelocity;
+	MoveInAABB( result.correctedVelocity, solids );
 
 	/*
 	// If we can't resolve with very small movement, we give-up the moving.
@@ -194,13 +196,14 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 	MoveXZImpl( correctedVelocity, wsRayOffsets, recursionCount + 1, pTerrain, pTerrainMatrix );
 	*/
 }
-void Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+void Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	// Y moving does not need the correction recursively.
 	constexpr int RECURSIVE_LIMIT = 1;
 	auto result = CalcCorrectVelocity( yMovement, {}, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
 	pos += result.correctedVelocity;
+	MoveInAABB( result.correctedVelocity, solids );
 
 	/*
 	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
@@ -229,8 +232,201 @@ void Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const Donya::StaticMesh
 	pos = wsIntersection - ySizeOffset;
 	*/
 }
+
+Donya::AABB Actor::CalcCollidingBox( const Donya::AABB &myself, const std::vector<Donya::AABB> &solids ) const
+{
+	Donya::OutputDebugStr( "Enter into CalcCollidingBox().\n" );
+
+	for ( const auto &it : solids )
+	{
+		if ( Donya::AABB::IsHitAABB( myself, it ) )
+		{
+			return it;
+		}
+	}
+
+	return Donya::AABB::Nil();
+}
+void Actor::MoveInAABB( Donya::Vector3 moveVelocity, const std::vector<Donya::AABB> &solids )
+{
+	Donya::OutputDebugStr( "Enter into MoveInAABB().\n" );
+
+	Donya::Vector3 moveSign // The moving direction of myself. Take a value of +1.0f or -1.0f.
+	{
+		scast<float>( Donya::SignBit( moveVelocity.x ) ),
+		scast<float>( Donya::SignBit( moveVelocity.y ) ),
+		scast<float>( Donya::SignBit( moveVelocity.z ) )
+	};
+	if ( moveSign.IsZero() ) { return; }
+	// else
+
+	Donya::AABB movedBody = GetHitBox();
+	movedBody.pos += moveVelocity;
+
+	Donya::AABB other{};
+	
+	constexpr unsigned int MAX_LOOP_COUNT = 1000U;
+	unsigned int loopCount{};
+	while ( ++loopCount < MAX_LOOP_COUNT )
+	{
+		other = CalcCollidingBox( movedBody, solids );
+		if ( other == Donya::AABB::Nil() ) { break; } // Does not detected a collision.
+		// else
+
+		auto CalcPenetration	= []( const Donya::AABB &myself, const Donya::Vector3 &myMoveSign, const Donya::AABB &other )
+		{
+			Donya::Vector3 plusPenetration
+			{
+				fabsf( ( myself.pos.x + myself.size.x ) - ( other.pos.x - other.size.x ) ),
+				fabsf( ( myself.pos.y + myself.size.y ) - ( other.pos.y - other.size.y ) ),
+				fabsf( ( myself.pos.z + myself.size.z ) - ( other.pos.z - other.size.z ) )
+			};
+			Donya::Vector3 minusPenetration
+			{
+				fabsf( ( myself.pos.x - myself.size.x ) - ( other.pos.x + other.size.x ) ),
+				fabsf( ( myself.pos.y - myself.size.y ) - ( other.pos.y + other.size.y ) ),
+				fabsf( ( myself.pos.z - myself.size.z ) - ( other.pos.z + other.size.z ) )
+			};
+			Donya::Vector3 penetration{}; // Store absolute value.
+			penetration.x
+				= ( myMoveSign.x < 0.0f ) ? minusPenetration.x
+				: ( myMoveSign.x > 0.0f ) ? plusPenetration.x
+				: 0.0f;
+			penetration.y
+				= ( myMoveSign.y < 0.0f ) ? minusPenetration.y
+				: ( myMoveSign.y > 0.0f ) ? plusPenetration.y
+				: 0.0f;
+			penetration.z
+				= ( myMoveSign.z < 0.0f ) ? minusPenetration.z
+				: ( myMoveSign.z > 0.0f ) ? plusPenetration.z
+				: 0.0f;
+			return penetration;
+		};
+		auto CalcResolver		= []( const Donya::Vector3 &penetration, const Donya::Vector3 &myMoveSign )
+		{
+			// Prevent the two edges onto same place(the collision detective allows same(equal) value).
+			constexpr float ERROR_MARGIN = 0.0001f;
+
+			Donya::Vector3 resolver
+			{
+				( penetration.x + ERROR_MARGIN ) * -myMoveSign.x,
+				( penetration.y + ERROR_MARGIN ) * -myMoveSign.y,
+				( penetration.z + ERROR_MARGIN ) * -myMoveSign.z
+			};
+			return resolver;
+		};
+
+		Donya::Vector3 penetration{}; // Store absolute value.
+		Donya::Vector3 resolver{};
+		penetration	= CalcPenetration( movedBody, moveSign, other );
+		resolver	= CalcResolver( penetration, moveSign );
+
+		enum AXIS { X = 0, Y, Z };
+		auto At = []( Donya::Vector3 &refV, AXIS index )->float &
+		{
+			switch ( index )
+			{
+			case X:  return refV.x;
+			case Y:  return refV.y;
+			case Z:  return refV.z;
+			default: break;
+			}
+
+			assert( !"Error" );
+			// Fail safe.
+			return refV.x;
+		};
+
+		// Repulse to the more little(but greater than zero) axis side of penetration.
+
+		auto CalcLowestAxis = [&At]( const Donya::Vector3 &v )->AXIS
+		{
+			// Fail safe.
+			if ( v.IsZero() ) { return X; }
+			// else
+
+			auto Add = []( AXIS axis )
+			{
+				return scast<AXIS>( scast<int>( axis ) + 1 );
+			};
+
+			auto IsLowerThanOther = [&Add, &At]( Donya::Vector3 v, AXIS targetAxis )
+			{
+				for ( AXIS i = X; i <= Z; i = Add( i ) )
+				{
+					// Except the same axis.
+					if ( i == targetAxis ) { continue; }
+					if ( ZeroEqual( At( v, i ) ) ) { continue; }
+					// else
+
+					if ( At( v, i ) < At( v, targetAxis ) )
+					{
+						return false;
+					}
+				}
+
+				return true;
+			};
+			auto AssignInitialAxis = [&Add, &At]( Donya::Vector3 v )->AXIS
+			{
+				for ( AXIS i = X; i <= Z; i = Add( i ) )
+				{
+					if ( ZeroEqual( At( v, i ) ) ) { continue; }
+					// else
+					return i;
+				}
+
+				// Fail safe.
+				return Y;
+			};
+
+			AXIS lowestAxis = AssignInitialAxis( v );
+			for ( AXIS i = X; i <= Z; i = Add( i ) )
+			{
+				if ( ZeroEqual( At( const_cast<Donya::Vector3 &>( v ), i ) ) ) { continue; }
+				// else
+
+				if ( IsLowerThanOther( v, i ) )
+				{
+					lowestAxis = i;
+				}
+			}
+
+			return lowestAxis;
+		};
+		AXIS axis = CalcLowestAxis( penetration );
+
+		At( movedBody.pos,	axis ) += At( resolver, axis );
+		At( moveVelocity,	axis ) =  0.0f;
+		At( moveSign,		axis ) =  scast<float>( Donya::SignBit( At( resolver, axis ) ) );
+
+		if ( moveSign.IsZero()  ) { break; }
+		// else
+
+		/*
+		// Repulse to the more little(but greater than zero) axis side of penetration.
+		if ( ( penetration.y < penetration.x && !ZeroEqual( penetration.y ) ) || ZeroEqual( penetration.x ) )
+		{
+			movedBody.pos.y += resolver.y;
+			moveVelocity.y  =  0.0f;
+			moveSign.y = scast<float>( Donya::SignBit( resolver.y ) );
+		}
+		else if ( !ZeroEqual( penetration.x ) )
+		{
+			movedBody.pos.x += resolver.x;
+			moveVelocity.x  =  0.0f;
+			moveSign.x = scast<float>( Donya::SignBit( resolver.x ) );
+		}
+		*/
+	}
+
+	pos = movedBody.pos;
+}
+
 Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const
 {
+	Donya::OutputDebugStr( std::string{ "Enter into CalcCorrectVelocity(), Recursive count is : " + std::to_string( recursionCount ) + ".\n" }.c_str() );
+
 	constexpr float ERROR_ADJUST = 0.001f;
 
 	// If we can't resolve with very small movement, we give-up the moving.

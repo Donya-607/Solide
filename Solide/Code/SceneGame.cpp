@@ -289,7 +289,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	PlayerUpdate( elapsedTime );
 
-	PlayerPhysicUpdate( &pTerrain );
+	PlayerPhysicUpdate( pObstacles->GetHitBoxes(), &pTerrain );
 
 	CameraUpdate();
 
@@ -694,7 +694,7 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 
 	pPlayer->Update( elapsedTime, input );
 }
-void SceneGame::PlayerPhysicUpdate( const std::unique_ptr<Terrain> *ppTerrain )
+void SceneGame::PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const std::unique_ptr<Terrain> *ppTerrain )
 {
 	if ( !pPlayer ) { return; }
 	if ( !ppTerrain ) { return; }
@@ -705,7 +705,7 @@ void SceneGame::PlayerPhysicUpdate( const std::unique_ptr<Terrain> *ppTerrain )
 	// else
 
 	const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
-	pPlayer->PhysicUpdate( pTerrain->GetMesh().get(), &terrainMatrix );
+	pPlayer->PhysicUpdate( solids, pTerrain->GetMesh().get(), &terrainMatrix );
 }
 void SceneGame::PlayerDraw( const Donya::Vector4x4 &matVP )
 {

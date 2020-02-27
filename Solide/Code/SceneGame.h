@@ -50,7 +50,7 @@ private:
 
 	void	PlayerInit();
 	void	PlayerUpdate( float elapsedTime );
-	void	PlayerPhysicUpdate( const std::unique_ptr<Terrain> *ppTerrain );
+	void	PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const std::unique_ptr<Terrain> *ppTerrain );
 	void	PlayerDraw( const Donya::Vector4x4 &matViewProj );
 	void	PlayerUninit();
 

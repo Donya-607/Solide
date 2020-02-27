@@ -85,7 +85,7 @@ public:
 
 	void Update( float elapsedTime, Input input );
 	// void PhysicUpdate( const std::vector<Solid> &collisions );
-	void PhysicUpdate( const Donya::StaticMesh *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+	void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
 	void Draw( const Donya::Vector4x4 &matVP );
 public:

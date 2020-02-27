@@ -45,10 +45,13 @@ protected:
 	Donya::AABB		hitBox;	// The "pos" acts as an offset.
 public:
 	// virtual void Move( const Donya::Vector3 &wsMovement, const std::vector<Solid> &collisions = std::vector<Solid>{}, const Donya::StaticMesh *pTerrain = nullptr );
-	virtual void Move( const Donya::Vector3 &wsMovement, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const Donya::StaticMesh *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+	virtual void Move( const Donya::Vector3 &wsMovement, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh * pTerrain = nullptr, const Donya::Vector4x4 * pTerrainWorldMatrix = nullptr );
 private:
-	void MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOriginOffsets, int recursionCount, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
-	void MoveYImpl ( const Donya::Vector3 &yMovement,  const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+	void MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOriginOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+	void MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+
+	Donya::AABB CalcCollidingBox( const Donya::AABB &myself, const std::vector<Donya::AABB> &solids ) const;
+	void MoveInAABB( Donya::Vector3 velocity, const std::vector<Donya::AABB> &solids );
 
 	struct CalcedRayResult
 	{
