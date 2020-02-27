@@ -3,7 +3,9 @@
 #include <memory>
 #include <vector>
 
+#include "Donya/Motion.h"
 #include "Donya/Quaternion.h"
+#include "Donya/SkinnedMesh.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
@@ -12,6 +14,8 @@
 class Player : public Actor
 {
 public:
+	static bool LoadModels();
+public:
 	struct Input
 	{
 		Donya::Vector2 moveVectorXZ;	// Y component will function as Z.
@@ -19,6 +23,30 @@ public:
 		bool useOil;
 	};
 private:
+	class MotionManager
+	{
+	private:
+		Donya::Animator animator;
+	public:
+		void Init();
+		void Update( Player &player, float elapsedTime );
+	public:
+		void SetIdle();
+		void SetRun();
+		void SetJump();
+		void SetFall();
+	public:
+		struct Bundle
+		{
+			std::shared_ptr<Donya::SkinnedMesh> pNowModel;
+			const Donya::MotionChunk *pNowMotions;
+		};
+		Bundle CalcNowModel( Player &player ) const;
+		const Donya::Animator &GetAnimator() const { return animator; }
+	private:
+		void ResetAnimation();
+	};
+
 	class MoverBase
 	{
 	public:
@@ -78,6 +106,7 @@ private:
 	Donya::Vector3				velocity;
 	Donya::Quaternion			orientation;
 	std::unique_ptr<MoverBase>	pMover;
+	MotionManager				motionManager;
 	bool						onGround = false;
 public:
 	void Init( const Donya::Vector3 &wsInitialPos );

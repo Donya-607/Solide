@@ -1,10 +1,12 @@
 #include "Player.h"
 
 #include <algorithm>			// For std::max(), min()
+#include <array>
 
 #include <cereal/types/vector.hpp>
 
 #include "Donya/Constant.h"		// For DEBUG_MODE macro.
+#include "Donya/Loader.h"
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
 #include "Donya/Useful.h"		// For ZeroEqual().
@@ -245,6 +247,123 @@ public:
 #endif // USE_IMGUI
 };
 
+namespace PlayerModel
+{
+	enum Kind
+	{
+		Idle,
+		Run,
+		Slide,
+		Jump,
+		Fall,
+
+		KindCount
+	};
+	constexpr size_t KIND_COUNT = scast<size_t>( KindCount );
+	constexpr const char *MODEL_DIRECTORY = "./Data/Models/Player/";
+	constexpr const char *EXTENSION = ".bin";
+	constexpr std::array<const char *, KIND_COUNT> MODEL_NAMES
+	{
+		"Idle",
+		"Run",
+		"Slide",
+		"Jump",
+		"Fall",
+	};
+
+	struct StorageBundle
+	{
+		std::shared_ptr<Donya::SkinnedMesh>	pModel;
+		Donya::MotionChunk					motionsPerMesh;
+	};
+	static std::array<StorageBundle, KIND_COUNT> models{};
+
+	bool LoadModels()
+	{
+		bool result		= true;
+		bool succeeded	= true;
+
+		auto Load = []( const std::string &filePath, StorageBundle *pDest )->bool
+		{
+			bool result = true;
+			Donya::Loader loader{};
+
+			result = loader.Load( filePath, nullptr );
+			if ( !result ) { return false; }
+			// else
+
+			pDest->pModel = std::make_shared<Donya::SkinnedMesh>();
+			result = Donya::SkinnedMesh::Create( loader, &( *pDest->pModel ) ); // unique_ptr<T> -> T -> T*
+			if ( !result ) { return false; }
+			// else
+
+			result = Donya::MotionChunk::Create( loader, &pDest->motionsPerMesh );
+			if ( !result ) { return false; }
+			// else
+
+			return result;
+		};
+
+		std::string filePath{};
+		const std::string prefix = MODEL_DIRECTORY;
+		for ( size_t i = 0; i < KIND_COUNT; ++i )
+		{
+			filePath = prefix + MODEL_NAMES[i] + EXTENSION;
+			if ( !Donya::IsExistFile( filePath ) )
+			{
+				const std::string outputMsgBase{ "Error : The model file does not exist. That is : " };
+				Donya::OutputDebugStr( ( outputMsgBase + "[" + filePath + "]" + "\n" ).c_str() );
+				continue;
+			}
+			// else
+
+			result = Load( filePath, &models[i] );
+			if ( !result )
+			{
+				const std::wstring errMsgBase{ L"Failed : Loading a model. That is : " };
+				const std::wstring errMsg = errMsgBase + Donya::MultiToWide( filePath );
+				_ASSERT_EXPR( 0, errMsg.c_str() );
+
+				succeeded = false;
+			}
+		}
+
+		return succeeded;
+	}
+
+	bool IsOutOfRange( Kind kind )
+	{
+		return ( kind < 0 || KindCount <= kind ) ? true : false;
+	}
+	std::string GetModelName( Kind kind )
+	{
+		if ( IsOutOfRange( kind ) )
+		{
+			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
+			return "";
+		}
+		// else
+
+		return std::string{ MODEL_NAMES[kind] };
+	}
+	StorageBundle *GetModelBundleOrNullptr( Kind kind )
+	{
+		if ( IsOutOfRange( kind ) )
+		{
+			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
+			return nullptr;
+		}
+		// else
+
+		return &models[kind];
+	}
+}
+
+bool Player::LoadModels()
+{
+	return PlayerModel::LoadModels();
+}
+
 // Internal utility.
 namespace
 {
@@ -267,6 +386,88 @@ namespace
 		pDest->x = source.x;
 		pDest->z = source.z;
 	}
+}
+
+void Player::MotionManager::Init()
+{
+	animator.Init();
+	animator.SetInterpolateFlag( true );
+}
+void Player::MotionManager::Update( Player &player, float elapsedTime )
+{
+	animator.Update( elapsedTime );
+}
+void Player::MotionManager::SetIdle()
+{
+	ResetAnimation();
+}
+void Player::MotionManager::SetRun()
+{
+	ResetAnimation();
+}
+void Player::MotionManager::SetJump()
+{
+	ResetAnimation();
+}
+void Player::MotionManager::SetFall()
+{
+	ResetAnimation();
+}
+Player::MotionManager::Bundle Player::MotionManager::CalcNowModel( Player &player ) const
+{
+	// TODO: To separate between the Jump and the Fall.
+
+	auto NowMoving	= [&]()
+	{
+		const Donya::Vector2 velocityXZ{ player.velocity.x, player.velocity.z };
+		return ( velocityXZ.IsZero() ) ? false : true;
+	};
+	auto IsDead		= [&]()
+	{
+		return player.IsDead();
+	};
+	auto IsJump		= [&]()
+	{
+		return ( player.onGround ) ? false : true;
+	};
+	auto IsRun		= [&]()
+	{
+		if ( !player.onGround ) { return false; }
+		// else
+		return ( NowMoving() ) ? true : false;
+	};
+	auto IsIdle		= [&]()
+	{
+		if ( !player.onGround ) { return false; }
+		// else
+		return ( NowMoving() ) ? false : true;
+	};
+
+	auto Convert	= []( const PlayerModel::StorageBundle *pStorage )->Player::MotionManager::Bundle
+	{
+		return Player::MotionManager::Bundle
+		{
+			pStorage->pModel,
+			&pStorage->motionsPerMesh
+		};
+	};
+	auto Getter		= []( PlayerModel::Kind kind )
+	{
+		// For typing easily.
+		return PlayerModel::GetModelBundleOrNullptr( kind );
+	};
+
+	// if ( IsDead() ) { return PlayerModel::GetModelPtr( PlayerModel::Kind::Dead ); }
+	if ( IsJump() ) { return Convert( Getter( PlayerModel::Kind::Jump ) ); }
+	if ( IsRun()  ) { return Convert( Getter( PlayerModel::Kind::Run  ) ); }
+	if ( IsIdle() ) { return Convert( Getter( PlayerModel::Kind::Idle ) ); }
+	// else
+
+	return Player::MotionManager::Bundle{ nullptr, nullptr };
+}
+void Player::MotionManager::ResetAnimation()
+{
+	animator.SetCurrentElapsedTime( 0.0f );
 }
 
 void Player::NormalMover::Init( Player &player )
@@ -443,6 +644,8 @@ void Player::Init( const Donya::Vector3 &wsInitialPos )
 	orientation	= Donya::Quaternion::Identity();
 
 	ResetMover<NormalMover>();
+
+	motionManager.Init();
 }
 void Player::Uninit()
 {
@@ -476,6 +679,8 @@ void Player::Update( float elapsedTime, Input input )
 	}
 
 	Fall( elapsedTime );
+
+	motionManager.Update( *this, elapsedTime );
 }
 
 void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMat )
@@ -508,6 +713,27 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 void Player::Draw( const Donya::Vector4x4 &matVP )
 {
 	const Donya::Quaternion actualOrientation = orientation.Rotated( pMover->GetExtraRotation( *this ) );
+
+	Donya::Vector4x4 W = actualOrientation.RequireRotationMatrix();
+	W._41 = pos.x;
+	W._42 = pos.y;
+	W._43 = pos.z;
+
+	auto modelBundle	= motionManager.CalcNowModel( *this );
+	auto animator		= motionManager.GetAnimator();
+
+	if ( modelBundle.pNowModel )
+	{
+		/*
+		modelBundle.pNowModel->Render
+		(
+			*modelBundle.pNowMotions, animator,
+			W * matVP, W,
+
+		);
+		*/
+	}
+
 #if DEBUG_MODE
 	const Donya::Vector4 color = ( pMover->IsDead() )
 		? Donya::Vector4{ 1.0f, 0.5f, 0.0f, 1.0f }
