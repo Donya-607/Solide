@@ -904,9 +904,9 @@ void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPo
 	W._22 = data.drawScale;
 	W._33 = data.drawScale;
 	W *= actualOrientation.RequireRotationMatrix();
-	W._41 = pos.x;
-	W._42 = pos.y;
-	W._43 = pos.z;
+	W._41 = pos.x + data.drawOffset.x;
+	W._42 = pos.y + data.drawOffset.y;
+	W._43 = pos.z + data.drawOffset.z;
 
 	auto modelBundle	= motionManager.CalcNowModel( *this );
 	auto animator		= motionManager.GetAnimator();
@@ -930,7 +930,7 @@ void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPo
 		PlayerModel::UpdateCBuffer
 		(
 			MakeConstantsPerScene(),
-			MakeConstantsPerModel( { 1.0f, 1.0f, 1.0f, 1.0f } )
+			MakeConstantsPerModel( bodyColor )
 		);
 
 		PlayerModel::SettingOption optScene{};
@@ -971,7 +971,8 @@ void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPo
 	}
 
 #if DEBUG_MODE
-	DrawHitBox( matVP, actualOrientation, bodyColor );
+	const Donya::Vector4 subForHitBox{ 0.0f, 0.0f, 0.0f, 0.7f };
+	DrawHitBox( matVP, actualOrientation, bodyColor - subForHitBox );
 #endif // DEBUG_MODE
 }
 
