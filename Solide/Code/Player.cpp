@@ -340,6 +340,8 @@ namespace
 		float drawScale = 1.0f;
 		std::vector<float> motionAccelerations; // Usually 1.0f.
 		Donya::Vector3 drawOffset;
+
+		float canRideSlopeBorder = 0.0f; // The standing face is ridable if that statement is true: canRideSlopeBorder <= fabsf( max( 0.0f, Dot( faceNormal, UP ) ) )
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -376,12 +378,16 @@ namespace
 			}
 			if ( 6 <= version )
 			{
+				archive( CEREAL_NVP( canRideSlopeBorder ) );
+			}
+			if ( 7 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				5 )
+CEREAL_CLASS_VERSION( Member,				6 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	0 )
 CEREAL_CLASS_VERSION( Member::OilMember,	1 )
 
@@ -486,6 +492,7 @@ public:
 				ImGui::DragFloat( u8"描画スケール", &m.drawScale, 0.01f, 0.0f );
 				ImGui::DragFloat3( u8"描画オフセット", &m.drawOffset.x, 0.01f );
 				ImGui::DragFloat( u8"落下死となるＹ座標しきい値", &m.falloutBorderPosY, 0.1f );
+				ImGui::SliderFloat( u8"乗ることができる坂のしきい値", &m.canRideSlopeBorder, 0.0f, 1.0f );
 
 				if ( ImGui::TreeNode( u8"レイピック時のレイのオフセット" ) )
 				{
@@ -912,12 +919,17 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	const Donya::Vector3 oldPos = pos;
 
 	const auto data = FetchMember();
-	Actor::Move( velocity, data.raypickOffsets, solids, pTerrain, pTerrainMat );
+	const Donya::Vector3 standingNormal = Actor::Move( velocity, data.raypickOffsets, solids, pTerrain, pTerrainMat );
 
 	bool wasCorrectedV = WasCorrectedVertically( oldPos, pTerrain );
 	if ( wasCorrectedV )
 	{
-		if ( velocity.y <= 0.0f )
+		const float dot = Donya::Dot( standingNormal, Donya::Vector3::Up() );
+		bool ridableFace = ( standingNormal.IsZero() )
+			? false 
+			: data.canRideSlopeBorder <= fabsf( std::max( 0.0f, dot ) );
+
+		if ( ridableFace && velocity.y <= 0.0f )
 		{
 			AssignLanding();
 		}

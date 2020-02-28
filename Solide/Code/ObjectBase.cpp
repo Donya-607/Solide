@@ -69,12 +69,12 @@ void Solid::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color 
 
 
 
-void Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	if ( !pTerrain || !pTerrainMatrix )
 	{
 		pos += movement;
-		return;
+		return Donya::Vector3::Zero();
 	}
 	// else
 
@@ -84,8 +84,10 @@ void Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vecto
 	const Donya::Vector3 xzMovement{ movement.x,	0.0f,		movement.z	};
 	const Donya::Vector3 yMovement { 0.0f,			movement.y,	0.0f		};
 
+	Donya::Vector3 lastNormal{};
 	if ( !xzMovement.IsZero() ) { MoveXZImpl( xzMovement, wsRayOffsets, 0, solids, pTerrain, pTerrainMatrix ); }
-	if ( !yMovement.IsZero()  ) { MoveYImpl ( yMovement,  solids, pTerrain, pTerrainMatrix ); }
+	if ( !yMovement.IsZero()  ) { lastNormal = MoveYImpl ( yMovement,  solids, pTerrain, pTerrainMatrix ); }
+	return lastNormal;
 }
 namespace
 {
@@ -195,19 +197,21 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 	MoveXZImpl( correctedVelocity, wsRayOffsets, recursionCount + 1, pTerrain, pTerrainMatrix );
 	*/
 }
-void Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	// Y moving does not need the correction recursively.
 	constexpr int RECURSIVE_LIMIT = 1;
 	auto result = CalcCorrectVelocity( yMovement, {}, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
 	const Donya::Vector3 sizeOffset	= MakeSizeOffset( hitBox, yMovement );
-	const Donya::Vector3 destPos	= ( result.wsLastIntersection.IsZero() )
+	const Donya::Vector3 destPos	= ( !result.wasHit )
 		? pos + yMovement
 		: result.wsLastIntersection - sizeOffset;
 	
 	// MoveInAABB( result.correctedVelocity, solids );
 	MoveInAABB( destPos - pos, solids );
+
+	return result.wsLastWallNormal;
 
 	/*
 	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
@@ -505,6 +509,7 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 
 	recursionResult.wsLastIntersection	= wsIntersection;
 	recursionResult.wsLastWallNormal	= wsWallNormal;
+	recursionResult.wasHit = true;
 
 	constexpr float ERROR_MAGNI = 1.0f + ERROR_ADJUST;
 	Donya::Vector3 correctedVelocity = velocity + ( -projVelocity * ERROR_MAGNI );

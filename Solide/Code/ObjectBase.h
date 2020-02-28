@@ -44,11 +44,15 @@ protected:
 	Donya::Vector3	pos;
 	Donya::AABB		hitBox;	// The "pos" acts as an offset.
 public:
-	// virtual void Move( const Donya::Vector3 &wsMovement, const std::vector<Solid> &collisions = std::vector<Solid>{}, const Donya::StaticMesh *pTerrain = nullptr );
-	virtual void Move( const Donya::Vector3 &wsMovement, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh * pTerrain = nullptr, const Donya::Vector4x4 * pTerrainWorldMatrix = nullptr );
+	// HACK: The reason for setting the return value here is that it was necessary for the player to determine if he landed.
+	// So this is not necessary for design.
+	/// <summary>
+	/// Returns face's normal of last collided by vertical move.
+	/// </summary>
+	virtual Donya::Vector3 Move( const Donya::Vector3 &wsMovement, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh * pTerrain = nullptr, const Donya::Vector4x4 * pTerrainWorldMatrix = nullptr );
 private:
 	void MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOriginOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
-	void MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+	Donya::Vector3 MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
 	Donya::AABB CalcCollidingBox( const Donya::AABB &myself, const std::vector<Donya::AABB> &solids ) const;
 	void MoveInAABB( Donya::Vector3 velocity, const std::vector<Donya::AABB> &solids );
@@ -58,6 +62,7 @@ private:
 		Donya::Vector3 correctedVelocity;
 		Donya::Vector3 wsLastIntersection;
 		Donya::Vector3 wsLastWallNormal;
+		bool wasHit = false;
 	};
 	CalcedRayResult CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const;
 public:
