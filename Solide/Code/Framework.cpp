@@ -149,7 +149,7 @@ void Framework::DebugShowInformation()
 
 			ImGui::TreePop();
 		}
-
+		
 		if ( ImGui::TreeNode( u8"イージングの確認" ) )
 		{
 			using namespace Donya::Easing;

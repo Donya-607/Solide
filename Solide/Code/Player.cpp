@@ -5,9 +5,11 @@
 
 #include <cereal/types/vector.hpp>
 
+#include "Donya/CBuffer.h"
 #include "Donya/Constant.h"		// For DEBUG_MODE macro.
 #include "Donya/Loader.h"
 #include "Donya/Serializer.h"
+#include "Donya/Shader.h"
 #include "Donya/Sound.h"
 #include "Donya/Useful.h"		// For ZeroEqual().
 
@@ -21,6 +23,227 @@
 
 #undef max
 #undef min
+
+namespace PlayerModel
+{
+	enum Kind
+	{
+		Idle,
+		Run,
+		Slide,
+		Jump,
+		Fall,
+
+		KindCount
+	};
+	constexpr size_t KIND_COUNT = scast<size_t>( KindCount );
+	constexpr const char *MODEL_DIRECTORY = "./Data/Models/Player/";
+	constexpr const char *EXTENSION = ".bin";
+	constexpr std::array<const char *, KIND_COUNT> MODEL_NAMES
+	{
+		"Idle",
+		"Run",
+		"Slide",
+		"Jump",
+		"Fall",
+	};
+
+	struct StorageBundle
+	{
+		std::shared_ptr<Donya::SkinnedMesh>	pModel;
+		Donya::MotionChunk					motionsPerMesh;
+	};
+	struct Shader
+	{
+		Donya::VertexShader	VS;
+		Donya::PixelShader	PS;
+	};
+	struct CBuffer
+	{
+		struct PerScene
+		{
+			Donya::Vector4 eyePos;
+			Donya::Vector4 lightColor;
+			Donya::Vector4 lightDirection;
+		};
+		struct PerModel
+		{
+			Donya::Vector4 materialColor;
+		};
+
+		Donya::CBuffer<PerScene> scene;
+		Donya::CBuffer<PerModel> model;
+	};
+	struct SettingOption
+	{
+		unsigned int setSlot = 0;
+		bool setVS = true;
+		bool setPS = true;
+	};
+	static std::array<std::unique_ptr<StorageBundle>, KIND_COUNT> models{};
+	static std::unique_ptr<Shader>  shader{};
+	static std::unique_ptr<CBuffer> cbuffer{};
+
+	bool LoadModels()
+	{
+		bool result		= true;
+		bool succeeded	= true;
+
+		auto Load = []( const std::string &filePath, std::unique_ptr<StorageBundle> *pDest )->bool
+		{
+			// Already loaded.
+			if ( *pDest ) { return true; }
+			// else
+
+			bool result = true;
+			Donya::Loader loader{};
+
+			result = loader.Load( filePath, nullptr );
+			if ( !result ) { return false; }
+			// else
+
+			std::unique_ptr<StorageBundle> &refDest = *pDest;
+			refDest = std::make_unique<StorageBundle>();
+
+			refDest->pModel = std::make_shared<Donya::SkinnedMesh>();
+			result = Donya::SkinnedMesh::Create( loader, refDest->pModel.get() );
+			if ( !result ) { return false; }
+			// else
+
+			result = Donya::MotionChunk::Create( loader, &refDest->motionsPerMesh );
+			if ( !result ) { return false; }
+			// else
+
+			return result;
+		};
+
+		std::string filePath{};
+		const std::string prefix = MODEL_DIRECTORY;
+		for ( size_t i = 0; i < KIND_COUNT; ++i )
+		{
+			filePath = prefix + MODEL_NAMES[i] + EXTENSION;
+			if ( !Donya::IsExistFile( filePath ) )
+			{
+				const std::string outputMsgBase{ "Error : The model file does not exist. That is : " };
+				Donya::OutputDebugStr( ( outputMsgBase + "[" + filePath + "]" + "\n" ).c_str() );
+				continue;
+			}
+			// else
+
+			result = Load( filePath, &models[i] );
+			if ( !result )
+			{
+				const std::wstring errMsgBase{ L"Failed : Loading a model. That is : " };
+				const std::wstring errMsg = errMsgBase + Donya::MultiToWide( filePath );
+				_ASSERT_EXPR( 0, errMsg.c_str() );
+
+				succeeded = false;
+			}
+		}
+
+		return succeeded;
+	}
+	bool LoadShaders()
+	{
+		// Already loaded.
+		if ( shader ) { return true; }
+		// else
+		shader = std::make_unique<Shader>();
+
+		bool succeeded = true;
+		bool result{};
+
+		constexpr const char *VSFilePath = "./Data/Shaders/SkinnedMeshVS.cso";
+		constexpr const char *PSFilePath = "./Data/Shaders/SkinnedMeshPS.cso";
+		using IE_DESC = D3D11_INPUT_ELEMENT_DESC;
+		constexpr std::array<IE_DESC, 5> inputElementDesc
+		{
+			IE_DESC{ "POSITION"		, 0, DXGI_FORMAT_R32G32B32_FLOAT,		0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			IE_DESC{ "NORMAL"		, 0, DXGI_FORMAT_R32G32B32_FLOAT,		0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			IE_DESC{ "TEXCOORD"		, 0, DXGI_FORMAT_R32G32_FLOAT,			0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			IE_DESC{ "BONES"		, 0, DXGI_FORMAT_R32G32B32A32_UINT,		0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			IE_DESC{ "WEIGHTS"		, 0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+
+		result = shader->VS.CreateByCSO( VSFilePath, std::vector<IE_DESC>{ inputElementDesc.begin(), inputElementDesc.end() } );
+		if ( !result ) { succeeded = false; }
+
+		result = shader->PS.CreateByCSO( PSFilePath );
+		if ( !result ) { succeeded = false; }
+
+		return succeeded;
+	}
+	bool CreateCBuffers()
+	{
+		// Already loaded.
+		if ( cbuffer ) { return true; }
+		// else
+		cbuffer = std::make_unique<CBuffer>();
+
+		bool succeeded = true;
+		bool result{};
+
+		result = cbuffer->scene.Create();
+		if ( !result ) { succeeded = false; }
+		result = cbuffer->model.Create();
+		if ( !result ) { succeeded = false; }
+
+		return succeeded;
+	}
+
+	bool IsOutOfRange( Kind kind )
+	{
+		return ( kind < 0 || KindCount <= kind ) ? true : false;
+	}
+	std::string GetModelName( Kind kind )
+	{
+		if ( IsOutOfRange( kind ) )
+		{
+			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
+			return "";
+		}
+		// else
+
+		return std::string{ MODEL_NAMES[kind] };
+	}
+	std::unique_ptr<StorageBundle> *GetModelBundleOrNullptr( Kind kind )
+	{
+		if ( IsOutOfRange( kind ) )
+		{
+			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
+			return nullptr;
+		}
+		// else
+
+		return &models[kind];
+	}
+
+	void UpdateCBuffer( const CBuffer::PerScene &scene, const CBuffer::PerModel &model )
+	{
+		cbuffer->scene.data = scene;
+		cbuffer->model.data = model;
+	}
+	void ActivateCBuffer( const SettingOption &scene, const SettingOption &model, ID3D11DeviceContext *pImmediateContext = nullptr )
+	{
+		cbuffer->scene.Activate( scene.setSlot, scene.setVS, scene.setPS, pImmediateContext );
+		cbuffer->model.Activate( model.setSlot, model.setVS, model.setPS, pImmediateContext );
+	}
+	void ActivateShader( ID3D11DeviceContext *pImmediateContext = nullptr )
+	{
+		shader->VS.Activate( pImmediateContext );
+		shader->PS.Activate( pImmediateContext );
+	}
+	void DeactivateCBuffer( ID3D11DeviceContext *pImmediateContext = nullptr )
+	{
+		cbuffer->scene.Deactivate( pImmediateContext );
+		cbuffer->model.Deactivate( pImmediateContext );
+	}
+	void DeactivateShader( ID3D11DeviceContext *pImmediateContext = nullptr )
+	{
+		shader->VS.Deactivate( pImmediateContext );
+		shader->PS.Deactivate( pImmediateContext );
+	}
+}
 
 namespace
 {
@@ -92,10 +315,18 @@ namespace
 			}
 		};
 
+		// These members are formed as appended order.
+
 		BasicMember		normal;
 		OilMember		oiled;
+
 		std::vector<Donya::Vector3>	raypickOffsets;
-		float			falloutBorderPosY;
+
+		float falloutBorderPosY;
+
+		float drawScale = 1.0f;
+		std::vector<float> motionAccelerations; // Usually 1.0f.
+		Donya::Vector3 drawOffset;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -120,12 +351,24 @@ namespace
 			}
 			if ( 4 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( drawScale ),
+					CEREAL_NVP( motionAccelerations )
+				);
+			}
+			if ( 5 <= version )
+			{
+				archive( CEREAL_NVP( drawOffset ) );
+			}
+			if ( 6 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				3 )
+CEREAL_CLASS_VERSION( Member,				5 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	0 )
 CEREAL_CLASS_VERSION( Member::OilMember,	0 )
 
@@ -143,9 +386,23 @@ public:
 	#else
 		LoadBin();
 	#endif // DEBUG_MODE
+
+		ResizeMotionVector();
 	}
 	void Uninit()   override {}
 	Member Data()   const { return m; }
+private:
+	void ResizeMotionVector()
+	{
+		if ( m.motionAccelerations.size() == PlayerModel::KIND_COUNT ) { return; }
+		// else
+
+		m.motionAccelerations.resize( PlayerModel::KIND_COUNT );
+		for ( auto &it : m.motionAccelerations )
+		{
+			it = 1.0f;
+		}
+	}
 private:
 	void LoadBin()  override
 	{
@@ -209,6 +466,8 @@ public:
 
 			if ( ImGui::TreeNode( u8"共通" ) )
 			{
+				ImGui::DragFloat( u8"描画スケール", &m.drawScale, 0.01f, 0.0f );
+				ImGui::DragFloat3( u8"描画オフセット", &m.drawOffset.x, 0.01f );
 				ImGui::DragFloat( u8"落下死となるＹ座標しきい値", &m.falloutBorderPosY, 0.1f );
 
 				if ( ImGui::TreeNode( u8"レイピック時のレイのオフセット" ) )
@@ -237,6 +496,26 @@ public:
 				ImGui::TreePop();
 			}
 
+			if ( ImGui::TreeNode( u8"モーション関連" ) )
+			{
+				ResizeMotionVector();
+
+				if ( ImGui::TreeNode( u8"再生速度の倍率" ) )
+				{
+					std::string caption{};
+					for ( size_t i = 0; i < PlayerModel::KIND_COUNT; ++i )
+					{
+						caption = "[" + std::to_string( i ) + ":" + PlayerModel::MODEL_NAMES[i] + "]";
+						ImGui::DragFloat( caption.c_str(), &m.motionAccelerations[i], 0.01f, 0.0f );
+					}
+
+					ImGui::TreePop();
+				}
+
+
+				ImGui::TreePop();
+			}
+
 			ShowIONode();
 
 			ImGui::TreePop();
@@ -247,121 +526,22 @@ public:
 #endif // USE_IMGUI
 };
 
-namespace PlayerModel
-{
-	enum Kind
-	{
-		Idle,
-		Run,
-		Slide,
-		Jump,
-		Fall,
-
-		KindCount
-	};
-	constexpr size_t KIND_COUNT = scast<size_t>( KindCount );
-	constexpr const char *MODEL_DIRECTORY = "./Data/Models/Player/";
-	constexpr const char *EXTENSION = ".bin";
-	constexpr std::array<const char *, KIND_COUNT> MODEL_NAMES
-	{
-		"Idle",
-		"Run",
-		"Slide",
-		"Jump",
-		"Fall",
-	};
-
-	struct StorageBundle
-	{
-		std::shared_ptr<Donya::SkinnedMesh>	pModel;
-		Donya::MotionChunk					motionsPerMesh;
-	};
-	static std::array<StorageBundle, KIND_COUNT> models{};
-
-	bool LoadModels()
-	{
-		bool result		= true;
-		bool succeeded	= true;
-
-		auto Load = []( const std::string &filePath, StorageBundle *pDest )->bool
-		{
-			bool result = true;
-			Donya::Loader loader{};
-
-			result = loader.Load( filePath, nullptr );
-			if ( !result ) { return false; }
-			// else
-
-			pDest->pModel = std::make_shared<Donya::SkinnedMesh>();
-			result = Donya::SkinnedMesh::Create( loader, &( *pDest->pModel ) ); // unique_ptr<T> -> T -> T*
-			if ( !result ) { return false; }
-			// else
-
-			result = Donya::MotionChunk::Create( loader, &pDest->motionsPerMesh );
-			if ( !result ) { return false; }
-			// else
-
-			return result;
-		};
-
-		std::string filePath{};
-		const std::string prefix = MODEL_DIRECTORY;
-		for ( size_t i = 0; i < KIND_COUNT; ++i )
-		{
-			filePath = prefix + MODEL_NAMES[i] + EXTENSION;
-			if ( !Donya::IsExistFile( filePath ) )
-			{
-				const std::string outputMsgBase{ "Error : The model file does not exist. That is : " };
-				Donya::OutputDebugStr( ( outputMsgBase + "[" + filePath + "]" + "\n" ).c_str() );
-				continue;
-			}
-			// else
-
-			result = Load( filePath, &models[i] );
-			if ( !result )
-			{
-				const std::wstring errMsgBase{ L"Failed : Loading a model. That is : " };
-				const std::wstring errMsg = errMsgBase + Donya::MultiToWide( filePath );
-				_ASSERT_EXPR( 0, errMsg.c_str() );
-
-				succeeded = false;
-			}
-		}
-
-		return succeeded;
-	}
-
-	bool IsOutOfRange( Kind kind )
-	{
-		return ( kind < 0 || KindCount <= kind ) ? true : false;
-	}
-	std::string GetModelName( Kind kind )
-	{
-		if ( IsOutOfRange( kind ) )
-		{
-			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
-			return "";
-		}
-		// else
-
-		return std::string{ MODEL_NAMES[kind] };
-	}
-	StorageBundle *GetModelBundleOrNullptr( Kind kind )
-	{
-		if ( IsOutOfRange( kind ) )
-		{
-			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
-			return nullptr;
-		}
-		// else
-
-		return &models[kind];
-	}
-}
-
 bool Player::LoadModels()
 {
 	return PlayerModel::LoadModels();
+}
+bool Player::LoadShadingObjects()
+{
+	bool result{};
+	bool succeeded = true;
+
+	result = PlayerModel::LoadShaders();
+	if ( !result ) { succeeded = false; }
+	
+	result = PlayerModel::CreateCBuffers();
+	if ( !result ) { succeeded = false; }
+
+	return succeeded;
 }
 
 // Internal utility.
@@ -443,12 +623,13 @@ Player::MotionManager::Bundle Player::MotionManager::CalcNowModel( Player &playe
 		return ( NowMoving() ) ? false : true;
 	};
 
-	auto Convert	= []( const PlayerModel::StorageBundle *pStorage )->Player::MotionManager::Bundle
+	auto Convert	= []( const std::unique_ptr<PlayerModel::StorageBundle> *pStorage )->Player::MotionManager::Bundle
 	{
+		const std::unique_ptr<PlayerModel::StorageBundle> &refStorage = *pStorage;
 		return Player::MotionManager::Bundle
 		{
-			pStorage->pModel,
-			&pStorage->motionsPerMesh
+			refStorage->pModel,
+			&refStorage->motionsPerMesh
 		};
 	};
 	auto Getter		= []( PlayerModel::Kind kind )
@@ -710,11 +891,19 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	}
 }
 
-void Player::Draw( const Donya::Vector4x4 &matVP )
+void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPos, const Donya::Vector4 &lightDir )
 {
+	const auto data = FetchMember();
 	const Donya::Quaternion actualOrientation = orientation.Rotated( pMover->GetExtraRotation( *this ) );
+	const Donya::Vector4 bodyColor = ( pMover->IsDead() )
+		? Donya::Vector4{ 1.0f, 0.5f, 0.0f, 1.0f }
+		: Donya::Vector4{ 0.1f, 1.0f, 0.3f, 1.0f };
 
-	Donya::Vector4x4 W = actualOrientation.RequireRotationMatrix();
+	Donya::Vector4x4 W{};
+	W._11 = data.drawScale;
+	W._22 = data.drawScale;
+	W._33 = data.drawScale;
+	W *= actualOrientation.RequireRotationMatrix();
 	W._41 = pos.x;
 	W._42 = pos.y;
 	W._43 = pos.z;
@@ -724,21 +913,65 @@ void Player::Draw( const Donya::Vector4x4 &matVP )
 
 	if ( modelBundle.pNowModel )
 	{
-		/*
+		auto MakeConstantsPerScene = [&]()
+		{
+			PlayerModel::CBuffer::PerScene constants{};
+			constants.eyePos			= cameraPos;
+			constants.lightColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+			constants.lightDirection	= lightDir;
+			return constants;
+		};
+		auto MakeConstantsPerModel = []( const Donya::Vector4 &color )
+		{
+			PlayerModel::CBuffer::PerModel constants{};
+			constants.materialColor = color;
+			return constants;
+		};
+		PlayerModel::UpdateCBuffer
+		(
+			MakeConstantsPerScene(),
+			MakeConstantsPerModel( { 1.0f, 1.0f, 1.0f, 1.0f } )
+		);
+
+		PlayerModel::SettingOption optScene{};
+		optScene.setSlot = 0;
+		optScene.setVS = true;
+		optScene.setPS = true;
+		PlayerModel::SettingOption optModel{};
+		optModel.setSlot = 1;
+		optModel.setVS = true;
+		optModel.setPS = true;
+		PlayerModel::ActivateCBuffer( optScene, optModel );
+
+		Donya::SkinnedMesh::CBSetOption optMesh{};
+		optMesh.setSlot = 2;
+		optMesh.setVS = true;
+		optMesh.setPS = true;
+		Donya::SkinnedMesh::CBSetOption optSubset{};
+		optSubset.setSlot = 3;
+		optSubset.setVS = true;
+		optSubset.setPS = true;
+		constexpr int samplerSlot		= 0;
+		constexpr int diffuseMapSlot	= 0;
+
+		PlayerModel::ActivateShader();
+
 		modelBundle.pNowModel->Render
 		(
 			*modelBundle.pNowMotions, animator,
 			W * matVP, W,
-
+			optMesh,
+			optSubset,
+			samplerSlot,
+			diffuseMapSlot
 		);
-		*/
+
+		PlayerModel::DeactivateShader();
+		PlayerModel::DeactivateCBuffer();
 	}
 
 #if DEBUG_MODE
-	const Donya::Vector4 color = ( pMover->IsDead() )
-		? Donya::Vector4{ 1.0f, 0.5f, 0.0f, 1.0f }
-		: Donya::Vector4{ 0.1f, 1.0f, 0.3f, 1.0f };
-	DrawHitBox( matVP, actualOrientation, color );
+	DrawHitBox( matVP, actualOrientation, bodyColor );
 #endif // DEBUG_MODE
 }
 

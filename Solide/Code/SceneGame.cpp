@@ -267,6 +267,8 @@ void SceneGame::Init()
 	pObstacles = std::make_unique<ObstacleContainer>();
 	pObstacles->Init();
 
+	assert( Player::LoadModels() );
+	assert( Player::LoadShadingObjects() );
 	PlayerInit();
 }
 void SceneGame::Uninit()
@@ -350,6 +352,7 @@ void SceneGame::Draw( float elapsedTime )
 	}
 
 	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
+	const Donya::Vector4   lightDir{ 0.0f, -1.0f, 0.0f, 0.0f };
 	const Donya::Vector4x4 V{ iCamera.CalcViewMatrix() };
 	const Donya::Vector4x4 P{ iCamera.GetProjectionMatrix() };
 	const Donya::Vector4x4 VP{ V * P };
@@ -358,11 +361,11 @@ void SceneGame::Draw( float elapsedTime )
 
 	// The drawing priority is determined by the priority of the information.
 
-	PlayerDraw( VP );
+	PlayerDraw( VP, cameraPos, lightDir );
 
-	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
-	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -763,11 +766,11 @@ void SceneGame::PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, cons
 	const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
 	pPlayer->PhysicUpdate( solids, pTerrain->GetCollisionMesh().get(), &terrainMatrix );
 }
-void SceneGame::PlayerDraw( const Donya::Vector4x4 &matVP )
+void SceneGame::PlayerDraw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPos, const Donya::Vector4 &lightDir )
 {
 	if ( !pPlayer ) { return; }
 	// else
-	pPlayer->Draw( matVP );
+	pPlayer->Draw( matVP, cameraPos, lightDir );
 }
 void SceneGame::PlayerUninit()
 {

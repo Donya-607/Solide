@@ -425,7 +425,7 @@ void Actor::MoveInAABB( Donya::Vector3 moveVelocity, const std::vector<Donya::AA
 		*/
 	}
 
-	pos = movedBody.pos;
+	pos = movedBody.pos - hitBox.pos/* Except the offset of hitBox */;
 }
 
 Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const

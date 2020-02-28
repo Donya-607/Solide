@@ -15,6 +15,7 @@ class Player : public Actor
 {
 public:
 	static bool LoadModels();
+	static bool LoadShadingObjects();
 public:
 	struct Input
 	{
@@ -116,7 +117,7 @@ public:
 	// void PhysicUpdate( const std::vector<Solid> &collisions );
 	void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
-	void Draw( const Donya::Vector4x4 &matVP );
+	void Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPos, const Donya::Vector4 &lightDirection );
 public:
 	bool IsDead() const
 	{
