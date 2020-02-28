@@ -641,7 +641,12 @@ Player::MotionManager::Bundle Player::MotionManager::CalcNowModel( Player &playe
 
 	// if ( IsDead() ) { return PlayerModel::GetModelPtr( PlayerModel::Kind::Dead ); }
 	if ( IsJump() ) { return Convert( Getter( PlayerModel::Kind::Jump ) ); }
-	if ( IsRun()  ) { return Convert( Getter( PlayerModel::Kind::Run  ) ); }
+	if ( IsRun()  )
+	{
+		return	( player.pMover->IsOiled() )
+				? Convert( Getter( PlayerModel::Kind::Slide ) )
+				: Convert( Getter( PlayerModel::Kind::Run   ) );
+	}
 	if ( IsIdle() ) { return Convert( Getter( PlayerModel::Kind::Idle ) ); }
 	// else
 
@@ -719,7 +724,7 @@ void Player::OilMover::Uninit( Player &player )
 void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 {
 #if DEBUG_MODE
-	pitch += ToRadian( 6.0f );
+	//pitch += ToRadian( 6.0f );
 #endif // DEBUG_MODE
 
 	input.moveVectorXZ.Normalize();
