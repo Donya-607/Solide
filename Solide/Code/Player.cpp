@@ -921,6 +921,8 @@ void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPo
 			constants.eyePos			= cameraPos;
 			constants.lightColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
 			constants.lightDirection	= lightDir;
+			// Donya::Vector3 lightDir3{ lightDir.x, lightDir.y, lightDir.z };
+			// constants.lightDirection	= Donya::Vector4{ actualOrientation.RotateVector( lightDir3 ), 0.0f };
 			return constants;
 		};
 		auto MakeConstantsPerModel = []( const Donya::Vector4 &color )
@@ -1012,12 +1014,12 @@ bool Player::IsUnderFalloutBorder() const
 
 bool Player::CalcWasLanding( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const
 {
-	const float  diffY = pos.y - oldPos.y;
-	if ( 0.0f <= diffY ) { return false; } // We can not landing to up.
+	const float diffY = pos.y - oldPos.y;
+	if ( 0.0f < diffY ) { return false; } // We can not landing to up.
 	// else
 
 	// If the actual movement is lower than velocity, that represents to was landing.
-	bool wasLanding = ( diffY < fabsf( velocity.y ) - 0.001f );
+	bool wasLanding = ( fabsf( diffY ) < fabsf( velocity.y ) - 0.001f );
 
 	// If the terrain is nothing, the criteria of landing is 0.0f.
 	if ( !pTerrain )

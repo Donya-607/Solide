@@ -241,8 +241,6 @@ void Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya
 
 Donya::AABB Actor::CalcCollidingBox( const Donya::AABB &myself, const std::vector<Donya::AABB> &solids ) const
 {
-	Donya::OutputDebugStr( "Enter into CalcCollidingBox().\n" );
-
 	for ( const auto &it : solids )
 	{
 		if ( Donya::AABB::IsHitAABB( myself, it ) )
@@ -255,8 +253,6 @@ Donya::AABB Actor::CalcCollidingBox( const Donya::AABB &myself, const std::vecto
 }
 void Actor::MoveInAABB( Donya::Vector3 moveVelocity, const std::vector<Donya::AABB> &solids )
 {
-	Donya::OutputDebugStr( "Enter into MoveInAABB().\n" );
-
 	Donya::Vector3 moveSign // The moving direction of myself. Take a value of +1.0f or -1.0f.
 	{
 		scast<float>( Donya::SignBit( moveVelocity.x ) ),
@@ -430,7 +426,7 @@ void Actor::MoveInAABB( Donya::Vector3 moveVelocity, const std::vector<Donya::AA
 
 Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const
 {
-	Donya::OutputDebugStr( std::string{ "Enter into CalcCorrectVelocity(), Recursive count is : " + std::to_string( recursionCount ) + ".\n" }.c_str() );
+	// Donya::OutputDebugStr( std::string{ "Enter into CalcCorrectVelocity(), Recursive count is : " + std::to_string( recursionCount ) + ".\n" }.c_str() );
 
 	constexpr float ERROR_ADJUST = 0.001f;
 
