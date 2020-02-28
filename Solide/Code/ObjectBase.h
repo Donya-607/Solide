@@ -62,6 +62,7 @@ private:
 		Donya::Vector3 correctedVelocity;
 		Donya::Vector3 wsLastIntersection;
 		Donya::Vector3 wsLastWallNormal;
+		Donya::Vector3 wsLastWallFace[3];
 		bool wasHit = false;
 	};
 	CalcedRayResult CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const;

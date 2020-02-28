@@ -863,6 +863,9 @@ namespace Donya
 			rpResult.distanceToIP		= currentDistance;
 			rpResult.intersectionPoint	= intersection;
 			rpResult.normal				= faceNormal.Normalized();
+			rpResult.lastCollidedFace[0] = faces[0];
+			rpResult.lastCollidedFace[1] = faces[1];
+			rpResult.lastCollidedFace[2] = faces[2];
 			rpResult.wasHit				= true;
 
 			if ( enoughOnlyPickFirst ) { return rpResult; }

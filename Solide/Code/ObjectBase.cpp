@@ -7,6 +7,9 @@
 #include "Donya/StaticMesh.h"
 #include "Donya/Useful.h"
 
+#undef max
+#undef min
+
 namespace
 {
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &wsPos, const Donya::Vector3 &halfSize, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
@@ -117,8 +120,36 @@ namespace
 }
 void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
+	Donya::Vector3 horizontalMovement = xzMovement;
+
+	// If now standing to a face, We should slope the movement to that face's slope.
+	{
+		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y, 0.0f };
+		const Donya::Vector3 checkUnderOffset{ 0.0f, 0.0f, 0.0f };
+		auto resultV = CalcCorrectVelocity( checkUnderLength, { checkUnderOffset }, pTerrain, pTerrainMatrix, {}, 0, 1 );
+		if ( resultV.wasHit )
+		{
+			float cosTheta = Donya::Dot( resultV.wsLastWallNormal, Donya::Vector3::Up() );
+			cosTheta = std::max( 0.0f, std::min( 1.0f, cosTheta ) ); // Prevent NaN at acosf.
+
+			const float slopeRadian = acosf( cosTheta );
+
+			const Donya::Vector3 faceCenter
+			{
+				( resultV.wsLastWallFace[0] + resultV.wsLastWallFace[1] + resultV.wsLastWallFace[2] )
+				/ // ------------------------------------------------------------------------------
+														3
+			};
+			const Donya::Vector3 somePlaneVector = resultV.wsLastWallFace[0] - faceCenter;
+			const Donya::Vector3 slopeAxis = Donya::Cross( somePlaneVector, resultV.wsLastWallNormal ).Normalize();
+
+			const Donya::Quaternion slopeRotation = Donya::Quaternion::Make( slopeAxis, slopeRadian );
+			horizontalMovement = slopeRotation.RotateVector( horizontalMovement );
+		}
+	}
+
 	constexpr int RECURSIVE_LIMIT = 4;
-	auto resultH = CalcCorrectVelocity( xzMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
+	auto resultH = CalcCorrectVelocity( horizontalMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
 	MoveInAABB( resultH.correctedVelocity, solids );
 
@@ -509,6 +540,9 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 
 	recursionResult.wsLastIntersection	= wsIntersection;
 	recursionResult.wsLastWallNormal	= wsWallNormal;
+	recursionResult.wsLastWallFace[0] = Transform( terrainMat, result.lastCollidedFace[0], 1.0f );
+	recursionResult.wsLastWallFace[1] = Transform( terrainMat, result.lastCollidedFace[1], 1.0f );
+	recursionResult.wsLastWallFace[2] = Transform( terrainMat, result.lastCollidedFace[2], 1.0f );
 	recursionResult.wasHit = true;
 
 	constexpr float ERROR_MAGNI = 1.0f + ERROR_ADJUST;

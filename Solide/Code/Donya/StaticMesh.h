@@ -170,6 +170,7 @@ namespace Donya
 			float	distanceToIP{};				// Store distance of nearest intersection-point.
 			Donya::Vector3 intersectionPoint{};	// Store intersection-point of nearest face.
 			Donya::Vector3 normal{};			// Store normalized normal.
+			Donya::Vector3 lastCollidedFace[3]{};// Store the positions of last collided face. CW.
 			bool	wasHit{ false };			// If hit to any face, will be true.
 		};
 		/// <summary>
