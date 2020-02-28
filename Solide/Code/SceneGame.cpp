@@ -509,7 +509,6 @@ void SceneGame::AssignCameraPos()
 
 	iCamera.SetPosition  ( playerPos + data.camera.offsetPos   );
 	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
-
 }
 void SceneGame::CameraUpdate()
 {
