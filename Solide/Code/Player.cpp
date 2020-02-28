@@ -876,10 +876,15 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	const auto data = FetchMember();
 	Actor::Move( velocity, data.raypickOffsets, solids, pTerrain, pTerrainMat );
 
-	bool wasLanding = CalcWasLanding( oldPos, pTerrain );
-	if ( wasLanding )
+	bool wasCorrectedV = WasCorrectedVertically( oldPos, pTerrain );
+	if ( wasCorrectedV )
 	{
-		AssignLanding();
+		if ( velocity.y <= 0.0f )
+		{
+			AssignLanding();
+		}
+
+		velocity.y = 0.0f;
 	}
 	else
 	{
@@ -1012,22 +1017,20 @@ bool Player::IsUnderFalloutBorder() const
 	return ( pos.y < data.falloutBorderPosY ) ? true : false;
 }
 
-bool Player::CalcWasLanding( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const
+bool Player::WasCorrectedVertically( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const
 {
 	const float diffY = pos.y - oldPos.y;
-	if ( 0.0f < diffY ) { return false; } // We can not landing to up.
-	// else
-
-	// If the actual movement is lower than velocity, that represents to was landing.
-	bool wasLanding = ( fabsf( diffY ) < fabsf( velocity.y ) - 0.001f );
+	
+	// If the actual movement is lower than velocity, that represents to was corrected.
+	bool wasCorrected = ( fabsf( diffY ) < fabsf( velocity.y ) - 0.001f );
 
 	// If the terrain is nothing, the criteria of landing is 0.0f.
 	if ( !pTerrain )
 	{
-		wasLanding = wasLanding || ( pos.y < 0.0f + hitBox.size.y );
+		wasCorrected = wasCorrected || ( pos.y < 0.0f + hitBox.size.y );
 	}
 
-	return wasLanding;
+	return wasCorrected;
 }
 void Player::AssignLanding()
 {

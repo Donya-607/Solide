@@ -313,8 +313,6 @@ namespace Donya
 	{
 		meshes.clear();
 		collisionFaces.clear();
-		meshes.shrink_to_fit();
-		collisionFaces.shrink_to_fit();
 	}
 
 	void StaticMesh::CreateDefaultSettings( ID3D11Device *pDevice )

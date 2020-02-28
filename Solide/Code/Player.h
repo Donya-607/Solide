@@ -143,7 +143,7 @@ private:
 	void Fall( float elapsedTime );
 	bool IsUnderFalloutBorder() const;
 
-	bool CalcWasLanding( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const;
+	bool WasCorrectedVertically( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const;
 	void AssignLanding();
 
 	void Die();
