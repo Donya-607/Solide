@@ -46,6 +46,7 @@ private:
 		const Donya::Animator &GetAnimator() const { return animator; }
 	private:
 		void ResetAnimation();
+		int  CalcNowKind( Player &player ) const;
 	};
 
 	class MoverBase

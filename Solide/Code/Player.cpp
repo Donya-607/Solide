@@ -523,7 +523,7 @@ public:
 					for ( size_t i = 0; i < PlayerModel::KIND_COUNT; ++i )
 					{
 						caption = "[" + std::to_string( i ) + ":" + PlayerModel::MODEL_NAMES[i] + "]";
-						ImGui::DragFloat( caption.c_str(), &m.motionAccelerations[i], 0.01f, 0.0f );
+						ImGui::DragFloat( caption.c_str(), &m.motionAccelerations[i], 0.001f, 0.0f );
 					}
 
 					ImGui::TreePop();
@@ -592,7 +592,12 @@ void Player::MotionManager::Init()
 }
 void Player::MotionManager::Update( Player &player, float elapsedTime )
 {
-	animator.Update( elapsedTime );
+	const auto  data = FetchMember();
+
+	const int motionIndex = scast<int>( CalcNowKind( player ) );
+	const float acceleration = data.motionAccelerations[motionIndex];
+
+	animator.Update( elapsedTime * acceleration );
 }
 void Player::MotionManager::SetIdle()
 {
@@ -611,6 +616,33 @@ void Player::MotionManager::SetFall()
 	ResetAnimation();
 }
 Player::MotionManager::Bundle Player::MotionManager::CalcNowModel( Player &player ) const
+{
+	Player::MotionManager::Bundle nil{ nullptr, nullptr };
+
+	auto Convert = [&nil]( const std::unique_ptr<PlayerModel::StorageBundle> *pStorage )->Player::MotionManager::Bundle
+	{
+		if ( !pStorage ) { return nil; }
+		// else
+
+		const std::unique_ptr<PlayerModel::StorageBundle> &refStorage = *pStorage;
+		return Player::MotionManager::Bundle
+		{
+			refStorage->pModel,
+			&refStorage->motionsPerMesh
+		};
+	};
+
+	PlayerModel::Kind nowKind = scast<PlayerModel::Kind>( CalcNowKind( player ) );
+
+	return	( PlayerModel::IsOutOfRange( nowKind ) )
+			? nil
+			: Convert( PlayerModel::GetModelBundleOrNullptr( nowKind ) );
+}
+void Player::MotionManager::ResetAnimation()
+{
+	animator.SetCurrentElapsedTime( 0.0f );
+}
+int  Player::MotionManager::CalcNowKind( Player &player ) const
 {
 	// TODO: To separate between the Jump and the Fall.
 
@@ -640,37 +672,19 @@ Player::MotionManager::Bundle Player::MotionManager::CalcNowModel( Player &playe
 		return ( NowMoving() ) ? false : true;
 	};
 
-	auto Convert	= []( const std::unique_ptr<PlayerModel::StorageBundle> *pStorage )->Player::MotionManager::Bundle
-	{
-		const std::unique_ptr<PlayerModel::StorageBundle> &refStorage = *pStorage;
-		return Player::MotionManager::Bundle
-		{
-			refStorage->pModel,
-			&refStorage->motionsPerMesh
-		};
-	};
-	auto Getter		= []( PlayerModel::Kind kind )
-	{
-		// For typing easily.
-		return PlayerModel::GetModelBundleOrNullptr( kind );
-	};
-
-	// if ( IsDead() ) { return PlayerModel::GetModelPtr( PlayerModel::Kind::Dead ); }
-	if ( IsJump() ) { return Convert( Getter( PlayerModel::Kind::Jump ) ); }
+	// if ( IsDead() ) { return PlayerModel::Kind::Dead; }
+	if ( IsJump() ) { return PlayerModel::Kind::Jump; }
 	if ( IsRun()  )
 	{
 		return	( player.pMover->IsOiled() )
-				? Convert( Getter( PlayerModel::Kind::Slide ) )
-				: Convert( Getter( PlayerModel::Kind::Run   ) );
+				? PlayerModel::Kind::Slide
+				: PlayerModel::Kind::Run;
 	}
-	if ( IsIdle() ) { return Convert( Getter( PlayerModel::Kind::Idle ) ); }
+	if ( IsIdle() ) { return PlayerModel::Kind::Idle; }
 	// else
 
-	return Player::MotionManager::Bundle{ nullptr, nullptr };
-}
-void Player::MotionManager::ResetAnimation()
-{
-	animator.SetCurrentElapsedTime( 0.0f );
+	assert( !"Error : Now is unexpected status!" );
+	return PlayerModel::Kind::KindCount;
 }
 
 void Player::NormalMover::Init( Player &player )
