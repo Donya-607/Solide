@@ -1026,6 +1026,7 @@ void Player::LookToInput( float elapsedTime, Input input )
 	Donya::Vector3 inputXZ{ input.moveVectorXZ.x, 0.0f, input.moveVectorXZ.y };
 
 	orientation = Donya::Quaternion::LookAt( orientation, inputXZ.Normalized(), Donya::Quaternion::Freeze::Up );
+	orientation.Normalize();
 }
 
 void Player::Move( float elapsedTime, Input input )
