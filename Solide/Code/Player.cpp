@@ -294,6 +294,9 @@ namespace
 			float		tiltDegree		= 1.0f;		// Per frame.
 			float		untiltDegree	= 2.0f;		// Per frame.
 			float		maxTiltDegree	= 45.0f;
+			float		hopStrength			= 0.1f;
+			float		hopRotation			= 0.1f;	// Degree.
+			float		hopRotationDegree	= 0.1f;	// Degree.
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -310,6 +313,15 @@ namespace
 				);
 
 				if ( 1 <= version )
+				{
+					archive
+					(
+						CEREAL_NVP( hopStrength ),
+						CEREAL_NVP( hopRotation ),
+						CEREAL_NVP( hopRotationDegree )
+					);
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -371,7 +383,7 @@ namespace
 }
 CEREAL_CLASS_VERSION( Member,				5 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	0 )
-CEREAL_CLASS_VERSION( Member::OilMember,	0 )
+CEREAL_CLASS_VERSION( Member::OilMember,	1 )
 
 class ParamPlayer : public ParameterBase<ParamPlayer>
 {
@@ -461,6 +473,10 @@ public:
 				ImGui::DragFloat( u8"‚P‚e‚ÉŒX‚¯‚éŠp“x",		&m.oiled.tiltDegree,	0.1f, 0.0f, 180.0f	);
 				ImGui::DragFloat( u8"‚P‚e‚ÉŒX‚«‚ğ–ß‚·Šp“x",	&m.oiled.untiltDegree,	0.1f, 0.0f, 180.0f	);
 				ImGui::DragFloat( u8"ŒX‚­Šp“x‚ÌÅ‘å",			&m.oiled.maxTiltDegree, 0.1f, 0.0f, 180.0f	);
+				ImGui::Text( "" );
+				ImGui::DragFloat( u8"”­“®E’µ‚Ë‚é‹­‚³",		&m.oiled.hopStrength, 0.1f, 0.0f	);
+				ImGui::DragFloat( u8"”­“®E‰ñ“]—Ê",			&m.oiled.hopRotation, 0.1f, 0.0f	);
+				ImGui::DragFloat( u8"”­“®E‚P‚e‚Ì‰ñ“]Šp“x",	&m.oiled.hopRotationDegree, 0.1f, 0.0f	);
 
 				ImGui::TreePop();
 			}
@@ -663,6 +679,7 @@ void Player::NormalMover::Init( Player &player )
 	player.hitBox = data.normal.hitBoxStage;
 }
 void Player::NormalMover::Uninit( Player &player ) {}
+void Player::NormalMover::Update( Player &player, float elapsedTime ) {}
 void Player::NormalMover::Move( Player &player, float elapsedTime, Input input )
 {
 	const auto data = FetchMember();
@@ -708,10 +725,12 @@ void Player::NormalMover::Fall( Player &player, float elapsedTime )
 
 void Player::OilMover::Init( Player &player )
 {
-	tilt = 0.0f;
-
 	const auto data = FetchMember();
 
+	tilt  = 0.0f;
+	pitch = ToRadian( -data.oiled.hopRotation );
+
+	player.velocity.y = data.oiled.hopStrength;
 	player.hitBox = data.oiled.basic.hitBoxStage;
 
 	Donya::Vector3 initVelocity = player.orientation.LocalFront() * data.oiled.basic.maxSpeed;
@@ -719,14 +738,22 @@ void Player::OilMover::Init( Player &player )
 }
 void Player::OilMover::Uninit( Player &player )
 {
+	const auto data = FetchMember();
+	player.velocity.y = data.oiled.hopStrength * 0.5f;
+
 	AssignToXZ( &player.velocity, Donya::Vector2::Zero() );
+}
+void Player::OilMover::Update( Player &player, float elapsedTime )
+{
+	if ( pitch < 0.0f )
+	{
+		const auto data = FetchMember();
+		pitch += ToRadian( data.oiled.hopRotationDegree ) * elapsedTime;
+		pitch =  std::min( 0.0f, pitch );
+	}
 }
 void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 {
-#if DEBUG_MODE
-	//pitch += ToRadian( 6.0f );
-#endif // DEBUG_MODE
-
 	input.moveVectorXZ.Normalize();
 
 	const auto data = FetchMember();
@@ -817,6 +844,7 @@ void Player::DeadMover::Init( Player &player )
 	player.hitBox.exist = false;
 }
 void Player::DeadMover::Uninit( Player &player ) {}
+void Player::DeadMover::Update( Player &player, float elapsedTime ) {}
 void Player::DeadMover::Move( Player &player, float elapsedTime, Input input ) {}
 void Player::DeadMover::Jump( Player &player, float elapsedTime ) {}
 void Player::DeadMover::Fall( Player &player, float elapsedTime ) {}
@@ -848,12 +876,13 @@ void Player::Update( float elapsedTime, Input input )
 #endif // USE_IMGUI
 
 	{
-		if ( input.useOil )
+		if ( input.useOil && canUseOil )
 		{
 			( pMover->IsOiled() )
 			? ResetMover<NormalMover>()
 			: ResetMover<OilMover>();
 
+			canUseOil = false;
 			Donya::Sound::Play( Music::PlayerTrans );
 		}
 	}
@@ -867,6 +896,7 @@ void Player::Update( float elapsedTime, Input input )
 
 	Fall( elapsedTime );
 
+	pMover->Update( *this, elapsedTime );
 	motionManager.Update( *this, elapsedTime );
 }
 
@@ -1045,6 +1075,7 @@ void Player::AssignLanding()
 	}
 
 	onGround	= true;
+	canUseOil	= true;
 	velocity.y	= 0.0f;
 }
 
@@ -1071,8 +1102,9 @@ void Player::UseImGui()
 		}
 
 		bool nowOiled = pMover->IsOiled(); // Immutable.
-		ImGui::Checkbox( u8"’nã‚É‚¢‚éH",	&onGround );
-		ImGui::Checkbox( u8"‚ ‚Ô‚çó‘Ô‚©H",	&nowOiled );
+		ImGui::Checkbox( u8"’nã‚É‚¢‚éH",		&onGround	);
+		ImGui::Checkbox( u8"‚ ‚Ô‚ç‚ğg‚¦‚é‚©H",	&canUseOil	);
+		ImGui::Checkbox( u8"‚ ‚Ô‚çó‘Ô‚©H",		&nowOiled	);
 
 		ImGui::TreePop();
 	}

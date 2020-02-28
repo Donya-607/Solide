@@ -53,6 +53,7 @@ private:
 	public:
 		virtual void Init( Player &player ) = 0;
 		virtual void Uninit( Player &player ) = 0;
+		virtual void Update( Player &player, float elapsedTime ) = 0;
 	public:
 		virtual void Move( Player &player, float elapsedTime, Input input ) = 0;
 		virtual void Jump( Player &player, float elapsedTime ) = 0;
@@ -70,6 +71,7 @@ private:
 	public:
 		void Init( Player &player ) override;
 		void Uninit( Player &player ) override;
+		void Update( Player &player, float elapsedTime ) override;
 	public:
 		void Move( Player &player, float elapsedTime, Input input ) override;
 		void Jump( Player &player, float elapsedTime ) override;
@@ -83,6 +85,7 @@ private:
 	public:
 		void Init( Player &player ) override;
 		void Uninit( Player &player ) override;
+		void Update( Player &player, float elapsedTime ) override;
 	public:
 		void Move( Player &player, float elapsedTime, Input input ) override;
 		void Jump( Player &player, float elapsedTime ) override;
@@ -96,6 +99,7 @@ private:
 	public:
 		void Init( Player &player ) override;
 		void Uninit( Player &player ) override;
+		void Update( Player &player, float elapsedTime ) override;
 	public:
 		void Move( Player &player, float elapsedTime, Input input ) override;
 		void Jump( Player &player, float elapsedTime ) override;
@@ -108,7 +112,8 @@ private:
 	Donya::Quaternion			orientation;
 	std::unique_ptr<MoverBase>	pMover;
 	MotionManager				motionManager;
-	bool						onGround = false;
+	bool						onGround  = false;
+	bool						canUseOil = true;	// Will recovery when landing.
 public:
 	void Init( const Donya::Vector3 &wsInitialPos );
 	void Uninit();
