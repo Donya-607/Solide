@@ -725,12 +725,10 @@ void Player::NormalMover::Fall( Player &player, float elapsedTime )
 
 void Player::OilMover::Init( Player &player )
 {
-	const auto data = FetchMember();
-
 	tilt  = 0.0f;
-	pitch = ToRadian( -data.oiled.hopRotation );
+	player.StartHopping();
 
-	player.velocity.y = data.oiled.hopStrength;
+	const auto data = FetchMember();
 	player.hitBox = data.oiled.basic.hitBoxStage;
 
 	Donya::Vector3 initVelocity = player.orientation.LocalFront() * data.oiled.basic.maxSpeed;
@@ -738,20 +736,11 @@ void Player::OilMover::Init( Player &player )
 }
 void Player::OilMover::Uninit( Player &player )
 {
-	const auto data = FetchMember();
-	player.velocity.y = data.oiled.hopStrength * 0.5f;
+	player.StartHopping();
 
 	AssignToXZ( &player.velocity, Donya::Vector2::Zero() );
 }
-void Player::OilMover::Update( Player &player, float elapsedTime )
-{
-	if ( pitch < 0.0f )
-	{
-		const auto data = FetchMember();
-		pitch += ToRadian( data.oiled.hopRotationDegree ) * elapsedTime;
-		pitch =  std::min( 0.0f, pitch );
-	}
-}
+void Player::OilMover::Update( Player &player, float elapsedTime ) {}
 void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 {
 	input.moveVectorXZ.Normalize();
@@ -833,9 +822,7 @@ void Player::OilMover::Fall( Player &player, float elapsedTime )
 }
 Donya::Quaternion Player::OilMover::GetExtraRotation( Player &player ) const
 {
-	Donya::Quaternion pitching = Donya::Quaternion::Make( player.orientation.LocalRight(), pitch );
-	Donya::Quaternion tilting  = Donya::Quaternion::Make( player.orientation.LocalFront(), ToRadian( -tilt ) );
-	return pitching.Rotated( tilting ); // Rotation: First:Pitch, Then:Tilt.
+	return Donya::Quaternion::Make( player.orientation.LocalFront(), ToRadian( -tilt ) );
 }
 
 void Player::DeadMover::Init( Player &player )
@@ -898,6 +885,8 @@ void Player::Update( float elapsedTime, Input input )
 
 	pMover->Update( *this, elapsedTime );
 	motionManager.Update( *this, elapsedTime );
+
+	UpdateHopping( elapsedTime );
 }
 
 void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMat )
@@ -935,7 +924,15 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPos, const Donya::Vector4 &lightDir )
 {
 	const auto data = FetchMember();
-	const Donya::Quaternion actualOrientation = orientation.Rotated( pMover->GetExtraRotation( *this ) );
+	const Donya::Quaternion pitchRotation		= Donya::Quaternion::Make( orientation.LocalRight(), hopPitching );
+	const Donya::Quaternion actualOrientation	= // Rotation: First:My Orientatoin, Then:Pitching, Last:Extra(actually that is tilting)
+		orientation.Rotated
+		(
+			pitchRotation.Rotated
+			(
+				pMover->GetExtraRotation( *this )
+			)
+		);
 	const Donya::Vector4 bodyColor = ( pMover->IsDead() )
 		? Donya::Vector4{ 1.0f, 0.5f, 0.0f, 1.0f }
 		: Donya::Vector4{ 0.1f, 1.0f, 0.3f, 1.0f };
@@ -1082,7 +1079,25 @@ void Player::AssignLanding()
 void Player::Die()
 {
 	ResetMover<DeadMover>();
-	onGround = false;
+	onGround  = false;
+	canUseOil = false;
+}
+
+void Player::StartHopping()
+{
+	const auto data = FetchMember();
+
+	hopPitching = ToRadian( -data.oiled.hopRotation );
+	velocity.y = data.oiled.hopStrength;
+}
+void Player::UpdateHopping( float elapsedTime )
+{
+	if ( 0.0f <= hopPitching ) { return; }
+	// else
+
+	const auto data = FetchMember();
+	hopPitching += ToRadian( data.oiled.hopRotationDegree ) * elapsedTime;
+	hopPitching = std::min( 0.0f, hopPitching );
 }
 
 #if USE_IMGUI

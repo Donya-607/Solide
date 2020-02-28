@@ -81,7 +81,6 @@ private:
 	{
 	private:
 		float tilt  = 0.0f; // Degree.
-		float pitch = 0.0f; // Radian.
 	public:
 		void Init( Player &player ) override;
 		void Uninit( Player &player ) override;
@@ -108,6 +107,7 @@ private:
 		bool IsDead() const override { return true; }
 	};
 private:
+	float						hopPitching = 0.0f;	// Radian. Use when hopping that will happen when used an oil.
 	Donya::Vector3				velocity;
 	Donya::Quaternion			orientation;
 	std::unique_ptr<MoverBase>	pMover;
@@ -152,6 +152,9 @@ private:
 	void AssignLanding();
 
 	void Die();
+private:
+	void StartHopping();
+	void UpdateHopping( float elapsedTime );
 private:
 #if USE_IMGUI
 	void UseImGui();
