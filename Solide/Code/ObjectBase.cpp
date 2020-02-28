@@ -115,11 +115,10 @@ namespace
 }
 void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
-	constexpr int RECURSIVE_LIMIT = 32;
-	auto result = CalcCorrectVelocity( xzMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
+	constexpr int RECURSIVE_LIMIT = 4;
+	auto resultH = CalcCorrectVelocity( xzMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
-	// pos += result.correctedVelocity;
-	MoveInAABB( result.correctedVelocity, solids );
+	MoveInAABB( resultH.correctedVelocity, solids );
 
 	/*
 	// If we can't resolve with very small movement, we give-up the moving.
@@ -207,7 +206,6 @@ void Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya
 		? pos + yMovement
 		: result.wsLastIntersection - sizeOffset;
 	
-	// pos += result.correctedVelocity;
 	// MoveInAABB( result.correctedVelocity, solids );
 	MoveInAABB( destPos - pos, solids );
 
@@ -431,8 +429,11 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 	constexpr float ERROR_ADJUST = 0.001f;
 
 	// If we can't resolve with very small movement, we give-up the moving.
-	if ( recursionLimit <= recursionCount ) { return recursionResult; }
-	if ( velocity.Length() < ERROR_ADJUST ) { return recursionResult; }
+	if ( recursionLimit <= recursionCount || velocity.Length() < ERROR_ADJUST )
+	{
+		recursionResult.correctedVelocity = Donya::Vector3::Zero();
+		return recursionResult;
+	}
 	// else
 
 	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
