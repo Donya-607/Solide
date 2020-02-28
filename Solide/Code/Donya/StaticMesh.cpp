@@ -182,7 +182,7 @@ namespace Donya
 		"{\n"
 		"	float  distance = length( pixelPos - eyePos );\n"
 		"	float  percent  = saturate( ( distance - transNear ) / ( transFar - transNear ) );\n"
-		"	return min( 1.0f, percent + transLower );\n"
+		"	return max( transLower, percent );\n"
 		"}\n"
 		"\n"
 		"Texture2D		diffuseMap			: register( t0 );\n"
