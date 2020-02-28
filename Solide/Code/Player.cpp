@@ -17,6 +17,7 @@
 #include "Donya/Keyboard.h"
 #endif // DEBUG_MODE
 
+#include "Common.h"
 #include "FilePath.h"
 #include "Music.h"
 #include "Parameter.h"
@@ -898,15 +899,16 @@ void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPo
 	const Donya::Vector4 bodyColor = ( pMover->IsDead() )
 		? Donya::Vector4{ 1.0f, 0.5f, 0.0f, 1.0f }
 		: Donya::Vector4{ 0.1f, 1.0f, 0.3f, 1.0f };
+	const Donya::Vector3 drawOffset = actualOrientation.RotateVector( data.drawOffset );
 
 	Donya::Vector4x4 W{};
 	W._11 = data.drawScale;
 	W._22 = data.drawScale;
 	W._33 = data.drawScale;
 	W *= actualOrientation.RequireRotationMatrix();
-	W._41 = pos.x + data.drawOffset.x;
-	W._42 = pos.y + data.drawOffset.y;
-	W._43 = pos.z + data.drawOffset.z;
+	W._41 = pos.x + drawOffset.x;
+	W._42 = pos.y + drawOffset.y;
+	W._43 = pos.z + drawOffset.z;
 
 	auto modelBundle	= motionManager.CalcNowModel( *this );
 	auto animator		= motionManager.GetAnimator();
@@ -971,8 +973,11 @@ void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPo
 	}
 
 #if DEBUG_MODE
-	const Donya::Vector4 subForHitBox{ 0.0f, 0.0f, 0.0f, 0.7f };
-	DrawHitBox( matVP, actualOrientation, bodyColor - subForHitBox );
+	if ( Common::IsShowCollision() )
+	{
+		const Donya::Vector4 subForHitBox{ 0.0f, 0.0f, 0.0f, 0.7f };
+		DrawHitBox( matVP, actualOrientation, bodyColor - subForHitBox );
+	}
 #endif // DEBUG_MODE
 }
 
