@@ -13,6 +13,7 @@ struct UIObject
 {
 private:
 	size_t			sprite = 0;
+public:
 	float			degree = 0.0f;
 	float			alpha  = 1.0f;
 	Donya::Vector2	pos;		// Screen space.
