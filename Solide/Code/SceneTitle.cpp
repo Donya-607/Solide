@@ -15,6 +15,9 @@
 #include "Music.h"
 #include "Parameter.h"
 
+#undef max
+#undef min
+
 namespace
 {
 	struct Member
@@ -37,6 +40,8 @@ namespace
 
 		Donya::Vector3 playerInitialPos;
 
+		int waitFrameUntilFade = 60;
+
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -57,12 +62,16 @@ namespace
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( waitFrameUntilFade ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 0 )
+CEREAL_CLASS_VERSION( Member, 1 )
 
 class ParamTitle : public ParameterBase<ParamTitle>
 {
@@ -112,6 +121,8 @@ public:
 		if ( ImGui::TreeNode( u8"タイトルのパラメータ調整" ) )
 		{
 			ImGui::DragFloat3( u8"自機の初期位置", &m.playerInitialPos.x, 0.01f );
+			ImGui::DragInt( u8"入力から，フェードまでの待機時間（フレーム）", &m.waitFrameUntilFade, 1.0f, 1 );
+			m.waitFrameUntilFade = std::max( 1, m.waitFrameUntilFade );
 			ImGui::Text( "" );
 
 			if ( ImGui::TreeNode( u8"カメラ" ) )
@@ -156,7 +167,9 @@ SceneTitle::SceneTitle() :
 	pTerrain( nullptr ),
 	pPlayer( nullptr ),
 	pObstacles( nullptr ),
-	pSentence( nullptr )
+	pSentence( nullptr ),
+	timer(),
+	nowWaiting( false )
 
 #if DEBUG_MODE
 	, nowDebugMode( false ),
@@ -172,6 +185,9 @@ SceneTitle::~SceneTitle() = default;
 void SceneTitle::Init()
 {
 	Donya::Sound::Play( Music::BGM_Title );
+
+	timer = 0;
+	nowWaiting = false;
 
 	bool result{};
 
@@ -255,11 +271,15 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	CameraUpdate();
 
-	bool wantAdvance = false;
-	if ( wantAdvance && !Fader::Get().IsExist() )
+	if ( IsRequiredAdvance() )
 	{
-		pSentence->AdvanceState();
-		StartFade();
+		nowWaiting = true;
+		WaitInit();
+	}
+
+	if ( nowWaiting )
+	{
+		WaitUpdate( elapsedTime );
 	}
 
 	pSentence->Update( elapsedTime );
@@ -554,6 +574,31 @@ void SceneTitle::PlayerUninit()
 	// else
 	pPlayer->Uninit();
 	pPlayer.reset();
+}
+
+bool SceneTitle::IsRequiredAdvance() const
+{
+	if ( Fader::Get().IsExist() ) { return false; }
+	if ( nowWaiting ) { return false; }
+	// else
+
+	return	( controller.IsConnected() )
+			? controller.Trigger( Donya::Gamepad::A )
+			: Donya::Keyboard::Trigger( 'Z' );
+}
+void SceneTitle::WaitInit()
+{
+	pSentence->AdvanceState();
+	Donya::Sound::Play( Music::UI_StartGame );
+}
+void SceneTitle::WaitUpdate( float elapsedTime )
+{
+	timer++;
+
+	if ( timer == FetchMember().waitFrameUntilFade )
+	{
+		StartFade();
+	}
 }
 
 void SceneTitle::ClearBackGround() const

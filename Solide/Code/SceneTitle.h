@@ -26,6 +26,9 @@ private:
 	std::unique_ptr<ObstacleContainer>	pObstacles;
 	std::unique_ptr<TitleSentence>		pSentence;
 
+	int  timer;
+	bool nowWaiting;
+
 #if DEBUG_MODE
 	bool nowDebugMode;
 	bool isReverseCameraMoveX;
@@ -53,6 +56,10 @@ private:
 	void	PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const std::unique_ptr<Terrain> *ppTerrain );
 	void	PlayerDraw( const Donya::Vector4x4 &matViewProj, const Donya::Vector4 &cameraPosition, const Donya::Vector4 &lightDirection );
 	void	PlayerUninit();
+
+	bool	IsRequiredAdvance() const;
+	void	WaitInit();
+	void	WaitUpdate( float elapsedTime );
 
 	void	ClearBackGround() const;
 	void	StartFade() const;

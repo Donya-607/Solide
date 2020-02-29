@@ -99,6 +99,8 @@ bool Framework::LoadSounds()
 			{ ID::BGM_Clear,			u8"./Data/Sounds/BGM/‚¤‚«‚¤‚«.mp3",				true  },
 			//{ ID::BGM_Over,				"./Data/Sounds/BGM/Over.wav",					true  },
 			
+			{ ID::UI_StartGame,			"./Data/Sounds/SE/Title/Start.wav",				false  },
+
 			{ ID::PlayerJump,			"./Data/Sounds/SE/Player/Jump.wav",				false  },
 			{ ID::PlayerLanding,		"./Data/Sounds/SE/Player/Landing.wav",			false  },
 			{ ID::PlayerTrans,			"./Data/Sounds/SE/Player/Trans.wav",			false  },
