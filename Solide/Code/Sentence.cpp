@@ -19,8 +19,10 @@ void TitleSentence::FlusherBase::UpdateImpl( TitleSentence &target, float elapse
 	const float increaseAmount = 360.0f / ( 60.0f * flushInterval );
 	target.flushTimer += increaseAmount;
 
-	const float sin  = sinf( ToRadian( target.flushTimer ) ) * flushRange;
-	target.drawAlpha = std::max( target.drawAlpha, std::min( 1.0f, sin ) );
+	const float sin_01 = ( sinf( ToRadian( target.flushTimer ) ) + 1.0f ) * 0.5f;
+	const float shake  = sin_01 * flushRange;
+
+	target.drawAlpha = std::max( target.lowestAlpha, std::min( 1.0f, shake ) );
 }
 void TitleSentence::LateFlusher::Update( TitleSentence &target, float elapsedTime )
 {
