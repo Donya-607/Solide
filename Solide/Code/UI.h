@@ -43,8 +43,8 @@ private:
 public:
 	bool LoadSprite( const std::wstring &filePath, size_t maxInstanceCount );
 
-	bool Draw() const;
-	bool DrawPart() const;
+	bool Draw( float drawDepth = 1.0f ) const;
+	bool DrawPart( float drawDepth = 1.0f ) const;
 public:
 
 public:

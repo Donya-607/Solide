@@ -8,19 +8,28 @@ bool UIObject::LoadSprite( const std::wstring &filePath, size_t maxCount )
 	return ( sprite == NULL ) ? false : true;
 }
 
-bool UIObject::Draw() const
+bool UIObject::Draw( float depth ) const
 {
-	return Donya::Sprite::DrawExt
+	const float prevDepth = Donya::Sprite::GetDrawDepth();
+	Donya::Sprite::SetDrawDepth( depth );
+
+	bool result = Donya::Sprite::DrawExt
 	(
 		sprite,
 		pos.x, pos.y,
 		drawScale.x, drawScale.y,
 		degree, alpha
 	);
+
+	Donya::Sprite::SetDrawDepth( prevDepth );
+	return result;
 }
-bool UIObject::DrawPart() const
+bool UIObject::DrawPart( float depth ) const
 {
-	return Donya::Sprite::DrawPartExt
+	const float prevDepth = Donya::Sprite::GetDrawDepth();
+	Donya::Sprite::SetDrawDepth( depth );
+
+	bool result = Donya::Sprite::DrawPartExt
 	(
 		sprite,
 		pos.x, pos.y,
@@ -29,6 +38,9 @@ bool UIObject::DrawPart() const
 		drawScale.x, drawScale.y,
 		degree, alpha
 	);
+
+	Donya::Sprite::SetDrawDepth( prevDepth );
+	return result;
 }
 
 #if USE_IMGUI

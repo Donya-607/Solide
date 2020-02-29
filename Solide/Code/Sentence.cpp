@@ -1,6 +1,6 @@
 #include "Sentence.h"
 
-#include <algorithm> // For std::max(), std::min()
+#include <algorithm>	// For std::max(), std::min()
 
 #undef max
 #undef min
@@ -59,8 +59,9 @@ void TitleSentence::Update( float elapsedTime )
 
 void TitleSentence::Draw( float elapsedTime ) const
 {
-	uiLogo.Draw();
-	uiPrompt.Draw();
+	constexpr float DRAW_DEPTH = 1.0f;
+	uiLogo.Draw( DRAW_DEPTH );
+	uiPrompt.Draw( DRAW_DEPTH );
 }
 
 void TitleSentence::AdvanceState()
