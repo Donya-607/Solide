@@ -179,7 +179,7 @@ void SceneTitle::Init()
 	assert( ObstacleBase::LoadModels() );
 	ObstacleBase::ParameterInit();
 	pObstacles = std::make_unique<ObstacleContainer>();
-	pObstacles->Init();
+	pObstacles->Init( 0 );
 
 	assert( Player::LoadModels() );
 	assert( Player::LoadShadingObjects() );
@@ -621,9 +621,54 @@ void SceneTitle::UseImGui()
 {
 	if ( ImGui::BeginIfAllowed() )
 	{
-		if ( ImGui::TreeNode( u8"タイトル・状況" ) )
+		if ( ImGui::TreeNode( u8"タイトル・メンバーの調整" ) )
 		{
+			ImGui::Text( u8"「Ｆ５キー」を押すと，" );
+			ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
+			ImGui::Text( "" );
 
+			if ( ImGui::TreeNode( u8"カメラ情報" ) )
+			{
+				ImGui::Checkbox( u8"移動方向を反転する・Ｘ", &isReverseCameraMoveX );
+				ImGui::Checkbox( u8"移動方向を反転する・Ｙ", &isReverseCameraMoveY );
+				ImGui::Checkbox( u8"回転方向を反転する・Ｘ", &isReverseCameraRotX );
+				ImGui::Checkbox( u8"回転方向を反転する・Ｙ", &isReverseCameraRotY );
+
+				auto ShowVec3 = []( const std::string &prefix, const Donya::Vector3 &v )
+				{
+					ImGui::Text( ( prefix + u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]" ).c_str(), v.x, v.y, v.z );
+				};
+
+				const Donya::Vector3 cameraPos = iCamera.GetPosition();
+				const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+				ShowVec3( u8"現在位置・絶対：", cameraPos );
+				ShowVec3( u8"現在位置・相対：", cameraPos - playerPos );
+				ImGui::Text( "" );
+
+				const Donya::Vector3 focusPoint = iCamera.GetFocusPoint();
+				ShowVec3( u8"注視点位置・絶対：", focusPoint );
+				ShowVec3( u8"注視点位置・相対：", focusPoint - playerPos );
+				ImGui::Text( "" );
+
+				ImGui::Text( u8"【デバッグモード時のみ有効】" );
+				ImGui::Text( u8"「ＡＬＴキー」を押している間のみ，" );
+				ImGui::Text( u8"「左クリック」を押しながらマウス移動で，" );
+				ImGui::Text( u8"カメラの回転ができます。" );
+				ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
+				ImGui::Text( u8"カメラの並行移動ができます。" );
+				ImGui::Text( "" );
+
+				ImGui::TreePop();
+			}
+
+			if ( pTerrain )
+			{
+				pTerrain->ShowImGuiNode( u8"地形" );
+			}
+			if ( pObstacles )
+			{
+				pObstacles->ShowImGuiNode( u8"障害物の生成・破棄" );
+			}
 
 			ImGui::TreePop();
 		}

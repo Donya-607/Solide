@@ -6,9 +6,9 @@
 
 #include "FilePath.h"
 
-void ObstacleContainer::Init()
+void ObstacleContainer::Init( int stageNumber )
 {
-	stageNo = 0;
+	stageNo = stageNumber;
 #if DEBUG_MODE
 	LoadJson( stageNo );
 #else
@@ -67,26 +67,32 @@ std::vector<Donya::AABB> ObstacleContainer::GetHitBoxes() const
 	return hitBoxes;
 }
 
-void ObstacleContainer::LoadBin ( int stageNo )
+std::string ObstacleContainer::MakeSerializePath( int stageNumber, bool fromBinary ) const
+{
+	const std::string postfix = "[" + std::to_string( stageNumber ) + "]";
+	return GenerateSerializePath( ID + postfix, fromBinary );
+}
+
+void ObstacleContainer::LoadBin ( int stageNumber )
 {
 	constexpr bool fromBinary = true;
-	Donya::Serializer::Load( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	Donya::Serializer::Load( *this, MakeSerializePath( stageNumber, fromBinary ).c_str(), ID, fromBinary );
 }
-void ObstacleContainer::LoadJson( int stageNo )
+void ObstacleContainer::LoadJson( int stageNumber )
 {
 	constexpr bool fromBinary = false;
-	Donya::Serializer::Load( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	Donya::Serializer::Load( *this, MakeSerializePath( stageNumber, fromBinary ).c_str(), ID, fromBinary );
 }
 #if USE_IMGUI
-void ObstacleContainer::SaveBin( int stageNo )
+void ObstacleContainer::SaveBin( int stageNumber )
 {
 	constexpr bool fromBinary = true;
-	Donya::Serializer::Save( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	Donya::Serializer::Save( *this, MakeSerializePath( stageNumber, fromBinary ).c_str(), ID, fromBinary );
 }
-void ObstacleContainer::SaveJson( int stageNo )
+void ObstacleContainer::SaveJson( int stageNumber )
 {
 	constexpr bool fromBinary = false;
-	Donya::Serializer::Save( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+	Donya::Serializer::Save( *this, MakeSerializePath( stageNumber, fromBinary ).c_str(), ID, fromBinary );
 }
 void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 {

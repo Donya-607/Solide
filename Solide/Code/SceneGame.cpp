@@ -261,7 +261,7 @@ void SceneGame::Init()
 	assert( ObstacleBase::LoadModels() );
 	ObstacleBase::ParameterInit();
 	pObstacles = std::make_unique<ObstacleContainer>();
-	pObstacles->Init();
+	pObstacles->Init( 1 ); // The stage-number is 1-based.(0 is title stage.)
 
 	assert( Player::LoadModels() );
 	assert( Player::LoadShadingObjects() );
