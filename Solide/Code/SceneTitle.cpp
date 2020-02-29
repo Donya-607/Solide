@@ -173,8 +173,6 @@ void SceneTitle::Init()
 	ParamTitle::Get().Init();
 	const auto data = FetchMember();
 
-	CameraInit();
-
 	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/TitleTerrain.bin", "./Data/Models/Terrain/ForCollision/TitleTerrain.bin" );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 1.0f, 1.0f, 1.0f }, Donya::Vector3::Zero() );
 
@@ -186,6 +184,8 @@ void SceneTitle::Init()
 	assert( Player::LoadModels() );
 	assert( Player::LoadShadingObjects() );
 	PlayerInit();
+
+	CameraInit();
 }
 void SceneTitle::Uninit()
 {

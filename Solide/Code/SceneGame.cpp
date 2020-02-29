@@ -255,8 +255,6 @@ void SceneGame::Init()
 	ParamGame::Get().Init();
 	const auto data = FetchMember();
 
-	CameraInit();
-
 	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin",  "./Data/Models/Terrain/ForCollision/Terrain.bin" );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 
@@ -268,6 +266,8 @@ void SceneGame::Init()
 	assert( Player::LoadModels() );
 	assert( Player::LoadShadingObjects() );
 	PlayerInit();
+
+	CameraInit();
 }
 void SceneGame::Uninit()
 {
