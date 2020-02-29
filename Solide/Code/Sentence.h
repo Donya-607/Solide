@@ -54,6 +54,7 @@ private:
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
+	static constexpr const char *ID = "TitleSentence";
 public:
 	/// <summary>
 	/// The loaded sprite will not changes.
@@ -73,8 +74,13 @@ private:
 		pFlusher = std::make_unique<Flusher>();
 		pFlusher->Init( *this );
 	}
-public:
+private:
+	void LoadBin ();
+	void LoadJson();
 #if USE_IMGUI
+	void SaveBin ();
+	void SaveJson();
+public:
 	void ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI
 };
