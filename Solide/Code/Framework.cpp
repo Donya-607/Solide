@@ -93,9 +93,9 @@ bool Framework::LoadSounds()
 	const std::array<Bundle, ID::MUSIC_COUNT> bandles =
 	{
 		{	// ID, FilePath, isEnableLoop
-			{ ID::BGM_Title,			"./Data/Sounds/BGM/Title.wav",					true  },
-			{ ID::BGM_Game,				"./Data/Sounds/BGM/Game.wav",					true  },
-			{ ID::BGM_Clear,			"./Data/Sounds/BGM/Clear.wav",					true  },
+			{ ID::BGM_Title,			u8"./Data/Sounds/BGM/アニマル・スマイル.mp3",		true  },
+			{ ID::BGM_Game,				"./Data/Sounds/BGM/Bouncy.mp3",					true  },
+			{ ID::BGM_Clear,			u8"./Data/Sounds/BGM/うきうき.mp3",				true  },
 			{ ID::BGM_Over,				"./Data/Sounds/BGM/Over.wav",					true  },
 			
 			{ ID::PlayerJump,			"./Data/Sounds/SE/Player/Jump.wav",				false  },
