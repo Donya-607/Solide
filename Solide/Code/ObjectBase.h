@@ -46,12 +46,13 @@ protected:
 public:
 	// HACK: The reason for setting the return value here is that it was necessary for the player to determine if he landed.
 	// So this is not necessary for design.
+	// HACK: This ray-offset should separate between origin's offset and whole ray's offset.
 	/// <summary>
 	/// Returns face's normal of last collided by vertical move.
 	/// </summary>
-	virtual Donya::Vector3 Move( const Donya::Vector3 &wsMovement, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh * pTerrain = nullptr, const Donya::Vector4x4 * pTerrainWorldMatrix = nullptr );
+	virtual Donya::Vector3 Move( const Donya::Vector3 &wsMovement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh * pTerrain = nullptr, const Donya::Vector4x4 * pTerrainWorldMatrix = nullptr );
 private:
-	void MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOriginOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+	void MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 	Donya::Vector3 MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
 	Donya::AABB CalcCollidingBox( const Donya::AABB &myself, const std::vector<Donya::AABB> &solids ) const;
