@@ -120,7 +120,6 @@ public:
 	void Uninit();
 
 	void Update( float elapsedTime, Input input );
-	// void PhysicUpdate( const std::vector<Solid> &collisions );
 	void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
 	void Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPos, const Donya::Vector4 &lightDirection );
@@ -128,6 +127,17 @@ public:
 	bool IsDead() const
 	{
 		return pMover->IsDead();
+	}
+
+	// These IsOiled() and GetOrientation() are used for controll when title scene.
+
+	bool IsOiled() const
+	{
+		return pMover->IsOiled();
+	}
+	Donya::Quaternion GetOrientation() const
+	{
+		return orientation;
 	}
 private:
 	template<class Mover>

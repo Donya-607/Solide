@@ -111,6 +111,9 @@ public:
 
 		if ( ImGui::TreeNode( u8"タイトルのパラメータ調整" ) )
 		{
+			ImGui::DragFloat3( u8"自機の初期位置", &m.playerInitialPos.x, 0.01f );
+			ImGui::Text( "" );
+
 			if ( ImGui::TreeNode( u8"カメラ" ) )
 			{
 				ImGui::DragFloat ( u8"補間倍率",						&m.camera.slerpFactor,		0.01f );
@@ -268,9 +271,9 @@ void SceneTitle::Draw( float elapsedTime )
 
 	PlayerDraw( VP, cameraPos, lightDir );
 
-	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
-
 	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
+
+	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -365,7 +368,6 @@ void SceneTitle::Draw( float elapsedTime )
 	}
 #endif // DEBUG_MODE
 }
-
 
 void SceneTitle::CameraInit()
 {
@@ -491,54 +493,13 @@ void SceneTitle::PlayerUpdate( float elapsedTime )
 		PlayerInit();
 	}
 
-	Donya::Vector2		moveVector{};
-	bool useJump		= false;
-	bool useOil			= false;
-
-	if ( controller.IsConnected() )
-	{
-		using Pad		= Donya::Gamepad;
-
-		moveVector		= controller.LeftStick();
-		useJump			= controller.Trigger( Pad::A );
-		// useOil			= controller.Press( Pad::B ) || controller.Press( Pad::Y );
-		useOil			= controller.Trigger( Pad::B ) || controller.Trigger( Pad::Y );
-	}
-	else
-	{
-		moveVector.x	+= Donya::Keyboard::Press( VK_RIGHT	) ? +1.0f : 0.0f;
-		moveVector.x	+= Donya::Keyboard::Press( VK_LEFT	) ? -1.0f : 0.0f;
-		moveVector.y	+= Donya::Keyboard::Press( VK_UP	) ? +1.0f : 0.0f; // Front is Plus.
-		moveVector.y	+= Donya::Keyboard::Press( VK_DOWN	) ? -1.0f : 0.0f; // Front is Plus.
-		moveVector.Normalize();
-
-		useJump			=  Donya::Keyboard::Trigger( 'Z' );
-		// useOil			=  Donya::Keyboard::Press( 'X' );
-		useOil			=  Donya::Keyboard::Trigger( 'X' );
-	}
-
-#if DEBUG_MODE
-	// Rotate input vector by camera.
-	if ( nowDebugMode )
-	{
-		auto cameraRotation = iCamera.GetOrientation();
-
-		// Disable the rotation of X-axis and Z-axis.
-		cameraRotation.x = 0.0f;
-		cameraRotation.z = 0.0f;
-		cameraRotation.Normalize();
-
-		Donya::Vector3 moveVector3{ moveVector.x, 0.0f, moveVector.y };
-		moveVector3 = cameraRotation.RotateVector( moveVector3 );
-		moveVector.x = moveVector3.x;
-		moveVector.y = moveVector3.z;
-	}
-#endif // DEBUG_MODE
+	const Donya::Quaternion	nowOrientation	= pPlayer->GetOrientation();
+	const Donya::Vector3	nowRight		= nowOrientation.LocalRight();
 
 	Player::Input input{};
-	input.moveVectorXZ	= moveVector;
-	input.useJump		= useJump;
-	input.useOil		= useOil;
+	input.moveVectorXZ	= Donya::Vector2{ nowRight.x, nowRight.z };
+	input.useJump		= false;
+	input.useOil		= ( pPlayer->IsOiled() ) ? false : true;
 
 	pPlayer->Update( elapsedTime, input );
 }
