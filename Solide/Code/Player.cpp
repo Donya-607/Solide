@@ -922,19 +922,23 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	const Donya::Vector3 standingNormal = Actor::Move( velocity, data.raypickOffsets, solids, pTerrain, pTerrainMat );
 
 	bool wasCorrectedV = WasCorrectedVertically( oldPos, pTerrain );
-	if ( wasCorrectedV )
+	if ( /*wasCorrectedV || */!standingNormal.IsZero()/* If now standing on some plane, that means corrected to vertically. */ )
 	{
 		const float dot  = Donya::Dot( standingNormal, Donya::Vector3::Up() );
 		bool ridableFace = ( standingNormal.IsZero() )
 			? false 
 			: data.canRideSlopeBorder <= fabsf( std::max( 0.0f, dot ) );
 
-		if ( ridableFace && velocity.y <= 0.0f )
+		// I want erase the vertical velocity If collided to ceil or ridable floor.
+
+		if ( 0.0f < velocity.y )
+		{
+			velocity.y = 0.0f;
+		}
+		else if ( ridableFace )
 		{
 			AssignLanding();
 		}
-
-		velocity.y = 0.0f;
 	}
 	else
 	{

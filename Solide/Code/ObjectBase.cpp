@@ -92,13 +92,17 @@ Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Do
 	if ( !yMovement.IsZero()  ) { lastNormal = MoveYImpl ( yMovement,  solids, pTerrain, pTerrainMatrix ); }
 
 	// If a face is there under from my foot, I correct onto the face for considering a slope.
+	// But this correction is not necessary if the vertical movement is up.
+	if ( yMovement.y <= 0.0f )
 	{
-		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y, 0.0f };
+		// The CalcCorrectVelocity() will extend the input velocity by the size of hitBox to the direction of input velocity.
+		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y * 0.5f, 0.0f };
 		auto resultV = CalcCorrectVelocity( checkUnderLength, {}, pTerrain, pTerrainMatrix, {}, 0, 1 );
 		if ( resultV.wasHit )
 		{
 			const Donya::Vector3 verticalSize{ 0.0f, hitBox.size.y, 0.0f };
-			const Donya::Vector3 diff = resultV.wsLastIntersection - ( pos - verticalSize );
+			const Donya::Vector3 footPos = pos - verticalSize;
+			const Donya::Vector3 diff = resultV.wsLastIntersection - footPos;
 			pos.y += diff.y;
 			lastNormal = resultV.wsLastWallNormal;
 		}
@@ -258,9 +262,20 @@ Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::ve
 	const Donya::Vector3 destPos	= ( result.wasHit )
 		? result.wsLastIntersection - sizeOffset
 		: pos + yMovement;
+	const Donya::Vector3 actualMovement = destPos - pos;
 	
-	// MoveInAABB( result.correctedVelocity, solids );
-	MoveInAABB( destPos - pos, solids );
+	const Donya::Vector3 directlyMovedPos = pos + actualMovement;
+	MoveInAABB( actualMovement, solids );
+
+	// If the position corrected by AABB, We should store the AABB's normal.
+	if ( pos != directlyMovedPos )
+	{
+		const Donya::Vector3 diff = pos - directlyMovedPos;
+
+		result.wsLastWallNormal = ( 0.0f < diff.y )
+			? Donya::Vector3::Up()
+			: -Donya::Vector3::Up();
+	}
 
 	return result.wsLastWallNormal;
 
