@@ -75,6 +75,7 @@ namespace Donya
 		float	elapsedTime;
 		float	samplingRate;		// Default is zero.
 		bool	enableInterpolate;	// Default is false.
+		bool	enableWrapAround;	// Default is true.
 	public:
 		Animator();
 	public:
@@ -102,6 +103,11 @@ namespace Donya
 		/// [FALSE:useInterpolate] The method of calculating a pose will calculate only a pose of the current frame(the less-equal than decimal is truncated).
 		/// </summary>
 		void SetInterpolateFlag( bool useInterpolate );
+		/// <summary>
+		/// [TRUE:useInterpolate] The method of calculating a frame will return a frame that wrap-arounded in motion count(ex.if motion count is 3, returns frame number is only 0, 1 or 2).<para></para>
+		/// [FALSE:useInterpolate] The method of calculating a frame will return a max motion count if over than motion count.
+		/// </summary>
+		void SetWrapAroundFlag( bool useWrapAround );
 
 		/// <summary>
 		/// Overwrite an internal timer that updating at Update(). This does not represent a current frame.
@@ -117,12 +123,10 @@ namespace Donya
 		/// </summary>
 		float CalcCurrentFrame() const;
 		/// <summary>
-		/// Returns current motion frame calculated by registered sampling rate(if the zero is registered, use the motion's sampling rate).<para></para>
-		/// [TRUE:useWrapAround] Returns frame will be wrap-arounded in motion count(ex.if motion count is 3, returns frame number is only 0, 1 or 2).<para></para>
-		/// [FALSE:useWrapAround] Returns frame is zero if over than motion count.
+		/// Returns current motion frame calculated by registered sampling rate(if the zero is registered, use the motion's sampling rate).
 		/// </summary>
-		float CalcCurrentFrame( const Motion &motion, bool useWrapAround = true ) const;
+		float CalcCurrentFrame( const Motion &motion ) const;
 
-		Skeletal FetchCurrentPose( const Motion &motion, bool useWrapAround = true ) const;
+		Skeletal FetchCurrentPose( const Motion &motion ) const;
 	};
 }

@@ -60,6 +60,7 @@ void Terrain::Draw( const Donya::Vector4 &eyePos, float transNear, float transFa
 {
 	const Donya::Vector4x4 W = GetWorldMatrix();
 	pDrawMesh->Render
+	// pCollisionMesh->Render
 	(
 		eyePos, transNear, transFar, transLowerAlpha,
 		nullptr,

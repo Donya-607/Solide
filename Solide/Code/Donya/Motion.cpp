@@ -90,7 +90,8 @@ namespace Donya
 
 	Animator::Animator() :
 		elapsedTime(), samplingRate(),
-		enableInterpolate( false )
+		enableInterpolate( false ),
+		enableWrapAround( true )
 	{}
 
 	void Animator::Init()
@@ -118,6 +119,10 @@ namespace Donya
 	{
 		enableInterpolate = useInterpolate;
 	}
+	void Animator::SetWrapAroundFlag( bool useWrapAround )
+	{
+		enableWrapAround = useWrapAround;
+	}
 
 	void Animator::SetCurrentElapsedTime( float overwrite )
 	{
@@ -136,7 +141,7 @@ namespace Donya
 	{
 		return CalcFrameImpl( elapsedTime, samplingRate );
 	}
-	float Animator::CalcCurrentFrame( const Motion &motion, bool useWrapAround ) const
+	float Animator::CalcCurrentFrame( const Motion &motion ) const
 	{
 		const float motionCountF = scast<float>( motion.motion.size() );
 		if ( ZeroEqual( motionCountF ) ) { return 0.0f; }
@@ -147,15 +152,15 @@ namespace Donya
 		float currentFrame =  CalcFrameImpl( elapsedTime, rate );
 		if (  motionCountF <= currentFrame )
 		{
-			currentFrame = ( useWrapAround )
+			currentFrame = ( enableWrapAround )
 			? fmodf( currentFrame, motionCountF )
-			: 0.0f;
+			: motionCountF - 1.0f;
 		}
 
 		return currentFrame;
 	}
 
-	Skeletal Animator::FetchCurrentPose( const Motion &motion, bool useWrapAround ) const
+	Skeletal Animator::FetchCurrentPose( const Motion &motion ) const
 	{
 		if ( motion.motion.empty() )
 		{
@@ -170,7 +175,7 @@ namespace Donya
 		}
 		// else
 
-		float currentFrame = CalcCurrentFrame( motion, useWrapAround );
+		float currentFrame = CalcCurrentFrame( motion );
 		      currentFrame = std::max( 0.0f, currentFrame ); // Fail safe
 
 		if ( enableInterpolate )

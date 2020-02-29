@@ -919,7 +919,12 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	const Donya::Vector3 oldPos = pos;
 
 	const auto data = FetchMember();
-	const Donya::Vector3 standingNormal = Actor::Move( velocity, data.raypickOffsets, solids, pTerrain, pTerrainMat );
+	std::vector<Donya::Vector3> rotatedOffsets = data.raypickOffsets;
+	for ( auto &it : rotatedOffsets )
+	{
+		it = orientation.RotateVector( it );
+	}
+	const Donya::Vector3 standingNormal = Actor::Move( velocity, rotatedOffsets, solids, pTerrain, pTerrainMat );
 
 	// bool wasCorrectedV = WasCorrectedVertically( oldPos, pTerrain );
 
