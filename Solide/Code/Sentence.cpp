@@ -59,7 +59,7 @@ void TitleSentence::Update( float elapsedTime )
 
 void TitleSentence::Draw( float elapsedTime ) const
 {
-	constexpr float DRAW_DEPTH = 1.0f;
+	constexpr float DRAW_DEPTH = 0.0f;
 	uiLogo.Draw( DRAW_DEPTH );
 	uiPrompt.Draw( DRAW_DEPTH );
 }
