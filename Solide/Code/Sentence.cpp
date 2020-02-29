@@ -72,7 +72,7 @@ void TitleSentence::AdvanceState()
 #if USE_IMGUI
 void TitleSentence::ShowImGuiNode( const std::string &nodeCaption )
 {
-	if ( ImGui::TreeNode( ( nodeCaption.c_str() ) ) ) { return; }
+	if ( !ImGui::TreeNode( ( nodeCaption.c_str() ) ) ) { return; }
 	// else
 
 	uiLogo.ShowImGuiNode( u8"ÉçÉS" );

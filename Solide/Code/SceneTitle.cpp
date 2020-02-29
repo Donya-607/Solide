@@ -258,8 +258,11 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	bool wantAdvance = false;
 	if ( wantAdvance && !Fader::Get().IsExist() )
 	{
+		pSentence->AdvanceState();
 		StartFade();
 	}
+
+	pSentence->Update( elapsedTime );
 
 	return ReturnResult();
 }
@@ -285,6 +288,8 @@ void SceneTitle::Draw( float elapsedTime )
 	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
+
+	pSentence->Draw( elapsedTime );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -650,6 +655,10 @@ void SceneTitle::UseImGui()
 			if ( pObstacles )
 			{
 				pObstacles->ShowImGuiNode( u8"障害物の生成・破棄" );
+			}
+			if ( pSentence )
+			{
+				pSentence->ShowImGuiNode( u8"タイトル画像" );
 			}
 
 			ImGui::TreePop();
