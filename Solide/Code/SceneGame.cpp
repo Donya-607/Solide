@@ -252,19 +252,25 @@ void SceneGame::Init()
 {
 	Donya::Sound::Play( Music::BGM_Game );
 
+	bool result{};
+
 	ParamGame::Get().Init();
 	const auto data = FetchMember();
 
 	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin",  "./Data/Models/Terrain/ForCollision/Terrain.bin" );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 
-	assert( ObstacleBase::LoadModels() );
+	result = ObstacleBase::LoadModels();
+	assert( result );
+
 	ObstacleBase::ParameterInit();
 	pObstacles = std::make_unique<ObstacleContainer>();
 	pObstacles->Init( 1 ); // The stage-number is 1-based.(0 is title stage.)
 
-	assert( Player::LoadModels() );
-	assert( Player::LoadShadingObjects() );
+	result = Player::LoadModels();
+	assert( result );
+	result = Player::LoadShadingObjects();
+	assert( result );
 	PlayerInit();
 
 	CameraInit();

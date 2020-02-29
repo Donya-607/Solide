@@ -155,8 +155,8 @@ SceneTitle::SceneTitle() :
 	controller( Donya::Gamepad::PAD_1 ),
 	pTerrain( nullptr ),
 	pPlayer( nullptr ),
-	pObstacles( nullptr )
-
+	pObstacles( nullptr ),
+	pSentence( nullptr )
 
 #if DEBUG_MODE
 	, nowDebugMode( false ),
@@ -173,19 +173,30 @@ void SceneTitle::Init()
 {
 	Donya::Sound::Play( Music::BGM_Title );
 
+	bool result{};
+
 	ParamTitle::Get().Init();
 	const auto data = FetchMember();
+
+	pSentence = std::make_unique<TitleSentence>();
+	pSentence->Init();
+	result = pSentence->LoadSprites( L"./Data/Images/Title/Logo.png", L"./Data/Images/Title/Prompt.png" );
+	assert( result );
 
 	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/TitleTerrain.bin", "./Data/Models/Terrain/ForCollision/TitleTerrain.bin" );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 1.0f, 1.0f, 1.0f }, Donya::Vector3::Zero() );
 
-	assert( ObstacleBase::LoadModels() );
+	result = ObstacleBase::LoadModels();
+	assert( result );
+
 	ObstacleBase::ParameterInit();
 	pObstacles = std::make_unique<ObstacleContainer>();
 	pObstacles->Init( 0 );
 
-	assert( Player::LoadModels() );
-	assert( Player::LoadShadingObjects() );
+	result = Player::LoadModels();
+	assert( result );
+	result = Player::LoadShadingObjects();
+	assert( result );
 	PlayerInit();
 
 	CameraInit();

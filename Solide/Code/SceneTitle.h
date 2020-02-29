@@ -11,6 +11,7 @@
 
 #include "ObstacleContainer.h"
 #include "Player.h"
+#include "Sentence.h"
 #include "Scene.h"
 #include "Terrain.h"
 
@@ -23,6 +24,7 @@ private:
 	std::unique_ptr<Terrain>			pTerrain;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<ObstacleContainer>	pObstacles;
+	std::unique_ptr<TitleSentence>		pSentence;
 
 #if DEBUG_MODE
 	bool nowDebugMode;
