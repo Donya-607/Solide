@@ -924,7 +924,7 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	bool wasCorrectedV = WasCorrectedVertically( oldPos, pTerrain );
 	if ( wasCorrectedV )
 	{
-		const float dot = Donya::Dot( standingNormal, Donya::Vector3::Up() );
+		const float dot  = Donya::Dot( standingNormal, Donya::Vector3::Up() );
 		bool ridableFace = ( standingNormal.IsZero() )
 			? false 
 			: data.canRideSlopeBorder <= fabsf( std::max( 0.0f, dot ) );
@@ -1078,10 +1078,16 @@ bool Player::IsUnderFalloutBorder() const
 
 bool Player::WasCorrectedVertically( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const
 {
-	const float diffY = pos.y - oldPos.y;
+	const Donya::Vector3 movement = pos - oldPos;
 	
 	// If the actual movement is lower than velocity, that represents to was corrected.
-	bool wasCorrected = ( fabsf( diffY ) < fabsf( velocity.y ) - 0.001f );
+	// bool wasCorrected = ( fabsf( movement.y ) < fabsf( velocity.y )/* - 0.001f*/ );
+
+	// If the actual movement is shrunk or stretched from velocity, that means I was corrected.
+	
+	constexpr float JUDGE_ERROR = 0.001f;
+	const float diff = fabsf( movement.y ) - fabsf( velocity.y );
+	bool wasCorrected = ( JUDGE_ERROR < fabsf( diff ) );
 
 	// If the terrain is nothing, the criteria of landing is 0.0f.
 	if ( !pTerrain )

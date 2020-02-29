@@ -90,6 +90,20 @@ Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Do
 	Donya::Vector3 lastNormal{};
 	if ( !xzMovement.IsZero() ) { MoveXZImpl( xzMovement, wsRayOffsets, 0, solids, pTerrain, pTerrainMatrix ); }
 	if ( !yMovement.IsZero()  ) { lastNormal = MoveYImpl ( yMovement,  solids, pTerrain, pTerrainMatrix ); }
+
+	// If a face is there under from my foot, I correct onto the face for considering a slope.
+	{
+		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y, 0.0f };
+		auto resultV = CalcCorrectVelocity( checkUnderLength, {}, pTerrain, pTerrainMatrix, {}, 0, 1 );
+		if ( resultV.wasHit )
+		{
+			const Donya::Vector3 verticalSize{ 0.0f, hitBox.size.y, 0.0f };
+			const Donya::Vector3 diff = resultV.wsLastIntersection - ( pos - verticalSize );
+			pos.y += diff.y;
+			lastNormal = resultV.wsLastWallNormal;
+		}
+	}
+
 	return lastNormal;
 }
 namespace
@@ -122,34 +136,40 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 {
 	Donya::Vector3 horizontalMovement = xzMovement;
 
+	constexpr int RECURSIVE_LIMIT = 4;
+	auto resultH = CalcCorrectVelocity( horizontalMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
+
 	// If now standing to a face, We should slope the movement to that face's slope.
+	if ( 0 )
 	{
 		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y, 0.0f };
-		const Donya::Vector3 checkUnderOffset{ 0.0f, 0.0f, 0.0f };
-		auto resultV = CalcCorrectVelocity( checkUnderLength, { checkUnderOffset }, pTerrain, pTerrainMatrix, {}, 0, 1 );
+		auto resultV = CalcCorrectVelocity( checkUnderLength, {}, pTerrain, pTerrainMatrix, {}, 0, 1 );
 		if ( resultV.wasHit )
 		{
-			float cosTheta = Donya::Dot( resultV.wsLastWallNormal, Donya::Vector3::Up() );
-			cosTheta = std::max( 0.0f, std::min( 1.0f, cosTheta ) ); // Prevent NaN at acosf.
-
-			const float slopeRadian = acosf( cosTheta );
-
-			const Donya::Vector3 faceCenter
+			auto CalcSlopeRotation = []( const CalcedRayResult &result )->Donya::Quaternion
 			{
-				( resultV.wsLastWallFace[0] + resultV.wsLastWallFace[1] + resultV.wsLastWallFace[2] )
-				/ // ------------------------------------------------------------------------------
-														3
-			};
-			const Donya::Vector3 somePlaneVector = resultV.wsLastWallFace[0] - faceCenter;
-			const Donya::Vector3 slopeAxis = Donya::Cross( somePlaneVector, resultV.wsLastWallNormal ).Normalize();
+				float cosTheta = Donya::Dot( result.wsLastWallNormal, Donya::Vector3::Up() );
+				cosTheta = std::max( 0.0f, std::min( 1.0f, cosTheta ) ); // Prevent NaN at acosf.
 
-			const Donya::Quaternion slopeRotation = Donya::Quaternion::Make( slopeAxis, slopeRadian );
+				const float slopeRadian = acosf( cosTheta );
+
+				const Donya::Vector3 faceCenter
+				{
+					( result.wsLastWallFace[0] + result.wsLastWallFace[1] + result.wsLastWallFace[2] )
+					/ // ---------------------------------------------------------------------------
+															3
+				};
+				const Donya::Vector3 somePlaneVector = result.wsLastWallFace[0] - faceCenter;
+				const Donya::Vector3 slopeAxis = Donya::Cross( somePlaneVector, result.wsLastWallNormal ).Normalize();
+
+				const Donya::Quaternion slopeRotation = Donya::Quaternion::Make( slopeAxis, slopeRadian );
+				return slopeRotation;
+			};
+
+			const Donya::Quaternion slopeRotation = CalcSlopeRotation( resultV );
 			horizontalMovement = slopeRotation.RotateVector( horizontalMovement );
 		}
 	}
-
-	constexpr int RECURSIVE_LIMIT = 4;
-	auto resultH = CalcCorrectVelocity( horizontalMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
 	MoveInAABB( resultH.correctedVelocity, solids );
 
@@ -235,9 +255,9 @@ Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::ve
 	auto result = CalcCorrectVelocity( yMovement, {}, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
 	const Donya::Vector3 sizeOffset	= MakeSizeOffset( hitBox, yMovement );
-	const Donya::Vector3 destPos	= ( !result.wasHit )
-		? pos + yMovement
-		: result.wsLastIntersection - sizeOffset;
+	const Donya::Vector3 destPos	= ( result.wasHit )
+		? result.wsLastIntersection - sizeOffset
+		: pos + yMovement;
 	
 	// MoveInAABB( result.correctedVelocity, solids );
 	MoveInAABB( destPos - pos, solids );
