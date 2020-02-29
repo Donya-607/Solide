@@ -179,6 +179,7 @@
     <ClCompile Include="Code\Section.cpp" />
     <ClCompile Include="Code\StorageForScene.cpp" />
     <ClCompile Include="Code\Terrain.cpp" />
+    <ClCompile Include="Code\UI.cpp" />
     <ClCompile Include="External\ImGui\imgui.cpp" />
     <ClCompile Include="External\ImGui\imgui_demo.cpp" />
     <ClCompile Include="External\ImGui\imgui_draw.cpp" />
@@ -250,6 +251,7 @@
     <ClInclude Include="Code\StorageForScene.h" />
     <ClInclude Include="Code\Terrain.h" />
     <ClInclude Include="Code\TexPart.h" />
+    <ClInclude Include="Code\UI.h" />
     <ClInclude Include="External\Cereal\include\cereal\access.hpp" />
     <ClInclude Include="External\Cereal\include\cereal\archives\adapters.hpp" />
     <ClInclude Include="External\Cereal\include\cereal\archives\binary.hpp" />

@@ -496,9 +496,19 @@ void SceneTitle::PlayerUpdate( float elapsedTime )
 	const Donya::Quaternion	nowOrientation	= pPlayer->GetOrientation();
 	const Donya::Vector3	nowRight		= nowOrientation.LocalRight();
 
+	bool useJump = false;
+	if ( controller.IsConnected() )
+	{
+		useJump = controller.Trigger( Donya::Gamepad::A );
+	}
+	else
+	{
+		useJump = Donya::Keyboard::Trigger( 'Z' );
+	}
+
 	Player::Input input{};
 	input.moveVectorXZ	= Donya::Vector2{ nowRight.x, nowRight.z };
-	input.useJump		= false;
+	input.useJump		= useJump;
 	input.useOil		= ( pPlayer->IsOiled() ) ? false : true;
 
 	pPlayer->Update( elapsedTime, input );
