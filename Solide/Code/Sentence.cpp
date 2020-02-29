@@ -120,7 +120,7 @@ void TitleSentence::ShowImGuiNode( const std::string &nodeCaption )
 		loadStr += ( isBinary ) ? u8"Binary" : u8"Json";
 		loadStr += u8"）";
 
-		if ( ImGui::Button( ( u8"セーブ" ).c_str() ) )
+		if ( ImGui::Button( u8"セーブ" ) )
 		{
 			SaveBin ();
 			SaveJson();
