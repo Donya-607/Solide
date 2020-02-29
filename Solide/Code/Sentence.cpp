@@ -14,26 +14,31 @@ void TitleSentence::FlusherBase::Init( TitleSentence &target )
 	target.flushTimer = 0.0f;
 	target.drawAlpha  = 1.0f;
 }
-void TitleSentence::FlusherBase::UpdateImpl( TitleSentence &target, float elapsedTime, float flushInterval )
+void TitleSentence::FlusherBase::UpdateImpl( TitleSentence &target, float elapsedTime, float flushInterval, float flushRange )
 {
 	const float increaseAmount = 360.0f / ( 60.0f * flushInterval );
 	target.flushTimer += increaseAmount;
 
-	const float sin  = sinf( ToRadian( target.flushTimer ) );
-	target.drawAlpha = target.lowestAlpha + sin;
-	target.drawAlpha = std::max( 0.0f, std::min( 1.0f, target.drawAlpha ) );
+	const float sin  = sinf( ToRadian( target.flushTimer ) ) * flushRange;
+	target.drawAlpha = std::max( target.drawAlpha, std::min( 1.0f, sin ) );
 }
 void TitleSentence::LateFlusher::Update( TitleSentence &target, float elapsedTime )
 {
-	FlusherBase::UpdateImpl( target, elapsedTime, target.flushIntervalLate );
+	FlusherBase::UpdateImpl( target, elapsedTime, target.flushIntervalLate, target.flushRangeLate );
 }
 void TitleSentence::FastFlusher::Update( TitleSentence &target, float elapsedTime )
 {
-	FlusherBase::UpdateImpl( target, elapsedTime, target.flushIntervalFast );
+	FlusherBase::UpdateImpl( target, elapsedTime, target.flushIntervalFast, target.flushRangeFast );
 }
 
 void TitleSentence::Init()
 {
+#if DEBUG_MODE
+	LoadBin();
+#else
+	LoadJson();
+#endif // DEBUG_MODE
+
 	flushTimer	= 0.0f;
 	drawAlpha	= 1.0f;
 	ResetFlusher<LateFlusher>();
@@ -104,6 +109,8 @@ void TitleSentence::ShowImGuiNode( const std::string &nodeCaption )
 
 	ImGui::DragFloat( u8"点滅間隔（秒）・ゆっくり",	&flushIntervalLate, 0.1f, 0.0f );
 	ImGui::DragFloat( u8"点滅間隔（秒）・はやい",		&flushIntervalFast, 0.1f, 0.0f );
+	ImGui::DragFloat( u8"点滅幅（秒）・ゆっくり",		&flushRangeLate, 0.1f, 0.0f );
+	ImGui::DragFloat( u8"点滅幅（秒）・はやい",		&flushRangeFast, 0.1f, 0.0f );
 	ImGui::SliderFloat( u8"アルファの最低値", &lowestAlpha, 0.0f, 1.0f );
 
 	auto ShowIONode = [&]()

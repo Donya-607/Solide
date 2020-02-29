@@ -13,7 +13,7 @@ private:
 		virtual void Init( TitleSentence &target );
 		virtual void Update( TitleSentence &target, float elapsedTime ) = 0;
 	protected:
-		void UpdateImpl( TitleSentence &target, float elapsedTime, float flushInterval );
+		void UpdateImpl( TitleSentence &target, float elapsedTime, float flushInterval, float flushRange );
 	};
 	class LateFlusher : public FlusherBase
 	{
@@ -35,6 +35,8 @@ private: // Serialize members.
 	float lowestAlpha		= 0.0f;
 	float flushIntervalLate	= 0.5f;	 // Seconds.
 	float flushIntervalFast	= 0.25f; // Seconds.
+	float flushRangeLate	= 0.0f;
+	float flushRangeFast	= 0.0f;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -50,6 +52,14 @@ private:
 		);
 
 		if ( 1 <= version )
+		{
+			archive
+			(
+				CEREAL_NVP( flushRangeLate ),
+				CEREAL_NVP( flushRangeFast )
+			);
+		}
+		if ( 2 <= version )
 		{
 			// archive( CEREAL_NVP( x ) );
 		}
@@ -84,4 +94,4 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( TitleSentence, 0 )
+CEREAL_CLASS_VERSION( TitleSentence, 1 )

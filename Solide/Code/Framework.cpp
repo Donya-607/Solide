@@ -70,7 +70,7 @@ void Framework::Update( float elapsedTime/*Elapsed seconds from last frame*/ )
 
 void Framework::Draw( float elapsedTime/*Elapsed seconds from last frame*/ )
 {
-	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA );
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 
 	pSceneMng->Draw( elapsedTime );
 }
