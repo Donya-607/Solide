@@ -30,7 +30,8 @@ bool Framework::Init()
 	pSceneMng = std::make_unique<SceneMng>();
 
 #if DEBUG_MODE
-	pSceneMng->Init( Scene::Type::Game );
+	// pSceneMng->Init( Scene::Type::Game );
+	pSceneMng->Init( Scene::Type::Title );
 #else
 	pSceneMng->Init( Scene::Type::Logo );
 #endif // DEBUG_MODE
@@ -96,7 +97,7 @@ bool Framework::LoadSounds()
 			{ ID::BGM_Title,			u8"./Data/Sounds/BGM/アニマル・スマイル.mp3",		true  },
 			{ ID::BGM_Game,				"./Data/Sounds/BGM/Bouncy.mp3",					true  },
 			{ ID::BGM_Clear,			u8"./Data/Sounds/BGM/うきうき.mp3",				true  },
-			{ ID::BGM_Over,				"./Data/Sounds/BGM/Over.wav",					true  },
+			//{ ID::BGM_Over,				"./Data/Sounds/BGM/Over.wav",					true  },
 			
 			{ ID::PlayerJump,			"./Data/Sounds/SE/Player/Jump.wav",				false  },
 			{ ID::PlayerLanding,		"./Data/Sounds/SE/Player/Landing.wav",			false  },

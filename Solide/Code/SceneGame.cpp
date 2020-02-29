@@ -38,7 +38,7 @@ namespace
 			Donya::Vector3 offsetPos;	// The offset of position from the player position.
 			Donya::Vector3 offsetFocus;	// The offset of focus from the player position.
 		}
-		camera;	// The X and Z component is: player-position + offset. The Y component is:basePosY.
+		camera;
 		Section playerInitialPos;
 		Section goalArea;
 
@@ -49,8 +49,6 @@ namespace
 			float lowerAlpha = 0.0f; // 0.0f ~ 1.0f.
 		}
 		transparency;
-
-		// std::vector<Section> sections;
 
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
@@ -337,19 +335,7 @@ void SceneGame::Draw( float elapsedTime )
 {
 	elapsedTime = 1.0f; // Disable
 
-	// Clear the back-ground.
-	{
-		constexpr FLOAT BG_COLOR[4]{ 0.4f, 0.4f, 0.4f, 1.0f };
-		Donya::ClearViews( BG_COLOR );
-
-	#if DEBUG_MODE
-		if ( nowDebugMode )
-		{
-			constexpr FLOAT DEBUG_COLOR[4]{ 0.7f, 0.8f, 0.1f, 1.0f };
-			Donya::ClearViews( DEBUG_COLOR );
-		}
-	#endif // DEBUG_MODE
-	}
+	ClearBackGround();
 
 	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
 	const Donya::Vector4   lightDir{ 0.0f, -1.0f, 0.0f, 0.0f };
@@ -791,6 +777,20 @@ bool SceneGame::NowGoalMoment() const
 	return Donya::AABB::IsHitAABB( playerBody, goalArea );
 }
 
+void SceneGame::ClearBackGround() const
+{
+	constexpr FLOAT BG_COLOR[4]{ 0.4f, 0.4f, 0.4f, 1.0f };
+	Donya::ClearViews( BG_COLOR );
+
+#if DEBUG_MODE
+	if ( nowDebugMode )
+	{
+		constexpr FLOAT DEBUG_COLOR[4]{ 0.7f, 0.8f, 0.1f, 1.0f };
+		Donya::ClearViews( DEBUG_COLOR );
+	}
+#endif // DEBUG_MODE
+}
+
 void SceneGame::StartFade() const
 {
 	Fader::Configuration config{};
@@ -821,7 +821,7 @@ Scene::Result SceneGame::ReturnResult()
 
 	bool requestPause	= controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT ) || Donya::Keyboard::Trigger( 'P' );
 	bool allowPause		= !Fader::Get().IsExist();
-	if ( requestPause && allowPause )
+	if ( 0 && requestPause && allowPause )
 	{
 		Donya::Sound::Play( Music::ItemDecision );
 

@@ -7,11 +7,11 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+#include "ObstacleContainer.h"
 #include "Player.h"
 #include "Section.h"
 #include "Scene.h"
 #include "Terrain.h"
-#include "ObstacleContainer.h"
 
 class SceneGame : public Scene
 {
@@ -60,6 +60,7 @@ private:
 
 	bool	NowGoalMoment() const;
 
+	void	ClearBackGround() const;
 	void	StartFade() const;
 private:
 	Result	ReturnResult();
