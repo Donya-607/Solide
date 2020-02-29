@@ -921,13 +921,16 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	const auto data = FetchMember();
 	const Donya::Vector3 standingNormal = Actor::Move( velocity, data.raypickOffsets, solids, pTerrain, pTerrainMat );
 
-	bool wasCorrectedV = WasCorrectedVertically( oldPos, pTerrain );
-	if ( /*wasCorrectedV || */!standingNormal.IsZero()/* If now standing on some plane, that means corrected to vertically. */ )
+	// bool wasCorrectedV = WasCorrectedVertically( oldPos, pTerrain );
+
+	// If now standing on some plane, that means corrected to vertically.
+	bool wasCorrectedV = !standingNormal.IsZero();
+	if ( wasCorrectedV )
 	{
-		const float dot  = Donya::Dot( standingNormal, Donya::Vector3::Up() );
-		bool ridableFace = ( standingNormal.IsZero() )
-			? false 
-			: data.canRideSlopeBorder <= fabsf( std::max( 0.0f, dot ) );
+		const float	dot = Donya::Dot( standingNormal, Donya::Vector3::Up() );
+		const bool	ridableFace = ( standingNormal.IsZero() )
+					? false 
+					: data.canRideSlopeBorder <= fabsf( std::max( 0.0f, dot ) );
 
 		// I want erase the vertical velocity If collided to ceil or ridable floor.
 
@@ -1084,10 +1087,7 @@ bool Player::WasCorrectedVertically( const Donya::Vector3 &oldPos, const Donya::
 {
 	const Donya::Vector3 movement = pos - oldPos;
 	
-	// If the actual movement is lower than velocity, that represents to was corrected.
-	// bool wasCorrected = ( fabsf( movement.y ) < fabsf( velocity.y )/* - 0.001f*/ );
-
-	// If the actual movement is shrunk or stretched from velocity, that means I was corrected.
+	// If the actual movement is shrunk or stretched from velocity, we regard as I was corrected.
 	
 	constexpr float JUDGE_ERROR = 0.001f;
 	const float diff = fabsf( movement.y ) - fabsf( velocity.y );
@@ -1105,6 +1105,7 @@ void Player::AssignLanding()
 {
 	if ( !onGround )
 	{
+		// Prevent play the sound every frame.
 		Donya::Sound::Play( Music::PlayerLanding );
 	}
 

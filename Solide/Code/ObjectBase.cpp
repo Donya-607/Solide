@@ -96,6 +96,9 @@ Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Do
 	if ( yMovement.y <= 0.0f )
 	{
 		// The CalcCorrectVelocity() will extend the input velocity by the size of hitBox to the direction of input velocity.
+		// This input velocity length should be serialized.
+		// Because if this is lower, the slope correction is not function,
+		// if this is larger, an actor will landing too hurry.
 		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y * 0.5f, 0.0f };
 		auto resultV = CalcCorrectVelocity( checkUnderLength, {}, pTerrain, pTerrainMatrix, {}, 0, 1 );
 		if ( resultV.wasHit )
@@ -138,119 +141,10 @@ namespace
 }
 void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
-	Donya::Vector3 horizontalMovement = xzMovement;
-
 	constexpr int RECURSIVE_LIMIT = 4;
-	auto resultH = CalcCorrectVelocity( horizontalMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
+	auto result = CalcCorrectVelocity( xzMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
-	// If now standing to a face, We should slope the movement to that face's slope.
-	if ( 0 )
-	{
-		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y, 0.0f };
-		auto resultV = CalcCorrectVelocity( checkUnderLength, {}, pTerrain, pTerrainMatrix, {}, 0, 1 );
-		if ( resultV.wasHit )
-		{
-			auto CalcSlopeRotation = []( const CalcedRayResult &result )->Donya::Quaternion
-			{
-				float cosTheta = Donya::Dot( result.wsLastWallNormal, Donya::Vector3::Up() );
-				cosTheta = std::max( 0.0f, std::min( 1.0f, cosTheta ) ); // Prevent NaN at acosf.
-
-				const float slopeRadian = acosf( cosTheta );
-
-				const Donya::Vector3 faceCenter
-				{
-					( result.wsLastWallFace[0] + result.wsLastWallFace[1] + result.wsLastWallFace[2] )
-					/ // ---------------------------------------------------------------------------
-															3
-				};
-				const Donya::Vector3 somePlaneVector = result.wsLastWallFace[0] - faceCenter;
-				const Donya::Vector3 slopeAxis = Donya::Cross( somePlaneVector, result.wsLastWallNormal ).Normalize();
-
-				const Donya::Quaternion slopeRotation = Donya::Quaternion::Make( slopeAxis, slopeRadian );
-				return slopeRotation;
-			};
-
-			const Donya::Quaternion slopeRotation = CalcSlopeRotation( resultV );
-			horizontalMovement = slopeRotation.RotateVector( horizontalMovement );
-		}
-	}
-
-	MoveInAABB( resultH.correctedVelocity, solids );
-
-	/*
-	// If we can't resolve with very small movement, we give-up the moving.
-	constexpr int RECURSIVE_LIMIT = 255;
-	if ( RECURSIVE_LIMIT <= recursionCount ) { return; }
-	if ( xzMovement.Length() < 0.001f ) { return; }
-	// else
-
-	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
-	const Donya::Vector4x4	invTerrainMat	=  pTerrainMatrix->Inverse();
-	const Donya::Vector3	xzSizeOffset	=  MakeSizeOffset( hitBox, xzMovement );
-	const Donya::Vector3	wsRayStart		=  pos;
-	const Donya::Vector3	wsRayEnd		=  wsRayStart + xzMovement + xzSizeOffset;
-
-	// Terrain space.
-	const Donya::Vector3 tsRayStart	= Transform( invTerrainMat, wsRayStart,	1.0f );
-	const Donya::Vector3 tsRayEnd	= Transform( invTerrainMat, wsRayEnd,	1.0f );
-
-	// Store nearest collided result of rays that be affected offsets, or invalid(wasHit == false).
-	Donya::StaticMesh::RayPickResult result{};
-	{
-		result.wasHit = false;
-
-		// Store a ray pick results of each ray offsets.
-
-		Donya::Vector3 tsRayOffset{};
-		std::vector<Donya::StaticMesh::RayPickResult> temporaryResults{};
-		for ( const auto &offset : wsRayOffsets )
-		{
-			tsRayOffset = Transform( invTerrainMat, offset, 1.0f );
-
-			auto tmp = pTerrain->RayPick( tsRayStart + tsRayOffset, tsRayEnd + tsRayOffset );
-			temporaryResults.emplace_back( std::move( tmp ) );
-		}
-
-		// Choose the nearest collided result.
-
-		float nearestDistance = FLT_MAX;
-		Donya::Vector3 diff{};
-		for ( const auto &it : temporaryResults )
-		{
-			if ( !it.wasHit ) { continue; }
-			// else
-
-			diff = it.intersectionPoint - tsRayStart;
-			if ( diff.LengthSq() < nearestDistance )
-			{
-				nearestDistance = diff.LengthSq();
-				result = it;
-			}
-		}
-	}
-
-	// The moving vector(ray) didn't collide to anything, so we can move directly.
-	if ( !result.wasHit )
-	{
-		pos += xzMovement;
-		return;
-	}
-	// else
-
-	// Transform to World space from Terrains pace.
-	const Donya::Vector3 wsIntersection	= Transform( terrainMat, result.intersectionPoint, 1.0f );
-	const Donya::Vector3 wsWallNormal	= Transform( terrainMat, result.normal, 0.0f ).Normalized();
-
-	const Donya::Vector3 internalVec	= wsRayEnd - wsIntersection;
-	const Donya::Vector3 projVelocity	= -wsWallNormal * Dot( internalVec, -wsWallNormal );
-
-	constexpr float ERROR_MAGNI = 1.0f + 0.1f;
-	Donya::Vector3 correctedVelocity = xzMovement + ( -projVelocity * ERROR_MAGNI );
-
-	// Move by corrected velocity.
-	// This recursion will stop when the corrected velocity was not collided.
-	MoveXZImpl( correctedVelocity, wsRayOffsets, recursionCount + 1, pTerrain, pTerrainMatrix );
-	*/
+	MoveInAABB( result.correctedVelocity, solids );
 }
 Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
@@ -278,33 +172,6 @@ Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::ve
 	}
 
 	return result.wsLastWallNormal;
-
-	/*
-	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
-	const Donya::Vector4x4	invTerrainMat	=  pTerrainMatrix->Inverse();
-	const Donya::Vector3	ySizeOffset		=  MakeSizeOffset( hitBox, yMovement );
-	const Donya::Vector3	wsRayStart		=  pos - yMovement;
-	const Donya::Vector3	wsRayEnd		=  pos + yMovement + ySizeOffset;
-
-	// Terrain space.
-	const Donya::Vector3 tsRayStart	= Transform( invTerrainMat, wsRayStart,	1.0f );
-	const Donya::Vector3 tsRayEnd	= Transform( invTerrainMat, wsRayEnd,	1.0f );
-
-	auto  result = pTerrain->RayPick( tsRayStart, tsRayEnd );
-	// The moving vector(ray) didn't collide to anything, so we can move directly.
-	if ( !result.wasHit )
-	{
-		pos += yMovement;
-		return;
-	}
-	// else
-
-	// Transform to World space from Terrain space.
-	const Donya::Vector3 wsIntersection	= Transform( terrainMat, result.intersectionPoint, 1.0f );
-	const Donya::Vector3 wsWallNormal	= Transform( terrainMat, result.normal, 0.0f ).Normalized();
-
-	pos = wsIntersection - ySizeOffset;
-	*/
 }
 
 Donya::AABB Actor::CalcCollidingBox( const Donya::AABB &myself, const std::vector<Donya::AABB> &solids ) const
