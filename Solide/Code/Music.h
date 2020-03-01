@@ -10,6 +10,7 @@ namespace Music
 		BGM_Over,
 
 		UI_StartGame,
+		UI_Goal,
 
 		PlayerJump,
 		PlayerLanding,
