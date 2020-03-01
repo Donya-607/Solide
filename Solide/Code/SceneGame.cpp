@@ -349,6 +349,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	if ( NowGoalMoment() )
 	{
 		WaitInit();
+		Donya::Sound::Play( Music::UI_Goal );
 	}
 
 	WaitUpdate( elapsedTime );
@@ -830,8 +831,6 @@ void SceneGame::WaitInit()
 	timer = 0;
 	nowWaiting = true;
 	pClearSentence->Appear();
-
-	Donya::Sound::Play( Music::UI_Goal );
 }
 void SceneGame::WaitUpdate( float elapsedTime )
 {
