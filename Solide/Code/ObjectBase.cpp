@@ -115,8 +115,12 @@ Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Do
 }
 namespace
 {
-	Donya::Vector3 MakeSizeOffset( const Donya::AABB &hitBox, const Donya::Vector3 &sign )
+	Donya::Vector3 MakeSizeOffset( const Donya::AABB &hitBox, const Donya::Vector3 &movement )
 	{
+		const float avgSpeed = ( hitBox.size.x + hitBox.size.y + hitBox.size.z ) / 3.0f;
+		return movement.Normalized() * avgSpeed;
+
+		/*
 		const Donya::Vector3 sizeOffset
 		{
 			hitBox.size.x * Donya::SignBit( sign.x ),
@@ -124,6 +128,7 @@ namespace
 			hitBox.size.z * Donya::SignBit( sign.z ),
 		};
 		return sizeOffset;
+		*/
 	}
 	Donya::Vector3 ToVec3( const Donya::Vector4 &v )
 	{
@@ -152,7 +157,7 @@ Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::ve
 	constexpr int RECURSIVE_LIMIT = 1;
 	auto result = CalcCorrectVelocity( yMovement, {}, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
-	const Donya::Vector3 sizeOffset	= MakeSizeOffset( hitBox, yMovement );
+	const Donya::Vector3 sizeOffset	= Donya::Vector3::Up() * Donya::SignBit( yMovement.y ) * hitBox.size.y;
 	const Donya::Vector3 destPos	= ( result.wasHit )
 		? result.wsLastIntersection - sizeOffset
 		: pos + yMovement;

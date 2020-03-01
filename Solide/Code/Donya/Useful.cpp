@@ -50,13 +50,13 @@ namespace Donya
 	#endif
 	}
 
-	void OutputDebugStr( const char		*string )
+	void OutputDebugStr( const char *string )
 	{
 	#if DEBUG_MODE
 		OutputDebugStringA( string );
 	#endif // DEBUG_MODE
 	}
-	void OutputDebugStr( const wchar_t	*string )
+	void OutputDebugStr( const wchar_t *string )
 	{
 	#if DEBUG_MODE
 		OutputDebugStringW( string );
@@ -109,7 +109,7 @@ namespace Donya
 
 	// these convert function referenced to https://nekko1119.hatenablog.com/entry/2017/01/02/054629
 
-	std::wstring	MultiToWide( const std::string	&source, int codePage )
+	std::wstring	MultiToWide( const std::string &source, int codePage )
 	{
 		// MultiByteToWideChar() : http://www.t-net.ne.jp/~cyfis/win_api/sdk/MultiByteToWideChar.html
 		const int destSize = MultiByteToWideChar( codePage, 0U, source.data(), -1, nullptr, NULL );
@@ -126,7 +126,7 @@ namespace Donya
 
 		return std::wstring( dest.begin(), dest.end() );
 	}
-	std::string		WideToMulti( const std::wstring	&source, int codePage )
+	std::string		WideToMulti( const std::wstring &source, int codePage )
 	{
 		// WideCharToMultiByte() : http://www.t-net.ne.jp/~cyfis/win_api/sdk/WideCharToMultiByte.html
 		const int destSize = WideCharToMultiByte( codePage, 0U, source.data(), -1, nullptr, NULL, NULL, NULL );
@@ -144,15 +144,15 @@ namespace Donya
 		return std::string( dest.begin(), dest.end() );
 	}
 
-	const wchar_t	*MultiToWide( const char			*source )
+	const wchar_t *MultiToWide( const char *source )
 	{
 		return MultiToWide( std::string( source ) ).c_str();
 	}
-	const char		*WideToMulti( const wchar_t			*source )
+	const char *WideToMulti( const wchar_t *source )
 	{
 		return WideToMulti( std::wstring( source ) ).data();
 	}
-	std::wstring	MultiToWide( const std::string		&source )
+	std::wstring	MultiToWide( const std::string &source )
 	{
 	#if USE_WIN_API
 
@@ -193,7 +193,7 @@ namespace Donya
 
 	#endif // USE_WIN_API
 	}
-	std::string		WideToMulti( const std::wstring		&source )
+	std::string		WideToMulti( const std::wstring &source )
 	{
 	#if USE_WIN_API
 
@@ -233,22 +233,22 @@ namespace Donya
 	#endif // USE_WIN_API
 	}
 
-	std::wstring	UTF8ToWide( const std::string		&source )
+	std::wstring	UTF8ToWide( const std::string &source )
 	{
 		return MultiToWide( source, CP_UTF8 );
 	}
-	std::string		WideToUTF8( const std::wstring		&source )
+	std::string		WideToUTF8( const std::wstring &source )
 	{
 		// std::wstring_convert is deprecated in C++17.
 
 		return WideToMulti( source, CP_UTF8 );
 	}
 
-	std::string		MultiToUTF8( const std::string		&source )
+	std::string		MultiToUTF8( const std::string &source )
 	{
 		return WideToUTF8( MultiToWide( source ) );
 	}
-	std::string		UTF8ToMulti( const std::string		&source )
+	std::string		UTF8ToMulti( const std::string &source )
 	{
 		return WideToMulti( UTF8ToWide( source ) );
 	}
@@ -269,7 +269,7 @@ namespace Donya
 		std::lock_guard<std::mutex> enterCS( mutexFullPathName );
 
 		auto bufferSize = GetFullPathNameA( filePath.c_str(), NULL, NULL, nullptr );
-		std::unique_ptr<char[]> buffer = std::make_unique<char[]>( bufferSize );
+		std::unique_ptr<char[]> buffer = std::make_unique<char[]>( bufferSize + 1/* Null End */ );
 
 		/* auto result = */GetFullPathNameA( filePath.c_str(), bufferSize, buffer.get(), nullptr );
 
@@ -282,7 +282,7 @@ namespace Donya
 		if ( !pathLength ) { return ""; }
 		// else
 
-		std::unique_ptr<char[]> directory = std::make_unique<char[]>( pathLength );
+		std::unique_ptr<char[]> directory = std::make_unique<char[]>( pathLength + 1/* Null End */ );
 		for ( size_t i = 0; i < pathLength; ++i )
 		{
 			directory[i] = fullPath[i];
