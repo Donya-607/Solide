@@ -97,6 +97,113 @@ public:
 CEREAL_CLASS_VERSION( TitleSentence, 1 )
 
 
+class TutorialSentence
+{
+public:
+	struct WhatEasing
+	{
+		int		easeKind = 0;
+		int		easeType = 0;
+		float	easeSeconds = 1.0f;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( easeKind ),
+				CEREAL_NVP( easeType ),
+				CEREAL_NVP( easeSeconds )
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
+private:
+	class PerformerBase
+	{
+	public:
+		void Init( TutorialSentence &target ) const;
+		virtual void Update( TutorialSentence &target, float elapsedTime ) = 0;
+		float CalcEasing( TutorialSentence &target, const WhatEasing &param ) const;
+	};
+	class AppearPerformer : public PerformerBase
+	{
+	public:
+		void Update( TutorialSentence &target, float elapsedTime ) override;
+	};
+	class SlidePerformer : public PerformerBase
+	{
+	public:
+		void Update( TutorialSentence &target, float elapsedTime ) override;
+	};
+private:
+	float			easingTimer	= 0.0f; // 0.0f ~ 1.0f
+	float			drawScale	= 0.0f;
+	Donya::Vector2	drawPos;
+	std::unique_ptr<PerformerBase> pPerformer;
+private: // Serialize members.
+	UIObject uiTutorial;
+
+	WhatEasing		appearEasing;
+	float			appearScale = 1.0f;
+	Donya::Vector2	appearPos;
+	WhatEasing		slideEasing;
+	float			slideScale  = 1.0f;
+	Donya::Vector2	slidePos;
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			CEREAL_NVP( uiTutorial ),
+			CEREAL_NVP( appearEasing ),
+			CEREAL_NVP( appearScale ),
+			CEREAL_NVP( appearPos ),
+			CEREAL_NVP( slideEasing ),
+			CEREAL_NVP( slideScale ),
+			CEREAL_NVP( slidePos )
+		);
+
+		if ( 0 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
+	static constexpr const char *ID = "TutorialSentence";
+public:
+	void Init();
+	bool LoadSprite( const std::wstring &tutorialFileName );
+
+	void Update( float elapsedTime );
+
+	void Draw( float elapsedTime ) const;
+private:
+	template<class Performer>
+	void ResetPerformer()
+	{
+		pPerformer = std::make_unique<Performer>();
+		pPerformer->Init( *this );
+	}
+private:
+	void LoadBin();
+	void LoadJson();
+#if USE_IMGUI
+	void SaveBin();
+	void SaveJson();
+public:
+	void ShowImGuiNode( const std::string &nodeCaption );
+#endif // USE_IMGUI
+};
+CEREAL_CLASS_VERSION( TutorialSentence, 0 )
+CEREAL_CLASS_VERSION( TutorialSentence::WhatEasing, 0 )
+
 
 class ClearSentence
 {

@@ -154,6 +154,166 @@ void TitleSentence::ShowImGuiNode( const std::string &nodeCaption )
 #pragma endregion
 
 
+#pragma region TutorialSentence
+
+void TutorialSentence::PerformerBase::Init( TutorialSentence &target ) const
+{
+	target.easingTimer = 0.0f;
+}
+float TutorialSentence::PerformerBase::CalcEasing( TutorialSentence &target, const WhatEasing &param ) const
+{
+	const float increment =  1.0f / ( 60.0f * param.easeSeconds );
+	target.easingTimer += increment;
+	target.easingTimer =  std::min( 1.0f, target.easingTimer );
+
+	namespace E = Donya::Easing;
+	return E::Ease( scast<E::Kind>( param.easeKind ), scast<E::Type>( param.easeType ), target.easingTimer );
+}
+
+void TutorialSentence::AppearPerformer::Update( TutorialSentence &target, float elapsedTime )
+{
+	const float easing = CalcEasing( target, target.appearEasing );
+
+	target.drawScale = target.appearScale * easing;
+	target.drawPos   = target.appearPos;
+}
+void TutorialSentence::SlidePerformer::Update( TutorialSentence &target, float elapsedTime )
+{
+	const float easing = CalcEasing( target, target.slideEasing );
+
+	const float diffScale = target.slideScale - target.appearScale;
+	const Donya::Vector2 diffPos = target.slidePos - target.appearPos;
+
+	target.drawScale = target.appearScale + ( diffScale * easing );
+	target.drawPos = target.appearPos + ( diffPos * easing );
+}
+
+void TutorialSentence::Init()
+{
+#if DEBUG_MODE
+	LoadBin();
+#else
+	LoadJson();
+#endif // DEBUG_MODE
+
+	ResetPerformer<AppearPerformer>();
+}
+bool TutorialSentence::LoadSprite( const std::wstring &tutorialName )
+{
+	constexpr size_t INSTANCE_COUNT = 4U;
+	return uiTutorial.LoadSprite( tutorialName, INSTANCE_COUNT );
+}
+
+void TutorialSentence::Update( float elapsedTime )
+{
+	pPerformer->Update( *this, elapsedTime );
+}
+
+void TutorialSentence::Draw( float elapsedTime ) const
+{
+	constexpr float DRAW_DEPTH = 0.0f;
+	uiTutorial.Draw( DRAW_DEPTH );;
+}
+
+void TutorialSentence::LoadBin()
+{
+	constexpr bool fromBinary = true;
+	Donya::Serializer::Load( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+}
+void TutorialSentence::LoadJson()
+{
+	constexpr bool fromBinary = false;
+	Donya::Serializer::Load( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+}
+#if USE_IMGUI
+void TutorialSentence::SaveBin()
+{
+	constexpr bool fromBinary = true;
+	Donya::Serializer::Save( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+}
+void TutorialSentence::SaveJson()
+{
+	constexpr bool fromBinary = false;
+	Donya::Serializer::Save( *this, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
+}
+void TutorialSentence::ShowImGuiNode( const std::string &nodeCaption )
+{
+	if ( !ImGui::TreeNode( ( nodeCaption.c_str() ) ) ) { return; }
+	// else
+
+	ImGui::Text( "Timer  : %5.3f", easingTimer );
+	ImGui::Text( "Scale  : %5.3f", drawScale   );
+	if ( ImGui::Button( u8"演出タイマーをリセット" ) )
+	{
+		easingTimer = 0.0f;
+	}
+
+	uiTutorial.ShowImGuiNode( u8"画像文字" );
+
+	auto ShowEasingParam = []( WhatEasing *pDest )
+	{
+		namespace E = Donya::Easing;
+		constexpr int kindCount = E::GetKindCount();
+		constexpr int typeCount = E::GetTypeCount();
+		ImGui::SliderInt( u8"イージングの種類",	&pDest->easeKind, 0, kindCount - 1 );
+		ImGui::SliderInt( u8"イージングのかけ方",	&pDest->easeType, 0, typeCount - 1 );
+		ImGui::Text( u8"内容：%s・%s", E::KindName( pDest->easeKind ), E::TypeName( pDest->easeType ) );
+		
+		ImGui::DragFloat( u8"イージングにかける秒数", &pDest->easeSeconds, 0.1f, 0.001f );
+	};
+	if ( ImGui::TreeNode( u8"出現時" ) )
+	{
+		ImGui::DragFloat( u8"最終的な描画スケール", &appearScale, 0.1f, 0.0f );
+		ImGui::DragFloat2( u8"描画位置", &appearPos.x, 1.0f );
+		ShowEasingParam( &appearEasing );
+
+		ImGui::TreePop();
+	}
+	if ( ImGui::TreeNode( u8"移動時" ) )
+	{
+		ImGui::DragFloat( u8"最終的な描画スケール", &slideScale, 0.1f, 0.0f );
+		ImGui::DragFloat2( u8"描画位置", &slidePos.x, 1.0f );
+		ShowEasingParam( &slideEasing );
+
+		ImGui::TreePop();
+	}
+
+	auto ShowIONode = [&]()
+	{
+		if ( !ImGui::TreeNode( u8"ファイル I/O" ) ) { return; }
+		// else
+
+		static bool isBinary = true;
+		if ( ImGui::RadioButton( "Binary", isBinary ) ) { isBinary = true;  }
+		if ( ImGui::RadioButton( "Json",  !isBinary ) ) { isBinary = false; }
+
+		std::string loadStr = u8"ロード";
+		loadStr += u8"（by:";
+		loadStr += ( isBinary ) ? u8"Binary" : u8"Json";
+		loadStr += u8"）";
+
+		if ( ImGui::Button( u8"セーブ" ) )
+		{
+			SaveBin ();
+			SaveJson();
+		}
+		if ( ImGui::Button( loadStr.c_str() ) )
+		{
+			( isBinary ) ? LoadBin() : LoadJson();
+		}
+
+		ImGui::TreePop();
+	};
+	ShowIONode();
+
+	ImGui::TreePop();
+}
+#endif // USE_IMGUI
+
+// region TutorialSentence
+#pragma endregion
+
+
 #pragma region ClearSentence
 
 
