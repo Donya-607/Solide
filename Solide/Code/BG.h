@@ -10,7 +10,7 @@ private: // Serialize members.
 	UIObject	sprBG;
 	UIObject	sprCloud;
 	float		scrollSpeed = 1.0f;
-	float		cloudWidth = 1080.0f;
+	float		cloudWidth = 1920.0f;
 private:
 	friend class cereal::access;
 	template<class Archive>

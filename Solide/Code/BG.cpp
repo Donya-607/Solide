@@ -31,21 +31,27 @@ void BG::Update( float elapsedTime )
 	sprBG.pos = halfScreenSize;
 	sprCloud.pos = halfScreenSize;
 
-	horizonPos += scrollSpeed;
+	{
+		horizonPos += scrollSpeed;
+		if ( cloudWidth < fabsf( horizonPos ) )
+		{
+			horizonPos -= cloudWidth * Donya::SignBit( scrollSpeed );
+		}
+	}
 
-	sprCloud.pos.x = horizonPos;
+	sprCloud.pos.x += horizonPos;
 }
 
 void BG::Draw( float elapsedTime )
 {
 	constexpr float MOST_FAR = 1.0f;
 	sprBG.Draw( MOST_FAR );
-
-	sprCloud.Draw( MOST_FAR - 0.001f );
+	
+	sprCloud.Draw( MOST_FAR );
 
 	const int scrollSign = Donya::SignBit( scrollSpeed );
 	sprCloud.pos.x += cloudWidth * -scrollSign;
-	sprCloud.Draw( MOST_FAR - 0.001f );
+	sprCloud.Draw( MOST_FAR );
 	sprCloud.pos.x -= cloudWidth * -scrollSign;
 }
 

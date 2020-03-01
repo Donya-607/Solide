@@ -390,7 +390,6 @@ void SceneGame::Draw( float elapsedTime )
 	elapsedTime = 1.0f; // Disable
 
 	ClearBackGround();
-	pBG->Draw( elapsedTime );
 
 	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
 	const Donya::Vector4   lightDir{ 0.0f, -1.0f, 0.0f, 0.0f };
@@ -411,6 +410,9 @@ void SceneGame::Draw( float elapsedTime )
 	// A draw check of these sentences are doing at internal of these methods.
 	pTutorialSentence->Draw( elapsedTime );
 	pClearSentence->Draw( elapsedTime );
+
+	// Drawing to far for avoiding to trans the BG's blue.
+	pBG->Draw( elapsedTime );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
