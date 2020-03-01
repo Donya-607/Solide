@@ -996,9 +996,9 @@ void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPo
 			PlayerModel::CBuffer::PerScene constants{};
 			constants.eyePos			= cameraPos;
 			constants.lightColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-			constants.lightDirection	= lightDir;
-			// Donya::Vector3 lightDir3{ lightDir.x, lightDir.y, lightDir.z };
-			// constants.lightDirection	= Donya::Vector4{ actualOrientation.RotateVector( lightDir3 ), 0.0f };
+			// constants.lightDirection	= lightDir;
+			Donya::Vector3 lightDir3{ lightDir.x, lightDir.y, lightDir.z };
+			constants.lightDirection	= Donya::Vector4{ actualOrientation.RotateVector( lightDir3 ), 0.0f };
 			return constants;
 		};
 		auto MakeConstantsPerModel = []( const Donya::Vector4 &color )
