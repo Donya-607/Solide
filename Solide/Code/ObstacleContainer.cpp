@@ -1,5 +1,7 @@
 #include "ObstacleContainer.h"
 
+#include <algorithm>	// For sort by depth.
+
 #if USE_IMGUI
 #include "Donya/Useful.h" // Convert the character codes.
 #endif // USE_IMGUI
@@ -51,6 +53,17 @@ void ObstacleContainer::Draw( const Donya::Vector4 &eyePos, float transNear, flo
 		// else
 		pIt->Draw( eyePos, transNear, transFar, transLowerAlpha, VP, lightDir, color );
 	}
+}
+
+void ObstacleContainer::SortByDepth()
+{
+	using ElementType = std::shared_ptr<ObstacleBase>;
+	auto IsGreaterDepth = []( const ElementType &lhs, const ElementType &rhs )
+	{
+		return ( rhs->GetPosition().z < lhs->GetPosition().z );
+	};
+
+	std::sort( pObstacles.begin(), pObstacles.end(), IsGreaterDepth );
 }
 
 std::vector<Donya::AABB> ObstacleContainer::GetHitBoxes() const
@@ -119,6 +132,13 @@ void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		data.pop_back();
 	}
+	
+	ImGui::Text( "" );
+	ImGui::Text( u8"ソートはセーブ時にも自動で行われます" );
+	if ( ImGui::Button( u8"ソート" ) )
+	{
+		SortByDepth();
+	}
 
 	{
 		const size_t count = data.size();
@@ -161,6 +181,8 @@ void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 
 		if ( ImGui::Button( ( u8"セーブ" + strIndex ).c_str() ) )
 		{
+			SortByDepth();
+
 			SaveBin ( stageNo );
 			SaveJson( stageNo );
 		}

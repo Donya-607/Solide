@@ -44,6 +44,8 @@ public:
 
 	void Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color );
 public:
+	void SortByDepth();
+public:
 	std::vector<Donya::AABB> GetHitBoxes() const;
 private:
 	std::string MakeSerializePath( int stageNo, bool fromBinary ) const;
