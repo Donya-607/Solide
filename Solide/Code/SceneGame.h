@@ -30,6 +30,7 @@ private:
 	std::unique_ptr<Terrain>			pTerrain;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<ObstacleContainer>	pObstacles;
+	std::unique_ptr<TutorialSentence>	pTutorialSentence;
 	std::unique_ptr<ClearSentence>		pClearSentence;
 
 	int  timer;

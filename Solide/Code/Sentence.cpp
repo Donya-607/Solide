@@ -196,7 +196,7 @@ void TutorialSentence::Init()
 	LoadJson();
 #endif // DEBUG_MODE
 
-	ResetPerformer<AppearPerformer>();
+	pPerformer.reset();
 }
 bool TutorialSentence::LoadSprite( const std::wstring &tutorialName )
 {
@@ -206,13 +206,28 @@ bool TutorialSentence::LoadSprite( const std::wstring &tutorialName )
 
 void TutorialSentence::Update( float elapsedTime )
 {
+	if ( !pPerformer ) { return; }
+	// else
+
 	pPerformer->Update( *this, elapsedTime );
 }
 
 void TutorialSentence::Draw( float elapsedTime ) const
 {
+	if ( !pPerformer ) { return; }
+	// else
+
 	constexpr float DRAW_DEPTH = 0.0f;
 	uiTutorial.Draw( DRAW_DEPTH );;
+}
+
+void TutorialSentence::Appear()
+{
+	ResetPerformer<AppearPerformer>();
+}
+void TutorialSentence::StartSliding()
+{
+	ResetPerformer<SlidePerformer>();
 }
 
 void TutorialSentence::LoadBin()

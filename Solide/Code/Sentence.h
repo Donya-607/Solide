@@ -184,6 +184,9 @@ public:
 	void Update( float elapsedTime );
 
 	void Draw( float elapsedTime ) const;
+public:
+	void Appear();
+	void StartSliding();
 private:
 	template<class Performer>
 	void ResetPerformer()
