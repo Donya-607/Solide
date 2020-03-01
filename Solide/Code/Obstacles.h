@@ -179,6 +179,8 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Table )
 class Goal : public ObstacleBase
 {
 private:
+	Donya::Quaternion orientation;
+private:
 	friend class cereal::access;
 	template<class Archive>
 	void serialize( Archive &archive, std::uint32_t version )

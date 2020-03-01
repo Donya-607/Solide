@@ -54,6 +54,8 @@ namespace
 		int waitFrameUntilSlideTutorial = 60;
 		int waitFrameUntilFade = 60;
 
+		Donya::Vector4 goalColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -99,12 +101,16 @@ namespace
 			}
 			if ( 5 <= version )
 			{
+				archive( CEREAL_NVP( goalColor ) );
+			}
+			if ( 6 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 4 )
+CEREAL_CLASS_VERSION( Member, 5 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -199,37 +205,7 @@ public:
 
 				ShowSectionGUI( u8"自機の初期位置",	&m.playerInitialPos	);
 				ShowSectionGUI( u8"ゴール位置",		&m.goalArea			);
-
-				// vector<Section> process.
-				/*
-				auto &data = m.sections;
-				if ( ImGui::Button( u8"追加" ) )
-				{
-					data.push_back( { m.addSectionPos } );
-				}
-				if ( 1 <= data.size() && ImGui::Button( u8"末尾を削除" ) )
-				{
-					data.pop_back();
-				}
-
-				const size_t count = data.size();
-				size_t removeIndex = count;
-				std::string strIndex{};
-				for ( size_t i = 0; i < count; ++i )
-				{
-					strIndex = u8"[" + std::to_string( i ) + u8"]";
-
-					bool shouldErase = false;
-					data[i].ShowImGuiNode( ( u8"セクション" + strIndex ).c_str(), &shouldErase );
-
-					if ( shouldErase ) { removeIndex = i; }
-				}
-
-				if ( removeIndex != count )
-				{
-					data.erase( data.begin() + removeIndex );
-				}
-				*/
+				ImGui::ColorEdit4( u8"ゴールオブジェクトの色", &m.goalColor.x );
 
 				ImGui::TreePop();
 			}
@@ -409,7 +385,7 @@ void SceneGame::Draw( float elapsedTime )
 
 	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
-	pGoal->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	pGoal->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, data.goalColor );
 	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 	// Drawing to far for avoiding to trans the BG's blue.

@@ -393,10 +393,24 @@ int Table::GetKind() const
 void Goal::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Goal, ParamObstacle::Get().Data() );
+
+	constexpr float ROT_ANGLE = 1.5f; // ( 360 / 4 )
+	const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( ROT_ANGLE ) );
+	orientation.RotateBy( rotation );
 }
 void Goal::Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
 {
-	DrawModel( Kind::Goal, eyePos, transNear, transFar, transLowerAlpha, GetWorldMatrix(), VP, lightDir, color );
+	const Donya::AABB body = GetHitBox();
+	Donya::Vector4x4 W{};
+	W._11 = body.size.x * 2.0f;
+	W._22 = body.size.y * 2.0f;
+	W._33 = body.size.z * 2.0f;
+	W *= orientation.RequireRotationMatrix();
+	W._41 = body.pos.x;
+	W._42 = body.pos.y;
+	W._43 = body.pos.z;
+
+	DrawModel( Kind::Goal, eyePos, transNear, transFar, transLowerAlpha, W, VP, lightDir, color );
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
