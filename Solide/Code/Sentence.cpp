@@ -218,7 +218,7 @@ void TutorialSentence::Draw( float elapsedTime ) const
 	// else
 
 	constexpr float DRAW_DEPTH = 0.0f;
-	uiTutorial.Draw( DRAW_DEPTH );;
+	uiTutorial.Draw( DRAW_DEPTH );
 }
 
 void TutorialSentence::Appear()
@@ -373,7 +373,7 @@ void ClearSentence::Draw( float elapsedTime ) const
 	// else
 
 	constexpr float DRAW_DEPTH = 0.0f;
-	uiClear.Draw( DRAW_DEPTH );;
+	uiClear.Draw( DRAW_DEPTH );
 }
 
 void ClearSentence::Hide()

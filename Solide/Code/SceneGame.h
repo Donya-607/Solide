@@ -33,7 +33,8 @@ private:
 	std::unique_ptr<TutorialSentence>	pTutorialSentence;
 	std::unique_ptr<ClearSentence>		pClearSentence;
 
-	int  timer;
+	int  gameTimer;
+	int  clearTimer;
 	bool nowWaiting;
 
 #if DEBUG_MODE
@@ -63,6 +64,8 @@ private:
 	void	PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const std::unique_ptr<Terrain> *ppTerrain );
 	void	PlayerDraw( const Donya::Vector4x4 &matViewProj, const Donya::Vector4 &cameraPosition, const Donya::Vector4 &lightDirection );
 	void	PlayerUninit();
+
+	void	TutorialUpdate( float elapsedTime );
 
 	bool	NowGoalMoment() const;
 

@@ -50,6 +50,8 @@ namespace
 		}
 		transparency;
 
+		int waitFrameUntilShowTutorial  = 60;
+		int waitFrameUntilSlideTutorial = 60;
 		int waitFrameUntilFade = 60;
 
 	public: // Does not serialize members.
@@ -89,12 +91,20 @@ namespace
 			}
 			if ( 4 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( waitFrameUntilShowTutorial ),
+					CEREAL_NVP( waitFrameUntilSlideTutorial )
+				);
+			}
+			if ( 5 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 3 )
+CEREAL_CLASS_VERSION( Member, 4 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -143,7 +153,11 @@ public:
 
 		if ( ImGui::TreeNode( u8"ゲームのパラメータ調整" ) )
 		{
+			ImGui::DragInt( u8"開始からチュートリアル画像表示までの秒数", &m.waitFrameUntilShowTutorial,  1.0f, 1 );
+			ImGui::DragInt( u8"チュートリアル画像表示から縮小までの秒数", &m.waitFrameUntilSlideTutorial, 1.0f, 1 );
 			ImGui::DragInt( u8"ゴールからフェードまでの秒数", &m.waitFrameUntilFade, 1.0f, 1 );
+			m.waitFrameUntilShowTutorial  = std::max( 1, m.waitFrameUntilShowTutorial  );
+			m.waitFrameUntilSlideTutorial = std::max( 1, m.waitFrameUntilSlideTutorial );
 			m.waitFrameUntilFade = std::max( 1, m.waitFrameUntilFade );
 
 			if ( ImGui::TreeNode( u8"カメラ" ) )
@@ -246,7 +260,8 @@ SceneGame::SceneGame() :
 	pPlayer( nullptr ),
 	pObstacles( nullptr ),
 	pClearSentence( nullptr ),
-	timer(),
+	gameTimer(),
+	clearTimer(),
 	nowWaiting( false )
 
 #if DEBUG_MODE
@@ -269,6 +284,11 @@ void SceneGame::Init()
 	ParamGame::Get().Init();
 	const auto data = FetchMember();
 
+	pTutorialSentence = std::make_unique<TutorialSentence>();
+	pTutorialSentence->Init();
+	result = pTutorialSentence->LoadSprite( L"./Data/Images/Game/Tutorial.png" );
+	assert( result );
+	
 	pClearSentence = std::make_unique<ClearSentence>();
 	pClearSentence->Init();
 	result = pClearSentence->LoadSprite( L"./Data/Images/Game/Clear.png" );
@@ -352,6 +372,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		Donya::Sound::Play( Music::UI_Goal );
 	}
 
+	TutorialUpdate( elapsedTime );
 	WaitUpdate( elapsedTime );
 
 	return ReturnResult();
@@ -379,6 +400,8 @@ void SceneGame::Draw( float elapsedTime )
 
 	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
+	// A draw check of these sentences are doing at internal of these methods.
+	pTutorialSentence->Draw( elapsedTime );
 	pClearSentence->Draw( elapsedTime );
 
 #if DEBUG_MODE
@@ -705,6 +728,26 @@ void SceneGame::PlayerUninit()
 	pPlayer.reset();
 }
 
+void SceneGame::TutorialUpdate( float elapsedTime )
+{
+	const int showTiming  = FetchMember().waitFrameUntilShowTutorial;
+	const int slideTiming = showTiming + FetchMember().waitFrameUntilSlideTutorial;
+
+	if ( slideTiming + 1 < gameTimer ) { return; }
+	// else
+
+	gameTimer++;
+
+	if ( gameTimer == showTiming )
+	{
+		pTutorialSentence->Appear();
+	}
+	if ( gameTimer == slideTiming )
+	{
+		pTutorialSentence->Appear();
+	}
+}
+
 bool SceneGame::NowGoalMoment() const
 {
 	if ( !pPlayer ) { return false; }
@@ -720,7 +763,7 @@ bool SceneGame::NowGoalMoment() const
 
 void SceneGame::WaitInit()
 {
-	timer = 0;
+	clearTimer = 0;
 	nowWaiting = true;
 	pClearSentence->Appear();
 }
@@ -731,8 +774,8 @@ void SceneGame::WaitUpdate( float elapsedTime )
 
 	pClearSentence->Update( elapsedTime );
 
-	timer++;
-	if ( timer == FetchMember().waitFrameUntilFade )
+	clearTimer++;
+	if ( clearTimer == FetchMember().waitFrameUntilFade )
 	{
 		StartFade();
 	}
@@ -856,6 +899,10 @@ void SceneGame::UseImGui()
 		if ( pObstacles )
 		{
 			pObstacles->ShowImGuiNode( u8"障害物の生成・破棄" );
+		}
+		if ( pTutorialSentence )
+		{
+			pTutorialSentence->ShowImGuiNode( u8"チュートリアル画像" );
 		}
 		if ( pClearSentence )
 		{
