@@ -256,6 +256,7 @@ SceneGame::SceneGame() :
 	dirLight(),
 	iCamera(),
 	controller( Donya::Gamepad::PAD_1 ),
+	pBG( nullptr ),
 	pTerrain( nullptr ),
 	pPlayer( nullptr ),
 	pObstacles( nullptr ),
@@ -283,6 +284,10 @@ void SceneGame::Init()
 
 	ParamGame::Get().Init();
 	const auto data = FetchMember();
+
+	pBG = std::make_unique<BG>();
+	result = pBG->LoadSprites( L"./Data/Images/BG/Back.png", L"./Data/Images/BG/Cloud.png" );
+	assert( result );
 
 	pTutorialSentence = std::make_unique<TutorialSentence>();
 	pTutorialSentence->Init();
@@ -356,6 +361,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	controller.Update();
 
+	pBG->Update( elapsedTime );
+
 	pTerrain->BuildWorldMatrix();
 
 	pObstacles->Update( elapsedTime );
@@ -383,6 +390,7 @@ void SceneGame::Draw( float elapsedTime )
 	elapsedTime = 1.0f; // Disable
 
 	ClearBackGround();
+	pBG->Draw( elapsedTime );
 
 	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
 	const Donya::Vector4   lightDir{ 0.0f, -1.0f, 0.0f, 0.0f };
@@ -892,6 +900,10 @@ void SceneGame::UseImGui()
 			ImGui::TreePop();
 		}
 
+		if ( pBG )
+		{
+			pBG->ShowImGuiNode( u8"ÇaÇf" );
+		}
 		if ( pTerrain )
 		{
 			pTerrain->ShowImGuiNode( u8"ínå`" );
