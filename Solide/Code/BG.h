@@ -36,8 +36,13 @@ public:
 	void Update( float elapsedTime );
 
 	void Draw( float elapsedTime );
-public:
+private:
+	void LoadBin();
+	void LoadJson();
 #if USE_IMGUI
+	void SaveBin();
+	void SaveJson();
+public:
 	void ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI
 };
