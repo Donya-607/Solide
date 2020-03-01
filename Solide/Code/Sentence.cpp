@@ -112,10 +112,10 @@ void TitleSentence::ShowImGuiNode( const std::string &nodeCaption )
 	uiLogo.ShowImGuiNode( u8"ロゴ" );
 	uiPrompt.ShowImGuiNode( u8"スタート文字" );
 
-	ImGui::DragFloat( u8"点滅間隔（秒）・ゆっくり",	&flushIntervalLate, 0.1f, 0.0f );
-	ImGui::DragFloat( u8"点滅間隔（秒）・はやい",		&flushIntervalFast, 0.1f, 0.0f );
-	ImGui::DragFloat( u8"点滅幅（秒）・ゆっくり",		&flushRangeLate, 0.1f, 0.0f );
-	ImGui::DragFloat( u8"点滅幅（秒）・はやい",		&flushRangeFast, 0.1f, 0.0f );
+	ImGui::DragFloat( u8"点滅間隔（秒）・ゆっくり",	&flushIntervalLate, 0.01f, 0.0f );
+	ImGui::DragFloat( u8"点滅間隔（秒）・はやい",		&flushIntervalFast, 0.01f, 0.0f );
+	ImGui::DragFloat( u8"点滅幅（秒）・ゆっくり",		&flushRangeLate, 0.01f, 0.0f );
+	ImGui::DragFloat( u8"点滅幅（秒）・はやい",		&flushRangeFast, 0.01f, 0.0f );
 	ImGui::SliderFloat( u8"アルファの最低値", &lowestAlpha, 0.0f, 1.0f );
 
 	auto ShowIONode = [&]()
@@ -285,7 +285,7 @@ void TutorialSentence::ShowImGuiNode( const std::string &nodeCaption )
 		ImGui::SliderInt( u8"イージングのかけ方",	&pDest->easeType, 0, typeCount - 1 );
 		ImGui::Text( u8"内容：%s・%s", E::KindName( pDest->easeKind ), E::TypeName( pDest->easeType ) );
 		
-		ImGui::DragFloat( u8"イージングにかける秒数", &pDest->easeSeconds, 0.1f, 0.001f );
+		ImGui::DragFloat( u8"イージングにかける秒数", &pDest->easeSeconds, 0.01f, 0.001f );
 	};
 	if ( ImGui::TreeNode( u8"出現時" ) )
 	{
@@ -445,7 +445,7 @@ void ClearSentence::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text( "" );
 
 	ImGui::DragFloat( u8"イージングにかける秒数", &easeSeconds, 0.1f, 0.001f );
-	ImGui::DragFloat( u8"スケーリングする幅", &scalingSize, 0.1f, 0.0f );
+	ImGui::DragFloat( u8"スケーリングする幅", &scalingSize, 0.01f, 0.0f );
 
 	auto ShowIONode = [&]()
 	{
