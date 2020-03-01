@@ -807,11 +807,12 @@ void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 		const float rotRadian = ToRadian( data.oiled.turnDegree ) * sideSign;
 		const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), rotRadian );
 		player.orientation.RotateBy( rotation );
+		player.orientation.Normalize();
 
 		// Speed that the Y component is excepted.
-		const float currentSpeed = ToXZVector( player.velocity ).Length();
 
-		Donya::Vector3 rotatedVelocity = player.orientation.LocalFront() * currentSpeed;
+		const float slideSpeed = data.oiled.basic.maxSpeed;
+		Donya::Vector3 rotatedVelocity = player.orientation.LocalFront() * slideSpeed;
 		AssignToXZ( &player.velocity, rotatedVelocity );
 	}
 
