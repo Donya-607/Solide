@@ -210,6 +210,9 @@ void TutorialSentence::Update( float elapsedTime )
 	// else
 
 	pPerformer->Update( *this, elapsedTime );
+
+	uiTutorial.drawScale	= drawScale;
+	uiTutorial.pos			= drawPos;
 }
 
 void TutorialSentence::Draw( float elapsedTime ) const
@@ -261,6 +264,14 @@ void TutorialSentence::ShowImGuiNode( const std::string &nodeCaption )
 	if ( ImGui::Button( u8"演出タイマーをリセット" ) )
 	{
 		easingTimer = 0.0f;
+	}
+	if ( ImGui::Button( u8"出現演出にリセット" ) )
+	{
+		ResetPerformer<AppearPerformer>();
+	}
+	if ( ImGui::Button( u8"移動演出にリセット" ) )
+	{
+		ResetPerformer<SlidePerformer>();
 	}
 
 	uiTutorial.ShowImGuiNode( u8"画像文字" );

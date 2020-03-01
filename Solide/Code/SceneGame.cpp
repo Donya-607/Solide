@@ -733,10 +733,8 @@ void SceneGame::TutorialUpdate( float elapsedTime )
 	const int showTiming  = FetchMember().waitFrameUntilShowTutorial;
 	const int slideTiming = showTiming + FetchMember().waitFrameUntilSlideTutorial;
 
-	if ( slideTiming + 1 < gameTimer ) { return; }
-	// else
-
 	gameTimer++;
+	gameTimer = std::min( INT_MAX - 1, gameTimer );
 
 	if ( gameTimer == showTiming )
 	{
@@ -744,8 +742,10 @@ void SceneGame::TutorialUpdate( float elapsedTime )
 	}
 	if ( gameTimer == slideTiming )
 	{
-		pTutorialSentence->Appear();
+		pTutorialSentence->StartSliding();
 	}
+
+	pTutorialSentence->Update( elapsedTime );
 }
 
 bool SceneGame::NowGoalMoment() const
