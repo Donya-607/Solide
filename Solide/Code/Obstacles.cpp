@@ -289,10 +289,12 @@ void ObstacleBase::AssignDerivedModel( int modelKind, std::shared_ptr<ObstacleBa
 	AssignModel( scast<Kind>( modelKind ), pOutput );
 }
 
+#if USE_IMGUI
 void ObstacleBase::UseImGui()
 {
 	ParamObstacle::Get().UseImGui();
 }
+#endif // USE_IMGUI
 
 #if USE_IMGUI
 bool ObstacleBase::ShowImGuiNode( const std::string &nodeCaption )

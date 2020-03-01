@@ -157,7 +157,7 @@ Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::ve
 	constexpr int RECURSIVE_LIMIT = 1;
 	auto result = CalcCorrectVelocity( yMovement, {}, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 
-	const Donya::Vector3 sizeOffset	= Donya::Vector3::Up() * Donya::SignBit( yMovement.y ) * hitBox.size.y;
+	const Donya::Vector3 sizeOffset	= Donya::Vector3::Up() * scast<float>( Donya::SignBit( yMovement.y ) ) * hitBox.size.y;
 	const Donya::Vector3 destPos	= ( result.wasHit )
 		? result.wsLastIntersection - sizeOffset
 		: pos + yMovement;

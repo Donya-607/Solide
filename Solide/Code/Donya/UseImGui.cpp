@@ -4,7 +4,7 @@
 
 namespace Donya
 {
-	static bool isAllowShowingImGui = true;
+	static bool isAllowShowingImGui = false;
 	void SetShowStateOfImGui( bool isAllow )
 	{
 		isAllowShowingImGui = isAllow;
