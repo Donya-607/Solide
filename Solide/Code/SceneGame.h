@@ -10,6 +10,7 @@
 #include "ObstacleContainer.h"
 #include "Player.h"
 #include "Section.h"
+#include "Sentence.h"
 #include "Scene.h"
 #include "Terrain.h"
 
@@ -29,6 +30,10 @@ private:
 	std::unique_ptr<Terrain>			pTerrain;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<ObstacleContainer>	pObstacles;
+	std::unique_ptr<ClearSentence>		pClearSentence;
+
+	int  timer;
+	bool nowWaiting;
 
 #if DEBUG_MODE
 	bool nowDebugMode;
@@ -59,6 +64,9 @@ private:
 	void	PlayerUninit();
 
 	bool	NowGoalMoment() const;
+
+	void	WaitInit();
+	void	WaitUpdate( float elapsedTime );
 
 	void	ClearBackGround() const;
 	void	StartFade() const;

@@ -147,12 +147,6 @@ public:
 	/// </summary>
 	void Appear();
 private:
-	template<class Flusher>
-	void ResetFlusher()
-	{
-		
-	}
-private:
 	void LoadBin();
 	void LoadJson();
 #if USE_IMGUI

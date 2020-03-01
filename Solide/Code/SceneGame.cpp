@@ -50,6 +50,8 @@ namespace
 		}
 		transparency;
 
+		int waitFrameUntilFade = 60;
+
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -83,12 +85,16 @@ namespace
 			}
 			if ( 3 <= version )
 			{
+				archive( CEREAL_NVP( waitFrameUntilFade ) );
+			}
+			if ( 4 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 2 )
+CEREAL_CLASS_VERSION( Member, 3 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -137,6 +143,8 @@ public:
 
 		if ( ImGui::TreeNode( u8"ゲームのパラメータ調整" ) )
 		{
+			ImGui::DragInt( u8"ゴールからフェードまでの秒数", &m.waitFrameUntilFade, 1.0f, 1 );
+
 			if ( ImGui::TreeNode( u8"カメラ" ) )
 			{
 				ImGui::DragFloat ( u8"補間倍率",						&m.camera.slerpFactor,		0.01f );
@@ -235,7 +243,10 @@ SceneGame::SceneGame() :
 	controller( Donya::Gamepad::PAD_1 ),
 	pTerrain( nullptr ),
 	pPlayer( nullptr ),
-	pObstacles( nullptr )
+	pObstacles( nullptr ),
+	pClearSentence( nullptr ),
+	timer(),
+	nowWaiting( false )
 
 #if DEBUG_MODE
 	, nowDebugMode( false ),
@@ -256,6 +267,11 @@ void SceneGame::Init()
 
 	ParamGame::Get().Init();
 	const auto data = FetchMember();
+
+	pClearSentence = std::make_unique<ClearSentence>();
+	pClearSentence->Init();
+	result = pClearSentence->LoadSprite( L"./Data/Images/Game/Clear.png" );
+	assert( result );
 
 	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin",  "./Data/Models/Terrain/ForCollision/Terrain.bin" );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
@@ -329,10 +345,12 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	CameraUpdate();
 
-	if ( NowGoalMoment() && !Fader::Get().IsExist() )
+	if ( NowGoalMoment() )
 	{
-		StartFade();
+		WaitInit();
 	}
+
+	WaitUpdate( elapsedTime );
 
 	return ReturnResult();
 }
@@ -358,6 +376,8 @@ void SceneGame::Draw( float elapsedTime )
 	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
+
+	pClearSentence->Draw( elapsedTime );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -775,12 +795,33 @@ bool SceneGame::NowGoalMoment() const
 {
 	if ( !pPlayer ) { return false; }
 	if ( Fader::Get().IsExist() ) { return false; }
+	if ( nowWaiting ) { return false; }
 	// else
 
 	const Donya::AABB goalArea   = FetchMember().goalArea.GetHitBox();
 	const Donya::AABB playerBody = pPlayer->GetHitBox();
 
 	return Donya::AABB::IsHitAABB( playerBody, goalArea );
+}
+
+void SceneGame::WaitInit()
+{
+	timer = 0;
+	nowWaiting = true;
+	pClearSentence->Appear();
+}
+void SceneGame::WaitUpdate( float elapsedTime )
+{
+	if ( !nowWaiting ) { return; }
+	// else
+
+	pClearSentence->Update( elapsedTime );
+
+	timer++;
+	if ( timer == FetchMember().waitFrameUntilFade )
+	{
+		StartFade();
+	}
 }
 
 void SceneGame::ClearBackGround() const
