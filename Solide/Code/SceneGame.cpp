@@ -306,6 +306,8 @@ void SceneGame::Init()
 	assert( result );
 
 	ObstacleBase::ParameterInit();
+	pGoal = std::make_unique<Goal>();
+	pGoal->Init( data.goalArea.GetPosition() );
 	pObstacles = std::make_unique<ObstacleContainer>();
 	pObstacles->Init( 1 ); // The stage-number is 1-based.(0 is title stage.)
 
@@ -321,6 +323,7 @@ void SceneGame::Uninit()
 {
 	pTerrain.reset();
 
+	if ( pGoal ) { pGoal->Uninit(); }
 	if ( pObstacles ) { pObstacles->Uninit(); }
 
 	PlayerUninit();
@@ -365,6 +368,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	pTerrain->BuildWorldMatrix();
 
+	pGoal->Update( elapsedTime );
 	pObstacles->Update( elapsedTime );
 
 	PlayerUpdate( elapsedTime );
@@ -405,6 +409,7 @@ void SceneGame::Draw( float elapsedTime )
 
 	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
+	pGoal->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 	// Drawing to far for avoiding to trans the BG's blue.
@@ -909,6 +914,10 @@ void SceneGame::UseImGui()
 		if ( pTerrain )
 		{
 			pTerrain->ShowImGuiNode( u8"地形" );
+		}
+		if ( pGoal )
+		{
+			pGoal->ShowImGuiNode( u8"ゴールオブジェクト" );
 		}
 		if ( pObstacles )
 		{

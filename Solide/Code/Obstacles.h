@@ -175,3 +175,29 @@ public:
 CEREAL_CLASS_VERSION( Table, 0 )
 CEREAL_REGISTER_TYPE( Table )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Table )
+
+class Goal : public ObstacleBase
+{
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			cereal::base_class<ObstacleBase>( this )
+		);
+		if ( 1 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
+public:
+	void Update( float elapsedTime ) override;
+	void Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color ) override;
+public:
+	int GetKind() const override;
+};
+CEREAL_CLASS_VERSION( Goal, 0 )
+CEREAL_REGISTER_TYPE( Goal )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Goal )

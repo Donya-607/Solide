@@ -22,6 +22,8 @@ namespace
 		Tree,
 		Table,
 
+		Goal,
+
 		KindCount
 	};
 	constexpr size_t KIND_COUNT = scast<size_t>( KindCount );
@@ -33,6 +35,8 @@ namespace
 		"Log",
 		"Tree",
 		"Table",
+
+		"Goal",
 	};
 
 	static std::array<std::shared_ptr<Donya::StaticMesh>, KIND_COUNT> models{};
@@ -144,6 +148,7 @@ namespace
 		case Log:	*pOutput = std::make_shared<::Log>();				return;
 		case Tree:	*pOutput = std::make_shared<::Tree>();				return;
 		case Table:	*pOutput = std::make_shared<::Table>();				return;
+		case Goal:	*pOutput = std::make_shared<::Goal>();				return;
 		default: _ASSERT_EXPR( 0, L"Error : Unexpected model kind!" );	return;
 		}
 	}
@@ -383,4 +388,23 @@ void Table::Draw( const Donya::Vector4 &eyePos, float transNear, float transFar,
 int Table::GetKind() const
 {
 	return scast<int>( Kind::Table );
+}
+
+void Goal::Update( float elapsedTime )
+{
+	hitBox = GetModelHitBox( Kind::Goal, ParamObstacle::Get().Data() );
+}
+void Goal::Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
+{
+	DrawModel( Kind::Goal, eyePos, transNear, transFar, transLowerAlpha, GetWorldMatrix(), VP, lightDir, color );
+#if DEBUG_MODE
+	if ( Common::IsShowCollision() )
+	{
+		DrawHitBox( VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
+	}
+#endif // DEBUG_MODE
+}
+int Goal::GetKind() const
+{
+	return scast<int>( Kind::Goal );
 }
