@@ -647,6 +647,26 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 
 #if DEBUG_MODE
 
+#if USE_IMGUI
+	{
+		static bool disallowInput = false;
+		if ( ImGui::BeginIfAllowed( "ClearConfig" ) )
+		{
+			ImGui::Checkbox( u8"ƒNƒŠƒAŒã‚Ì“ü—Í‚ð–³Œø‚É‚·‚é", &disallowInput );
+			ImGui::End();
+		}
+		if ( disallowInput && nowWaiting )
+		{
+			Player::Input input{};
+			input.moveVectorXZ	= Donya::Vector2::Zero();
+			input.useJump		= false;
+			input.useOil		= false;
+			pPlayer->Update( elapsedTime, input );
+			return;
+		}
+	}
+#endif // USE_IMGUI
+
 	// Rotate input vector by camera.
 	if ( nowDebugMode )
 	{
