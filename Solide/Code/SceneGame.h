@@ -67,6 +67,7 @@ private:
 
 	void	WaitInit();
 	void	WaitUpdate( float elapsedTime );
+	bool	NowWaiting() const;
 
 	void	ClearBackGround() const;
 	void	StartFade() const;

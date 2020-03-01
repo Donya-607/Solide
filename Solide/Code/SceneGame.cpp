@@ -646,28 +646,14 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 		useOil			=  Donya::Keyboard::Trigger( 'X' );
 	}
 
-#if DEBUG_MODE
-
-#if USE_IMGUI
+	if ( nowWaiting )
 	{
-		static bool disallowInput = false;
-		if ( ImGui::BeginIfAllowed( "ClearConfig" ) )
-		{
-			ImGui::Checkbox( u8"クリア後の入力を無効にする", &disallowInput );
-			ImGui::End();
-		}
-		if ( disallowInput && nowWaiting )
-		{
-			Player::Input input{};
-			input.moveVectorXZ	= Donya::Vector2::Zero();
-			input.useJump		= false;
-			input.useOil		= false;
-			pPlayer->Update( elapsedTime, input );
-			return;
-		}
+		moveVector	= Donya::Vector2::Zero();
+		useJump		= false;
+		useOil		= ( pPlayer->IsOiled() ) ? true : false;
 	}
-#endif // USE_IMGUI
 
+#if DEBUG_MODE
 	// Rotate input vector by camera.
 	if ( nowDebugMode )
 	{
@@ -682,100 +668,6 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 		moveVector3 = cameraRotation.RotateVector( moveVector3 );
 		moveVector.x = moveVector3.x;
 		moveVector.y = moveVector3.z;
-	}
-
-	// Some Test
-	if ( 0 )
-	{
-		static Donya::Quaternion base{};
-		static bool enableAdd = false;
-		Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( 1.0f ) );
-
-		if ( enableAdd )
-		{
-			base.RotateBy( rotation );
-		}
-
-		if ( Donya::Keyboard::Trigger( 'R' ) )
-		{
-			Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Front(), ToRadian( -45.0f ) );
-			base.RotateBy( rotation );
-		}
-		if ( Donya::Keyboard::Trigger( 'T' ) )
-		{
-			Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Front(), ToRadian( 45.0f ) );
-			base.RotateBy( rotation );
-		}
-		if ( Donya::Keyboard::Trigger( 'F' ) )
-		{
-			Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Right(), ToRadian( -45.0f ) );
-			base.RotateBy( rotation );
-		}
-		if ( Donya::Keyboard::Trigger( 'G' ) )
-		{
-			Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Right(), ToRadian( 45.0f ) );
-			base.RotateBy( rotation );
-		}
-
-		auto nowEuler = base.GetEulerAngles();
-		float x = ToDegree( nowEuler.x );
-		float y = ToDegree( nowEuler.y );
-		float z = ToDegree( nowEuler.z );
-		auto tmp = 0;
-		tmp++;
-
-		auto CalcDifference = []( const Donya::Quaternion &lhs, const Donya::Quaternion &rhs )
-		{
-			// See https://qiita.com/Guvalif/items/767cf45f19c36e242fc6
-			return lhs.Inverse().RotateBy( rhs );
-		};
-		auto diff = CalcDifference( Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( 180.0f ) ), base );
-		auto diffEuler = base.GetEulerAngles();
-		float dx = ToDegree( diffEuler.x );
-		float dy = ToDegree( diffEuler.y );
-		float dz = ToDegree( diffEuler.z );
-
-		ImGui::Begin( u8"テスト" );
-
-		ImGui::Text( u8"値：[X:%5.3f][Y:%5.3f][Z:%5.3f][W:%5.3f]", base.x, base.y, base.z, base.w );
-		ImGui::Text( u8"Degree角度：[X:%5.3f][Y:%5.3f][Z:%5.3f]", x, y, z );
-		ImGui::Text( u8"差分：[X:%5.3f][Y:%5.3f][Z:%5.3f][W:%5.3f]", diff.x, diff.y, diff.z, diff.w );
-		ImGui::Text( u8"差分角度：[X:%5.3f][Y:%5.3f][Z:%5.3f]", dx, dy, dz );
-		ImGui::Checkbox( u8"インクリメントを有効にする", &enableAdd );
-		ImGui::Text( u8"Ｒ：Ｚ軸でー４５度回転" );
-		ImGui::Text( u8"Ｔ：Ｚ軸で４５度回転" );
-		ImGui::Text( u8"Ｆ：Ｘ軸でー４５度回転" );
-		ImGui::Text( u8"Ｇ：Ｘ軸で４５度回転" );
-
-		static Donya::Vector3 front{ 0, 0, 1 };
-		static Donya::Vector3 random{ 1, 0, 0 };
-		if ( ImGui::Button( u8"ランダム生成" ) )
-		{
-			front.x = Donya::Random::GenerateFloat( -1.0f, 1.0f );
-			front.y = 0.0f;
-			front.z = Donya::Random::GenerateFloat( -1.0f, 1.0f );
-			front.Normalize();
-
-			random.x = Donya::Random::GenerateFloat( -1.0f, 1.0f );
-			random.y = 0.0f;
-			random.z = Donya::Random::GenerateFloat( -1.0f, 1.0f );
-			random.Normalize();
-		}
-
-		auto ToXZ = []( const  Donya::Vector3 &v ) { return Donya::Vector2{ v.x, v.z }; };
-
-		Donya::Vector2 xzFront = ToXZ( front );
-		Donya::Vector2 xzRand  = ToXZ( random );
-		ImGui::Text( u8"前方向：[X:%5.3f][Y:%5.3f]",		xzFront.x, xzFront.y );
-		ImGui::Text( u8"ランダム：[X:%5.3f][Y:%5.3f]",	xzRand.x, xzRand.y   );
-		ImGui::Text( u8"外積・前 x ラ：[%5.3f]", Donya::Cross( xzFront, xzRand ) );
-		ImGui::Text( u8"外積・ラ x 前：[%5.3f]", Donya::Cross( xzRand, xzFront ) );
-		ImGui::Text( ( Donya::Cross( xzFront, xzRand ) < 0.0f ) ? u8"ラは右です" : u8"ラは左です" );
-		ImGui::Text( u8"内積：[%5.3f]", Donya::Dot( xzFront, xzRand ) );
-		ImGui::Text( u8"acos：[%5.3f]", acosf( Donya::Dot( xzFront, xzRand ) ) );
-		ImGui::Text( u8"Degree：[%5.3f]", ToDegree( acosf( Donya::Dot( xzFront, xzRand ) ) ) );
-
-		ImGui::End();
 	}
 #endif // DEBUG_MODE
 
@@ -844,6 +736,10 @@ void SceneGame::WaitUpdate( float elapsedTime )
 	{
 		StartFade();
 	}
+}
+bool SceneGame::NowWaiting() const
+{
+	return nowWaiting;
 }
 
 void SceneGame::ClearBackGround() const
