@@ -164,6 +164,7 @@ namespace
 SceneTitle::SceneTitle() :
 	iCamera(),
 	controller( Donya::Gamepad::PAD_1 ),
+	pBG( nullptr ),
 	pTerrain( nullptr ),
 	pPlayer( nullptr ),
 	pObstacles( nullptr ),
@@ -193,6 +194,10 @@ void SceneTitle::Init()
 
 	ParamTitle::Get().Init();
 	const auto data = FetchMember();
+
+	pBG = std::make_unique<BG>();
+	result = pBG->LoadSprites( L"./Data/Images/BG/Back.png", L"./Data/Images/BG/Cloud.png" );
+	assert( result );
 
 	pSentence = std::make_unique<TitleSentence>();
 	pSentence->Init();
@@ -261,6 +266,8 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	controller.Update();
 
+	pBG->Update( elapsedTime );
+
 	pTerrain->BuildWorldMatrix();
 
 	pObstacles->Update( elapsedTime );
@@ -308,6 +315,9 @@ void SceneTitle::Draw( float elapsedTime )
 	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
+
+	// Drawing to far for avoiding to trans the BG's blue.
+	pBG->Draw( elapsedTime );
 
 	pSentence->Draw( elapsedTime );
 
@@ -693,6 +703,10 @@ void SceneTitle::UseImGui()
 				ImGui::TreePop();
 			}
 
+			if ( pBG )
+			{
+				pBG->ShowImGuiNode( u8"ÇaÇf" );
+			}
 			if ( pTerrain )
 			{
 				pTerrain->ShowImGuiNode( u8"ínå`" );

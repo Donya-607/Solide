@@ -9,6 +9,7 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+#include "BG.h"
 #include "ObstacleContainer.h"
 #include "Player.h"
 #include "Sentence.h"
@@ -21,6 +22,7 @@ private:
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller;
 
+	std::unique_ptr<BG>					pBG;
 	std::unique_ptr<Terrain>			pTerrain;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<ObstacleContainer>	pObstacles;

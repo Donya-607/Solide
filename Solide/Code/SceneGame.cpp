@@ -407,12 +407,12 @@ void SceneGame::Draw( float elapsedTime )
 
 	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
+	// Drawing to far for avoiding to trans the BG's blue.
+	pBG->Draw( elapsedTime );
+
 	// A draw check of these sentences are doing at internal of these methods.
 	pTutorialSentence->Draw( elapsedTime );
 	pClearSentence->Draw( elapsedTime );
-
-	// Drawing to far for avoiding to trans the BG's blue.
-	pBG->Draw( elapsedTime );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
