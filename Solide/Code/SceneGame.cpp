@@ -144,6 +144,7 @@ public:
 		if ( ImGui::TreeNode( u8"ゲームのパラメータ調整" ) )
 		{
 			ImGui::DragInt( u8"ゴールからフェードまでの秒数", &m.waitFrameUntilFade, 1.0f, 1 );
+			m.waitFrameUntilFade = std::max( 1, m.waitFrameUntilFade );
 
 			if ( ImGui::TreeNode( u8"カメラ" ) )
 			{
@@ -938,6 +939,10 @@ void SceneGame::UseImGui()
 		if ( pObstacles )
 		{
 			pObstacles->ShowImGuiNode( u8"障害物の生成・破棄" );
+		}
+		if ( pClearSentence )
+		{
+			pClearSentence->ShowImGuiNode( u8"クリア画像" );
 		}
 
 		ImGui::TreePop();
