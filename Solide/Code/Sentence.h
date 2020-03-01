@@ -95,3 +95,71 @@ public:
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( TitleSentence, 1 )
+
+
+
+class ClearSentence
+{
+private:
+	float	easingTimer = 0.0f; // 0.0f ~ 1.0f
+	float	drawScale   = 0.0f;
+	bool	nowHidden	= true;
+private: // Serialize members.
+	UIObject uiClear;
+	int		easeKind = 0;
+	int		easeType = 0;
+	float	easeSeconds = 1.0f;
+	float	scalingSize = 1.0f;
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			CEREAL_NVP( uiClear ),
+			CEREAL_NVP( easeKind ),
+			CEREAL_NVP( easeType ),
+			CEREAL_NVP( easeSeconds ),
+			CEREAL_NVP( scalingSize )
+		);
+
+		if ( 0 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
+	static constexpr const char *ID = "ClearSentence";
+public:
+	void Init();
+	bool LoadSprite( const std::wstring &clearFileName );
+
+	void Update( float elapsedTime );
+
+	void Draw( float elapsedTime ) const;
+public:
+	/// <summary>
+	/// Will reset a performance state.
+	/// </summary>
+	void Hide();
+	/// <summary>
+	/// Will start a performance.
+	/// </summary>
+	void Appear();
+private:
+	template<class Flusher>
+	void ResetFlusher()
+	{
+		
+	}
+private:
+	void LoadBin();
+	void LoadJson();
+#if USE_IMGUI
+	void SaveBin();
+	void SaveJson();
+public:
+	void ShowImGuiNode( const std::string &nodeCaption );
+#endif // USE_IMGUI
+};
+CEREAL_CLASS_VERSION( ClearSentence, 0 )

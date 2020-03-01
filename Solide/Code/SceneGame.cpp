@@ -821,7 +821,7 @@ Scene::Result SceneGame::ReturnResult()
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
-		change.sceneType = Scene::Type::Clear;
+		change.sceneType = Scene::Type::Title;
 		return change;
 	}
 
