@@ -1054,7 +1054,8 @@ void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPo
 	if ( Common::IsShowCollision() )
 	{
 		const Donya::Vector4 subForHitBox{ 0.0f, 0.0f, 0.0f, 0.7f };
-		DrawHitBox( matVP, actualOrientation, bodyColor - subForHitBox );
+		// DrawHitBox( matVP, actualOrientation, bodyColor - subForHitBox );
+		DrawHitBox( matVP, Donya::Quaternion::Identity(), bodyColor - subForHitBox );
 	}
 #endif // DEBUG_MODE
 }

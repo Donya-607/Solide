@@ -95,11 +95,10 @@ Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Do
 	// But this correction is not necessary if the vertical movement is up.
 	if ( yMovement.y <= 0.0f )
 	{
-		// The CalcCorrectVelocity() will extend the input velocity by the size of hitBox to the direction of input velocity.
 		// This input velocity length should be serialized.
 		// Because if this is lower, the slope correction is not function,
 		// if this is larger, an actor will landing too hurry.
-		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y * 0.5f, 0.0f };
+		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y * 1.5001f, 0.0f };
 		auto resultV = CalcCorrectVelocity( checkUnderLength, {}, pTerrain, pTerrainMatrix, {}, 0, 1 );
 		if ( resultV.wasHit )
 		{
@@ -115,20 +114,24 @@ Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Do
 }
 namespace
 {
-	Donya::Vector3 MakeSizeOffset( const Donya::AABB &hitBox, const Donya::Vector3 &movement )
+	Donya::Vector3 MakeSizeOffset( const Donya::Vector3 &size, const Donya::Vector3 &movement )
 	{
-		const float avgSpeed = ( hitBox.size.x + hitBox.size.y + hitBox.size.z ) / 3.0f;
-		return movement.Normalized() * avgSpeed;
-
 		/*
 		const Donya::Vector3 sizeOffset
 		{
-			hitBox.size.x * Donya::SignBit( sign.x ),
-			hitBox.size.y * Donya::SignBit( sign.y ),
-			hitBox.size.z * Donya::SignBit( sign.z ),
+			hitBox.size.x * Donya::SignBit( movement.x ),
+			hitBox.size.y * Donya::SignBit( movement.y ),
+			hitBox.size.z * Donya::SignBit( movement.z ),
+		};
+		*/
+		const Donya::Vector3 nMovement = movement.Normalized();
+		const Donya::Vector3 sizeOffset
+		{
+			size.x * std::max( -1.0f, std::min( 1.0f, nMovement.x ) ),
+			size.y * std::max( -1.0f, std::min( 1.0f, nMovement.y ) ),
+			size.z * std::max( -1.0f, std::min( 1.0f, nMovement.z ) ),
 		};
 		return sizeOffset;
-		*/
 	}
 	Donya::Vector3 ToVec3( const Donya::Vector4 &v )
 	{
@@ -146,20 +149,84 @@ namespace
 }
 void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
+	const Donya::Vector3 extendSize = MakeSizeOffset( hitBox.size, xzMovement );
+
 	constexpr int RECURSIVE_LIMIT = 4;
-	auto result = CalcCorrectVelocity( xzMovement, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
+	auto result = CalcCorrectVelocity( xzMovement + extendSize, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
+	if ( result.wasHit )
+	{
+		const Donya::Vector3 repulseSize = MakeSizeOffset( hitBox.size, result.wsLastWallNormal );
+		result.wsLastIntersection.x += repulseSize.x;
+		result.wsLastIntersection.y += repulseSize.y;
+		result.wsLastIntersection.z += repulseSize.z;
+
+		result.correctedVelocity += repulseSize;
+	}
+	else
+	{
+		result.correctedVelocity -= extendSize;
+	}
 
 	MoveInAABB( result.correctedVelocity, solids );
+
+	// Correct the side of hitBox.
+	{
+		const Donya::Vector3 horizontalSize{ hitBox.size.x, 0.0f, 0.0f };
+		auto rightResult = CalcCorrectVelocity( horizontalSize, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, 3 );
+		if ( rightResult.wasHit )
+		{
+			const float penetration = horizontalSize.x - fabsf( rightResult.correctedVelocity.x ) + EPSILON;
+			pos.x -= penetration;
+
+			const Donya::Vector3 repulseSize = MakeSizeOffset( horizontalSize, rightResult.wsLastWallNormal );
+			// rightResult.wsLastIntersection.x += repulseSize.x;
+			// rightResult.wsLastIntersection.y += repulseSize.y;
+			// rightResult.wsLastIntersection.z += repulseSize.z;
+
+			// pos.x = rightResult.wsLastIntersection.x - horizontalSize.x;
+			// pos.x = rightResult.wsLastIntersection.x - repulseSize.x;
+		}
+		
+		auto leftResult = CalcCorrectVelocity( -horizontalSize, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, 3 );
+		if ( leftResult.wasHit )
+		{
+			const float penetration = horizontalSize.x - fabsf( rightResult.correctedVelocity.x ) + EPSILON;
+			pos.x += penetration;
+
+			const Donya::Vector3 repulseSize = MakeSizeOffset( horizontalSize, leftResult.wsLastWallNormal );
+			// leftResult.wsLastIntersection.x += repulseSize.x;
+			// leftResult.wsLastIntersection.y += repulseSize.y;
+			// leftResult.wsLastIntersection.z += repulseSize.z;
+
+			// pos.x = leftResult.wsLastIntersection.x + horizontalSize.x;
+			// pos.x = leftResult.wsLastIntersection.x + repulseSize.x;
+		}
+	}
 }
 Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
+	const Donya::Vector3 extendSize = MakeSizeOffset( hitBox.size, yMovement );
+
 	// Y moving does not need the correction recursively.
 	constexpr int RECURSIVE_LIMIT = 1;
-	auto result = CalcCorrectVelocity( yMovement, {}, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
+	auto result = CalcCorrectVelocity( yMovement + extendSize, {}, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
+	if ( result.wasHit )
+	{
+		const Donya::Vector3 repulseSize = MakeSizeOffset( hitBox.size, result.wsLastWallNormal );
+		result.wsLastIntersection.x += repulseSize.x;
+		result.wsLastIntersection.y += repulseSize.y;
+		result.wsLastIntersection.z += repulseSize.z;
+
+		result.correctedVelocity += repulseSize;
+	}
+	else
+	{
+		result.correctedVelocity -= extendSize;
+	}
 
 	const Donya::Vector3 sizeOffset	= Donya::Vector3::Up() * scast<float>( Donya::SignBit( yMovement.y ) ) * hitBox.size.y;
 	const Donya::Vector3 destPos	= ( result.wasHit )
-		? result.wsLastIntersection - sizeOffset
+		? result.wsLastIntersection
 		: pos + yMovement;
 	const Donya::Vector3 actualMovement = destPos - pos;
 	
@@ -380,9 +447,8 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 
 	const Donya::Vector4x4	&terrainMat		= *pTerrainMatrix;
 	const Donya::Vector4x4	invTerrainMat	=  pTerrainMatrix->Inverse();
-	const Donya::Vector3	sizeOffset		=  MakeSizeOffset( hitBox, velocity );
 	const Donya::Vector3	wsRayStart		=  pos;
-	const Donya::Vector3	wsRayEnd		=  wsRayStart + velocity + sizeOffset;
+	const Donya::Vector3	wsRayEnd		=  wsRayStart + velocity;
 
 	// Terrain space.
 	const Donya::Vector3	tsRayStart		= Transform( invTerrainMat, wsRayStart,	1.0f );
