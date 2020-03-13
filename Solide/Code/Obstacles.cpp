@@ -193,37 +193,20 @@ public:
 private:
 	Member m;
 public:
-	void Init()     override
+	void Init() override
 	{
 	#if DEBUG_MODE
-		LoadJson();
+		constexpr bool fromBinary = false;
 	#else
-		LoadBin();
+		constexpr bool fromBinary = true;
 	#endif // DEBUG_MODE
+
+		Load( m, fromBinary );
 	}
-	void Uninit()   override {}
-	Member Data()   const { return m; }
+	Member Data() const { return m; }
 private:
-	void LoadBin()  override
-	{
-		constexpr bool fromBinary = true;
-		Donya::Serializer::Load( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
-	}
-	void LoadJson() override
-	{
-		constexpr bool fromBinary = false;
-		Donya::Serializer::Load( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
-	}
-	void SaveBin()  override
-	{
-		constexpr bool fromBinary = true;
-		Donya::Serializer::Save( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
-	}
-	void SaveJson() override
-	{
-		constexpr bool fromBinary = false;
-		Donya::Serializer::Save( m, GenerateSerializePath( ID, fromBinary ).c_str(), ID, fromBinary );
-	}
+	std::string GetSerializeIdentifier()			override { return ID; }
+	std::string GetSerializePath( bool isBinary )	override { return GenerateSerializePath( ID, isBinary ); }
 public:
 #if USE_IMGUI
 	void UseImGui() override
@@ -253,7 +236,7 @@ public:
 				ImGui::TreePop();
 			}
 
-			ShowIONode();
+			ShowIONode( m );
 
 			ImGui::TreePop();
 		}

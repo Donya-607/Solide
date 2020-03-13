@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "Donya/Serializer.h"
 #include "Donya/Template.h"
 #include "Donya/UseImGui.h"
 
@@ -12,23 +13,39 @@ class ParameterBase : public Donya::Singleton<DerivedClass>
 {
 public:
 	virtual void Init()     = 0;
-	virtual void Uninit()   = 0;
-	/* // For static polymorphism.
-	DerivedClass &AcquireDerivedClass()
-	{
-		return static_cast<DerivedClass &>( *this );
-	}
-	*/
+	virtual void Uninit() {}
 protected:
-	virtual void LoadBin()  = 0;
-	virtual void LoadJson() = 0;
-	virtual void SaveBin()  = 0;
-	virtual void SaveJson() = 0;
+	virtual std::string GetSerializeIdentifier() = 0;
+	virtual std::string GetSerializePath( bool isBinary ) = 0;
+protected:
+	template<class SerializeObject>
+	void Load( SerializeObject &object, bool fromBinary )
+	{
+		Donya::Serializer::Load
+		(
+			object,
+			GetSerializePath( fromBinary ).c_str(),
+			GetSerializeIdentifier().c_str(),
+			fromBinary
+		);
+	}
+	template<class SerializeObject>
+	void Save( SerializeObject &object, bool toBinary )
+	{
+		Donya::Serializer::Save
+		(
+			object,
+			GetSerializePath( toBinary ).c_str(),
+			GetSerializeIdentifier().c_str(),
+			toBinary
+		);
+	}
 public:
 #if USE_IMGUI
 	virtual void UseImGui() = 0;
 
-	void ShowIONode()
+	template<class SerializeObject>
+	void ShowIONode( SerializeObject &IOTarget )
 	{
 		if ( !ImGui::TreeNode( u8"ファイル I/O" ) ) { return; }
 		// else
@@ -43,12 +60,12 @@ public:
 
 		if ( ImGui::Button( u8"セーブ" ) )
 		{
-			SaveBin();
-			SaveJson();
+			Save( IOTarget, true  );
+			Save( IOTarget, false );
 		}
 		if ( ImGui::Button( loadStr.c_str() ) )
 		{
-			( isBinary ) ? LoadBin() : LoadJson();
+			Load( IOTarget, isBinary );
 		}
 
 		ImGui::TreePop();
