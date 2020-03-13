@@ -67,6 +67,8 @@ private:
 		bool wasHit = false;
 	};
 	CalcedRayResult CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const;
+
+	void CorrectByHitBox( const std::vector<Donya::Vector3> &wsRayOriginOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix, int recursiveCount );
 public:
 	virtual bool IsRiding( const Solid &onto ) const;
 	/// <summary>

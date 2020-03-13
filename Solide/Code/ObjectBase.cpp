@@ -156,60 +156,26 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 	auto result = CalcCorrectVelocity( xzMovement + extendSize, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 	if ( result.wasHit )
 	{
-		// The hit-box size of projected to the wall's normal component.
-		const Donya::Vector3 repulseSize = MakeSizeOffset( hitBox.size, result.wsLastWallNormal );
-		// result.wsLastIntersection.x += repulseSize.x;
-		// result.wsLastIntersection.y += repulseSize.y;
-		// result.wsLastIntersection.z += repulseSize.z;
+		// The "corrected-velocity is zero" means a wall places too nearly.
+		if ( !result.correctedVelocity.IsZero() ) { return; }
+		// else
 
 		// If we use repulseSize, the velocity will extend.
+		// const Donya::Vector3 repulseSize = MakeSizeOffset( hitBox.size, result.wsLastWallNormal );
 		// result.correctedVelocity += repulseSize;
+
 		result.correctedVelocity -= extendSize;
 	}
 	else
 	{
-		result.correctedVelocity -= extendSize;
+		// result.correctedVelocity -= extendSize; // These process is equivalence.
+		result.correctedVelocity = xzMovement;
 	}
 
 	MoveInAABB( result.correctedVelocity, solids );
 
-	// Correct the XZ side of hitBox.
-	{
-		constexpr int SIDE_RECURSIVE_COUNT = 3;	// Prevent the corrected velocity to be zero that recursion method will return the zero if the recursion count arrived to limit.
-		constexpr Donya::Vector3 directions[]	// Right, Left, Front and Back.
-		{
-			{ +1.0f, 0.0f, 0.0f },
-			{ -1.0f, 0.0f, 0.0f },
-			{ 0.0f, 0.0f, +1.0f },
-			{ 0.0f, 0.0f, -1.0f },
-		};
-		const Donya::Vector3 horizontalSize{ hitBox.size.x, 0.0f, hitBox.size.z };
-
-		for ( const auto &sign : directions )
-		{
-			const Donya::Vector3 velocityDirection
-			{
-				horizontalSize.x * sign.x,
-				horizontalSize.y * sign.y,
-				horizontalSize.z * sign.z,
-			};
-			auto sideResult = CalcCorrectVelocity( velocityDirection, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, SIDE_RECURSIVE_COUNT );
-			if ( sideResult.wasHit )
-			{
-				const Donya::Vector3 penetration
-				{
-					velocityDirection.x - sideResult.correctedVelocity.x + EPSILON,
-					velocityDirection.y - sideResult.correctedVelocity.y + EPSILON,
-					velocityDirection.z - sideResult.correctedVelocity.z + EPSILON,
-				};
-				const Donya::Vector3 projPenetration =
-					sideResult.wsLastWallNormal *
-					Donya::Dot( penetration, sideResult.wsLastWallNormal );
-
-				pos -= projPenetration;
-			}
-		}
-	}
+	constexpr int SIDE_RECURSIVE_COUNT = 4;	// Prevent the corrected velocity to be zero that recursion method will return the zero if the recursion count arrived to limit.
+	CorrectByHitBox( wsRayOffsets, pTerrain, pTerrainMatrix, SIDE_RECURSIVE_COUNT );
 }
 Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
@@ -221,25 +187,26 @@ Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::ve
 	auto result = CalcCorrectVelocity( yMovement + extendSize, {}, pTerrain, pTerrainMatrix, {}, 0, RECURSIVE_LIMIT );
 	if ( result.wasHit )
 	{
-		// The hit-box size of projected to the wall's normal component.
-		const Donya::Vector3 repulseSize = MakeSizeOffset( hitBox.size, result.wsLastWallNormal );
-		// result.wsLastIntersection.x += repulseSize.x;
-		// result.wsLastIntersection.y += repulseSize.y;
-		// result.wsLastIntersection.z += repulseSize.z;
+		// The "corrected-velocity is zero" means a wall places too nearly.
+		if ( !result.correctedVelocity.IsZero() ) { return; }
+		// else
 
 		// If we use repulseSize, the velocity will extend.
+		// const Donya::Vector3 repulseSize = MakeSizeOffset( hitBox.size, result.wsLastWallNormal );
 		// result.correctedVelocity += repulseSize;
+
 		result.correctedVelocity -= extendSize;
 	}
 	else
 	{
-		result.correctedVelocity -= extendSize;
+		// result.correctedVelocity -= extendSize;
+		result.correctedVelocity = yMovement;
 	}
 
-	const Donya::Vector3 sizeOffset	= Donya::Vector3::Up() * scast<float>( Donya::SignBit( yMovement.y ) ) * hitBox.size.y;
-	const Donya::Vector3 destPos	= ( result.wasHit )
-		? result.wsLastIntersection
-		: pos + yMovement;
+	const Donya::Vector3 sizeOffset	= Donya::Vector3::Up() * hitBox.size.y * scast<float>( Donya::SignBit( yMovement.y ) );
+	const Donya::Vector3 destPos = ( result.wasHit )
+		? result.wsLastIntersection - sizeOffset
+		: pos + result.correctedVelocity;
 	const Donya::Vector3 actualMovement = destPos - pos;
 	
 	const Donya::Vector3 directlyMovedPos = pos + actualMovement;
@@ -536,6 +503,37 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 	// Recurse by corrected velocity.
 	// This recursion will stop when the corrected velocity was not collided.
 	return CalcCorrectVelocity( correctedVelocity, wsRayOffsets, pTerrain, pTerrainMatrix, recursionResult, recursionCount + 1, recursionLimit );
+}
+
+void Actor::CorrectByHitBox( const std::vector<Donya::Vector3> &wsRayOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix, int recursiveCount )
+{
+	constexpr Donya::Vector3 directions[]	// Right, Left, Front and Back.
+	{
+		{ +1.0f, 0.0f, 0.0f },
+		{ -1.0f, 0.0f, 0.0f },
+		{ 0.0f, 0.0f, +1.0f },
+		{ 0.0f, 0.0f, -1.0f },
+	};
+	const Donya::Vector3 horizontalSize{ hitBox.size.x, 0.0f, hitBox.size.z };
+
+	for ( const auto &sign : directions )
+	{
+		const Donya::Vector3 velocityDirection
+		{
+			horizontalSize.x * sign.x,
+			horizontalSize.y * sign.y,
+			horizontalSize.z * sign.z,
+		};
+		auto sideResult = CalcCorrectVelocity( velocityDirection, wsRayOffsets, pTerrain, pTerrainMatrix, {}, 0, recursiveCount );
+		if ( sideResult.wasHit )
+		{
+			if ( sideResult.correctedVelocity.IsZero() ) { continue; }
+			// else
+
+			const Donya::Vector3 diff = velocityDirection - sideResult.correctedVelocity;
+			pos -= diff;
+		}
+	}
 }
 
 bool Actor::IsRiding( const Solid &onto ) const
