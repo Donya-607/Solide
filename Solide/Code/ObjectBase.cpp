@@ -188,7 +188,7 @@ Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::ve
 	if ( result.wasHit )
 	{
 		// The "corrected-velocity is zero" means a wall places too nearly.
-		if ( !result.correctedVelocity.IsZero() ) { return; }
+		if ( !result.correctedVelocity.IsZero() ) { return result.wsLastWallNormal; }
 		// else
 
 		// If we use repulseSize, the velocity will extend.
