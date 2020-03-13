@@ -6,6 +6,8 @@
 #include "Donya/StaticMesh.h"
 #include "Donya/Useful.h"
 
+#include "FilePath.h"
+#include "Section.h" // Use for DrawHitBox.
 #include "Parameter.h"
 
 namespace Bullet
@@ -146,3 +148,73 @@ namespace Bullet
 	};
 }
 CEREAL_CLASS_VERSION( Bullet::OilMember, 0 )
+
+class ParamOilBullet : public ParameterBase<ParamOilBullet>
+{
+public:
+	static constexpr const char *ID = "OilBullet";
+private:
+	Bullet::OilMember m;
+public:
+	void Init() override
+	{
+	#if DEBUG_MODE
+		constexpr bool fromBinary = false;
+	#else
+		constexpr bool fromBinary = true;
+	#endif // DEBUG_MODE
+
+		Load( m, fromBinary );
+	}
+	Bullet::OilMember Data() const { return m; }
+private:
+	std::string GetSerializeIdentifier()			override { return ID; }
+	std::string GetSerializePath( bool isBinary )	override { return GenerateSerializePath( ID, isBinary ); }
+public:
+#if USE_IMGUI
+	void UseImGui() override
+	{
+		if ( !ImGui::BeginIfAllowed() ) { return; }
+		// else
+
+		if ( ImGui::TreeNode( u8"íeÅEÉIÉCÉã" ) )
+		{
+			m.ShowImGuiNode( u8"í≤êÆ" );
+			ShowIONode( m );
+
+			ImGui::TreePop();
+		}
+
+		ImGui::End();
+	}
+#endif // USE_IMGUI
+};
+
+
+namespace
+{
+	void DrawHitBox( const Donya::AABB &drawObj, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+	{
+		Section hitBoxDrawer{ drawObj.pos, drawObj };
+		hitBoxDrawer.DrawHitBox( VP, color );
+	}
+}
+
+
+namespace Bullet
+{
+	void BulletBase::Init( const Donya::Vector3 &wsPos, float speed, const Donya::Vector3 &direction )
+	{
+		AttachSelfKind();
+		pos			= wsPos;
+		velocity	= direction * speed;
+		orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), direction );
+	}
+	void BulletBase::PhysicUpdate()
+	{
+		pos += velocity;
+	}
+
+
+
+}

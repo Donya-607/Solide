@@ -37,14 +37,18 @@ namespace Bullet
 		BulletBase &operator = ( BulletBase && )		= default;
 		virtual ~BulletBase()							= default;
 	public:
-		virtual void Init( float initialSpeed, const Donya::Vector3 &direction );
+		virtual void Init( const Donya::Vector3 &wsInitialPos, float initialSpeed, const Donya::Vector3 &direction );
 		virtual void Uninit() {}
 
-		virtual void Update( float elapsedTime );
+		virtual void Update( float elapsedTime ) {}
 		virtual void PhysicUpdate();
 
 		virtual void Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color ) = 0;
+		virtual void DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) {}
+	protected:
+		virtual void AttachSelfKind() = 0;
 	public:
+		virtual bool			ShouldRemove()	const = 0;
 		virtual Kind			GetKind()		const { return kind; }
 		virtual Donya::Vector3	GetPosition()	const { return pos; }
 		virtual Donya::AABB		GetHitBox()		const { return Donya::AABB::Nil(); }
@@ -61,7 +65,7 @@ namespace Bullet
 	class OilBullet : public BulletBase
 	{
 	public:
-		void Init( float initialSpeed, const Donya::Vector3 &direction ) override;
+		void Init( const Donya::Vector3 &wsInitialPos, float initialSpeed, const Donya::Vector3 &direction ) override;
 
 		void Update( float elapsedTime );
 		void PhysicUpdate();
