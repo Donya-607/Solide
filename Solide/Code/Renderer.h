@@ -18,11 +18,13 @@ private:
 	{
 		Donya::CBuffer<Donya::Model::Constants::PerScene::Common> scene;
 		Donya::CBuffer<Donya::Model::Constants::PerModel::Common> model;
+	public:
+		bool Create();
 	};
 	struct Renderer
 	{
-		Donya::Model::StaticRenderer	normalStatic;
-		Donya::Model::SkinningRenderer	normalSkinning;
+		std::unique_ptr<Donya::Model::StaticRenderer>	pStatic;
+		std::unique_ptr<Donya::Model::SkinningRenderer>	pSkinning;
 	public:
 		bool Create();
 	};
@@ -45,9 +47,10 @@ private:
 	};
 	struct State
 	{
-		int DS	= 0;
-		int RS	= 0;
-		int PS	= 0;
+		static constexpr int DEFAULT_ID = -1;
+		int DS	= DEFAULT_ID;
+		int RS	= DEFAULT_ID;
+		int PS	= DEFAULT_ID;
 	public:
 		bool Create();
 	};
@@ -56,6 +59,7 @@ private:
 	std::unique_ptr<CBuffer>	pCBuffer;
 	std::unique_ptr<ShaderSet>	pShader;
 	std::unique_ptr<Renderer>	pRenderer;
+	bool wasCreated = false;
 public:
 	bool Init();
 public:
