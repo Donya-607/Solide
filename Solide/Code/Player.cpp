@@ -99,7 +99,7 @@ namespace PlayerModel
 			bool result = true;
 			Donya::Loader loader{};
 
-			result = loader.Load( filePath, nullptr );
+			result = loader.Load( filePath );
 			if ( !result ) { return false; }
 			// else
 

@@ -171,6 +171,7 @@
     <ClCompile Include="Code\Obstacles.cpp" />
     <ClCompile Include="Code\Parameter.cpp" />
     <ClCompile Include="Code\Player.cpp" />
+    <ClCompile Include="Code\Renderer.cpp" />
     <ClCompile Include="Code\SceneClear.cpp" />
     <ClCompile Include="Code\SceneGame.cpp" />
     <ClCompile Include="Code\SceneLogo.cpp" />
@@ -244,6 +245,7 @@
     <ClInclude Include="Code\Obstacles.h" />
     <ClInclude Include="Code\Parameter.h" />
     <ClInclude Include="Code\Player.h" />
+    <ClInclude Include="Code\Renderer.h" />
     <ClInclude Include="Code\Scene.h" />
     <ClInclude Include="Code\SceneClear.h" />
     <ClInclude Include="Code\SceneGame.h" />

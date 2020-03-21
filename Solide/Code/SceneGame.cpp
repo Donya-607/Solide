@@ -215,6 +215,7 @@ SceneGame::SceneGame() :
 	dirLight(),
 	iCamera(),
 	controller( Donya::Gamepad::PAD_1 ),
+	pShader( nullptr ),
 	pBG( nullptr ),
 	pTerrain( nullptr ),
 	pPlayer( nullptr ),
@@ -491,6 +492,11 @@ void SceneGame::Draw( float elapsedTime )
 		}
 	}
 #endif // DEBUG_MODE
+}
+
+bool SceneGame::CreateRenderingStatus()
+{
+
 }
 
 void SceneGame::CameraInit()

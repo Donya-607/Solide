@@ -3,7 +3,10 @@
 #include <memory>
 
 #include "Donya/Camera.h"
+#include "Donya/ModelCommon.h"
+#include "Donya/ModelRenderer.h"
 #include "Donya/GamepadXInput.h"
+#include "Donya/Shader.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
@@ -23,10 +26,32 @@ public:
 		Donya::Vector4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
 		Donya::Vector4 dir	{ 0.0f,-1.0f, 1.0f, 0.0f };
 	};
+	struct Shader
+	{
+		Donya::VertexShader	VS;
+		Donya::PixelShader	PS;
+	};
+	struct ShaderSet
+	{
+		Shader	normalStatic;
+		Shader	normalSkinning;
+	};
+	struct CBuffer
+	{
+		Donya::CBuffer<Donya::Model::Constants::PerScene::Common> perScene;
+		Donya::CBuffer<Donya::Model::Constants::PerModel::Common> perModel;
+	};
+	struct Renderer
+	{
+		Donya::Model::StaticRenderer	pStatic;
+		Donya::Model::SkinningRenderer	pSkinning;
+	};
 private:
 	DirectionalLight					dirLight;
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller;
+
+	std::unique_ptr<ShaderSet>			pShader;
 
 	std::unique_ptr<BG>					pBG;
 	std::unique_ptr<Terrain>			pTerrain;
@@ -58,6 +83,8 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
+	bool	CreateRenderingStatus();
+
 	void	CameraInit();
 	void	AssignCameraPos();
 	void	CameraUpdate();
