@@ -708,7 +708,7 @@ void Player::NormalMover::Move( Player &player, float elapsedTime, Input input )
 		velocityXZ += input.moveVectorXZ * data.normal.accel * elapsedTime;
 		if ( data.normal.maxSpeed <= velocityXZ.Length() )
 		{
-			velocityXZ = velocityXZ.Normalized() * data.normal.maxSpeed;
+			velocityXZ = velocityXZ.Unit() * data.normal.maxSpeed;
 		}
 
 		player.LookToInput( elapsedTime, input );
@@ -754,7 +754,7 @@ void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 	float betweenCross{};
 	float betweenRadian{};
 	{
-		Donya::Vector2 nXZFront = ToXZVector( player.orientation.LocalFront().Normalized() );
+		Donya::Vector2 nXZFront = ToXZVector( player.orientation.LocalFront().Unit() );
 		
 		betweenCross  = Donya::Cross( nXZFront, input.moveVectorXZ );
 		betweenRadian = Donya::Dot  ( nXZFront, input.moveVectorXZ );
@@ -1048,7 +1048,7 @@ void Player::LookToInput( float elapsedTime, Input input )
 	Donya::Vector3 frontXZ = orientation.LocalFront(); frontXZ.y = 0.0f;
 	Donya::Vector3 inputXZ{ input.moveVectorXZ.x, 0.0f, input.moveVectorXZ.y };
 
-	orientation = Donya::Quaternion::LookAt( orientation, inputXZ.Normalized(), Donya::Quaternion::Freeze::Up );
+	orientation = Donya::Quaternion::LookAt( orientation, inputXZ.Unit(), Donya::Quaternion::Freeze::Up );
 	orientation.Normalize();
 }
 

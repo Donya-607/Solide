@@ -1,6 +1,7 @@
 #include "Vector.h"
 
-#include "Useful.h" // Use ToDegree(), Equal().
+#include "Quaternion.h"
+#include "Useful.h"		// Use ToDegree(), Equal().
 
 using namespace DirectX;
 
@@ -20,7 +21,7 @@ namespace Donya
 
 		return *this;
 	}
-	Vector2 Vector2::Normalized() const
+	Vector2 Vector2::Unit() const
 	{
 		Vector2 normalized = *this;
 		normalized.Normalize();
@@ -37,6 +38,16 @@ namespace Donya
 	bool Vector2::IsZero() const
 	{
 		return ( ZeroEqual( LengthSq() ) ) ? true : false;
+	}
+	Vector2 Vector2::Rotate( float radian )
+	{
+		const float cos = cosf( radian );
+		const float sin = sinf( radian );
+		return Vector2
+		{
+			x * cos - y * sin,
+			x * sin + y * cos
+		};
 	}
 	bool operator == ( const Vector2 &L, const Vector2 &R )
 	{
@@ -60,7 +71,7 @@ namespace Donya
 
 		return *this;
 	}
-	Vector3 Vector3::Normalized() const
+	Vector3 Vector3::Unit() const
 	{
 		Vector3 normalized = *this;
 		normalized.Normalize();
@@ -286,6 +297,20 @@ namespace Donya
 			XMMatrixTranslation( offset.x, offset.y, offset.z )
 		);
 	}
+
+	Vector4x4 Vector4x4::MakeTransformation( const Vector3 &scaling, const Quaternion &rotation, const Vector3 translation )
+	{
+		Vector4x4 M;
+		M._11 = scaling.x;
+		M._22 = scaling.y;
+		M._33 = scaling.z;
+		M *= rotation.RequireRotationMatrix();
+		M._41 = translation.x;
+		M._42 = translation.y;
+		M._43 = translation.z;
+		return M;
+	}
+
 
 	bool operator == ( const Vector4x4 &L, const Vector4x4 &R )
 	{

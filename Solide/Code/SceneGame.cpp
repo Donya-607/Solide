@@ -476,7 +476,7 @@ void SceneGame::Draw( float elapsedTime )
 		#endif // USE_IMGUI
 
 			Donya::Vector4x4 TB_S = Donya::Vector4x4::MakeScaling( boardScale );
-			Donya::Vector4x4 TB_R = texBoard.CalcBillboardRotation( ( iCamera.GetPosition() - boardPos ).Normalized(), boardRadian );
+			Donya::Vector4x4 TB_R = texBoard.CalcBillboardRotation( ( iCamera.GetPosition() - boardPos ).Unit(), boardRadian );
 			Donya::Vector4x4 TB_T = Donya::Vector4x4::MakeTranslation( boardPos );
 			Donya::Vector4x4 TB_W = TB_S * TB_R * TB_T;
 

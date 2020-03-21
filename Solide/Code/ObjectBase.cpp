@@ -124,7 +124,7 @@ namespace
 			hitBox.size.z * Donya::SignBit( movement.z ),
 		};
 		*/
-		const Donya::Vector3 nMovement = movement.Normalized();
+		const Donya::Vector3 nMovement = movement.Unit();
 		const Donya::Vector3 sizeOffset
 		{
 			size.x * std::max( -1.0f, std::min( 1.0f, nMovement.x ) ),
@@ -485,7 +485,7 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 
 	// Transform to World space from Terrains pace.
 	const Donya::Vector3 wsIntersection	= Transform( terrainMat, result.intersectionPoint, 1.0f );
-	const Donya::Vector3 wsWallNormal	= Transform( terrainMat, result.normal, 0.0f ).Normalized();
+	const Donya::Vector3 wsWallNormal	= Transform( terrainMat, result.normal, 0.0f ).Unit();
 
 	const Donya::Vector3 internalVec	= wsRayEnd - wsIntersection;
 	const Donya::Vector3 projVelocity	= -wsWallNormal * Dot( internalVec, -wsWallNormal );

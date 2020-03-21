@@ -47,7 +47,7 @@ Quaternion MakeLookAtRotation( const Donya::Vector3 &nFront, const Donya::Vector
 	// else
 
 	const float rotAngle = acosf( cosTheta );
-	Donya::Vector3 rotAxis = Donya::Vector3::Cross( nFront, nLookDir ).Normalized();
+	Donya::Vector3 rotAxis = Donya::Vector3::Cross( nFront, nLookDir ).Unit();
 
 	return ( ZeroEqual( rotAngle ) )
 	? Donya::Quaternion::Identity()
@@ -132,7 +132,7 @@ namespace Donya
 		// else
 		*this /= len;
 	}
-	Quaternion Quaternion::Normalized() const
+	Quaternion Quaternion::Unit() const
 	{
 		Quaternion normalized = *this;
 		normalized.Normalize();
@@ -219,7 +219,7 @@ namespace Donya
 		Quaternion rotation = MakeLookAtRotation
 		(
 			LocalFront(),
-			lookDirection.Normalized()
+			lookDirection.Unit()
 		);
 
 		rotation = FreezeRotation( rotation, freeze );
@@ -349,8 +349,8 @@ namespace Donya
 
 		Quaternion rotation = MakeLookAtRotation
 		(
-			front.Normalized(),
-			lookDirection.Normalized()
+			front.Unit(),
+			lookDirection.Unit()
 		);
 
 		rotation = FreezeRotation( rotation, freeze );
@@ -382,7 +382,7 @@ namespace Donya
 			// The inputs are too close for comfort.
 
 			Quaternion result = nStart + ( percent * ( nLast - nStart ) );
-			return result.Normalized();
+			return result.Unit();
 		}
 		// else
 

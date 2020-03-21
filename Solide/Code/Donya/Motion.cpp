@@ -262,9 +262,9 @@ namespace Donya
 					nextScales[Y],
 					nextScales[Z]
 				);
-				rotationQuat[Base]	= Donya::Quaternion::Make ( rotationMat[Base] ).Normalized();
-				rotationQuat[Next]	= Donya::Quaternion::Make ( rotationMat[Next] ).Normalized();
-				rotationSlerped		= Donya::Quaternion::Slerp( rotationQuat[Base], rotationQuat[Next], fractional ).Normalized();
+				rotationQuat[Base]	= Donya::Quaternion::Make ( rotationMat[Base] ).Unit();
+				rotationQuat[Next]	= Donya::Quaternion::Make ( rotationMat[Next] ).Unit();
+				rotationSlerped		= Donya::Quaternion::Slerp( rotationQuat[Base], rotationQuat[Next], fractional ).Unit();
 				rotation			= rotationSlerped.RequireRotationMatrix();
 
 				base = Donya::Vector4x4

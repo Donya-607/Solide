@@ -118,7 +118,7 @@ namespace Donya
 		/// </summary>
 		virtual void LookAtDestFocus()
 		{
-			const Donya::Vector3 nLookDir = ( dest.focus - dest.pos ).Normalized();
+			const Donya::Vector3 nLookDir = ( dest.focus - dest.pos ).Unit();
 			dest.orientation = Donya::Quaternion::LookAt( Donya::Quaternion::Identity(), nLookDir/*, Donya::Quaternion::Freeze::Front*/ );
 			// HACK: Why is using the Freeze::Front to the argument of freeze axis?
 		}
