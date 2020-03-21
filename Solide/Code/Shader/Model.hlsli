@@ -25,10 +25,3 @@ cbuffer CBPerModel : register( b1 )
 	row_major
 	float4x4	cbWorld;
 };
-
-cbuffer CBPerSubset : register( b3 )
-{
-	float4		cbAmbient;
-	float4		cbDiffuse;
-	float4		cbSpecular;
-};

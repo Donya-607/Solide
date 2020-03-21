@@ -144,6 +144,12 @@
     <ClCompile Include="Code\Donya\Keyboard.cpp" />
     <ClCompile Include="Code\Donya\Loader.cpp" />
     <ClCompile Include="Code\Donya\Looper.cpp" />
+    <ClCompile Include="Code\Donya\Model.cpp" />
+    <ClCompile Include="Code\Donya\ModelCommon.cpp" />
+    <ClCompile Include="Code\Donya\ModelMotion.cpp" />
+    <ClCompile Include="Code\Donya\ModelPolygon.cpp" />
+    <ClCompile Include="Code\Donya\ModelPose.cpp" />
+    <ClCompile Include="Code\Donya\ModelRenderer.cpp" />
     <ClCompile Include="Code\Donya\Motion.cpp" />
     <ClCompile Include="Code\Donya\Mouse.cpp" />
     <ClCompile Include="Code\Donya\Quaternion.cpp" />
@@ -215,6 +221,13 @@
     <ClInclude Include="Code\Donya\Keyboard.h" />
     <ClInclude Include="Code\Donya\Loader.h" />
     <ClInclude Include="Code\Donya\Looper.h" />
+    <ClInclude Include="Code\Donya\Model.h" />
+    <ClInclude Include="Code\Donya\ModelCommon.h" />
+    <ClInclude Include="Code\Donya\ModelMotion.h" />
+    <ClInclude Include="Code\Donya\ModelPolygon.h" />
+    <ClInclude Include="Code\Donya\ModelPose.h" />
+    <ClInclude Include="Code\Donya\ModelRenderer.h" />
+    <ClInclude Include="Code\Donya\ModelSource.h" />
     <ClInclude Include="Code\Donya\Motion.h" />
     <ClInclude Include="Code\Donya\Mouse.h" />
     <ClInclude Include="Code\Donya\Quaternion.h" />

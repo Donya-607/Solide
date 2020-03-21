@@ -366,11 +366,16 @@ namespace Donya
 		/// </summary>
 		struct RegisterDesc
 		{
-			unsigned int setSlot = 0;
-			bool setVS = true;
-			bool setPS = true;
+			unsigned int setSlot;
+			bool setVS;
+			bool setPS;
 		public:
-			static RegisterDesc Make( unsigned int setSlot, bool setVS, bool setPS )
+			constexpr RegisterDesc() :
+				setSlot( 0 ), setVS( true ), setPS( true ) {}
+			constexpr RegisterDesc( unsigned int setSlot, bool setVS, bool setPS ) :
+				setSlot( setSlot ), setVS( setVS ), setPS( setPS ) {}
+		public:
+			static constexpr RegisterDesc Make( unsigned int setSlot, bool setVS, bool setPS )
 			{
 				return RegisterDesc{ setSlot, setVS, setPS };
 			}

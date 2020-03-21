@@ -65,13 +65,15 @@ public:
 public:
 	void UpdateConstant( const Donya::Model::Constants::PerScene::Common &constant );
 	void UpdateConstant( const Donya::Model::Constants::PerModel::Common &constant );
-	void ActivateConstantScene();
-	void ActivateConstantModel();
+	void ActivateConstantScene( const Donya::Model::RegisterDesc &setting );
+	void ActivateConstantModel( const Donya::Model::RegisterDesc &setting );
 	void DeactivateConstantScene();
 	void DeactivateConstantModel();
 public:
-	void ActivateShaderNormal();
-	void DeactivateShaderNormal();
+	void ActivateShaderNormalStatic();
+	void ActivateShaderNormalSkinning();
+	void DeactivateShaderNormalStatic();
+	void DeactivateShaderNormalSkinning();
 public:
 	void Render( const Donya::Model::StaticModel	&model, const Donya::Model::Pose &pose );
 	void Render( const Donya::Model::SkinningModel	&model, const Donya::Model::Pose &pose );

@@ -44,6 +44,23 @@ namespace
 		standard.MaxLOD					= D3D11_FLOAT32_MAX;
 		return standard;
 	}
+
+	static constexpr Donya::Model::RegisterDesc MeshSetting()
+	{
+		return Donya::Model::RegisterDesc::Make( 2, /* setVS = */ true, /* setPS = */ false );
+	}
+	static constexpr Donya::Model::RegisterDesc SubsetSetting()
+	{
+		return Donya::Model::RegisterDesc::Make( 3, /* setVS = */ false, /* setPS = */ true );
+	}
+	static constexpr Donya::Model::RegisterDesc DiffuseMapSetting()
+	{
+		return Donya::Model::RegisterDesc::Make( 0, /* setVS = */ false, /* setPS = */ true );
+	}
+	static constexpr Donya::Model::RegisterDesc SamplerSetting()
+	{
+		return Donya::Model::RegisterDesc::Make( 0, /* setVS = */ false, /* setPS = */ true );
+	}
 }
 
 bool RenderingHelper::CBuffer::Create()
@@ -165,43 +182,51 @@ bool RenderingHelper::Init()
 
 void RenderingHelper::UpdateConstant( const Donya::Model::Constants::PerScene::Common &constant )
 {
-
+	pCBuffer->scene.data = constant;
 }
 void RenderingHelper::UpdateConstant( const Donya::Model::Constants::PerModel::Common &constant )
 {
-
+	pCBuffer->model.data = constant;
 }
-void RenderingHelper::ActivateConstantScene()
+void RenderingHelper::ActivateConstantScene( const Donya::Model::RegisterDesc &desc )
 {
-
+	pCBuffer->scene.Activate( desc.setSlot, desc.setVS, desc.setPS );
 }
-void RenderingHelper::ActivateConstantModel()
+void RenderingHelper::ActivateConstantModel( const Donya::Model::RegisterDesc &desc )
 {
-
+	pCBuffer->model.Activate( desc.setSlot, desc.setVS, desc.setPS );
 }
 void RenderingHelper::DeactivateConstantScene()
 {
-
+	pCBuffer->scene.Deactivate();
 }
 void RenderingHelper::DeactivateConstantModel()
 {
-
+	pCBuffer->model.Deactivate();
 }
 
-void RenderingHelper::ActivateShaderNormal()
+void RenderingHelper::ActivateShaderNormalStatic()
 {
-
+	pShader->normalStatic.Activate();
 }
-void RenderingHelper::DeactivateShaderNormal()
+void RenderingHelper::ActivateShaderNormalSkinning()
 {
-
+	pShader->normalSkinning.Activate();
+}
+void RenderingHelper::DeactivateShaderNormalStatic()
+{
+	pShader->normalStatic.Deactivate();
+}
+void RenderingHelper::DeactivateShaderNormalSkinning()
+{
+	pShader->normalSkinning.Deactivate();
 }
 
 void RenderingHelper::Render( const Donya::Model::StaticModel &model, const Donya::Model::Pose &pose )
 {
-
+	pRenderer->pStatic->Render( model, pose, MeshSetting(), SubsetSetting(), DiffuseMapSetting() );
 }
 void RenderingHelper::Render( const Donya::Model::SkinningModel &model, const Donya::Model::Pose &pose )
 {
-
+	pRenderer->pSkinning->Render( model, pose, MeshSetting(), SubsetSetting(), DiffuseMapSetting() );
 }
