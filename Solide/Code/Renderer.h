@@ -13,9 +13,18 @@
 
 class RenderingHelper
 {
+public:
+	struct TransConstant
+	{
+		float zNear				= 1.0f;
+		float zFar				= 3.0f;
+		float lowerAlpha		= 0.1f;
+		float heightThreshold	= 0.0f;	// Transparency applies only to pixels above this threshold.
+	};
 private:
 	struct CBuffer
 	{
+		Donya::CBuffer<TransConstant> trans;
 		Donya::CBuffer<Donya::Model::Constants::PerScene::Common> scene;
 		Donya::CBuffer<Donya::Model::Constants::PerModel::Common> model;
 	public:
@@ -63,10 +72,13 @@ private:
 public:
 	bool Init();
 public:
+	void UpdateConstant( const TransConstant &constant );
 	void UpdateConstant( const Donya::Model::Constants::PerScene::Common &constant );
 	void UpdateConstant( const Donya::Model::Constants::PerModel::Common &constant );
-	void ActivateConstantScene( const Donya::Model::RegisterDesc &setting );
-	void ActivateConstantModel( const Donya::Model::RegisterDesc &setting );
+	void ActivateConstantTrans();
+	void ActivateConstantScene();
+	void ActivateConstantModel();
+	void DeactivateConstantTrans();
 	void DeactivateConstantScene();
 	void DeactivateConstantModel();
 public:

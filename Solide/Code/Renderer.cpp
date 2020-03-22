@@ -45,6 +45,22 @@ namespace
 		return standard;
 	}
 
+	// These settings are hard-coded by a programmer.
+
+	static constexpr Donya::Model::RegisterDesc TransSetting()
+	{
+		return Donya::Model::RegisterDesc::Make( 4, /* setVS = */ false, /* setPS = */ true );
+	}
+
+	static constexpr Donya::Model::RegisterDesc SceneSetting()
+	{
+		return Donya::Model::RegisterDesc::Make( 0, /* setVS = */ true, /* setPS = */ true );
+	}
+	static constexpr Donya::Model::RegisterDesc ModelSetting()
+	{
+		return Donya::Model::RegisterDesc::Make( 1, /* setVS = */ true, /* setPS = */ true );
+	}
+
 	static constexpr Donya::Model::RegisterDesc MeshSetting()
 	{
 		return Donya::Model::RegisterDesc::Make( 2, /* setVS = */ true, /* setPS = */ false );
@@ -53,6 +69,7 @@ namespace
 	{
 		return Donya::Model::RegisterDesc::Make( 3, /* setVS = */ false, /* setPS = */ true );
 	}
+
 	static constexpr Donya::Model::RegisterDesc DiffuseMapSetting()
 	{
 		return Donya::Model::RegisterDesc::Make( 0, /* setVS = */ false, /* setPS = */ true );
@@ -66,6 +83,7 @@ namespace
 bool RenderingHelper::CBuffer::Create()
 {
 	bool succeeded = true;
+	if ( !trans.Create() ) { succeeded = false; }
 	if ( !scene.Create() ) { succeeded = false; }
 	if ( !model.Create() ) { succeeded = false; }
 	return succeeded;
@@ -180,6 +198,10 @@ bool RenderingHelper::Init()
 	return succeeded;
 }
 
+void RenderingHelper::UpdateConstant( const TransConstant &constant )
+{
+	pCBuffer->trans.data = constant;
+}
 void RenderingHelper::UpdateConstant( const Donya::Model::Constants::PerScene::Common &constant )
 {
 	pCBuffer->scene.data = constant;
@@ -188,13 +210,24 @@ void RenderingHelper::UpdateConstant( const Donya::Model::Constants::PerModel::C
 {
 	pCBuffer->model.data = constant;
 }
-void RenderingHelper::ActivateConstantScene( const Donya::Model::RegisterDesc &desc )
+void RenderingHelper::ActivateConstantTrans()
 {
+	constexpr auto desc = TransSetting();
+	pCBuffer->trans.Activate( desc.setSlot, desc.setVS, desc.setPS );
+}
+void RenderingHelper::ActivateConstantScene()
+{
+	constexpr auto desc = SceneSetting();
 	pCBuffer->scene.Activate( desc.setSlot, desc.setVS, desc.setPS );
 }
-void RenderingHelper::ActivateConstantModel( const Donya::Model::RegisterDesc &desc )
+void RenderingHelper::ActivateConstantModel()
 {
+	constexpr auto desc = ModelSetting();
 	pCBuffer->model.Activate( desc.setSlot, desc.setVS, desc.setPS );
+}
+void RenderingHelper::DeactivateConstantTrans()
+{
+	pCBuffer->trans.Deactivate();
 }
 void RenderingHelper::DeactivateConstantScene()
 {
