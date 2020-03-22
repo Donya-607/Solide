@@ -48,7 +48,6 @@ namespace Donya
 		static std::mutex fbxMutex;
 	#endif // USE_FBX_SDK
 	private: // Loading parameters.
-		std::string			filePath;		// The full file path.
 		std::string			fileDirectory;	// The '/' terminated file directory.
 		std::string			fileName;		// The file name that contains the extension.
 
@@ -63,7 +62,6 @@ namespace Donya
 		{
 			archive
 			(
-				CEREAL_NVP( filePath ),
 				CEREAL_NVP( fileName ),
 				CEREAL_NVP( fileDirectory ),
 				CEREAL_NVP( source ),
@@ -84,13 +82,17 @@ namespace Donya
 	#endif // USE_FBX_SDK
 	public:
 		/// <summary>
+		/// Clear the read source.
+		/// </summary>
+		void ClearData();
+		/// <summary>
 		/// We can those load file extensions:<para></para>
 		/// .fbx, .FBX(If the flag of use fbx-sdk is on),<para></para>
 		/// .obj, .OBJ(If the flag of use fbx-sdk is on),<para></para>
 		/// .bin.
 		/// </summary>
 		bool Load( const std::string &filePath, bool outputDebugProgress = true );
-
+	public:
 		/// <summary>
 		/// We expect the "filePath" contain extension also.
 		/// </summary>
@@ -98,14 +100,9 @@ namespace Donya
 	public:
 		const Model::Source &GetModelSource()	const { return source; }
 		void SetModelSource( const Model::Source &newSource ) { source = newSource; }
-
 		const Model::PolygonGroup &GetPolygonGroup()	const { return polyGroup; }
 		void SetPolygonGroup( const Model::PolygonGroup &newSource ) { polyGroup = newSource; }
-
-		/// <summary>
-		/// Ex. returns "C:/Foo/Bar.fbx" from ["C:/Foo/Bar.fbx"].
-		/// </summary>
-		std::string GetFullFilePath()					const { return filePath; }
+	public:
 		/// <summary>
 		/// Ex. returns "Bar.fbx" from ["C:/Foo/Bar.fbx"].
 		/// </summary>
@@ -116,15 +113,11 @@ namespace Donya
 		std::string GetFileDirectory()					const { return fileDirectory; }
 	private:
 		bool LoadByCereal( const std::string &filePath, bool outputDebugProgress );
-
 	#if USE_FBX_SDK
 		bool LoadByFBXSDK( const std::string &filePath, bool outputDebugProgress );
-
-		void MakeAbsoluteFilePath( const std::string &filePath );
 	#endif // USE_FBX_SDK
-
-	#if USE_IMGUI
 	public:
+	#if USE_IMGUI
 		void ShowEnumNode( const std::string &nodeCaption ) const;
 	#endif // USE_IMGUI
 

@@ -5,8 +5,9 @@
 
 #include "Donya/Constant.h"
 #include "Donya/Loader.h"
+#include "Donya/Model.h"
+#include "Donya/ModelPose.h"
 #include "Donya/Serializer.h"
-#include "Donya/StaticMesh.h"
 #include "Donya/Useful.h"		// MultiByte char -> Wide char
 
 #include "Common.h"
@@ -39,24 +40,31 @@ namespace
 		"Goal",
 	};
 
-	static std::array<std::shared_ptr<Donya::StaticMesh>, KIND_COUNT> models{};
+	struct ModelData
+	{
+		Donya::Model::StaticModel	model;
+		Donya::Model::Pose			pose;
+	};
+	static std::array<std::shared_ptr<ModelData>, KIND_COUNT> models{};
 
 	bool LoadModels()
 	{
 		bool result		= true;
 		bool succeeded	= true;
 
-		auto Load = []( const std::string &filePath, Donya::StaticMesh *pDest )->bool
+		auto Load = []( const std::string &filePath, ModelData *pDest )->bool
 		{
-			bool result = true;
 			Donya::Loader loader{};
 
-			result = loader.Load( filePath, nullptr );
+			bool result = loader.Load( filePath );
 			if ( !result ) { return false; }
 			// else
 
-			result = Donya::StaticMesh::Create( loader, *pDest );
-			return result;
+			const auto &source = loader.GetModelSource();
+			pDest->model = Donya::Model::StaticModel::Create( source, loader.GetFileDirectory() );
+			pDest->pose.AssignSkeletal( source.skeletal );
+
+			return pDest->model.WasInitializeSucceeded();
 		};
 
 		std::string filePath{};
