@@ -89,6 +89,16 @@ bool RenderingHelper::CBuffer::Create()
 	return succeeded;
 }
 
+bool RenderingHelper::PrimitiveSet::Create()
+{
+	bool succeeded = true;
+	if ( !modelCube.Create()		) { succeeded = false; }
+	if ( !rendererCube.Create()		) { succeeded = false; }
+	if ( !modelSphere.Create()		) { succeeded = false; }
+	if ( !rendererSphere.Create()	) { succeeded = false; }
+	return succeeded;
+}
+
 bool RenderingHelper::Renderer::Create()
 {
 	pStatic		= std::make_unique<Donya::Model::StaticRenderer>();
@@ -188,11 +198,13 @@ bool RenderingHelper::Init()
 	pCBuffer	= std::make_unique<CBuffer>();
 	pShader		= std::make_unique<ShaderSet>();
 	pRenderer	= std::make_unique<Renderer>();
+	pPrimitive	= std::make_unique<PrimitiveSet>();
 
-	if ( !state.Create() )		{ succeeded = false; }
-	if ( !pCBuffer->Create() )	{ succeeded = false; }
-	if ( !pShader->Create() )	{ succeeded = false; }
-	if ( !pRenderer->Create() )	{ succeeded = false; }
+	if ( !state.Create() )			{ succeeded = false; }
+	if ( !pCBuffer->Create() )		{ succeeded = false; }
+	if ( !pRenderer->Create() )		{ succeeded = false; }
+	if ( !pShader->Create() )		{ succeeded = false; }
+	if ( !pPrimitive->Create() )	{ succeeded = false; }
 
 	if ( succeeded ) { wasCreated = true; }
 	return succeeded;
@@ -210,6 +222,14 @@ void RenderingHelper::UpdateConstant( const Donya::Model::Constants::PerModel::C
 {
 	pCBuffer->model.data = constant;
 }
+void RenderingHelper::UpdateConstant( const Donya::Model::Cube::Constant	&constant )
+{
+	pPrimitive->rendererCube.UpdateConstant( constant );
+}
+void RenderingHelper::UpdateConstant( const Donya::Model::Sphere::Constant	&constant )
+{
+	pPrimitive->rendererSphere.UpdateConstant( constant );
+}
 void RenderingHelper::ActivateConstantTrans()
 {
 	constexpr auto desc = TransSetting();
@@ -225,6 +245,14 @@ void RenderingHelper::ActivateConstantModel()
 	constexpr auto desc = ModelSetting();
 	pCBuffer->model.Activate( desc.setSlot, desc.setVS, desc.setPS );
 }
+void RenderingHelper::ActivateConstantCube()
+{
+	pPrimitive->rendererCube.ActivateConstant();
+}
+void RenderingHelper::ActivateConstantSphere()
+{
+	pPrimitive->rendererSphere.ActivateConstant();
+}
 void RenderingHelper::DeactivateConstantTrans()
 {
 	pCBuffer->trans.Deactivate();
@@ -237,6 +265,14 @@ void RenderingHelper::DeactivateConstantModel()
 {
 	pCBuffer->model.Deactivate();
 }
+void RenderingHelper::DeactivateConstantCube()
+{
+	pPrimitive->rendererCube.DeactivateConstant();
+}
+void RenderingHelper::DeactivateConstantSphere()
+{
+	pPrimitive->rendererSphere.DeactivateConstant();
+}
 
 void RenderingHelper::ActivateShaderNormalStatic()
 {
@@ -246,6 +282,16 @@ void RenderingHelper::ActivateShaderNormalSkinning()
 {
 	pShader->normalSkinning.Activate();
 }
+void RenderingHelper::ActivateShaderCube()
+{
+	pPrimitive->rendererCube.ActivateVertexShader();
+	pPrimitive->rendererCube.ActivatePixelShader();
+}
+void RenderingHelper::ActivateShaderSphere()
+{
+	pPrimitive->rendererSphere.ActivateVertexShader();
+	pPrimitive->rendererSphere.ActivatePixelShader();
+}
 void RenderingHelper::DeactivateShaderNormalStatic()
 {
 	pShader->normalStatic.Deactivate();
@@ -253,6 +299,16 @@ void RenderingHelper::DeactivateShaderNormalStatic()
 void RenderingHelper::DeactivateShaderNormalSkinning()
 {
 	pShader->normalSkinning.Deactivate();
+}
+void RenderingHelper::DeactivateShaderCube()
+{
+	pPrimitive->rendererCube.DeactivateVertexShader();
+	pPrimitive->rendererCube.DeactivatePixelShader();
+}
+void RenderingHelper::DeactivateShaderSphere()
+{
+	pPrimitive->rendererSphere.DeactivateVertexShader();
+	pPrimitive->rendererSphere.DeactivatePixelShader();
 }
 
 void RenderingHelper::Render( const Donya::Model::StaticModel &model, const Donya::Model::Pose &pose )
@@ -262,4 +318,57 @@ void RenderingHelper::Render( const Donya::Model::StaticModel &model, const Dony
 void RenderingHelper::Render( const Donya::Model::SkinningModel &model, const Donya::Model::Pose &pose )
 {
 	pRenderer->pSkinning->Render( model, pose, MeshSetting(), SubsetSetting(), DiffuseMapSetting() );
+}
+
+void RenderingHelper::CallDrawCube()
+{
+	pPrimitive->modelCube.CallDraw();
+}
+void RenderingHelper::CallDrawSphere()
+{
+	pPrimitive->modelSphere.CallDraw();
+}
+
+void RenderingHelper::DrawCube()
+{
+	pPrimitive->rendererCube.Draw( pPrimitive->modelCube );
+}
+void RenderingHelper::DrawSphere()
+{
+	pPrimitive->rendererSphere.Draw( pPrimitive->modelSphere );
+}
+
+namespace
+{
+	template<class PrimitiveRenderer, class Constant, typename DrawMethod>
+	void ProcessDrawingImpl( PrimitiveRenderer &renderer, const Constant &constant, const DrawMethod &Draw )
+	{
+		renderer.ActivateVertexShader();
+		renderer.ActivatePixelShader();
+		renderer.ActivateDepthStencil();
+		renderer.ActivateRasterizer();
+		
+		renderer.UpdateConstant( constant );
+		renderer.ActivateConstant();
+
+		Draw();
+		
+		renderer.DeactivateConstant();
+
+		renderer.DeactivateRasterizer();
+		renderer.DeactivateDepthStencil();
+		renderer.DeactivatePixelShader();
+		renderer.DeactivateVertexShader();
+	}
+}
+
+void RenderingHelper::ProcessDrawingCube( const Donya::Model::Cube::Constant &constant )
+{
+	auto Draw = [&]() { DrawCube(); };
+	ProcessDrawingImpl( pPrimitive->rendererCube, constant, Draw );
+}
+void RenderingHelper::ProcessDrawingSphere( const Donya::Model::Sphere::Constant &constant )
+{
+	auto Draw = [&]() { DrawSphere(); };
+	ProcessDrawingImpl( pPrimitive->rendererSphere, constant, Draw );
 }
