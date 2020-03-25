@@ -149,6 +149,7 @@
     <ClCompile Include="Code\Donya\ModelMotion.cpp" />
     <ClCompile Include="Code\Donya\ModelPolygon.cpp" />
     <ClCompile Include="Code\Donya\ModelPose.cpp" />
+    <ClCompile Include="Code\Donya\ModelPrimitive.cpp" />
     <ClCompile Include="Code\Donya\ModelRenderer.cpp" />
     <ClCompile Include="Code\Donya\Motion.cpp" />
     <ClCompile Include="Code\Donya\Mouse.cpp" />
@@ -226,6 +227,7 @@
     <ClInclude Include="Code\Donya\ModelMotion.h" />
     <ClInclude Include="Code\Donya\ModelPolygon.h" />
     <ClInclude Include="Code\Donya\ModelPose.h" />
+    <ClInclude Include="Code\Donya\ModelPrimitive.h" />
     <ClInclude Include="Code\Donya\ModelRenderer.h" />
     <ClInclude Include="Code\Donya\ModelSource.h" />
     <ClInclude Include="Code\Donya\Motion.h" />
