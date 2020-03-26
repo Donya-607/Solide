@@ -215,7 +215,7 @@ SceneGame::SceneGame() :
 	dirLight(),
 	iCamera(),
 	controller( Donya::Gamepad::PAD_1 ),
-	pShader( nullptr ),
+	pRenderer( nullptr ),
 	pBG( nullptr ),
 	pTerrain( nullptr ),
 	pPlayer( nullptr ),
@@ -241,6 +241,10 @@ void SceneGame::Init()
 	Donya::Sound::Play( Music::BGM_Game );
 
 	bool result{};
+
+	pRenderer = std::make_unique<RenderingHelper>();
+	result = pRenderer->Init();
+	assert( result );
 
 	ParamGame::Get().Init();
 	const auto data = FetchMember();
@@ -363,15 +367,37 @@ void SceneGame::Draw( float elapsedTime )
 	const auto data = FetchMember();
 	const auto &trans = data.transparency;
 
+	{
+		Donya::Model::Constants::PerScene::Common constant{};
+		constant.directionalLight.color		= dirLight.color;
+		constant.directionalLight.direction	= dirLight.dir;
+		constant.eyePosition				= cameraPos;
+		constant.viewProjMatrix				= VP;
+		pRenderer->UpdateConstant( constant );
+	}
+	{
+		RenderingHelper::TransConstant constant{};
+		constant.zNear				= trans.enableNear;
+		constant.zFar				= trans.enableFar;
+		constant.lowerAlpha			= trans.lowerAlpha;
+		constant.heightThreshold	= pPlayer->GetPosition().y - pPlayer->GetHitBox().size.y;
+		pRenderer->UpdateConstant( constant );
+	}
+	pRenderer->ActivateConstantScene();
+
 	// The drawing priority is determined by the priority of the information.
 
 	PlayerDraw( VP, cameraPos, lightDir );
 
 	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
-	pGoal->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, data.goalColor );
-	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	pRenderer->ActivateConstantScene();
+	pGoal->Draw( pRenderer.get(), VP, data.goalColor );
+	pObstacles->Draw( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
+	pGoal->DrawHitBox( pRenderer.get(), VP, data.goalColor );
+	pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	
 	// Drawing to far for avoiding to trans the BG's blue.
 	pBG->Draw( elapsedTime );
 

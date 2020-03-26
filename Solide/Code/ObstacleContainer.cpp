@@ -45,14 +45,25 @@ void ObstacleContainer::Update( float elapsedTime )
 	}
 }
 
-void ObstacleContainer::Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
+void ObstacleContainer::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
 {
 	for ( auto &pIt : pObstacles )
 	{
 		if ( !pIt ) { continue; }
 		// else
-		pIt->Draw( eyePos, transNear, transFar, transLowerAlpha, VP, lightDir, color );
+		pIt->Draw( pRenderer, VP, color );
 	}
+}
+void ObstacleContainer::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+{
+#if DEBUG_MODE
+	for ( auto &pIt : pObstacles )
+	{
+		if ( !pIt ) { continue; }
+		// else
+		pIt->DrawHitBox( pRenderer, VP, color );
+	}
+#endif // DEBUG_MODE
 }
 
 void ObstacleContainer::SortByDepth()

@@ -3,13 +3,15 @@
 #include <memory>
 #include <vector>
 
-#include "Donya/Motion.h"
+#include "Donya/ModelMotion.h"
+#include "Donya/ModelPose.h"
 #include "Donya/Quaternion.h"
 #include "Donya/SkinnedMesh.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
 #include "ObjectBase.h"
+#include "Renderer.h"
 
 class Player : public Actor
 {
@@ -122,7 +124,8 @@ public:
 	void Update( float elapsedTime, Input input );
 	void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
-	void Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPos, const Donya::Vector4 &lightDirection );
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
 public:
 	bool IsDead() const
 	{

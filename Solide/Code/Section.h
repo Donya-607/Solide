@@ -8,6 +8,7 @@
 #include "Donya/UseImGui.h"
 
 #include "ObjectBase.h"
+#include "Renderer.h"
 
 /// <summary>
 /// Provides some world position.
@@ -35,9 +36,9 @@ private:
 		}
 	}
 public:
-	void DrawHitBox( const Donya::Vector4x4 &matVP, const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const
 	{
-		Solid::DrawHitBox( matVP, color );
+		Solid::DrawHitBox( pRenderer, matVP, color );
 	}
 public:
 	void SetPosition( const Donya::Vector3 &wsPos )

@@ -54,7 +54,8 @@ public:
 	}
 	virtual void Uninit() {}
 	virtual void Update( float elapsedTime ) = 0;
-	virtual void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) = 0;
+	virtual void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) = 0;
+	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
 public:
 	virtual int GetKind() const = 0;
 	virtual Donya::Vector3 GetPosition() const { return pos; }
@@ -92,7 +93,8 @@ private:
 	}
 public:
 	void Update( float elapsedTime ) override;
-	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
 	int GetKind() const override;
 };
@@ -118,7 +120,8 @@ private:
 	}
 public:
 	void Update( float elapsedTime ) override;
-	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
 	int GetKind() const override;
 };
@@ -144,7 +147,8 @@ private:
 	}
 public:
 	void Update( float elapsedTime ) override;
-	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
 	int GetKind() const override;
 };
@@ -170,7 +174,8 @@ private:
 	}
 public:
 	void Update( float elapsedTime ) override;
-	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
 	int GetKind() const override;
 };
@@ -198,7 +203,8 @@ private:
 	}
 public:
 	void Update( float elapsedTime ) override;
-	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
 	int GetKind() const override;
 };

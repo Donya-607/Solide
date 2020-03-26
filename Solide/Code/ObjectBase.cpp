@@ -27,19 +27,28 @@ namespace
 		m._43 = wsPos.z;
 		return m;
 	}
-	void DrawCube( const Donya::Vector4x4 &W, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+	void DrawCube( RenderingHelper *pRenderer, const Donya::Vector4x4 &W, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
 	{
+		Donya::Model::Cube::Constant constant;
+		constant.matWorld		= W;
+		constant.matViewProj	= VP;
+		constant.drawColor		= color;
+		constant.lightDirection	= -Donya::Vector3::Up();
+		pRenderer->ProcessDrawingCube( constant );
+
+		/*
 		static auto cube = Donya::Geometric::CreateCube();
 		constexpr Donya::Vector4 lightDir{ 0.0f, -1.0f, 0.0f, 0.0f };
 
 		cube.Render
 		(
 			nullptr,
-			/* useDefaultShading	= */ true,
-			/* isEnableFill			= */ true,
+			/ useDefaultShading	= / true,
+			/ isEnableFill		= / true,
 			W * VP, W,
 			lightDir, color
 		);
+		*/
 	}
 }
 
@@ -64,10 +73,10 @@ Donya::Vector4x4 Solid::GetWorldMatrix() const
 	return MakeWorldMatrix( GetPosition(), { 0.5f, 0.5f, 0.5f } );
 }
 
-void Solid::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
+void Solid::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
 {
 	const auto body = GetHitBox();
-	DrawCube( MakeWorldMatrix( body.pos, body.size ), VP, color );
+	DrawCube( pRenderer, MakeWorldMatrix( body.pos, body.size ), VP, color );
 }
 
 
@@ -561,8 +570,8 @@ Donya::Vector4x4 Actor::GetWorldMatrix() const
 	return MakeWorldMatrix( GetPosition(), { 0.5f, 0.5f, 0.5f } );
 }
 
-void Actor::DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Quaternion &rotation, const Donya::Vector4 &color ) const
+void Actor::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Quaternion &rotation, const Donya::Vector4 &color ) const
 {
 	const auto body = GetHitBox();
-	DrawCube( MakeWorldMatrix( body.pos, body.size, rotation ), VP, color );
+	DrawCube( pRenderer, MakeWorldMatrix( body.pos, body.size, rotation ), VP, color );
 }

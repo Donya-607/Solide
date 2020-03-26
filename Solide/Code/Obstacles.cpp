@@ -292,6 +292,15 @@ void ObstacleBase::UseImGui()
 }
 #endif // USE_IMGUI
 
+void ObstacleBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	if ( !Common::IsShowCollision() ) { return; }
+	// else
+
+#if DEBUG_MODE
+	DrawHitBox( pRenderer, matVP, color );
+#endif // DEBUG_MODE
+}
 #if USE_IMGUI
 bool ObstacleBase::ShowImGuiNode( const std::string &nodeCaption )
 {
@@ -316,15 +325,13 @@ void Stone::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Stone, ParamObstacle::Get().Data() );
 }
-void Stone::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+void Stone::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Stone, pRenderer, GetWorldMatrix(), color );
-#if DEBUG_MODE
-	if ( Common::IsShowCollision() )
-	{
-		DrawHitBox( VP, { 0.3f, 0.3f, 0.3f, 0.5f } );
-	}
-#endif // DEBUG_MODE
+}
+void Stone::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	ObstacleBase::DrawHitBox( pRenderer, matVP, { 0.3f, 0.3f, 0.3f, 0.5f } );
 }
 int Stone::GetKind() const
 {
@@ -335,15 +342,13 @@ void Log::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Log, ParamObstacle::Get().Data() );
 }
-void Log::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+void Log::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Log, pRenderer, GetWorldMatrix(), color );
-#if DEBUG_MODE
-	if ( Common::IsShowCollision() )
-	{
-		DrawHitBox( VP, { 0.5f, 0.4f, 0.1f, 0.5f } );
-	}
-#endif // DEBUG_MODE
+}
+void Log::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	ObstacleBase::DrawHitBox( pRenderer, matVP, { 0.5f, 0.4f, 0.1f, 0.5f } );
 }
 int Log::GetKind() const
 {
@@ -354,15 +359,13 @@ void Tree::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Tree, ParamObstacle::Get().Data() );
 }
-void Tree::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+void Tree::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Tree, pRenderer, GetWorldMatrix(), color );
-#if DEBUG_MODE
-	if ( Common::IsShowCollision() )
-	{
-		DrawHitBox( VP, { 0.4f, 0.5f, 0.0f, 0.5f } );
-	}
-#endif // DEBUG_MODE
+}
+void Tree::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	ObstacleBase::DrawHitBox( pRenderer, matVP, { 0.4f, 0.5f, 0.0f, 0.5f } );
 }
 int Tree::GetKind() const
 {
@@ -373,15 +376,13 @@ void Table::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Table, ParamObstacle::Get().Data() );
 }
-void Table::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+void Table::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Table, pRenderer, GetWorldMatrix(), color );
-#if DEBUG_MODE
-	if ( Common::IsShowCollision() )
-	{
-		DrawHitBox( VP, { 0.4f, 0.5f, 0.0f, 0.5f } );
-	}
-#endif // DEBUG_MODE
+}
+void Table::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	ObstacleBase::DrawHitBox( pRenderer, matVP, { 0.4f, 0.5f, 0.0f, 0.5f } );
 }
 int Table::GetKind() const
 {
@@ -396,7 +397,7 @@ void Goal::Update( float elapsedTime )
 	const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( ROT_ANGLE ) );
 	orientation.RotateBy( rotation );
 }
-void Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+void Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
 	const Donya::AABB body = GetHitBox();
 	Donya::Vector4x4 W{};
@@ -409,12 +410,10 @@ void Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 	W._43 = body.pos.z;
 
 	DrawModel( Kind::Goal, pRenderer, W, color );
-#if DEBUG_MODE
-	if ( Common::IsShowCollision() )
-	{
-		DrawHitBox( VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
-	}
-#endif // DEBUG_MODE
+}
+void Goal::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	ObstacleBase::DrawHitBox( pRenderer, matVP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 }
 int Goal::GetKind() const
 {

@@ -125,6 +125,9 @@ namespace Donya
 		public:
 			bool Create() override;
 		public:
+			/// <summary>
+			/// Setting slot is 0.
+			/// </summary>
 			void ActivateConstant();
 		public:
 			/// <summary>
@@ -167,6 +170,9 @@ namespace Donya
 		public:
 			bool Create() override;
 		public:
+			/// <summary>
+			/// Setting slot is 0.
+			/// </summary>
 			void ActivateConstant();
 		public:
 			/// <summary>

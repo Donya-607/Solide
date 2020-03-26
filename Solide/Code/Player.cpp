@@ -8,6 +8,8 @@
 #include "Donya/CBuffer.h"
 #include "Donya/Constant.h"		// For DEBUG_MODE macro.
 #include "Donya/Loader.h"
+#include "Donya/Model.h"
+#include "Donya/ModelMotion.h"
 #include "Donya/Serializer.h"
 #include "Donya/Shader.h"
 #include "Donya/Sound.h"
@@ -972,74 +974,72 @@ void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPo
 	auto modelBundle	= motionManager.CalcNowModel( *this );
 	auto animator		= motionManager.GetAnimator();
 
-	if ( modelBundle.pNowModel )
+	if ( !modelBundle.pNowModel ) { return; }
+	// else
+
+	auto MakeConstantsPerScene = [&]()
 	{
-		auto MakeConstantsPerScene = [&]()
-		{
-			PlayerModel::CBuffer::PerScene constants{};
-			constants.eyePos			= cameraPos;
-			constants.lightColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-			// constants.lightDirection	= lightDir;
-			Donya::Vector3 lightDir3{ lightDir.x, lightDir.y, lightDir.z };
-			constants.lightDirection	= Donya::Vector4{ actualOrientation.RotateVector( lightDir3 ), 0.0f };
-			return constants;
-		};
-		auto MakeConstantsPerModel = []( const Donya::Vector4 &color )
-		{
-			PlayerModel::CBuffer::PerModel constants{};
-			constants.materialColor = color;
-			return constants;
-		};
-		PlayerModel::UpdateCBuffer
-		(
-			MakeConstantsPerScene(),
-			MakeConstantsPerModel( bodyColor )
-		);
+		PlayerModel::CBuffer::PerScene constants{};
+		constants.eyePos			= cameraPos;
+		constants.lightColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+		constants.lightDirection	= lightDir;
+		return constants;
+	};
+	auto MakeConstantsPerModel = []( const Donya::Vector4 &color )
+	{
+		PlayerModel::CBuffer::PerModel constants{};
+		constants.materialColor = color;
+		return constants;
+	};
+	PlayerModel::UpdateCBuffer
+	(
+		MakeConstantsPerScene(),
+		MakeConstantsPerModel( bodyColor )
+	);
 
-		PlayerModel::SettingOption optScene{};
-		optScene.setSlot = 0;
-		optScene.setVS = true;
-		optScene.setPS = true;
-		PlayerModel::SettingOption optModel{};
-		optModel.setSlot = 1;
-		optModel.setVS = true;
-		optModel.setPS = true;
-		PlayerModel::ActivateCBuffer( optScene, optModel );
+	PlayerModel::SettingOption optScene{};
+	optScene.setSlot = 0;
+	optScene.setVS = true;
+	optScene.setPS = true;
+	PlayerModel::SettingOption optModel{};
+	optModel.setSlot = 1;
+	optModel.setVS = true;
+	optModel.setPS = true;
+	PlayerModel::ActivateCBuffer( optScene, optModel );
 
-		Donya::SkinnedMesh::CBSetOption optMesh{};
-		optMesh.setSlot = 2;
-		optMesh.setVS = true;
-		optMesh.setPS = true;
-		Donya::SkinnedMesh::CBSetOption optSubset{};
-		optSubset.setSlot = 3;
-		optSubset.setVS = true;
-		optSubset.setPS = true;
-		constexpr int samplerSlot		= 0;
-		constexpr int diffuseMapSlot	= 0;
+	Donya::SkinnedMesh::CBSetOption optMesh{};
+	optMesh.setSlot = 2;
+	optMesh.setVS = true;
+	optMesh.setPS = true;
+	Donya::SkinnedMesh::CBSetOption optSubset{};
+	optSubset.setSlot = 3;
+	optSubset.setVS = true;
+	optSubset.setPS = true;
+	constexpr int samplerSlot		= 0;
+	constexpr int diffuseMapSlot	= 0;
 
-		PlayerModel::ActivateShader();
+	PlayerModel::ActivateShader();
 
-		modelBundle.pNowModel->Render
-		(
-			*modelBundle.pNowMotions, animator,
-			W * matVP, W,
-			optMesh,
-			optSubset,
-			samplerSlot,
-			diffuseMapSlot
-		);
+	modelBundle.pNowModel->Render
+	(
+		*modelBundle.pNowMotions, animator,
+		W * matVP, W,
+		optMesh,
+		optSubset,
+		samplerSlot,
+		diffuseMapSlot
+	);
 
-		PlayerModel::DeactivateShader();
-		PlayerModel::DeactivateCBuffer();
-	}
-
+	PlayerModel::DeactivateShader();
+	PlayerModel::DeactivateCBuffer();
+}
+void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP )
+{
+	if ( !Common::IsShowCollision() ) { return; }
+	// else
 #if DEBUG_MODE
-	if ( Common::IsShowCollision() )
-	{
-		const Donya::Vector4 subForHitBox{ 0.0f, 0.0f, 0.0f, 0.7f };
-		// DrawHitBox( matVP, actualOrientation, bodyColor - subForHitBox );
-		DrawHitBox( matVP, Donya::Quaternion::Identity(), bodyColor - subForHitBox );
-	}
+	constexpr Donya::Vector4 color{ 0.1f, 1.0f, 0.3f, 1.0f };
+	Actor::DrawHitBox( pRenderer, matVP, Donya::Quaternion::Identity(), color );
 #endif // DEBUG_MODE
 }
 

@@ -14,6 +14,7 @@
 #include "Donya/Vector.h"
 
 #include "Obstacles.h"
+#include "Renderer.h"
 
 class ObstacleContainer
 {
@@ -42,7 +43,8 @@ public:
 
 	void Update( float elapsedTime );
 
-	void Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color );
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
+	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
 public:
 	void SortByDepth();
 public:

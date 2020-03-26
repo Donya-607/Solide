@@ -5,6 +5,8 @@
 #include "Donya/Vector.h"
 #include "Donya/Collision.h"
 
+#include "Renderer.h"
+
 // For ray-pick.
 namespace Donya { class StaticMesh; }
 
@@ -31,7 +33,7 @@ public:
 	Donya::AABB GetHitBox() const;
 	Donya::Vector4x4 GetWorldMatrix() const;
 public:
-	void DrawHitBox( const Donya::Vector4x4 &matVP, const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 };
 
 /// <summary>
@@ -80,5 +82,5 @@ public:
 	virtual Donya::AABB GetHitBox() const;
 	virtual Donya::Vector4x4 GetWorldMatrix() const;
 public:
-	virtual void DrawHitBox( const Donya::Vector4x4 &matVP, const Donya::Quaternion &rotation = Donya::Quaternion::Identity(), const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Quaternion &rotation = Donya::Quaternion::Identity(), const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 };
