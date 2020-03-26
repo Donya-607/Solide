@@ -3,7 +3,8 @@
 #include <array>
 
 #include "Donya/Loader.h"
-#include "Donya/StaticMesh.h"
+#include "Donya/Model.h"
+#include "Donya/ModelPose.h"
 #include "Donya/Useful.h"
 
 #include "FilePath.h"
@@ -22,25 +23,34 @@ namespace Bullet
 			"Oil"
 		};
 
-		static std::array<std::shared_ptr<Donya::StaticMesh>, KIND_COUNT> models{};
+		struct StorageBundle
+		{
+			Donya::Model::StaticModel	model;
+			Donya::Model::Pose			pose;
+		};
+		static std::array<std::shared_ptr<StorageBundle>, KIND_COUNT> models{};
 
 		bool LoadModels()
 		{
-			bool result		= true;
-			bool succeeded	= true;
-
-			auto Load = []( const std::string &filePath, Donya::StaticMesh *pDest )->bool
+			Donya::Loader loader{};
+			auto Load = [&loader]( const std::string &filePath, StorageBundle *pDest )->bool
 			{
 				bool result = true;
-				Donya::Loader loader{};
 
-				result = loader.Load( filePath, nullptr );
-				if ( !result ) { return false; }
+				loader.ClearData();
+				if ( !loader.Load( filePath ) ) { return false; }
 				// else
 
-				result = Donya::StaticMesh::Create( loader, *pDest );
-				return result;
+				const auto &source = loader.GetModelSource();
+
+				pDest->model = Donya::Model::StaticModel::Create( source, loader.GetFileDirectory() );
+				pDest->pose.AssignSkeletal( source.skeletal );
+
+				return pDest->model.WasInitializeSucceeded();
 			};
+
+			bool result		= true;
+			bool succeeded	= true;
 
 			std::string filePath{};
 			const std::string prefix = MODEL_DIRECTORY;
@@ -76,7 +86,7 @@ namespace Bullet
 			const     int intKind = scast<int>( kind );
 			return ( intKind < 0 || intEnd <= intKind ) ? true : false;
 		}
-		std::shared_ptr<Donya::StaticMesh> GetModelPtr( Kind kind )
+		std::shared_ptr<StorageBundle> GetModelPtr( Kind kind )
 		{
 			if ( IsOutOfRange( kind ) )
 			{
@@ -101,16 +111,16 @@ namespace Bullet
 	}
 
 	std::string GetBulletName( Kind kind )
+	{
+		if ( IsOutOfRange( kind ) )
 		{
-			if ( IsOutOfRange( kind ) )
-			{
-				_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
-				return "";
-			}
-			// else
-
-			return std::string{ MODEL_NAMES[scast<int>( kind )] };
+			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
+			return "";
 		}
+		// else
+
+		return std::string{ MODEL_NAMES[scast<int>( kind )] };
+	}
 
 	struct OilMember
 	{
@@ -193,10 +203,10 @@ public:
 
 namespace
 {
-	void DrawHitBox( const Donya::AABB &drawObj, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::AABB &drawObj, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
 	{
 		Section hitBoxDrawer{ drawObj.pos, drawObj };
-		hitBoxDrawer.DrawHitBox( VP, color );
+		hitBoxDrawer.DrawHitBox( pRenderer, VP, color );
 	}
 }
 

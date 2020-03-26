@@ -7,6 +7,8 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+#include "Renderer.h"
+
 namespace Bullet
 {
 	enum class Kind
@@ -43,8 +45,8 @@ namespace Bullet
 		virtual void Update( float elapsedTime ) {}
 		virtual void PhysicUpdate();
 
-		virtual void Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color ) = 0;
-		virtual void DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) {}
+		virtual void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) = 0;
+		virtual void DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
 	protected:
 		virtual void AttachSelfKind() = 0;
 	public:
@@ -70,7 +72,7 @@ namespace Bullet
 		void Update( float elapsedTime );
 		void PhysicUpdate();
 
-		void Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color ) override;
+		void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 	public:
 		Donya::AABB GetHitBox() const override;
 	};
