@@ -17,7 +17,6 @@ class Player : public Actor
 {
 public:
 	static bool LoadModels();
-	static bool LoadShadingObjects();
 public:
 	struct Input
 	{

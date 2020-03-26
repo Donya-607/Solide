@@ -40,211 +40,69 @@ namespace PlayerModel
 		KindCount
 	};
 	constexpr size_t KIND_COUNT = scast<size_t>( KindCount );
-	constexpr const char *MODEL_DIRECTORY = "./Data/Models/Player/";
-	constexpr const char *EXTENSION = ".bin";
-	constexpr std::array<const char *, KIND_COUNT> MODEL_NAMES
+	constexpr const char *MODEL_FILE_PATH = "./Data/Models/Player/Player.bin";
+	constexpr const char *KIND_NAMES[KIND_COUNT]
 	{
 		"Idle",
 		"Run",
 		"Slide",
 		"Jump",
-		"Fall",
+		"Fall"
 	};
 
 	struct StorageBundle
 	{
-		std::shared_ptr<Donya::SkinnedMesh>	pModel;
-		Donya::MotionChunk					motionsPerMesh;
+		Donya::Model::SkinningModel	model;
+		Donya::Model::MotionHolder	motionHolder;
 	};
-	struct Shader
+	static std::unique_ptr<StorageBundle> pModel{};
+
+	bool LoadModel()
 	{
-		Donya::VertexShader	VS;
-		Donya::PixelShader	PS;
-	};
-	struct CBuffer
-	{
-		struct PerScene
+		// Already has loaded.
+		if ( pModel ) { return false; }
+		// else
+
+		if ( !Donya::IsExistFile( MODEL_FILE_PATH ) )
 		{
-			Donya::Vector4 eyePos;
-			Donya::Vector4 lightColor;
-			Donya::Vector4 lightDirection;
-		};
-		struct PerModel
-		{
-			Donya::Vector4 materialColor;
-		};
-
-		Donya::CBuffer<PerScene> scene;
-		Donya::CBuffer<PerModel> model;
-	};
-	struct SettingOption
-	{
-		unsigned int setSlot = 0;
-		bool setVS = true;
-		bool setPS = true;
-	};
-	static std::array<std::unique_ptr<StorageBundle>, KIND_COUNT> models{};
-	static std::unique_ptr<Shader>  shader{};
-	static std::unique_ptr<CBuffer> cbuffer{};
-
-	bool LoadModels()
-	{
-		bool result		= true;
-		bool succeeded	= true;
-
-		auto Load = []( const std::string &filePath, std::unique_ptr<StorageBundle> *pDest )->bool
-		{
-			// Already loaded.
-			if ( *pDest ) { return true; }
-			// else
-
-			bool result = true;
-			Donya::Loader loader{};
-
-			result = loader.Load( filePath );
-			if ( !result ) { return false; }
-			// else
-
-			std::unique_ptr<StorageBundle> &refDest = *pDest;
-			refDest = std::make_unique<StorageBundle>();
-
-			refDest->pModel = std::make_shared<Donya::SkinnedMesh>();
-			result = Donya::SkinnedMesh::Create( loader, refDest->pModel.get() );
-			if ( !result ) { return false; }
-			// else
-
-			result = Donya::MotionChunk::Create( loader, &refDest->motionsPerMesh );
-			if ( !result ) { return false; }
-			// else
-
-			return result;
-		};
-
-		std::string filePath{};
-		const std::string prefix = MODEL_DIRECTORY;
-		for ( size_t i = 0; i < KIND_COUNT; ++i )
-		{
-			filePath = prefix + MODEL_NAMES[i] + EXTENSION;
-			if ( !Donya::IsExistFile( filePath ) )
-			{
-				const std::string outputMsgBase{ "Error : The model file does not exist. That is : " };
-				Donya::OutputDebugStr( ( outputMsgBase + "[" + filePath + "]" + "\n" ).c_str() );
-				continue;
-			}
-			// else
-
-			result = Load( filePath, &models[i] );
-			if ( !result )
-			{
-				const std::wstring errMsgBase{ L"Failed : Loading a model. That is : " };
-				const std::wstring errMsg = errMsgBase + Donya::MultiToWide( filePath );
-				_ASSERT_EXPR( 0, errMsg.c_str() );
-
-				succeeded = false;
-			}
+			Donya::OutputDebugStr( "Error : The Player's model file does not exist." );
+			return false;
 		}
-
-		return succeeded;
-	}
-	bool LoadShaders()
-	{
-		// Already loaded.
-		if ( shader ) { return true; }
 		// else
-		shader = std::make_unique<Shader>();
 
-		bool succeeded = true;
-		bool result{};
+		Donya::Loader loader{};
+		if ( !loader.Load( MODEL_FILE_PATH ) ) { return false; }
+		// else
 
-		constexpr const char *VSFilePath = "./Data/Shaders/SkinnedMeshVS.cso";
-		constexpr const char *PSFilePath = "./Data/Shaders/SkinnedMeshPS.cso";
-		using IE_DESC = D3D11_INPUT_ELEMENT_DESC;
-		constexpr std::array<IE_DESC, 5> inputElementDesc
+		const Donya::Model::Source source = loader.GetModelSource();
+
+		pModel = std::make_unique<StorageBundle>();
+		pModel->model = Donya::Model::SkinningModel::Create( source, loader.GetFileDirectory() );
+		pModel->motionHolder.AppendSource( source );
+
+		if ( !pModel->model.WasInitializeSucceeded() )
 		{
-			IE_DESC{ "POSITION"		, 0, DXGI_FORMAT_R32G32B32_FLOAT,		0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			IE_DESC{ "NORMAL"		, 0, DXGI_FORMAT_R32G32B32_FLOAT,		0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			IE_DESC{ "TEXCOORD"		, 0, DXGI_FORMAT_R32G32_FLOAT,			0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			IE_DESC{ "BONES"		, 0, DXGI_FORMAT_R32G32B32A32_UINT,		0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			IE_DESC{ "WEIGHTS"		, 0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		};
-
-		result = shader->VS.CreateByCSO( VSFilePath, std::vector<IE_DESC>{ inputElementDesc.begin(), inputElementDesc.end() } );
-		if ( !result ) { succeeded = false; }
-
-		result = shader->PS.CreateByCSO( PSFilePath );
-		if ( !result ) { succeeded = false; }
-
-		return succeeded;
-	}
-	bool CreateCBuffers()
-	{
-		// Already loaded.
-		if ( cbuffer ) { return true; }
+			pModel.reset();
+			return false;
+		}
 		// else
-		cbuffer = std::make_unique<CBuffer>();
 
-		bool succeeded = true;
-		bool result{};
-
-		result = cbuffer->scene.Create();
-		if ( !result ) { succeeded = false; }
-		result = cbuffer->model.Create();
-		if ( !result ) { succeeded = false; }
-
-		return succeeded;
+		return true;
 	}
 
 	bool IsOutOfRange( Kind kind )
 	{
 		return ( kind < 0 || KindCount <= kind ) ? true : false;
 	}
-	std::string GetModelName( Kind kind )
+	const Donya::Model::SkinningModel &GetModel()
 	{
-		if ( IsOutOfRange( kind ) )
-		{
-			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
-			return "";
-		}
-		// else
-
-		return std::string{ MODEL_NAMES[kind] };
+		_ASSERT_EXPR( pModel, L"Error : The Player's model does not initialized!" );
+		return pModel->model;
 	}
-	std::unique_ptr<StorageBundle> *GetModelBundleOrNullptr( Kind kind )
+	const Donya::Model::MotionHolder  &GetMotions()
 	{
-		if ( IsOutOfRange( kind ) )
-		{
-			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
-			return nullptr;
-		}
-		// else
-
-		return &models[kind];
-	}
-
-	void UpdateCBuffer( const CBuffer::PerScene &scene, const CBuffer::PerModel &model )
-	{
-		cbuffer->scene.data = scene;
-		cbuffer->model.data = model;
-	}
-	void ActivateCBuffer( const SettingOption &scene, const SettingOption &model, ID3D11DeviceContext *pImmediateContext = nullptr )
-	{
-		cbuffer->scene.Activate( scene.setSlot, scene.setVS, scene.setPS, pImmediateContext );
-		cbuffer->model.Activate( model.setSlot, model.setVS, model.setPS, pImmediateContext );
-	}
-	void ActivateShader( ID3D11DeviceContext *pImmediateContext = nullptr )
-	{
-		shader->VS.Activate( pImmediateContext );
-		shader->PS.Activate( pImmediateContext );
-	}
-	void DeactivateCBuffer( ID3D11DeviceContext *pImmediateContext = nullptr )
-	{
-		cbuffer->scene.Deactivate( pImmediateContext );
-		cbuffer->model.Deactivate( pImmediateContext );
-	}
-	void DeactivateShader( ID3D11DeviceContext *pImmediateContext = nullptr )
-	{
-		shader->VS.Deactivate( pImmediateContext );
-		shader->PS.Deactivate( pImmediateContext );
+		_ASSERT_EXPR( pModel, L"Error : The Player's motions does not initialized!" );
+		return pModel->motionHolder;
 	}
 }
 
@@ -340,10 +198,12 @@ namespace
 		float falloutBorderPosY;
 
 		float drawScale = 1.0f;
-		std::vector<float> motionAccelerations; // Usually 1.0f.
-		Donya::Vector3 drawOffset;
+		std::vector<float>	motionAccelerations; // "motionAccelerations[i]" represents a value of static_cast<enumKind>( i ). This size was guaranteed to: size() == PlayerModel::KIND_COUNT
+		Donya::Vector3		drawOffset;
 
-		float canRideSlopeBorder = 0.0f; // The standing face is ridable if that statement is true: canRideSlopeBorder <= fabsf( max( 0.0f, Dot( faceNormal, UP ) ) )
+		float canRideSlopeBorder = 0.0f;	// The standing face is ridable if that statement is true: canRideSlopeBorder <= fabsf( max( 0.0f, Dot( faceNormal, UP ) ) )
+
+		std::vector<int> useMotionIndices;	// This size was guaranteed to: size() == PlayerModel::KIND_COUNT
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -384,12 +244,16 @@ namespace
 			}
 			if ( 7 <= version )
 			{
+				archive( CEREAL_NVP( useMotionIndices ) );
+			}
+			if ( 8 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				6 )
+CEREAL_CLASS_VERSION( Member,				7 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	0 )
 CEREAL_CLASS_VERSION( Member::OilMember,	1 )
 
@@ -416,13 +280,22 @@ public:
 private:
 	void ResizeMotionVector()
 	{
-		if ( m.motionAccelerations.size() == PlayerModel::KIND_COUNT ) { return; }
-		// else
-
-		m.motionAccelerations.resize( PlayerModel::KIND_COUNT );
-		for ( auto &it : m.motionAccelerations )
+		if ( m.motionAccelerations.size() != PlayerModel::KIND_COUNT )
 		{
-			it = 1.0f;
+			m.motionAccelerations.resize( PlayerModel::KIND_COUNT );
+			for ( auto &it : m.motionAccelerations )
+			{
+				it = 1.0f;
+			}
+		}
+
+		if ( m.useMotionIndices.size() != PlayerModel::KIND_COUNT )
+		{
+			m.useMotionIndices.resize( PlayerModel::KIND_COUNT );
+			for ( size_t i = 0; i < PlayerModel::KIND_COUNT; ++i )
+			{
+				m.useMotionIndices[i] = i;
+			}
 		}
 	}
 private:
@@ -509,12 +382,48 @@ public:
 			{
 				ResizeMotionVector();
 
+				const auto &motionHolder = PlayerModel::GetMotions();
+				const size_t motionCount = motionHolder.GetMotionCount();
+
+				if ( ImGui::TreeNode( u8"プログラム側が期待するモーションたち" ) )
+				{
+					for ( size_t i = 0; i < motionCount; ++i )
+					{
+						ImGui::Text( u8"[%d]:%s", i, PlayerModel::KIND_NAMES[i] );
+					}
+					ImGui::TreePop();
+				}
+				if ( ImGui::TreeNode( u8"読みこんだモデルにあるモーションたち" ) )
+				{
+					for ( size_t i = 0; i < motionCount; ++i )
+					{
+						ImGui::Text( u8"[%d]:%s", i, motionHolder.GetMotion( i ).name.c_str() );
+					}
+					ImGui::TreePop();
+				}
+
+				if ( ImGui::TreeNode( u8"モーション番号の紐づけ" ) )
+				{
+					std::string arrayIndex{};
+					std::string nowLinkMotion{};
+					std::string caption{};
+					for ( size_t i = 0; i < motionCount; ++i )
+					{
+						arrayIndex		= "[" + std::to_string( i ) + "]";
+						nowLinkMotion	= motionHolder.GetMotion( m.useMotionIndices[i] ).name;
+						caption			= arrayIndex + u8":" + nowLinkMotion;
+						ImGui::SliderInt( caption.c_str(), &m.useMotionIndices[i], 0, motionCount - 1 );
+					}
+
+					ImGui::TreePop();
+				}
+
 				if ( ImGui::TreeNode( u8"再生速度の倍率" ) )
 				{
 					std::string caption{};
 					for ( size_t i = 0; i < PlayerModel::KIND_COUNT; ++i )
 					{
-						caption = "[" + std::to_string( i ) + ":" + PlayerModel::MODEL_NAMES[i] + "]";
+						caption = "[" + std::to_string( i ) + ":" + PlayerModel::KIND_NAMES[i] + "]";
 						ImGui::DragFloat( caption.c_str(), &m.motionAccelerations[i], 0.001f, 0.0f );
 					}
 
@@ -537,20 +446,7 @@ public:
 
 bool Player::LoadModels()
 {
-	return PlayerModel::LoadModels();
-}
-bool Player::LoadShadingObjects()
-{
-	bool result{};
-	bool succeeded = true;
-
-	result = PlayerModel::LoadShaders();
-	if ( !result ) { succeeded = false; }
-	
-	result = PlayerModel::CreateCBuffers();
-	if ( !result ) { succeeded = false; }
-
-	return succeeded;
+	return PlayerModel::LoadModel();
 }
 
 // Internal utility.

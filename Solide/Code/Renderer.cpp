@@ -311,11 +311,11 @@ void RenderingHelper::DeactivateShaderSphere()
 	pPrimitive->rendererSphere.DeactivatePixelShader();
 }
 
-void RenderingHelper::Render( const Donya::Model::StaticModel &model, const Donya::Model::Pose &pose )
+void RenderingHelper::Render( const Donya::Model::StaticModel	&model, const Donya::Model::Pose &pose )
 {
 	pRenderer->pStatic->Render( model, pose, MeshSetting(), SubsetSetting(), DiffuseMapSetting() );
 }
-void RenderingHelper::Render( const Donya::Model::SkinningModel &model, const Donya::Model::Pose &pose )
+void RenderingHelper::Render( const Donya::Model::SkinningModel	&model, const Donya::Model::Pose &pose )
 {
 	pRenderer->pSkinning->Render( model, pose, MeshSetting(), SubsetSetting(), DiffuseMapSetting() );
 }
