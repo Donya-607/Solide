@@ -475,60 +475,32 @@ namespace
 
 void Player::MotionManager::Init()
 {
-	animator.Init();
-	animator.SetInterpolateFlag( true );
+	animator.ResetTimer();
+	AssignPose( 0 );
 }
 void Player::MotionManager::Update( Player &player, float elapsedTime )
 {
-	const auto  data = FetchMember();
+	const auto  data			= FetchMember();
 
-	const int motionIndex = scast<int>( CalcNowKind( player ) );
-	const float acceleration = data.motionAccelerations[motionIndex];
+	const int   nowKind			= CalcNowKind( player );
+	const int   nowMotion		= data.useMotionIndices[nowKind];
+
+	const float acceleration	= data.motionAccelerations[nowMotion];
 
 	animator.Update( elapsedTime * acceleration );
+	AssignPose( nowMotion );
 }
-void Player::MotionManager::SetIdle()
+const Donya::Model::Pose &Player::MotionManager::GetPose() const
 {
-	ResetAnimation();
+	return pose;
 }
-void Player::MotionManager::SetRun()
+void Player::MotionManager::AssignPose( int motionIndex )
 {
-	ResetAnimation();
-}
-void Player::MotionManager::SetJump()
-{
-	ResetAnimation();
-}
-void Player::MotionManager::SetFall()
-{
-	ResetAnimation();
-}
-Player::MotionManager::Bundle Player::MotionManager::CalcNowModel( Player &player ) const
-{
-	Player::MotionManager::Bundle nil{ nullptr, nullptr };
+	const auto &motionHolder  = PlayerModel::GetMotions();
+	_ASSERT_EXPR( motionHolder.IsOutOfRange( motionIndex ), L"Error : Passed motion index out of range!" );
 
-	auto Convert = [&nil]( const std::unique_ptr<PlayerModel::StorageBundle> *pStorage )->Player::MotionManager::Bundle
-	{
-		if ( !pStorage ) { return nil; }
-		// else
-
-		const std::unique_ptr<PlayerModel::StorageBundle> &refStorage = *pStorage;
-		return Player::MotionManager::Bundle
-		{
-			refStorage->pModel,
-			&refStorage->motionsPerMesh
-		};
-	};
-
-	PlayerModel::Kind nowKind = scast<PlayerModel::Kind>( CalcNowKind( player ) );
-
-	return	( PlayerModel::IsOutOfRange( nowKind ) )
-			? nil
-			: Convert( PlayerModel::GetModelBundleOrNullptr( nowKind ) );
-}
-void Player::MotionManager::ResetAnimation()
-{
-	animator.SetCurrentElapsedTime( 0.0f );
+	const auto &currentMotion = motionHolder.GetMotion( motionIndex );
+	pose.AssignSkeletal( animator.CalcCurrentPose( currentMotion ) );
 }
 int  Player::MotionManager::CalcNowKind( Player &player ) const
 {
@@ -841,8 +813,11 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	}
 }
 
-void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPos, const Donya::Vector4 &lightDir )
+void Player::Draw( RenderingHelper *pRenderer )
 {
+	if ( !pRenderer ) { return; }
+	// else
+
 	const auto data = FetchMember();
 	const Donya::Quaternion pitchRotation		= Donya::Quaternion::Make( orientation.LocalRight(), hopPitching );
 	const Donya::Quaternion actualOrientation	= // Rotation: First:My Orientatoin, Then:Pitching, Last:Extra(actually that is tilting)
@@ -867,71 +842,22 @@ void Player::Draw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPo
 	W._42 = pos.y + drawOffset.y;
 	W._43 = pos.z + drawOffset.z;
 
-	auto modelBundle	= motionManager.CalcNowModel( *this );
-	auto animator		= motionManager.GetAnimator();
+	const auto &drawModel = PlayerModel::GetModel();
+	const auto &drawPose  = motionManager.GetPose();
 
-	if ( !modelBundle.pNowModel ) { return; }
-	// else
+	Donya::Model::Constants::PerModel::Common constant{};
+	constant.drawColor		= bodyColor;
+	constant.worldMatrix	= W;
+	pRenderer->UpdateConstant( constant );
+	pRenderer->ActivateConstantModel();
 
-	auto MakeConstantsPerScene = [&]()
-	{
-		PlayerModel::CBuffer::PerScene constants{};
-		constants.eyePos			= cameraPos;
-		constants.lightColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-		constants.lightDirection	= lightDir;
-		return constants;
-	};
-	auto MakeConstantsPerModel = []( const Donya::Vector4 &color )
-	{
-		PlayerModel::CBuffer::PerModel constants{};
-		constants.materialColor = color;
-		return constants;
-	};
-	PlayerModel::UpdateCBuffer
-	(
-		MakeConstantsPerScene(),
-		MakeConstantsPerModel( bodyColor )
-	);
+	pRenderer->Render( drawModel, drawPose );
 
-	PlayerModel::SettingOption optScene{};
-	optScene.setSlot = 0;
-	optScene.setVS = true;
-	optScene.setPS = true;
-	PlayerModel::SettingOption optModel{};
-	optModel.setSlot = 1;
-	optModel.setVS = true;
-	optModel.setPS = true;
-	PlayerModel::ActivateCBuffer( optScene, optModel );
-
-	Donya::SkinnedMesh::CBSetOption optMesh{};
-	optMesh.setSlot = 2;
-	optMesh.setVS = true;
-	optMesh.setPS = true;
-	Donya::SkinnedMesh::CBSetOption optSubset{};
-	optSubset.setSlot = 3;
-	optSubset.setVS = true;
-	optSubset.setPS = true;
-	constexpr int samplerSlot		= 0;
-	constexpr int diffuseMapSlot	= 0;
-
-	PlayerModel::ActivateShader();
-
-	modelBundle.pNowModel->Render
-	(
-		*modelBundle.pNowMotions, animator,
-		W * matVP, W,
-		optMesh,
-		optSubset,
-		samplerSlot,
-		diffuseMapSlot
-	);
-
-	PlayerModel::DeactivateShader();
-	PlayerModel::DeactivateCBuffer();
+	pRenderer->DeactivateConstantModel();
 }
 void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP )
 {
-	if ( !Common::IsShowCollision() ) { return; }
+	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 	// else
 #if DEBUG_MODE
 	constexpr Donya::Vector4 color{ 0.1f, 1.0f, 0.3f, 1.0f };

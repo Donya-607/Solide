@@ -64,8 +64,6 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
-	bool	CreateRenderingStatus();
-
 	void	CameraInit();
 	void	AssignCameraPos();
 	void	CameraUpdate();
@@ -73,7 +71,8 @@ private:
 	void	PlayerInit();
 	void	PlayerUpdate( float elapsedTime );
 	void	PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const std::unique_ptr<Terrain> *ppTerrain );
-	void	PlayerDraw( const Donya::Vector4x4 &matViewProj, const Donya::Vector4 &cameraPosition, const Donya::Vector4 &lightDirection );
+	void	PlayerDraw();
+	void	PlayerDrawHitBox( const Donya::Vector4x4 &matVP );
 	void	PlayerUninit();
 
 	void	TutorialUpdate( float elapsedTime );

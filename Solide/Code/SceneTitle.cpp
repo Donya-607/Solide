@@ -175,6 +175,10 @@ void SceneTitle::Init()
 
 	bool result{};
 
+	pRenderer = std::make_unique<RenderingHelper>();
+	result = pRenderer->Init();
+	assert( result );
+
 	ParamTitle::Get().Init();
 	const auto data = FetchMember();
 
@@ -198,8 +202,6 @@ void SceneTitle::Init()
 	pObstacles->Init( 0 );
 
 	result = Player::LoadModels();
-	assert( result );
-	result = Player::LoadShadingObjects();
 	assert( result );
 	PlayerInit();
 
@@ -291,13 +293,38 @@ void SceneTitle::Draw( float elapsedTime )
 	const auto data = FetchMember();
 	const auto &trans = data.transparency;
 
+	{
+		Donya::Model::Constants::PerScene::Common constant{};
+		constant.directionalLight.color		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+		constant.directionalLight.direction	= lightDir;
+		constant.eyePosition				= cameraPos;
+		constant.viewProjMatrix				= VP;
+		pRenderer->UpdateConstant( constant );
+	}
+	{
+		RenderingHelper::TransConstant constant{};
+		constant.zNear				= trans.enableNear;
+		constant.zFar				= trans.enableFar;
+		constant.lowerAlpha			= trans.lowerAlpha;
+		constant.heightThreshold	= pPlayer->GetPosition().y - pPlayer->GetHitBox().size.y;
+		pRenderer->UpdateConstant( constant );
+	}
+	pRenderer->ActivateConstantScene();
+
 	// The drawing priority is determined by the priority of the information.
 
-	PlayerDraw( VP, cameraPos, lightDir );
+	PlayerDraw();
 
-	pObstacles->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
+
+	if ( Common::IsShowCollision() )
+	{
+		PlayerDrawHitBox( VP );
+
+		pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	}
 
 	// Drawing to far for avoiding to trans the BG's blue.
 	pBG->Draw( elapsedTime );
@@ -339,60 +366,6 @@ void SceneTitle::Draw( float elapsedTime )
 			{
 				DrawCube( { 1.0f, 1.0f, 1.0f }, it.pos, it.color );
 			}
-		}
-
-		// Drawing TextureBoard Demo.
-		if ( 0 )
-		{
-			constexpr const wchar_t *texturePath	= L"./Data/Images/Rights/FMOD Logo White - Black Background.png";
-			static Donya::Geometric::TextureBoard	texBoard = Donya::Geometric::CreateTextureBoard( texturePath );
-			static Donya::Vector2	texPos{};
-			static Donya::Vector2	texSize{ 728.0f, 192.0f };
-
-			static Donya::Vector3	boardScale{ 1.0f, 1.0f, 1.0f };
-			static Donya::Vector3	boardPos{};
-			static float			boardRadian{};
-
-			static Donya::Vector4	boardColor{ 1.0f, 1.0f, 1.0f, 1.0f };
-
-		#if USE_IMGUI
-
-			if ( ImGui::BeginIfAllowed() )
-			{
-				if ( ImGui::TreeNode( u8"板ポリ描画テスト" ) )
-				{
-					ImGui::DragFloat2( u8"切り取り位置・左上", &texPos.x );
-					ImGui::DragFloat2( u8"切り取りサイズ・全体", &texSize.x );
-					ImGui::Text( "" );
-					ImGui::DragFloat3( u8"スケール", &boardScale.x );
-					ImGui::DragFloat3( u8"ワールド位置", &boardPos.x );
-					ImGui::DragFloat( u8"Z回転", &boardRadian, ToRadian( 10.0f ) );
-					ImGui::Text( "" );
-					ImGui::ColorEdit4( u8"ブレンド色", &boardColor.x );
-					ImGui::Text( "" );
-
-					ImGui::TreePop();
-				}
-
-				ImGui::End();
-			}
-
-		#endif // USE_IMGUI
-
-			Donya::Vector4x4 TB_S = Donya::Vector4x4::MakeScaling( boardScale );
-			Donya::Vector4x4 TB_R = texBoard.CalcBillboardRotation( ( iCamera.GetPosition() - boardPos ).Unit(), boardRadian );
-			Donya::Vector4x4 TB_T = Donya::Vector4x4::MakeTranslation( boardPos );
-			Donya::Vector4x4 TB_W = TB_S * TB_R * TB_T;
-
-			texBoard.RenderPart
-			(
-				texPos, texSize,
-				nullptr, // Specify use library's device-context.
-				/* useDefaultShading = */ true,
-				/* isEnableFill      = */ true,
-				( TB_W * VP ), TB_W,
-				lightDir, boardColor
-			);
 		}
 	}
 #endif // DEBUG_MODE
@@ -555,11 +528,17 @@ void SceneTitle::PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, con
 	const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
 	pPlayer->PhysicUpdate( solids, pTerrain->GetCollisionMesh().get(), &terrainMatrix );
 }
-void SceneTitle::PlayerDraw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPos, const Donya::Vector4 &lightDir )
+void SceneTitle::PlayerDraw()
 {
 	if ( !pPlayer ) { return; }
 	// else
-	pPlayer->Draw( matVP, cameraPos, lightDir );
+	pPlayer->Draw( pRenderer.get() );
+}
+void SceneTitle::PlayerDrawHitBox( const Donya::Vector4x4 &matVP )
+{
+	if ( !pPlayer ) { return; }
+	// else
+	pPlayer->DrawHitBox( pRenderer.get(), matVP );
 }
 void SceneTitle::PlayerUninit()
 {

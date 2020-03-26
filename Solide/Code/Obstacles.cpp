@@ -325,7 +325,7 @@ void Stone::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Stone, ParamObstacle::Get().Data() );
 }
-void Stone::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+void Stone::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Stone, pRenderer, GetWorldMatrix(), color );
 }
@@ -342,7 +342,7 @@ void Log::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Log, ParamObstacle::Get().Data() );
 }
-void Log::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+void Log::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Log, pRenderer, GetWorldMatrix(), color );
 }
@@ -359,7 +359,7 @@ void Tree::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Tree, ParamObstacle::Get().Data() );
 }
-void Tree::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+void Tree::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Tree, pRenderer, GetWorldMatrix(), color );
 }
@@ -376,7 +376,7 @@ void Table::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Table, ParamObstacle::Get().Data() );
 }
-void Table::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+void Table::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
 	DrawModel( Kind::Table, pRenderer, GetWorldMatrix(), color );
 }
@@ -397,7 +397,7 @@ void Goal::Update( float elapsedTime )
 	const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( ROT_ANGLE ) );
 	orientation.RotateBy( rotation );
 }
-void Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+void Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
 	const Donya::AABB body = GetHitBox();
 	Donya::Vector4x4 W{};

@@ -277,8 +277,6 @@ void SceneGame::Init()
 
 	result = Player::LoadModels();
 	assert( result );
-	result = Player::LoadShadingObjects();
-	assert( result );
 	PlayerInit();
 
 	CameraInit();
@@ -387,16 +385,21 @@ void SceneGame::Draw( float elapsedTime )
 
 	// The drawing priority is determined by the priority of the information.
 
-	PlayerDraw( VP, cameraPos, lightDir );
+	PlayerDraw();
 
 	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 	pRenderer->ActivateConstantScene();
-	pGoal->Draw( pRenderer.get(), VP, data.goalColor );
-	pObstacles->Draw( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	pGoal->Draw( pRenderer.get(), data.goalColor );
+	pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 
-	pGoal->DrawHitBox( pRenderer.get(), VP, data.goalColor );
-	pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	if ( Common::IsShowCollision() )
+	{
+		PlayerDrawHitBox( VP );
+
+		pGoal->DrawHitBox( pRenderer.get(), VP, data.goalColor );
+		pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	}
 	
 	// Drawing to far for avoiding to trans the BG's blue.
 	pBG->Draw( elapsedTime );
@@ -423,7 +426,7 @@ void SceneGame::Draw( float elapsedTime )
 
 			// Currently selecting section.
 			Section willAddition{ data.selectingPos };
-			willAddition.DrawHitBox( VP, { 0.7f, 0.7f, 0.7f, 0.5f } );
+			willAddition.DrawHitBox( pRenderer.get(), VP, { 0.7f, 0.7f, 0.7f, 0.5f } );
 
 			struct Bundle { const Section *pSection; Donya::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; };
 			std::vector<Bundle> drawList
@@ -435,94 +438,11 @@ void SceneGame::Draw( float elapsedTime )
 
 			for ( const auto &it : drawList )
 			{
-				it.pSection->DrawHitBox( VP, it.color );
+				it.pSection->DrawHitBox( pRenderer.get(), VP, it.color );
 			}
-		}
-
-		// Ground likes.
-		if ( 0 )
-		{
-			static Donya::Vector3 pos  { 0.0f, -1.0f, 0.0f };
-			static Donya::Vector3 size { 70.0f, 1.0f, 120.0f };
-			static Donya::Vector4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
-
-			Donya::Vector4x4 W
-			{
-				size.x, 0.0f,   0.0f,   0.0f,
-				0.0f,   size.y, 0.0f,   0.0f,
-				0.0f,   0.0f,   size.z, 0.0f,
-				pos.x,  pos.y,  pos.z,  1.0f
-			};
-
-			cube.Render
-			(
-				nullptr, true, true,
-				W * V * P, W,
-				lightDir, color
-			);
-		}
-
-		// Drawing TextureBoard Demo.
-		if ( 0 )
-		{
-			constexpr const wchar_t *texturePath	= L"./Data/Images/Rights/FMOD Logo White - Black Background.png";
-			static Donya::Geometric::TextureBoard	texBoard = Donya::Geometric::CreateTextureBoard( texturePath );
-			static Donya::Vector2	texPos{};
-			static Donya::Vector2	texSize{ 728.0f, 192.0f };
-
-			static Donya::Vector3	boardScale{ 1.0f, 1.0f, 1.0f };
-			static Donya::Vector3	boardPos{};
-			static float			boardRadian{};
-
-			static Donya::Vector4	boardColor{ 1.0f, 1.0f, 1.0f, 1.0f };
-
-		#if USE_IMGUI
-
-			if ( ImGui::BeginIfAllowed() )
-			{
-				if ( ImGui::TreeNode( u8"板ポリ描画テスト" ) )
-				{
-					ImGui::DragFloat2( u8"切り取り位置・左上", &texPos.x );
-					ImGui::DragFloat2( u8"切り取りサイズ・全体", &texSize.x );
-					ImGui::Text( "" );
-					ImGui::DragFloat3( u8"スケール", &boardScale.x );
-					ImGui::DragFloat3( u8"ワールド位置", &boardPos.x );
-					ImGui::DragFloat( u8"Z回転", &boardRadian, ToRadian( 10.0f ) );
-					ImGui::Text( "" );
-					ImGui::ColorEdit4( u8"ブレンド色", &boardColor.x );
-					ImGui::SliderFloat3( u8"板ポリのライト方向", &lightDir.x, -1.0f, 1.0f );
-					ImGui::Text( "" );
-
-					ImGui::TreePop();
-				}
-
-				ImGui::End();
-			}
-
-		#endif // USE_IMGUI
-
-			Donya::Vector4x4 TB_S = Donya::Vector4x4::MakeScaling( boardScale );
-			Donya::Vector4x4 TB_R = texBoard.CalcBillboardRotation( ( iCamera.GetPosition() - boardPos ).Unit(), boardRadian );
-			Donya::Vector4x4 TB_T = Donya::Vector4x4::MakeTranslation( boardPos );
-			Donya::Vector4x4 TB_W = TB_S * TB_R * TB_T;
-
-			texBoard.RenderPart
-			(
-				texPos, texSize,
-				nullptr, // Specify use library's device-context.
-				/* useDefaultShading = */ true,
-				/* isEnableFill      = */ true,
-				( TB_W * VP ), TB_W,
-				lightDir, boardColor
-			);
 		}
 	}
 #endif // DEBUG_MODE
-}
-
-bool SceneGame::CreateRenderingStatus()
-{
-
 }
 
 void SceneGame::CameraInit()
@@ -720,11 +640,17 @@ void SceneGame::PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, cons
 	const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
 	pPlayer->PhysicUpdate( solids, pTerrain->GetCollisionMesh().get(), &terrainMatrix );
 }
-void SceneGame::PlayerDraw( const Donya::Vector4x4 &matVP, const Donya::Vector4 &cameraPos, const Donya::Vector4 &lightDir )
+void SceneGame::PlayerDraw()
 {
 	if ( !pPlayer ) { return; }
 	// else
-	pPlayer->Draw( matVP, cameraPos, lightDir );
+	pPlayer->Draw( pRenderer.get() );
+}
+void SceneGame::PlayerDrawHitBox( const Donya::Vector4x4 &matVP )
+{
+	if ( !pPlayer ) { return; }
+	// else
+	pPlayer->DrawHitBox( pRenderer.get(), matVP );
 }
 void SceneGame::PlayerUninit()
 {

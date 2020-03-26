@@ -43,7 +43,7 @@ public:
 
 	void Update( float elapsedTime );
 
-	void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
 	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
 public:
 	void SortByDepth();

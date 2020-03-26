@@ -22,6 +22,8 @@ private:
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller;
 
+	std::unique_ptr<RenderingHelper>	pRenderer;
+
 	std::unique_ptr<BG>					pBG;
 	std::unique_ptr<Terrain>			pTerrain;
 	std::unique_ptr<Player>				pPlayer;
@@ -56,7 +58,8 @@ private:
 	void	PlayerInit();
 	void	PlayerUpdate( float elapsedTime );
 	void	PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const std::unique_ptr<Terrain> *ppTerrain );
-	void	PlayerDraw( const Donya::Vector4x4 &matViewProj, const Donya::Vector4 &cameraPosition, const Donya::Vector4 &lightDirection );
+	void	PlayerDraw();
+	void	PlayerDrawHitBox( const Donya::Vector4x4 &matVP );
 	void	PlayerUninit();
 
 	bool	IsRequiredAdvance() const;

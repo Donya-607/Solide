@@ -45,13 +45,13 @@ void ObstacleContainer::Update( float elapsedTime )
 	}
 }
 
-void ObstacleContainer::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+void ObstacleContainer::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
 	for ( auto &pIt : pObstacles )
 	{
 		if ( !pIt ) { continue; }
 		// else
-		pIt->Draw( pRenderer, VP, color );
+		pIt->Draw( pRenderer, color );
 	}
 }
 void ObstacleContainer::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )

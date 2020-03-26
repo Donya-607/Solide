@@ -28,25 +28,15 @@ private:
 	class MotionManager
 	{
 	private:
-		Donya::Animator animator;
+		Donya::Model::Animator	animator;
+		Donya::Model::Pose		pose;
 	public:
 		void Init();
 		void Update( Player &player, float elapsedTime );
 	public:
-		void SetIdle();
-		void SetRun();
-		void SetJump();
-		void SetFall();
-	public:
-		struct Bundle
-		{
-			std::shared_ptr<Donya::SkinnedMesh> pNowModel;
-			const Donya::MotionChunk *pNowMotions;
-		};
-		Bundle CalcNowModel( Player &player ) const;
-		const Donya::Animator &GetAnimator() const { return animator; }
+		const Donya::Model::Pose &GetPose() const;
 	private:
-		void ResetAnimation();
+		void AssignPose( int motionIndex );
 		int  CalcNowKind( Player &player ) const;
 	};
 
@@ -123,7 +113,7 @@ public:
 	void Update( float elapsedTime, Input input );
 	void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
-	void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
+	void Draw( RenderingHelper *pRenderer );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
 public:
 	bool IsDead() const
