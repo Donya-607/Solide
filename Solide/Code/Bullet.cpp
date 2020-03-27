@@ -65,7 +65,7 @@ namespace Bullet
 				}
 				// else
 
-				models[i] = std::make_shared<Donya::StaticMesh>();
+				models[i] = std::make_shared<StorageBundle>();
 				result = Load( filePath, &( *models[i] ) ); // std::shared_ptr<T> -> T -> T *
 				if ( !result )
 				{

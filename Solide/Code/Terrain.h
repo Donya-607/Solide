@@ -28,7 +28,7 @@ public:
 	void BuildWorldMatrix();
 public:
 	const Donya::Vector4x4 &GetWorldMatrix() const { return matWorld; }
-	std::shared_ptr<Donya::Model::PolygonGroup> GetCollisionMesh() const { return pPolygons; }
+	std::shared_ptr<Donya::Model::PolygonGroup> GetCollisionModel() const { return pPolygons; }
 public:
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
 public:

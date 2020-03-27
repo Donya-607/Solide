@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Donya/ModelMotion.h"
+#include "Donya/ModelPolygon.h"
 #include "Donya/ModelPose.h"
 #include "Donya/Quaternion.h"
 #include "Donya/SkinnedMesh.h"
@@ -111,7 +112,7 @@ public:
 	void Uninit();
 
 	void Update( float elapsedTime, Input input );
-	void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::StaticMesh *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+	void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
 	void Draw( RenderingHelper *pRenderer );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
@@ -151,7 +152,7 @@ private:
 	void Fall( float elapsedTime );
 	bool IsUnderFalloutBorder() const;
 
-	bool WasCorrectedVertically( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const;
+	bool WasCorrectedVertically( const Donya::Vector3 &oldPos, const Donya::Model::PolygonGroup *pTerrain ) const;
 	void AssignLanding();
 
 	void Die();

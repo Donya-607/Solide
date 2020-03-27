@@ -764,7 +764,7 @@ void Player::Update( float elapsedTime, Input input )
 	UpdateHopping( elapsedTime );
 }
 
-void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMat )
+void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMat )
 {
 	if ( pMover->IsDead() ) { return; }
 	// else
@@ -895,7 +895,7 @@ bool Player::IsUnderFalloutBorder() const
 	return ( pos.y < data.falloutBorderPosY ) ? true : false;
 }
 
-bool Player::WasCorrectedVertically( const Donya::Vector3 &oldPos, const Donya::StaticMesh *pTerrain ) const
+bool Player::WasCorrectedVertically( const Donya::Vector3 &oldPos, const Donya::Model::PolygonGroup *pTerrain ) const
 {
 	const Donya::Vector3 movement = pos - oldPos;
 	

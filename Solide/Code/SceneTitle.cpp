@@ -317,7 +317,7 @@ void SceneTitle::Draw( float elapsedTime )
 
 	pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 
-	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 
 	if ( Common::IsShowCollision() )
 	{
@@ -525,8 +525,8 @@ void SceneTitle::PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, con
 	if ( !pTerrain ) { return; }
 	// else
 
-	const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
-	pPlayer->PhysicUpdate( solids, pTerrain->GetCollisionMesh().get(), &terrainMatrix );
+	const Donya::Vector4x4 &terrainMatrix = pTerrain->GetWorldMatrix();
+	pPlayer->PhysicUpdate( solids, pTerrain->GetCollisionModel().get(), &terrainMatrix );
 }
 void SceneTitle::PlayerDraw()
 {

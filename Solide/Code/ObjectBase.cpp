@@ -81,7 +81,7 @@ void Solid::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, 
 
 
 
-Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	if ( !pTerrain || !pTerrainMatrix )
 	{
@@ -156,7 +156,7 @@ namespace
 		return ToVec3( M.Mul( V, fourthParam ) );
 	}
 }
-void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	// The hit-box size of projected to movement component.
 	const Donya::Vector3 extendSize = MakeSizeOffset( hitBox.size, xzMovement );
@@ -186,7 +186,7 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 	constexpr int SIDE_RECURSIVE_COUNT = 4;	// Prevent the corrected velocity to be zero that recursion method will return the zero if the recursion count arrived to limit.
 	CorrectByHitBox( wsRayOffsets, pTerrain, pTerrainMatrix, SIDE_RECURSIVE_COUNT );
 }
-Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+Donya::Vector3 Actor::MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	// The hit-box size of projected to movement component.
 	const Donya::Vector3 extendSize = MakeSizeOffset( hitBox.size, yMovement );
@@ -419,7 +419,7 @@ void Actor::MoveInAABB( Donya::Vector3 moveVelocity, const std::vector<Donya::AA
 	pos = movedBody.pos - hitBox.pos/* Except the offset of hitBox */;
 }
 
-Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const
+Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOffsets, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const
 {
 	// Donya::OutputDebugStr( std::string{ "Enter into CalcCorrectVelocity(), Recursive count is : " + std::to_string( recursionCount ) + ".\n" }.c_str() );
 
@@ -443,25 +443,25 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 	const Donya::Vector3	tsRayEnd		= Transform( invTerrainMat, wsRayEnd,	1.0f );
 
 	// Store nearest collided result of rays that be affected offsets, or invalid(wasHit == false).
-	Donya::StaticMesh::RayPickResult result{};
+	Donya::Model::RaycastResult result{};
 	{
 		result.wasHit = false;
 
 		if ( wsRayOffsets.empty() )
 		{
-			result = pTerrain->RayPick( tsRayStart, tsRayEnd );
+			result = pTerrain->Raycast( tsRayStart, tsRayEnd );
 		}
 		else
 		{
 			// Store a ray pick results of each ray offsets.
 
 			Donya::Vector3 tsRayOffset{};
-			std::vector<Donya::StaticMesh::RayPickResult> temporaryResults{};
+			std::vector<Donya::Model::RaycastResult> temporaryResults{};
 			for ( const auto &offset : wsRayOffsets )
 			{
 				tsRayOffset = Transform( invTerrainMat, offset, 1.0f );
 
-				auto tmp = pTerrain->RayPick( tsRayStart + tsRayOffset, tsRayEnd + tsRayOffset );
+				auto tmp = pTerrain->Raycast( tsRayStart + tsRayOffset, tsRayEnd + tsRayOffset );
 				temporaryResults.emplace_back( std::move( tmp ) );
 			}
 
@@ -474,7 +474,7 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 				if ( !it.wasHit ) { continue; }
 				// else
 
-				diff = it.intersectionPoint - tsRayStart;
+				diff = it.intersection - tsRayStart;
 				if ( diff.LengthSq() < nearestDistance )
 				{
 					nearestDistance = diff.LengthSq();
@@ -493,17 +493,17 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 	// else
 
 	// Transform to World space from Terrains pace.
-	const Donya::Vector3 wsIntersection	= Transform( terrainMat, result.intersectionPoint, 1.0f );
-	const Donya::Vector3 wsWallNormal	= Transform( terrainMat, result.normal, 0.0f ).Unit();
+	const Donya::Vector3 wsIntersection	= Transform( terrainMat, result.intersection, 1.0f );
+	const Donya::Vector3 wsWallNormal	= Transform( terrainMat, result.nearestPolygon.normal, 0.0f ).Unit();
 
 	const Donya::Vector3 internalVec	= wsRayEnd - wsIntersection;
 	const Donya::Vector3 projVelocity	= -wsWallNormal * Dot( internalVec, -wsWallNormal );
 
 	recursionResult.wsLastIntersection	= wsIntersection;
 	recursionResult.wsLastWallNormal	= wsWallNormal;
-	recursionResult.wsLastWallFace[0] = Transform( terrainMat, result.lastCollidedFace[0], 1.0f );
-	recursionResult.wsLastWallFace[1] = Transform( terrainMat, result.lastCollidedFace[1], 1.0f );
-	recursionResult.wsLastWallFace[2] = Transform( terrainMat, result.lastCollidedFace[2], 1.0f );
+	recursionResult.wsLastWallFace[0] = Transform( terrainMat, result.nearestPolygon.points[0], 1.0f );
+	recursionResult.wsLastWallFace[1] = Transform( terrainMat, result.nearestPolygon.points[1], 1.0f );
+	recursionResult.wsLastWallFace[2] = Transform( terrainMat, result.nearestPolygon.points[2], 1.0f );
 	recursionResult.wasHit = true;
 
 	constexpr float ERROR_MAGNI = 1.0f + ERROR_ADJUST;
@@ -514,7 +514,7 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 	return CalcCorrectVelocity( correctedVelocity, wsRayOffsets, pTerrain, pTerrainMatrix, recursionResult, recursionCount + 1, recursionLimit );
 }
 
-void Actor::CorrectByHitBox( const std::vector<Donya::Vector3> &wsRayOffsets, const Donya::StaticMesh *pTerrain, const Donya::Vector4x4 *pTerrainMatrix, int recursiveCount )
+void Actor::CorrectByHitBox( const std::vector<Donya::Vector3> &wsRayOffsets, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix, int recursiveCount )
 {
 	constexpr Donya::Vector3 directions[]	// Right, Left, Front and Back.
 	{

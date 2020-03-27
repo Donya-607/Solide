@@ -638,7 +638,7 @@ void SceneGame::PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, cons
 	// else
 
 	const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
-	pPlayer->PhysicUpdate( solids, pTerrain->GetCollisionMesh().get(), &terrainMatrix );
+	pPlayer->PhysicUpdate( solids, pTerrain->GetCollisionModel().get(), &terrainMatrix );
 }
 void SceneGame::PlayerDraw()
 {
