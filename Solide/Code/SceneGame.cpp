@@ -357,19 +357,16 @@ void SceneGame::Draw( float elapsedTime )
 
 	ClearBackGround();
 
-	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
 	const Donya::Vector4   lightDir{ 0.0f, -1.0f, 0.0f, 0.0f };
-	const Donya::Vector4x4 V{ iCamera.CalcViewMatrix() };
-	const Donya::Vector4x4 P{ iCamera.GetProjectionMatrix() };
-	const Donya::Vector4x4 VP{ V * P };
-	const auto data = FetchMember();
+	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
+	const auto data   = FetchMember();
 	const auto &trans = data.transparency;
 
 	{
 		Donya::Model::Constants::PerScene::Common constant{};
 		constant.directionalLight.color		= dirLight.color;
 		constant.directionalLight.direction	= dirLight.dir;
-		constant.eyePosition				= cameraPos;
+		constant.eyePosition				= Donya::Vector4{ iCamera.GetPosition(), 1.0f };
 		constant.viewProjMatrix				= VP;
 		pRenderer->UpdateConstant( constant );
 	}
@@ -382,16 +379,28 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->UpdateConstant( constant );
 	}
 
+	pRenderer->ActivateDepthStencilModel();
+	pRenderer->ActivateRasterizerModel();
+	pRenderer->ActivateSamplerModel();
 	pRenderer->ActivateConstantScene();
+	{
+		// The drawing priority is determined by the priority of the information.
 
-	// The drawing priority is determined by the priority of the information.
+		pRenderer->ActivateShaderNormalSkinning();
+		PlayerDraw();
+		pRenderer->DeactivateShaderNormalSkinning();
 
-	PlayerDraw();
+		pRenderer->ActivateShaderNormalStatic();
+			pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 
-	pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
-
-	pGoal->Draw( pRenderer.get(), data.goalColor );
-	pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+			pGoal->Draw( pRenderer.get(), data.goalColor );
+			pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+		pRenderer->DeactivateShaderNormalStatic();
+	}
+	pRenderer->DeactivateConstantScene();
+	pRenderer->DeactivateDepthStencilModel();
+	pRenderer->DeactivateRasterizerModel();
+	pRenderer->DeactivateSamplerModel();
 
 	if ( Common::IsShowCollision() )
 	{

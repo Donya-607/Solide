@@ -311,6 +311,64 @@ void RenderingHelper::DeactivateShaderSphere()
 	pPrimitive->rendererSphere.DeactivatePixelShader();
 }
 
+void RenderingHelper::ActivateDepthStencilModel()
+{
+	Donya::DepthStencil::Activate( state.DS );
+}
+void RenderingHelper::ActivateDepthStencilCube()
+{
+	pPrimitive->rendererCube.ActivateDepthStencil();
+}
+void RenderingHelper::ActivateDepthStencilSphere()
+{
+	pPrimitive->rendererSphere.ActivateDepthStencil();
+}
+void RenderingHelper::ActivateRasterizerModel()
+{
+	Donya::Rasterizer::Activate( state.RS );
+}
+void RenderingHelper::ActivateRasterizerCube()
+{
+	pPrimitive->rendererCube.ActivateRasterizer();
+}
+void RenderingHelper::ActivateRasterizerSphere()
+{
+	pPrimitive->rendererSphere.ActivateRasterizer();
+}
+void RenderingHelper::ActivateSamplerModel()
+{
+	const auto desc = SamplerSetting();
+	Donya::Sampler::Activate( state.PS, desc.setSlot, desc.setVS, desc.setPS );
+}
+void RenderingHelper::DeactivateDepthStencilModel()
+{
+	Donya::DepthStencil::Deactivate();
+}
+void RenderingHelper::DeactivateDepthStencilCube()
+{
+	pPrimitive->rendererCube.DeactivateDepthStencil();
+}
+void RenderingHelper::DeactivateDepthStencilSphere()
+{
+	pPrimitive->rendererSphere.DeactivateDepthStencil();
+}
+void RenderingHelper::DeactivateRasterizerModel()
+{
+	Donya::Rasterizer::Deactivate();
+}
+void RenderingHelper::DeactivateRasterizerCube()
+{
+	pPrimitive->rendererCube.DeactivateRasterizer();
+}
+void RenderingHelper::DeactivateRasterizerSphere()
+{
+	pPrimitive->rendererSphere.DeactivateRasterizer();
+}
+void RenderingHelper::DeactivateSamplerModel()
+{
+	Donya::Sampler::Deactivate();
+}
+
 void RenderingHelper::Render( const Donya::Model::StaticModel	&model, const Donya::Model::Pose &pose )
 {
 	pRenderer->pStatic->Render( model, pose, MeshSetting(), SubsetSetting(), DiffuseMapSetting() );

@@ -108,6 +108,21 @@ public:
 	void DeactivateShaderCube();	// For primitive.
 	void DeactivateShaderSphere();	// For primitive.
 public:
+	void ActivateDepthStencilModel();
+	void ActivateDepthStencilCube();
+	void ActivateDepthStencilSphere();
+	void ActivateRasterizerModel();
+	void ActivateRasterizerCube();
+	void ActivateRasterizerSphere();
+	void ActivateSamplerModel();
+	void DeactivateDepthStencilModel();
+	void DeactivateDepthStencilCube();
+	void DeactivateDepthStencilSphere();
+	void DeactivateRasterizerModel();
+	void DeactivateRasterizerCube();
+	void DeactivateRasterizerSphere();
+	void DeactivateSamplerModel();
+public:
 	void Render( const Donya::Model::StaticModel	&model, const Donya::Model::Pose &pose );
 	void Render( const Donya::Model::SkinningModel	&model, const Donya::Model::Pose &pose );
 public:
