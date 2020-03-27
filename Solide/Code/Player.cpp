@@ -497,7 +497,7 @@ const Donya::Model::Pose &Player::MotionManager::GetPose() const
 void Player::MotionManager::AssignPose( int motionIndex )
 {
 	const auto &motionHolder  = PlayerModel::GetMotions();
-	_ASSERT_EXPR( motionHolder.IsOutOfRange( motionIndex ), L"Error : Passed motion index out of range!" );
+	_ASSERT_EXPR( !motionHolder.IsOutOfRange( motionIndex ), L"Error : Passed motion index out of range!" );
 
 	const auto &currentMotion = motionHolder.GetMotion( motionIndex );
 	pose.AssignSkeletal( animator.CalcCurrentPose( currentMotion ) );

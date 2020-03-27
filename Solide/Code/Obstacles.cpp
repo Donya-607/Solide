@@ -298,7 +298,7 @@ void ObstacleBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x
 	// else
 
 #if DEBUG_MODE
-	DrawHitBox( pRenderer, matVP, color );
+	Solid::DrawHitBox( pRenderer, matVP, color );
 #endif // DEBUG_MODE
 }
 #if USE_IMGUI
