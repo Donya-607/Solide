@@ -4,28 +4,33 @@
 #include <string>
 
 #include "Donya/Constant.h"
-#include "Donya/StaticMesh.h"
+#include "Donya/Model.h"
+#include "Donya/ModelPose.h"
+#include "Donya/ModelPolygon.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
+
+#include "Renderer.h"
 
 class Terrain
 {
 private:
-	std::shared_ptr<Donya::StaticMesh> pCollisionMesh;
-	std::shared_ptr<Donya::StaticMesh> pDrawMesh;
-	Donya::Vector3 scale{ 1.0f, 1.0f, 1.0f };
-	Donya::Vector3 translation;
-	Donya::Vector4x4 matWorld;
+	Donya::Vector3		scale;
+	Donya::Vector3		translation;
+	Donya::Vector4x4	matWorld;
+	std::shared_ptr<Donya::Model::StaticModel>	pDrawModel;
+	std::shared_ptr<Donya::Model::Pose>			pPose;
+	std::shared_ptr<Donya::Model::PolygonGroup>	pPolygons;
 public:
-	Terrain( const std::string &drawMeshName, const std::string &collisionMeshName );
-	DELETE_COPY_AND_ASSIGN( Terrain );
+	Terrain( const std::string &drawModelName, const std::string &collisionModelName );
 public:
 	void SetWorldConfig( const Donya::Vector3 &scaling, const Donya::Vector3 &translate );
 	void BuildWorldMatrix();
-	Donya::Vector4x4 GetWorldMatrix() const { return matWorld; }
-	std::shared_ptr<Donya::StaticMesh> GetCollisionMesh() const { return pCollisionMesh; }
 public:
-	void Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &matVP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color );
+	const Donya::Vector4x4 &GetWorldMatrix() const { return matWorld; }
+	std::shared_ptr<Donya::Model::PolygonGroup> GetCollisionMesh() const { return pPolygons; }
+public:
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
 public:
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption );

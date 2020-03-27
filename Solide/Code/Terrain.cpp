@@ -5,43 +5,46 @@
 #include "Donya/Loader.h"
 #include "Donya/Useful.h"
 
-Terrain::Terrain( const std::string &drawMeshName, const std::string &collisionMeshName ) :
-	pCollisionMesh( nullptr ), pDrawMesh( nullptr ),
+Terrain::Terrain( const std::string &drawModelName, const std::string &collisionModelName ) :
 	scale( 1.0f, 1.0f, 1.0f ), translation(),
-	matWorld( Donya::Vector4x4::Identity() )
+	matWorld( Donya::Vector4x4::Identity() ),
+	pDrawModel( nullptr ), pPose( nullptr ), pPolygons( nullptr )
 {
-	bool succeeded = true;
-
-	struct Bundle { std::string fileName; std::shared_ptr<Donya::StaticMesh> *pMesh; };
-	const  Bundle bundles[]
+	auto Load = []( Donya::Loader *pLoader, const std::string &filePath )
 	{
-		Bundle{ collisionMeshName,	&pCollisionMesh	},
-		Bundle{ drawMeshName,		&pDrawMesh		}
-	};
-
-	for ( auto &it : bundles )
-	{
-		Donya::Loader loader{};
-		succeeded = loader.Load( it.fileName, nullptr );
-		if ( !succeeded )
+		pLoader->ClearData();
+		if ( !pLoader->Load( filePath ) )
 		{
 			const std::wstring errMsgBase{ L"Failed : Loading a model. That is : " };
-			const std::wstring errMsg = errMsgBase + Donya::MultiToWide( it.fileName );
+			const std::wstring errMsg = errMsgBase + Donya::MultiToWide( filePath );
 			_ASSERT_EXPR( 0, errMsg.c_str() );
-			throw std::runtime_error{ "Loader's Error" };
-		}
-		// else
 
-		*( it.pMesh ) = std::make_shared<Donya::StaticMesh>();
-		succeeded = Donya::StaticMesh::Create( loader, *( it.pMesh->get() ) );
-		if ( !succeeded )
-		{
-			const std::wstring errMsgBase{ L"Failed : Creating a model. That is : " };
-			const std::wstring errMsg = errMsgBase + Donya::MultiToWide( it.fileName );
-			_ASSERT_EXPR( 0, errMsg.c_str() );
-			throw std::runtime_error{ "Mesh's Error" };
+			throw std::runtime_error{ "Loading Error" };
 		}
+	};
+
+	Donya::Loader loader{};
+
+	Load( &loader, drawModelName );
+	pDrawModel = std::make_shared<Donya::Model::StaticModel>
+	(
+		Donya::Model::StaticModel::Create( loader.GetModelSource(), loader.GetFileDirectory() )
+	);
+	_ASSERT_EXPR( pDrawModel->WasInitializeSucceeded(), L"Failed : The model creation of Terrain." );
+
+	pPose = std::make_shared<Donya::Model::Pose>();
+	pPose->AssignSkeletal( loader.GetModelSource().skeletal );
+	pPose->UpdateTransformMatrices();
+
+	if ( collisionModelName != drawModelName )
+	{
+		Load( &loader, collisionModelName );
 	}
+
+	pPolygons = std::make_shared<Donya::Model::PolygonGroup>
+	(
+		loader.GetPolygonGroup()
+	);
 }
 
 void Terrain::SetWorldConfig( const Donya::Vector3 &scaling, const Donya::Vector3 &translate )
@@ -51,23 +54,28 @@ void Terrain::SetWorldConfig( const Donya::Vector3 &scaling, const Donya::Vector
 }
 void Terrain::BuildWorldMatrix()
 {
-	matWorld =
-	Donya::Vector4x4::MakeScaling( scale ) *
-	Donya::Vector4x4::MakeTranslation( translation );
+	// matWorld =
+	// Donya::Vector4x4::MakeScaling( scale ) *
+	// Donya::Vector4x4::MakeTranslation( translation );
+	matWorld._11 = scale.x;
+	matWorld._22 = scale.y;
+	matWorld._33 = scale.z;
+	matWorld._41 = translation.x;
+	matWorld._42 = translation.y;
+	matWorld._43 = translation.z;
 }
 
-void Terrain::Draw( const Donya::Vector4 &eyePos, float transNear, float transFar, float transLowerAlpha, const Donya::Vector4x4 &VP, const Donya::Vector4 &lightDir, const Donya::Vector4 &color )
+void Terrain::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
-	const Donya::Vector4x4 W = GetWorldMatrix();
-	pDrawMesh->Render
-	// pCollisionMesh->Render
-	(
-		eyePos, transNear, transFar, transLowerAlpha,
-		nullptr,
-		true, true,
-		W * VP, W,
-		lightDir, color
-	);
+	Donya::Model::Constants::PerModel::Common constant{};
+	constant.drawColor		= color;
+	constant.worldMatrix	= GetWorldMatrix();
+	pRenderer->UpdateConstant( constant );
+	pRenderer->ActivateConstantModel();
+
+	pRenderer->Render( *pDrawModel, *pPose );
+
+	pRenderer->DeactivateConstantModel();
 }
 
 #if USE_IMGUI

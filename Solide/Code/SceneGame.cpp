@@ -381,15 +381,15 @@ void SceneGame::Draw( float elapsedTime )
 		constant.heightThreshold	= pPlayer->GetPosition().y - pPlayer->GetHitBox().size.y;
 		pRenderer->UpdateConstant( constant );
 	}
+
 	pRenderer->ActivateConstantScene();
 
 	// The drawing priority is determined by the priority of the information.
 
 	PlayerDraw();
 
-	pTerrain->Draw( cameraPos, trans.enableNear, trans.enableFar, trans.lowerAlpha, VP, lightDir, { 1.0f, 1.0f, 1.0f, 1.0f } );
+	pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 
-	pRenderer->ActivateConstantScene();
 	pGoal->Draw( pRenderer.get(), data.goalColor );
 	pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 
