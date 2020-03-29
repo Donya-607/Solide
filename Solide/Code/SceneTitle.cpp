@@ -144,7 +144,7 @@ namespace
 	}
 }
 
-SceneTitle::SceneTitle() :
+SceneTitle::SceneTitle() : Scene(),
 	iCamera(),
 	controller( Donya::Gamepad::PAD_1 ),
 	pBG( nullptr ),

@@ -21,14 +21,7 @@
 
 class SceneGame : public Scene
 {
-public:
-	struct DirectionalLight
-	{
-		Donya::Vector4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
-		Donya::Vector4 dir	{ 0.0f,-1.0f, 1.0f, 0.0f };
-	};
 private:
-	DirectionalLight					dirLight;
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller;
 
@@ -55,7 +48,6 @@ private:
 #endif // DEBUG_MODE
 public:
 	SceneGame();
-	~SceneGame();
 public:
 	void	Init() override;
 	void	Uninit() override;

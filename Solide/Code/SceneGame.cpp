@@ -56,6 +56,8 @@ namespace
 
 		Donya::Vector4 goalColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
+		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
+
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -105,12 +107,20 @@ namespace
 			}
 			if ( 6 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( directionalLight.color		),
+					CEREAL_NVP( directionalLight.direction	)
+				);
+			}
+			if ( 7 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 5 )
+CEREAL_CLASS_VERSION( Member, 6 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -142,18 +152,31 @@ public:
 
 		if ( ImGui::TreeNode( u8"ゲームのパラメータ調整" ) )
 		{
-			ImGui::DragInt( u8"開始からチュートリアル画像表示までの秒数", &m.waitFrameUntilShowTutorial,  1.0f, 1 );
-			ImGui::DragInt( u8"チュートリアル画像表示から縮小までの秒数", &m.waitFrameUntilSlideTutorial, 1.0f, 1 );
-			ImGui::DragInt( u8"ゴールからフェードまでの秒数", &m.waitFrameUntilFade, 1.0f, 1 );
-			m.waitFrameUntilShowTutorial  = std::max( 1, m.waitFrameUntilShowTutorial  );
-			m.waitFrameUntilSlideTutorial = std::max( 1, m.waitFrameUntilSlideTutorial );
-			m.waitFrameUntilFade = std::max( 1, m.waitFrameUntilFade );
+			if ( ImGui::TreeNode( u8"秒数関連" ) )
+			{
+				ImGui::DragInt( u8"開始からチュートリアル画像表示までの秒数", &m.waitFrameUntilShowTutorial,  1.0f, 1 );
+				ImGui::DragInt( u8"チュートリアル画像表示から縮小までの秒数", &m.waitFrameUntilSlideTutorial, 1.0f, 1 );
+				ImGui::DragInt( u8"ゴールからフェードまでの秒数", &m.waitFrameUntilFade, 1.0f, 1 );
+				m.waitFrameUntilShowTutorial	= std::max( 1, m.waitFrameUntilShowTutorial		);
+				m.waitFrameUntilSlideTutorial	= std::max( 1, m.waitFrameUntilSlideTutorial	);
+				m.waitFrameUntilFade			= std::max( 1, m.waitFrameUntilFade				);
+
+				ImGui::TreePop();
+			}
 
 			if ( ImGui::TreeNode( u8"カメラ" ) )
 			{
 				ImGui::DragFloat ( u8"補間倍率",						&m.camera.slerpFactor,		0.01f );
 				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&m.camera.offsetPos.x,		0.01f );
 				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&m.camera.offsetFocus.x,	0.01f );
+
+				ImGui::TreePop();
+			}
+			
+			if ( ImGui::TreeNode( u8"平行光" ) )
+			{
+				ImGui::ColorEdit4  ( u8"色",		&m.directionalLight.color.x );
+				ImGui::SliderFloat4( u8"方向",	&m.directionalLight.direction.x, -1.0f, 1.0f );
 
 				ImGui::TreePop();
 			}
@@ -211,8 +234,7 @@ namespace
 	}
 }
 
-SceneGame::SceneGame() :
-	dirLight(),
+SceneGame::SceneGame() : Scene(),
 	iCamera(),
 	controller( Donya::Gamepad::PAD_1 ),
 	pRenderer( nullptr ),
@@ -234,7 +256,6 @@ SceneGame::SceneGame() :
 #endif // DEBUG_MODE
 
 {}
-SceneGame::~SceneGame() = default;
 
 void SceneGame::Init()
 {
@@ -360,20 +381,19 @@ void SceneGame::Draw( float elapsedTime )
 
 	ClearBackGround();
 
-	const Donya::Vector4   lightDir{ 0.0f, -1.0f, 0.0f, 0.0f };
 	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
 	const auto data   = FetchMember();
-	const auto &trans = data.transparency;
-
+	
 	{
 		Donya::Model::Constants::PerScene::Common constant{};
-		constant.directionalLight.color		= dirLight.color;
-		constant.directionalLight.direction	= dirLight.dir;
-		constant.eyePosition				= Donya::Vector4{ iCamera.GetPosition(), 1.0f };
-		constant.viewProjMatrix				= VP;
+		constant.directionalLight	= data.directionalLight;
+		constant.eyePosition		= Donya::Vector4{ iCamera.GetPosition(), 1.0f };
+		constant.viewProjMatrix		= VP;
 		pRenderer->UpdateConstant( constant );
 	}
+
 	{
+		const auto &trans = data.transparency;
 		RenderingHelper::TransConstant constant{};
 		constant.zNear				= trans.enableNear;
 		constant.zFar				= trans.enableFar;
@@ -423,8 +443,6 @@ void SceneGame::Draw( float elapsedTime )
 	if ( Common::IsShowCollision() )
 	{
 		static auto cube = Donya::Geometric::CreateCube();
-
-		static Donya::Vector4 lightDir{ 0.0f,-1.0f, 1.0f, 0.0f };
 
 		// Sections
 		{
