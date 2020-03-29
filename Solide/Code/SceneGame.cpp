@@ -47,6 +47,7 @@ namespace
 			float enableNear = 1.0f; // World space.
 			float enableFar	 = 2.0f; // World space.
 			float lowerAlpha = 0.0f; // 0.0f ~ 1.0f.
+			float applyThresholdOffset = -1.0f; // I don't wanna transparentize a pixel that under the player. This offset will function as: threshold = player.pos.y + offset;
 		}
 		transparency;
 
@@ -115,12 +116,16 @@ namespace
 			}
 			if ( 7 <= version )
 			{
+				archive( CEREAL_NVP( transparency.applyThresholdOffset ) );
+			}
+			if ( 8 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 6 )
+CEREAL_CLASS_VERSION( Member, 7 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -185,7 +190,8 @@ public:
 			{
 				ImGui::DragFloat( u8"範囲・手前側",	&m.transparency.enableNear,	0.01f, 0.0f );
 				ImGui::DragFloat( u8"範囲・奥側",	&m.transparency.enableFar,	0.01f, 0.0f );
-				ImGui::SliderFloat( u8"最低透明度", &m.transparency.lowerAlpha, 0.0f, 1.0f );
+				ImGui::SliderFloat( u8"最低透明度",	&m.transparency.lowerAlpha, 0.0f, 1.0f );
+				ImGui::DragFloat( u8"透明を適用する高さ（自機からの相対）",		&m.transparency.applyThresholdOffset, 0.01f );
 
 				ImGui::TreePop();
 			}
@@ -398,7 +404,7 @@ void SceneGame::Draw( float elapsedTime )
 		constant.zNear				= trans.enableNear;
 		constant.zFar				= trans.enableFar;
 		constant.lowerAlpha			= trans.lowerAlpha;
-		constant.heightThreshold	= pPlayer->GetPosition().y - pPlayer->GetHitBox().size.y;
+		constant.heightThreshold	= pPlayer->GetPosition().y + trans.applyThresholdOffset;
 		pRenderer->UpdateConstant( constant );
 	}
 
@@ -406,6 +412,7 @@ void SceneGame::Draw( float elapsedTime )
 	pRenderer->ActivateRasterizerModel();
 	pRenderer->ActivateSamplerModel();
 	pRenderer->ActivateConstantScene();
+	pRenderer->ActivateConstantTrans();
 	{
 		// The drawing priority is determined by the priority of the information.
 
@@ -419,6 +426,7 @@ void SceneGame::Draw( float elapsedTime )
 		pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 		pRenderer->DeactivateShaderNormalStatic();
 	}
+	pRenderer->DeactivateConstantTrans();
 	pRenderer->DeactivateConstantScene();
 	pRenderer->DeactivateDepthStencilModel();
 	pRenderer->DeactivateRasterizerModel();

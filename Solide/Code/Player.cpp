@@ -860,7 +860,7 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 	// else
 #if DEBUG_MODE
-	constexpr Donya::Vector4 color{ 0.1f, 1.0f, 0.3f, 1.0f };
+	constexpr Donya::Vector4 color{ 0.1f, 1.0f, 0.3f, 0.7f };
 	Actor::DrawHitBox( pRenderer, matVP, Donya::Quaternion::Identity(), color );
 #endif // DEBUG_MODE
 }
