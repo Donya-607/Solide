@@ -184,7 +184,8 @@ namespace Donya
 	{
 		// Convert right-hand space to left-hand space.
 		pSource->coordinateConversion._11 = -1.0f;
-		pPolyGroup->SetCullMode( Model::PolygonGroup::CullMode::Back );
+		pPolyGroup->ApplyCullMode( Model::PolygonGroup::CullMode::Back );
+		pPolyGroup->ApplyCoordinateConversion( pSource->coordinateConversion );
 	}
 
 	/// <summary>
@@ -820,12 +821,13 @@ namespace Donya
 
 	void BuildModelSource( Model::Source *pSource, Model::PolygonGroup *pPolyGroup, FBX::FbxScene *pScene, const std::vector<FBX::FbxNode *> &meshNodes, const std::vector<FBX::FbxNode *> &motionNodes, float animationSamplingFPS, const std::string &fileDirectory )
 	{
-		AdjustCoordinate( pSource, pPolyGroup );
-
 		BuildSkeletal( &pSource->skeletal, motionNodes );
 
 		// The meshes building function is using the skeletal, so we should build after building of the skeletal.
 		BuildMeshes( &pSource->meshes, meshNodes, pPolyGroup, pScene, fileDirectory, pSource->skeletal, animationSamplingFPS );
+
+		// This method should call after building of meshes because the polygon group will be reassigned by coordinate.
+		AdjustCoordinate( pSource, pPolyGroup );
 
 		BuildMotions( &pSource->motions, motionNodes, pScene, animationSamplingFPS );
 	}
@@ -934,10 +936,11 @@ namespace Donya
 		std::lock_guard<std::mutex> lock( cerealMutex );
 
 		Donya::Serializer seria;
-		bool succeeded = seria.Load( ext, filePath.c_str(), SERIAL_ID, *this );
+		bool succeeded	= seria.Load( ext, filePath.c_str(), SERIAL_ID, *this );
 
 		// I should overwrite file-directory after load, because this will overwritten by Serializer::Load().
-		fileDirectory = ExtractFileDirectoryFromFullPath( filePath );
+		fileDirectory	= ExtractFileDirectoryFromFullPath( filePath );
+		fileName		= filePath.substr( fileDirectory.size() );
 
 		return succeeded;
 	}

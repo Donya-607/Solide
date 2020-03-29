@@ -21,6 +21,10 @@ private:
 	std::shared_ptr<Donya::Model::StaticModel>	pDrawModel;
 	std::shared_ptr<Donya::Model::Pose>			pPose;
 	std::shared_ptr<Donya::Model::PolygonGroup>	pPolygons;
+#if DEBUG_MODE
+	std::shared_ptr<Donya::Model::StaticModel>	pCollisionModel;
+	std::shared_ptr<Donya::Model::Pose>			pCollisionPose;
+#endif // DEBUG_MODE
 public:
 	Terrain( const std::string &drawModelName, const std::string &collisionModelName );
 public:

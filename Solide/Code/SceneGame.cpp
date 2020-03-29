@@ -239,6 +239,9 @@ SceneGame::~SceneGame() = default;
 void SceneGame::Init()
 {
 	Donya::Sound::Play( Music::BGM_Game );
+#if DEBUG_MODE
+	Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
+#endif // DEBUG_MODE
 
 	bool result{};
 
@@ -391,10 +394,9 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->DeactivateShaderNormalSkinning();
 
 		pRenderer->ActivateShaderNormalStatic();
-			pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
-
-			pGoal->Draw( pRenderer.get(), data.goalColor );
-			pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+		pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+		pGoal->Draw( pRenderer.get(), data.goalColor );
+		pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 		pRenderer->DeactivateShaderNormalStatic();
 	}
 	pRenderer->DeactivateConstantScene();

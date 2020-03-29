@@ -24,12 +24,10 @@ Terrain::Terrain( const std::string &drawModelName, const std::string &collision
 	};
 
 	Donya::Loader loader{};
-
 	Load( &loader, drawModelName );
-	pDrawModel = std::make_shared<Donya::Model::StaticModel>
-	(
-		Donya::Model::StaticModel::Create( loader.GetModelSource(), loader.GetFileDirectory() )
-	);
+
+	const auto drawModel = Donya::Model::StaticModel::Create( loader.GetModelSource(), loader.GetFileDirectory() );
+	pDrawModel = std::make_shared<Donya::Model::StaticModel>( drawModel );
 	_ASSERT_EXPR( pDrawModel->WasInitializeSucceeded(), L"Failed : The model creation of Terrain." );
 
 	pPose = std::make_shared<Donya::Model::Pose>();
@@ -40,6 +38,15 @@ Terrain::Terrain( const std::string &drawModelName, const std::string &collision
 	{
 		Load( &loader, collisionModelName );
 	}
+
+#if DEBUG_MODE
+	const auto collisionModel = Donya::Model::StaticModel::Create( loader.GetModelSource(), loader.GetFileDirectory() );
+	pCollisionModel = std::make_shared<Donya::Model::StaticModel>( collisionModel );
+	_ASSERT_EXPR( pCollisionModel->WasInitializeSucceeded(), L"Debug.Failed : The collision model creation of Terrain." );
+	pCollisionPose = std::make_shared<Donya::Model::Pose>();
+	pCollisionPose->AssignSkeletal( loader.GetModelSource().skeletal );
+	pCollisionPose->UpdateTransformMatrices();
+#endif // DEBUG_MODE
 
 	pPolygons = std::make_shared<Donya::Model::PolygonGroup>
 	(
@@ -57,6 +64,7 @@ void Terrain::BuildWorldMatrix()
 	// matWorld =
 	// Donya::Vector4x4::MakeScaling( scale ) *
 	// Donya::Vector4x4::MakeTranslation( translation );
+	
 	matWorld._11 = scale.x;
 	matWorld._22 = scale.y;
 	matWorld._33 = scale.z;
@@ -73,6 +81,10 @@ void Terrain::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 	pRenderer->UpdateConstant( constant );
 	pRenderer->ActivateConstantModel();
 
+#if DEBUG_MODE && 0
+	pRenderer->Render( *pCollisionModel, *pCollisionPose );
+	// pRenderer->Render( *pCollisionModel, *pPose );
+#endif // DEBUG_MODE
 	pRenderer->Render( *pDrawModel, *pPose );
 
 	pRenderer->DeactivateConstantModel();
@@ -85,7 +97,7 @@ void Terrain::ShowImGuiNode( const std::string &nodeCaption )
 	// else
 
 	ImGui::DragFloat3( u8"スケール", &scale.x,		0.01f );
-	ImGui::DragFloat3( u8"平行移動", &translation.x,	0.01f );
+	ImGui::DragFloat3( u8"平行移動", &translation.x,	0.1f );
 
 	ImGui::TreePop();
 }

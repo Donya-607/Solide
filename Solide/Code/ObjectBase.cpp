@@ -438,48 +438,37 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 	const Donya::Vector3	wsRayStart		=  pos;
 	const Donya::Vector3	wsRayEnd		=  wsRayStart + velocity;
 
-	// Terrain space.
-	const Donya::Vector3	tsRayStart		= Transform( invTerrainMat, wsRayStart,	1.0f );
-	const Donya::Vector3	tsRayEnd		= Transform( invTerrainMat, wsRayEnd,	1.0f );
-
 	// Store nearest collided result of rays that be affected offsets, or invalid(wasHit == false).
 	Donya::Model::RaycastResult result{};
+	result.wasHit = false;
+
+	if ( wsRayOffsets.empty() )
 	{
-		result.wasHit = false;
-
-		if ( wsRayOffsets.empty() )
+		result = pTerrain->RaycastWorldSpace( terrainMat, wsRayStart, wsRayEnd );
+	}
+	else // Store a ray pick results of each ray offsets.
+	{
+		std::vector<Donya::Model::RaycastResult> temporaryResults{};
+		for ( const auto &offset : wsRayOffsets )
 		{
-			result = pTerrain->Raycast( tsRayStart, tsRayEnd );
+			auto tmp = pTerrain->RaycastWorldSpace( terrainMat, wsRayStart + offset, wsRayEnd + offset );
+			temporaryResults.emplace_back( std::move( tmp ) );
 		}
-		else
+
+		// Choose the nearest collided result.
+
+		float nearestDistance = FLT_MAX;
+		Donya::Vector3 diff{};
+		for ( const auto &it : temporaryResults )
 		{
-			// Store a ray pick results of each ray offsets.
+			if ( !it.wasHit ) { continue; }
+			// else
 
-			Donya::Vector3 tsRayOffset{};
-			std::vector<Donya::Model::RaycastResult> temporaryResults{};
-			for ( const auto &offset : wsRayOffsets )
+			diff = it.intersection - wsRayStart;
+			if ( diff.Length() < nearestDistance )
 			{
-				tsRayOffset = Transform( invTerrainMat, offset, 1.0f );
-
-				auto tmp = pTerrain->Raycast( tsRayStart + tsRayOffset, tsRayEnd + tsRayOffset );
-				temporaryResults.emplace_back( std::move( tmp ) );
-			}
-
-			// Choose the nearest collided result.
-
-			float nearestDistance = FLT_MAX;
-			Donya::Vector3 diff{};
-			for ( const auto &it : temporaryResults )
-			{
-				if ( !it.wasHit ) { continue; }
-				// else
-
-				diff = it.intersection - tsRayStart;
-				if ( diff.LengthSq() < nearestDistance )
-				{
-					nearestDistance = diff.LengthSq();
-					result = it;
-				}
+				nearestDistance = diff.Length();
+				result = it;
 			}
 		}
 	}
@@ -492,22 +481,19 @@ Actor::CalcedRayResult Actor::CalcCorrectVelocity( const Donya::Vector3 &velocit
 	}
 	// else
 
-	// Transform to World space from Terrains pace.
-	const Donya::Vector3 wsIntersection	= Transform( terrainMat, result.intersection, 1.0f );
-	const Donya::Vector3 wsWallNormal	= Transform( terrainMat, result.nearestPolygon.normal, 0.0f ).Unit();
-
-	const Donya::Vector3 internalVec	= wsRayEnd - wsIntersection;
-	const Donya::Vector3 projVelocity	= -wsWallNormal * Dot( internalVec, -wsWallNormal );
-
-	recursionResult.wsLastIntersection	= wsIntersection;
-	recursionResult.wsLastWallNormal	= wsWallNormal;
-	recursionResult.wsLastWallFace[0] = Transform( terrainMat, result.nearestPolygon.points[0], 1.0f );
-	recursionResult.wsLastWallFace[1] = Transform( terrainMat, result.nearestPolygon.points[1], 1.0f );
-	recursionResult.wsLastWallFace[2] = Transform( terrainMat, result.nearestPolygon.points[2], 1.0f );
-	recursionResult.wasHit = true;
+	const Donya::Vector3 internalVec		= wsRayEnd - result.intersection;
+	const Donya::Vector3 wsFaceNormal		= result.nearestPolygon.normal;
+	const Donya::Vector3 projVelocity		= -wsFaceNormal * Dot( internalVec, -wsFaceNormal );
 
 	constexpr float ERROR_MAGNI = 1.0f + ERROR_ADJUST;
-	Donya::Vector3 correctedVelocity = velocity + ( -projVelocity * ERROR_MAGNI );
+	const Donya::Vector3 correctedVelocity	= velocity - ( projVelocity * ERROR_MAGNI );
+
+	recursionResult.wsLastIntersection		= result.intersection;
+	recursionResult.wsLastWallNormal		= wsFaceNormal;
+	recursionResult.wsLastWallFace[0]		= result.nearestPolygon.points[0];
+	recursionResult.wsLastWallFace[1]		= result.nearestPolygon.points[1];
+	recursionResult.wsLastWallFace[2]		= result.nearestPolygon.points[2];
+	recursionResult.wasHit					= true;
 
 	// Recurse by corrected velocity.
 	// This recursion will stop when the corrected velocity was not collided.
