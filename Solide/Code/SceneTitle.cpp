@@ -78,7 +78,7 @@ namespace
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 1 )
+CEREAL_CLASS_VERSION( Member, 2 )
 
 class ParamTitle : public ParameterBase<ParamTitle>
 {
@@ -120,6 +120,14 @@ public:
 				ImGui::DragFloat ( u8"補間倍率",						&m.camera.slerpFactor,		0.01f );
 				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&m.camera.offsetPos.x,		0.01f );
 				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&m.camera.offsetFocus.x,	0.01f );
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"平行光" ) )
+			{
+				ImGui::ColorEdit4( u8"色", &m.directionalLight.color.x );
+				ImGui::SliderFloat4( u8"方向", &m.directionalLight.direction.x, -1.0f, 1.0f );
 
 				ImGui::TreePop();
 			}
@@ -296,23 +304,19 @@ void SceneTitle::Draw( float elapsedTime )
 
 	ClearBackGround();
 
-	const Donya::Vector4   cameraPos{ iCamera.GetPosition(), 1.0f };
-	const Donya::Vector4   lightDir{ 0.0f, -1.0f, 0.0f, 0.0f };
-	const Donya::Vector4x4 V{ iCamera.CalcViewMatrix() };
-	const Donya::Vector4x4 P{ iCamera.GetProjectionMatrix() };
-	const Donya::Vector4x4 VP{ V * P };
+	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
 	const auto data = FetchMember();
-	const auto &trans = data.transparency;
-
+	
 	{
 		Donya::Model::Constants::PerScene::Common constant{};
-		constant.directionalLight.color		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-		constant.directionalLight.direction	= lightDir;
-		constant.eyePosition				= cameraPos;
-		constant.viewProjMatrix				= VP;
+		constant.directionalLight	= data.directionalLight;
+		constant.eyePosition		= Donya::Vector4{ iCamera.GetPosition(), 1.0f };
+		constant.viewProjMatrix		= VP;
 		pRenderer->UpdateConstant( constant );
 	}
+
 	{
+		const auto &trans = data.transparency;
 		RenderingHelper::TransConstant constant{};
 		constant.zNear				= trans.zNear;
 		constant.zFar				= trans.zFar;
@@ -320,15 +324,29 @@ void SceneTitle::Draw( float elapsedTime )
 		constant.heightThreshold	= pPlayer->GetPosition().y + trans.heightThreshold;
 		pRenderer->UpdateConstant( constant );
 	}
+	
+	pRenderer->ActivateDepthStencilModel();
+	pRenderer->ActivateRasterizerModel();
+	pRenderer->ActivateSamplerModel();
 	pRenderer->ActivateConstantScene();
+	pRenderer->ActivateConstantTrans();
+	{
+		// The drawing priority is determined by the priority of the information.
 
-	// The drawing priority is determined by the priority of the information.
+		pRenderer->ActivateShaderNormalSkinning();
+		PlayerDraw();
+		pRenderer->DeactivateShaderNormalSkinning();
 
-	PlayerDraw();
-
-	pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
-
-	pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+		pRenderer->ActivateShaderNormalStatic();
+		pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+		pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+		pRenderer->DeactivateShaderNormalStatic();
+	}
+	pRenderer->DeactivateConstantTrans();
+	pRenderer->DeactivateConstantScene();
+	pRenderer->DeactivateDepthStencilModel();
+	pRenderer->DeactivateRasterizerModel();
+	pRenderer->DeactivateSamplerModel();
 
 	if ( Common::IsShowCollision() )
 	{
@@ -359,8 +377,8 @@ void SceneTitle::Draw( float elapsedTime )
 			cube.Render
 			(
 				nullptr, true, true,
-				W * V * P, W,
-				lightDir, color
+				W * VP, W,
+				data.directionalLight.direction, color
 			);
 		};
 
