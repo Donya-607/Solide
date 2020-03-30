@@ -380,7 +380,7 @@ void SceneGame::Draw( float elapsedTime )
 	ClearBackGround();
 
 	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
-	const auto data   = FetchMember();
+	const auto data = FetchMember();
 	
 	{
 		Donya::Model::Constants::PerScene::Common constant{};

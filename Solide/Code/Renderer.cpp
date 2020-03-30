@@ -177,12 +177,12 @@ bool RenderingHelper::State::Create()
 	if ( RS == DEFAULT_ID )
 	{
 		RS = FindAvailableID( Donya::Rasterizer::IsAlreadyExists );
-		if ( !Donya::Rasterizer::CreateState( DS, RasterizerDesc() ) ) { succeeded = false; }
+		if ( !Donya::Rasterizer::CreateState( RS, RasterizerDesc() ) ) { succeeded = false; }
 	}
 	if ( PS == DEFAULT_ID )
 	{
 		PS = FindAvailableID( Donya::Sampler::IsAlreadyExists );
-		if ( !Donya::Sampler::CreateState( DS, SamplerDesc() ) ) { succeeded = false; }
+		if ( !Donya::Sampler::CreateState( PS, SamplerDesc() ) ) { succeeded = false; }
 	}
 
 	return succeeded;
