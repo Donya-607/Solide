@@ -1,9 +1,11 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "Donya/Collision.h"
 #include "Donya/Quaternion.h"
+#include "Donya/Template.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
@@ -24,6 +26,35 @@ namespace Bullet
 	static void UseBulletsImGui();
 	#endif // USE_IMGUI
 
+	class BulletBase;
+	class BulletAdmin : Donya::Singleton<BulletAdmin>
+	{
+	private:
+		std::vector<std::shared_ptr<BulletBase>> bulletPtrs;
+	public:
+		struct FireDesc
+		{
+			Kind			kind	= Kind::KindCount;
+			float			speed	= 0.0f;
+			Donya::Vector3	direction;
+			Donya::Vector3	generatePos;
+		};
+	public:
+		/// <summary>
+		/// Clear all bullets.
+		/// </summary>
+		void Init();
+		void Uninit() {}
+
+		void Update( float elapsedTime );
+		void PhysicUpdate();
+
+		void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
+		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
+	public:
+		void Append( const FireDesc &fireParameter );
+	};
+
 	class BulletBase
 	{
 	protected:
@@ -39,21 +70,22 @@ namespace Bullet
 		BulletBase &operator = ( BulletBase && )		= default;
 		virtual ~BulletBase()							= default;
 	public:
-		virtual void Init( const Donya::Vector3 &wsInitialPos, float initialSpeed, const Donya::Vector3 &direction );
+		virtual void Init( const BulletAdmin::FireDesc &initializeParameter );
 		virtual void Uninit() {}
 
 		virtual void Update( float elapsedTime ) {}
 		virtual void PhysicUpdate();
 
-		virtual void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) = 0;
-		virtual void DrawHitBox( const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
+		virtual void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
+		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
 	protected:
 		virtual void AttachSelfKind() = 0;
 	public:
-		virtual bool			ShouldRemove()	const = 0;
-		virtual Kind			GetKind()		const { return kind; }
-		virtual Donya::Vector3	GetPosition()	const { return pos; }
-		virtual Donya::AABB		GetHitBox()		const { return Donya::AABB::Nil(); }
+		virtual bool				ShouldRemove()		const = 0;
+		virtual Kind				GetKind()			const { return kind; }
+		virtual Donya::Vector3		GetPosition()		const { return pos; }
+		virtual Donya::AABB			GetHitBox()			const { return Donya::AABB::Nil(); }
+		virtual Donya::Vector4x4	GetWorldMatrix()	const;
 	public:
 	#if USE_IMGUI
 		/// <summary>
@@ -63,17 +95,17 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 
-
-	class OilBullet : public BulletBase
+	namespace Impl
 	{
-	public:
-		void Init( const Donya::Vector3 &wsInitialPos, float initialSpeed, const Donya::Vector3 &direction ) override;
-
-		void Update( float elapsedTime );
-		void PhysicUpdate();
-
-		void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
-	public:
-		Donya::AABB GetHitBox() const override;
-	};
+		class OilBullet : public BulletBase
+		{
+		public:
+			void Update( float elapsedTime ) override;
+			void PhysicUpdate() override;
+		private:
+			void AttachSelfKind() override;
+		public:
+			Donya::AABB GetHitBox() const override;
+		};
+	}
 }

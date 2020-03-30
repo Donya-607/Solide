@@ -1,5 +1,6 @@
 #include "Bullet.h"
 
+#include <algorithm>
 #include <array>
 
 #include "Donya/Loader.h"
@@ -97,15 +98,33 @@ namespace Bullet
 
 			return models[scast<int>( kind )];
 		}
+
+		void DrawModel( Kind kind, RenderingHelper *pRenderer, const BulletBase &bullet, const Donya::Vector4 &color )
+		{
+			if ( !pRenderer ) { return; }
+			// else
+
+			const auto pModel = GetModelPtr( kind );
+			if ( !pModel ) { return; }
+			// else
+
+			Donya::Model::Constants::PerModel::Common constant{};
+			constant.drawColor		= color;
+			constant.worldMatrix	= bullet.GetWorldMatrix();
+			pRenderer->UpdateConstant( constant );
+			pRenderer->ActivateConstantModel();
+
+			pRenderer->Render( pModel->model, pModel->pose );
+
+			pRenderer->DeactivateConstantModel();
+		}
 	}
 
 	bool LoadBulletsResource()
 	{
-		bool result = true;
 		bool succeeded = true;
 
-		result = LoadModels();
-		if ( !result ) { succeeded = false; }
+		if ( !LoadModels() ) { succeeded = false; }
 
 		return succeeded;
 	}
@@ -201,30 +220,155 @@ public:
 };
 
 
-namespace
-{
-	void DrawHitBox( RenderingHelper *pRenderer, const Donya::AABB &drawObj, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
-	{
-		Section hitBoxDrawer{ drawObj.pos, drawObj };
-		hitBoxDrawer.DrawHitBox( pRenderer, VP, color );
-	}
-}
-
-
 namespace Bullet
 {
-	void BulletBase::Init( const Donya::Vector3 &wsPos, float speed, const Donya::Vector3 &direction )
+#if USE_IMGUI
+	void UseBulletsImGui()
+	{
+		ParamOilBullet::Get().UseImGui();
+	}
+#endif // USE_IMGUI
+
+
+	void BulletAdmin::Init()
+	{
+		bulletPtrs.clear();
+	}
+
+	void BulletAdmin::Update( float elapsedTime )
+	{
+		for ( auto &pIt : bulletPtrs )
+		{
+			if ( !pIt ) { continue; }
+			// else
+
+			pIt->Update( elapsedTime );
+		}
+
+		auto result = std::remove_if
+		(
+			bulletPtrs.begin(), bulletPtrs.end(),
+			[]( std::shared_ptr<BulletBase> &pElement )
+			{
+				return ( !pElement ) ? true : pElement->ShouldRemove();
+			}
+		);
+		bulletPtrs.erase( result, bulletPtrs.end() );
+	}
+	void BulletAdmin::PhysicUpdate()
+	{
+		for ( auto &pIt : bulletPtrs )
+		{
+			if ( !pIt ) { continue; }
+			// else
+
+			pIt->PhysicUpdate();
+		}
+	}
+
+	void BulletAdmin::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+	{
+		for ( auto &pIt : bulletPtrs )
+		{
+			if ( !pIt ) { continue; }
+			// else
+
+			pIt->Draw( pRenderer, color );
+		}
+	}
+	void BulletAdmin::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+	{
+		for ( auto &pIt : bulletPtrs )
+		{
+			if ( !pIt ) { continue; }
+			// else
+
+			pIt->DrawHitBox( pRenderer, VP, color );
+		}
+	}
+
+
+	void BulletBase::Init( const BulletAdmin::FireDesc &param )
 	{
 		AttachSelfKind();
-		pos			= wsPos;
-		velocity	= direction * speed;
-		orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), direction );
+		pos			= param.generatePos;
+		velocity	= param.direction * param.speed;
+		orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), param.direction );
 	}
 	void BulletBase::PhysicUpdate()
 	{
 		pos += velocity;
 	}
+	void BulletBase::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+	{
+		Bullet::DrawModel( kind, pRenderer, *this, color );
+	}
+	void BulletBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+	{
+		if ( !pRenderer ) { return; }
+		// else
 
+		const auto &body = GetHitBox();
+		if ( body == Donya::AABB::Nil() ) { return; }
+		// else
 
+		Donya::Model::Cube::Constant constant{};
+		constant.matWorld		= GetWorldMatrix();
+		constant.matViewProj	= VP;
+		constant.drawColor		= color;
+		pRenderer->ProcessDrawingCube( constant );
+	}
+	Donya::Vector4x4 BulletBase::GetWorldMatrix() const
+	{
+		Donya::Vector4x4 world = orientation.RequireRotationMatrix();
+		world._41 = pos.x;
+		world._42 = pos.y;
+		world._43 = pos.z;
+		return world;
+	}
+#if USE_IMGUI
+	bool BulletBase::ShowImGuiNode( const std::string &nodeCaption )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return false; }
+		// else
 
+		bool wantRemove = false;
+		if ( ImGui::Button( u8"取り除く" ) ) { wantRemove = true; }
+
+		const std::string kindName =
+			( kind == Kind::KindCount )
+			? "ERROR_KIND"
+			: Bullet::MODEL_NAMES[scast<int>( kind )];
+		ImGui::Text( u8"種類：%s", kindName.c_str() );
+
+		ImGui::DragFloat3( u8"ワールド座標", &pos.x,			0.1f );
+		ImGui::DragFloat3( u8"ワールド速度", &velocity.x,		0.1f );
+		ImGui::SliderFloat4( u8"姿勢",		&orientation.x,	-1.0f, 1.0f );
+
+		ImGui::TreePop();
+		return wantRemove;
+	}
+#endif // USE_IMGUI
+}
+
+namespace Bullet
+{
+	namespace Impl
+	{
+		void OilBullet::Update( float elapsedTime )
+		{
+			velocity.y += ParamOilBullet::Get().Data().gravity;
+		}
+		void OilBullet::PhysicUpdate()
+		{
+			BulletBase::PhysicUpdate();
+		}
+		void OilBullet::AttachSelfKind() { kind = Kind::Oil; }
+		Donya::AABB OilBullet::GetHitBox() const
+		{
+			Donya::AABB tmp = ParamOilBullet::Get().Data().hitBox;
+			tmp.pos += GetPosition();
+			return tmp;
+		}
+	}
 }
