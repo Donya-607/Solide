@@ -30,17 +30,15 @@ namespace
 		}
 		camera;
 
-		struct
-		{
-			float enableNear = 1.0f; // World space.
-			float enableFar	 = 2.0f; // World space.
-			float lowerAlpha = 0.0f; // 0.0f ~ 1.0f.
-		}
-		transparency;
+		// The threshold member will behave as offset from the player.
+		// That offset will function as: threshold = player.pos.y + offset;
+		RenderingHelper::TransConstant transparency;
 
 		Donya::Vector3 playerInitialPos;
 
 		int waitFrameUntilFade = 60;
+
+		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
 
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
@@ -51,13 +49,10 @@ namespace
 		{
 			archive
 			(
-				CEREAL_NVP( camera.slerpFactor ),
-				CEREAL_NVP( camera.offsetPos ),
-				CEREAL_NVP( camera.offsetFocus ),
-				CEREAL_NVP( transparency.enableNear ),
-				CEREAL_NVP( transparency.enableFar ),
-				CEREAL_NVP( transparency.lowerAlpha ),
-				CEREAL_NVP( playerInitialPos )
+				CEREAL_NVP( camera.slerpFactor	),
+				CEREAL_NVP( camera.offsetPos	),
+				CEREAL_NVP( camera.offsetFocus	),
+				CEREAL_NVP( playerInitialPos	)
 			);
 
 			if ( 1 <= version )
@@ -65,6 +60,18 @@ namespace
 				archive( CEREAL_NVP( waitFrameUntilFade ) );
 			}
 			if ( 2 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( transparency.zNear				),
+					CEREAL_NVP( transparency.zFar				),
+					CEREAL_NVP( transparency.lowerAlpha			),
+					CEREAL_NVP( transparency.heightThreshold	),
+					CEREAL_NVP( directionalLight.color			),
+					CEREAL_NVP( directionalLight.direction		)
+				);
+			}
+			if ( 3 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -119,9 +126,10 @@ public:
 
 			if ( ImGui::TreeNode( u8"近くのオブジェクトに適用する透明度" ) )
 			{
-				ImGui::DragFloat( u8"範囲・手前側",	&m.transparency.enableNear,	0.01f, 0.0f );
-				ImGui::DragFloat( u8"範囲・奥側",	&m.transparency.enableFar,	0.01f, 0.0f );
-				ImGui::SliderFloat( u8"最低透明度", &m.transparency.lowerAlpha, 0.0f, 1.0f );
+				ImGui::DragFloat( u8"範囲・手前側",	&m.transparency.zNear,		0.01f, 0.0f );
+				ImGui::DragFloat( u8"範囲・奥側",	&m.transparency.zFar,		0.01f, 0.0f );
+				ImGui::SliderFloat( u8"最低透明度",	&m.transparency.lowerAlpha, 0.0f,  1.0f );
+				ImGui::DragFloat( u8"透明を適用する高さ（自機からの相対）", &m.transparency.heightThreshold, 0.01f );
 
 				ImGui::TreePop();
 			}
@@ -169,6 +177,9 @@ SceneTitle::~SceneTitle() = default;
 void SceneTitle::Init()
 {
 	Donya::Sound::Play( Music::BGM_Title );
+#if DEBUG_MODE
+	Donya::Sound::AppendFadePoint( Music::BGM_Title, 2.0f, 0.0f, true ); // Too noisy.
+#endif // DEBUG_MODE
 
 	timer = 0;
 	nowWaiting = false;
@@ -303,10 +314,10 @@ void SceneTitle::Draw( float elapsedTime )
 	}
 	{
 		RenderingHelper::TransConstant constant{};
-		constant.zNear				= trans.enableNear;
-		constant.zFar				= trans.enableFar;
+		constant.zNear				= trans.zNear;
+		constant.zFar				= trans.zFar;
 		constant.lowerAlpha			= trans.lowerAlpha;
-		constant.heightThreshold	= pPlayer->GetPosition().y - pPlayer->GetHitBox().size.y;
+		constant.heightThreshold	= pPlayer->GetPosition().y + trans.heightThreshold;
 		pRenderer->UpdateConstant( constant );
 	}
 	pRenderer->ActivateConstantScene();

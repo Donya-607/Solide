@@ -60,7 +60,7 @@ namespace PlayerModel
 	bool LoadModel()
 	{
 		// Already has loaded.
-		if ( pModel ) { return false; }
+		if ( pModel ) { return true; }
 		// else
 
 		if ( !Donya::IsExistFile( MODEL_FILE_PATH ) )

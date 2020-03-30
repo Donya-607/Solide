@@ -42,14 +42,9 @@ namespace
 		Section playerInitialPos;
 		Section goalArea;
 
-		struct
-		{
-			float enableNear = 1.0f; // World space.
-			float enableFar	 = 2.0f; // World space.
-			float lowerAlpha = 0.0f; // 0.0f ~ 1.0f.
-			float applyThresholdOffset = -1.0f; // I don't wanna transparentize a pixel that under the player. This offset will function as: threshold = player.pos.y + offset;
-		}
-		transparency;
+		// The threshold member will behave as offset from the player.
+		// That offset will function as: threshold = player.pos.y + offset;
+		RenderingHelper::TransConstant transparency;
 
 		int waitFrameUntilShowTutorial  = 60;
 		int waitFrameUntilSlideTutorial = 60;
@@ -83,18 +78,9 @@ namespace
 			}
 			if ( 2 <= version )
 			{
-				archive
-				(
-					CEREAL_NVP( transparency.enableNear ),
-					CEREAL_NVP( transparency.enableFar  ),
-					CEREAL_NVP( transparency.lowerAlpha )
-				);
-			}
-			if ( 3 <= version )
-			{
 				archive( CEREAL_NVP( waitFrameUntilFade ) );
 			}
-			if ( 4 <= version )
+			if ( 3 <= version )
 			{
 				archive
 				(
@@ -102,11 +88,11 @@ namespace
 					CEREAL_NVP( waitFrameUntilSlideTutorial )
 				);
 			}
-			if ( 5 <= version )
+			if ( 4 <= version )
 			{
 				archive( CEREAL_NVP( goalColor ) );
 			}
-			if ( 6 <= version )
+			if ( 5 <= version )
 			{
 				archive
 				(
@@ -114,18 +100,24 @@ namespace
 					CEREAL_NVP( directionalLight.direction	)
 				);
 			}
-			if ( 7 <= version )
+			if ( 6 <= version )
 			{
-				archive( CEREAL_NVP( transparency.applyThresholdOffset ) );
+				archive
+				(
+					CEREAL_NVP( transparency.zNear				),
+					CEREAL_NVP( transparency.zFar				),
+					CEREAL_NVP( transparency.lowerAlpha			),
+					CEREAL_NVP( transparency.heightThreshold	)
+				);
 			}
-			if ( 8 <= version )
+			if ( 7 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 7 )
+CEREAL_CLASS_VERSION( Member, 6 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -188,10 +180,10 @@ public:
 
 			if ( ImGui::TreeNode( u8"近くのオブジェクトに適用する透明度" ) )
 			{
-				ImGui::DragFloat( u8"範囲・手前側",	&m.transparency.enableNear,	0.01f, 0.0f );
-				ImGui::DragFloat( u8"範囲・奥側",	&m.transparency.enableFar,	0.01f, 0.0f );
-				ImGui::SliderFloat( u8"最低透明度",	&m.transparency.lowerAlpha, 0.0f, 1.0f );
-				ImGui::DragFloat( u8"透明を適用する高さ（自機からの相対）",		&m.transparency.applyThresholdOffset, 0.01f );
+				ImGui::DragFloat( u8"範囲・手前側",	&m.transparency.zNear,		0.01f, 0.0f );
+				ImGui::DragFloat( u8"範囲・奥側",	&m.transparency.zFar,		0.01f, 0.0f );
+				ImGui::SliderFloat( u8"最低透明度",	&m.transparency.lowerAlpha,	0.0f,  1.0f );
+				ImGui::DragFloat( u8"透明を適用する高さ（自機からの相対）",		&m.transparency.heightThreshold, 0.01f );
 
 				ImGui::TreePop();
 			}
@@ -401,10 +393,10 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		const auto &trans = data.transparency;
 		RenderingHelper::TransConstant constant{};
-		constant.zNear				= trans.enableNear;
-		constant.zFar				= trans.enableFar;
+		constant.zNear				= trans.zNear;
+		constant.zFar				= trans.zFar;
 		constant.lowerAlpha			= trans.lowerAlpha;
-		constant.heightThreshold	= pPlayer->GetPosition().y + trans.applyThresholdOffset;
+		constant.heightThreshold	= pPlayer->GetPosition().y + trans.heightThreshold;
 		pRenderer->UpdateConstant( constant );
 	}
 

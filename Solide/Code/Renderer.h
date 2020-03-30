@@ -20,7 +20,7 @@ public:
 		float zNear				= 1.0f;
 		float zFar				= 3.0f;
 		float lowerAlpha		= 0.1f;
-		float heightThreshold	= 0.0f;	// Transparency applies only to pixels above this threshold.
+		float heightThreshold	= 0.0f;	// I don't wanna transparentize a pixel that under the threshold.
 	};
 private:
 	struct CBuffer
