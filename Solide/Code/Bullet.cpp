@@ -234,6 +234,10 @@ namespace Bullet
 	{
 		bulletPtrs.clear();
 	}
+	void BulletAdmin::Uninit()
+	{
+		bulletPtrs.clear();
+	}
 
 	void BulletAdmin::Update( float elapsedTime )
 	{

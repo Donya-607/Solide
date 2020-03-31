@@ -9,7 +9,6 @@
 #include "Donya/Camera.h"
 #include "Donya/Constant.h"
 #include "Donya/Donya.h"		// Use GetFPS().
-#include "Donya/GeometricPrimitive.h"
 #include "Donya/Keyboard.h"
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
@@ -21,6 +20,7 @@
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
 
+#include "Bullet.h"
 #include "Common.h"
 #include "Fader.h"
 #include "FilePath.h"
@@ -271,6 +271,8 @@ void SceneGame::Init()
 	ParamGame::Get().Init();
 	const auto data = FetchMember();
 
+	Bullet::BulletAdmin::Get().Init();
+
 	pBG = std::make_unique<BG>();
 	result = pBG->LoadSprites( L"./Data/Images/BG/Back.png", L"./Data/Images/BG/Cloud.png" );
 	assert( result );
@@ -307,13 +309,14 @@ void SceneGame::Uninit()
 {
 	pTerrain.reset();
 
-	if ( pGoal ) { pGoal->Uninit(); }
-	if ( pObstacles ) { pObstacles->Uninit(); }
+	if ( pGoal		) { pGoal->Uninit();		}
+	if ( pObstacles	) { pObstacles->Uninit();	}
 
 	PlayerUninit();
 
 	ObstacleBase::ParameterUninit();
 	ParamGame::Get().Uninit();
+	Bullet::BulletAdmin::Get().Uninit();
 
 	Donya::Sound::Stop( Music::BGM_Game );
 }
@@ -357,7 +360,11 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	PlayerUpdate( elapsedTime );
 
+	Bullet::BulletAdmin::Get().Update( elapsedTime );
+
 	PlayerPhysicUpdate( pObstacles->GetHitBoxes(), &pTerrain );
+
+	Bullet::BulletAdmin::Get().PhysicUpdate();
 
 	CameraUpdate();
 
@@ -413,6 +420,7 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->DeactivateShaderNormalSkinning();
 
 		pRenderer->ActivateShaderNormalStatic();
+		Bullet::BulletAdmin::Get().Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 		pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 		pGoal->Draw( pRenderer.get(), data.goalColor );
 		pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
@@ -429,6 +437,7 @@ void SceneGame::Draw( float elapsedTime )
 		PlayerDrawHitBox( VP );
 
 		pGoal->DrawHitBox( pRenderer.get(), VP, data.goalColor );
+		Bullet::BulletAdmin::Get().DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 1.0f } );
 		pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 1.0f } );
 	}
 	
@@ -442,8 +451,6 @@ void SceneGame::Draw( float elapsedTime )
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
-		static auto cube = Donya::Geometric::CreateCube();
-
 		// Sections
 		{
 			constexpr float selectColorBase  = 0.6f;

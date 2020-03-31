@@ -27,8 +27,9 @@ namespace Bullet
 	#endif // USE_IMGUI
 
 	class BulletBase;
-	class BulletAdmin : Donya::Singleton<BulletAdmin>
+	class BulletAdmin : public Donya::Singleton<BulletAdmin>
 	{
+		//friend Donya::Singleton<BulletAdmin>;
 	private:
 		std::vector<std::shared_ptr<BulletBase>> bulletPtrs;
 	public:
@@ -44,7 +45,7 @@ namespace Bullet
 		/// Clear all bullets.
 		/// </summary>
 		void Init();
-		void Uninit() {}
+		void Uninit();
 
 		void Update( float elapsedTime );
 		void PhysicUpdate();

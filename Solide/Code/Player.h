@@ -41,6 +41,8 @@ private:
 		int  CalcNowKind( Player &player ) const;
 	};
 
+
+
 	class MoverBase
 	{
 	public:

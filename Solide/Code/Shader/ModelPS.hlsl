@@ -20,6 +20,8 @@ float CalcTransparency( float3 pixelPos )
 {
 	float	distance		= length( pixelPos - cbEyePosition.xyz );
 	float	percent			= saturate( ( distance - cbTransNear ) / ( cbTransFar - cbTransNear ) );
+			clip( percent );
+			
 	float	biasedPercent	= cbTransLowerAlpha + ( percent * ( 1.0f - cbTransLowerAlpha ) );
 	
 	// I don't wanna transparentize if the pixel under the threshold.
