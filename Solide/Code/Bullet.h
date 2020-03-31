@@ -29,7 +29,6 @@ namespace Bullet
 	class BulletBase;
 	class BulletAdmin : public Donya::Singleton<BulletAdmin>
 	{
-		//friend Donya::Singleton<BulletAdmin>;
 	private:
 		std::vector<std::shared_ptr<BulletBase>> bulletPtrs;
 	public:
