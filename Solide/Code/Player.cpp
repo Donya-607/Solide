@@ -989,7 +989,9 @@ void Player::Shot( float elapsedTime )
 	auto useParam	= ( IsOiled() )
 					? data.oiled.basic.shotDesc
 					: data.normal.shotDesc;
-	useParam.speed *= elapsedTime;
+	useParam.speed			*= elapsedTime;
+	useParam.direction		=  orientation.RotateVector( useParam.direction );
+	useParam.generatePos	+= GetPosition();
 
 	Bullet::BulletAdmin::Get().Append( useParam );
 }

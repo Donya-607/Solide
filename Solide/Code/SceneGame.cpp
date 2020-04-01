@@ -272,6 +272,7 @@ void SceneGame::Init()
 	const auto data = FetchMember();
 
 	Bullet::BulletAdmin::Get().Init();
+	Bullet::LoadBulletsResource();
 
 	pBG = std::make_unique<BG>();
 	result = pBG->LoadSprites( L"./Data/Images/BG/Back.png", L"./Data/Images/BG/Cloud.png" );
@@ -347,6 +348,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	UseImGui();
 
 	ObstacleBase::UseImGui();
+	Bullet::UseBulletsImGui();
 #endif // USE_IMGUI
 
 	controller.Update();

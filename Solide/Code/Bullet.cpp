@@ -120,30 +120,28 @@ namespace Bullet
 		}
 	}
 
-	bool LoadBulletsResource()
-	{
-		bool succeeded = true;
-
-		if ( !LoadModels() ) { succeeded = false; }
-
-		return succeeded;
-	}
-
-	std::string GetBulletName( Kind kind )
+	// HACK : This method using switch-case statement.
+	std::shared_ptr<BulletBase> MakeBullet( Kind kind )
 	{
 		if ( IsOutOfRange( kind ) )
 		{
 			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
-			return "";
+			return nullptr;
 		}
 		// else
 
-		return std::string{ MODEL_NAMES[scast<int>( kind )] };
+		switch ( kind )
+		{
+		case Kind::Oil:	return std::make_shared<Impl::OilBullet>();
+		default: _ASSERT_EXPR( 0, L"Error : Unexpected bullet kind!" );	break;
+		}
+		return nullptr;
 	}
 
 	struct OilMember
 	{
-		float		gravity = 1.0f;
+		float		gravity		= 1.0f;	// Absolute value.
+		float		drawScale	= 1.0f;
 		Donya::AABB	hitBox;
 	private:
 		friend class cereal::access;
@@ -158,6 +156,10 @@ namespace Bullet
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( drawScale ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -169,6 +171,8 @@ namespace Bullet
 			// else
 
 			ImGui::DragFloat( u8"重力", &gravity, 0.01f, 0.0f );
+			ImGui::DragFloat( u8"描画スケール", &drawScale, 0.01f, 0.0f );
+
 			ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
 
 			ImGui::TreePop();
@@ -176,7 +180,7 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::OilMember, 0 )
+CEREAL_CLASS_VERSION( Bullet::OilMember, 1 )
 
 class ParamOilBullet : public ParameterBase<ParamOilBullet>
 {
@@ -235,6 +239,27 @@ namespace
 
 namespace Bullet
 {
+	bool LoadBulletsResource()
+	{
+		bool succeeded = true;
+
+		if ( !LoadModels() ) { succeeded = false; }
+
+		ParamOilBullet::Get().Init();
+
+		return succeeded;
+	}
+	std::string GetBulletName( Kind kind )
+	{
+		if ( IsOutOfRange( kind ) )
+		{
+			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
+			return "";
+		}
+		// else
+
+		return std::string{ MODEL_NAMES[scast<int>( kind )] };
+	}
 #if USE_IMGUI
 	void UseBulletsImGui()
 	{
@@ -326,6 +351,16 @@ namespace Bullet
 		}
 	}
 
+	void BulletAdmin::Append( const FireDesc &param )
+	{
+		std::shared_ptr<BulletBase> tmp = MakeBullet( param.kind );
+		if ( !tmp ) { assert( !"Unexpected error in bullet." ); return; }
+		// else
+
+		bulletPtrs.emplace_back( std::move( tmp ) );
+		bulletPtrs.back()->Init( param );
+	}
+
 
 	void BulletBase::Init( const BulletAdmin::FireDesc &param )
 	{
@@ -333,6 +368,10 @@ namespace Bullet
 		pos			= param.generatePos;
 		velocity	= param.direction * param.speed;
 		orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), param.direction );
+	}
+	void BulletBase::Update( float elapsedTime )
+	{
+		orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
 	}
 	void BulletBase::PhysicUpdate()
 	{
@@ -351,8 +390,16 @@ namespace Bullet
 		if ( body == Donya::AABB::Nil() ) { return; }
 		// else
 
+		Donya::Vector4x4 world{};
+		world._11 = body.size.x * 2.0f; // Half size -> Whole size
+		world._22 = body.size.y * 2.0f; // Half size -> Whole size
+		world._33 = body.size.z * 2.0f; // Half size -> Whole size
+		world._41 = body.pos.x;
+		world._42 = body.pos.y;
+		world._43 = body.pos.z;
+
 		Donya::Model::Cube::Constant constant{};
-		constant.matWorld		= GetWorldMatrix();
+		constant.matWorld		= world;
 		constant.matViewProj	= VP;
 		constant.drawColor		= color;
 		pRenderer->ProcessDrawingCube( constant );
@@ -392,18 +439,42 @@ namespace Bullet
 	{
 		void OilBullet::Update( float elapsedTime )
 		{
-			velocity.y += ParamOilBullet::Get().Data().gravity;
+			velocity.y -= ParamOilBullet::Get().Data().gravity;
+			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
 		}
 		void OilBullet::PhysicUpdate()
 		{
 			BulletBase::PhysicUpdate();
 		}
+		void OilBullet::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+		{
+			BulletBase::DrawHitBox( pRenderer, VP, { 0.2f, 0.2f, 0.2f, 0.7f } );
+		}
 		void OilBullet::AttachSelfKind() { kind = Kind::Oil; }
+		bool OilBullet::ShouldRemove() const
+		{
+		#if DEBUG_MODE
+			return !( rand() % 512 );
+		#endif // DEBUG_MODE
+		}
 		Donya::AABB OilBullet::GetHitBox() const
 		{
 			Donya::AABB tmp = ParamOilBullet::Get().Data().hitBox;
 			tmp.pos += GetPosition();
 			return tmp;
+		}
+		Donya::Vector4x4 OilBullet::GetWorldMatrix() const
+		{
+			const auto data = ParamOilBullet::Get().Data();
+			Donya::Vector4x4 world{};
+			world._11 = data.drawScale;
+			world._22 = data.drawScale;
+			world._33 = data.drawScale;
+			world *= orientation.RequireRotationMatrix();
+			world._41 = pos.x;
+			world._42 = pos.y;
+			world._43 = pos.z;
+			return world;
 		}
 	}
 }

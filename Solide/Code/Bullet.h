@@ -21,10 +21,10 @@ namespace Bullet
 		KindCount
 	};
 
-	static bool LoadBulletsResource();
-	static std::string GetBulletName( Kind bulletKind );
+	bool LoadBulletsResource();
+	std::string GetBulletName( Kind bulletKind );
 	#if USE_IMGUI
-	static void UseBulletsImGui();
+	void UseBulletsImGui();
 	#endif // USE_IMGUI
 
 	class BulletBase;
@@ -81,7 +81,7 @@ namespace Bullet
 	class BulletBase
 	{
 	protected:
-		Kind				kind;
+		Kind				kind = Kind::KindCount;
 		Donya::Vector3		pos;
 		Donya::Vector3		velocity;
 		Donya::Quaternion	orientation;
@@ -96,7 +96,7 @@ namespace Bullet
 		virtual void Init( const BulletAdmin::FireDesc &initializeParameter );
 		virtual void Uninit() {}
 
-		virtual void Update( float elapsedTime ) {}
+		virtual void Update( float elapsedTime );
 		virtual void PhysicUpdate();
 
 		virtual void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
@@ -125,10 +125,13 @@ namespace Bullet
 		public:
 			void Update( float elapsedTime ) override;
 			void PhysicUpdate() override;
+			void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) override;
 		private:
 			void AttachSelfKind() override;
 		public:
-			Donya::AABB GetHitBox() const override;
+			bool				ShouldRemove()		const override;
+			Donya::AABB			GetHitBox()			const override;
+			Donya::Vector4x4	GetWorldMatrix()	const override;
 		};
 	}
 }
