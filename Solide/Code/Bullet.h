@@ -5,6 +5,7 @@
 
 #include "Donya/Collision.h"
 #include "Donya/Quaternion.h"
+#include "Donya/Serializer.h"
 #include "Donya/Template.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
@@ -38,6 +39,28 @@ namespace Bullet
 			float			speed	= 0.0f;
 			Donya::Vector3	direction;
 			Donya::Vector3	generatePos;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( kind		),
+					CEREAL_NVP( speed		),
+					CEREAL_NVP( direction	),
+					CEREAL_NVP( generatePos	)
+				);
+
+				if ( 0 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		#if USE_IMGUI
+		public:
+			void ShowImGuiNode( const std::string &nodeCaption, bool generatePosIsRelative = true );
+		#endif // USE_IMGUI
 		};
 	public:
 		/// <summary>
@@ -109,3 +132,4 @@ namespace Bullet
 		};
 	}
 }
+CEREAL_CLASS_VERSION( Bullet::BulletAdmin::FireDesc, 0 )

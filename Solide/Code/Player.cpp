@@ -19,6 +19,7 @@
 #include "Donya/Keyboard.h"
 #endif // DEBUG_MODE
 
+#include "Bullet.h"
 #include "Common.h"
 #include "FilePath.h"
 #include "Music.h"
@@ -125,6 +126,8 @@ namespace
 			// That default value is visible and basic.
 
 			Donya::AABB hitBoxStage{ {}, { 0.5f, 0.5f, 0.5f }, true }; // Collide to a stage.
+
+			Bullet::BulletAdmin::FireDesc shotDesc;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -141,6 +144,10 @@ namespace
 				);
 
 				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( shotDesc ) );
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -204,6 +211,8 @@ namespace
 		float canRideSlopeBorder = 0.0f;	// The standing face is ridable if that statement is true: canRideSlopeBorder <= fabsf( max( 0.0f, Dot( faceNormal, UP ) ) )
 
 		std::vector<int> useMotionIndices;	// This size was guaranteed to: size() == PlayerModel::KIND_COUNT
+
+		int transTriggerFrame = 1;			// The trigger of transform to oil. Will be compared to press length.
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -248,13 +257,17 @@ namespace
 			}
 			if ( 8 <= version )
 			{
+				archive( CEREAL_NVP( transTriggerFrame ) );
+			}
+			if ( 9 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				7 )
-CEREAL_CLASS_VERSION( Member::BasicMember,	0 )
+CEREAL_CLASS_VERSION( Member,				8 )
+CEREAL_CLASS_VERSION( Member::BasicMember,	1 )
 CEREAL_CLASS_VERSION( Member::OilMember,	1 )
 
 class ParamPlayer : public ParameterBase<ParamPlayer>
@@ -321,6 +334,7 @@ public:
 				ImGui::DragFloat( ( prefix + u8"：跳躍力"	).c_str(),		&p->jumpStrength,	0.01f, 0.0f );
 				ImGui::DragFloat( ( prefix + u8"：重力"		).c_str(),		&p->gravity,		0.01f, 0.0f );
 				ParameterHelper::ShowAABBNode( prefix + u8"：当たり判定・ＶＳ地形", &p->hitBoxStage );
+				p->shotDesc.ShowImGuiNode( { prefix + u8"：ショット詳細" } );
 
 				ImGui::TreePop();
 			};
@@ -351,6 +365,9 @@ public:
 				ImGui::DragFloat3( u8"描画オフセット", &m.drawOffset.x, 0.01f );
 				ImGui::DragFloat( u8"落下死となるＹ座標しきい値", &m.falloutBorderPosY, 0.1f );
 				ImGui::SliderFloat( u8"乗ることができる坂のしきい値", &m.canRideSlopeBorder, 0.0f, 1.0f );
+				ImGui::Text( "" );
+				ImGui::DragInt( u8"オイル長押しの発動フレーム", &m.transTriggerFrame );
+				m.transTriggerFrame = std::max( 1, m.transTriggerFrame );
 
 				if ( ImGui::TreeNode( u8"レイピック時のレイのオフセット" ) )
 				{
@@ -547,6 +564,41 @@ int  Player::MotionManager::CalcNowKind( Player &player ) const
 	return PlayerModel::Kind::KindCount;
 }
 
+void Player::InputManager::Init()
+{
+	oilTimer				= 0;
+	currInput.moveVectorXZ	= Donya::Vector2::Zero();
+	currInput.useJump		= false;
+	currInput.useOil		= false;
+	prevInput				= currInput;
+}
+void Player::InputManager::Update( const Input &input )
+{
+	prevInput = currInput;
+	currInput = input;
+
+	oilTimer  = ( currInput.useOil ) ? oilTimer + 1 : 0;
+}
+bool Player::InputManager::ShouldJump( const Player &player ) const
+{
+	return currInput.useJump;
+}
+bool Player::InputManager::ShouldShot( const Player &player ) const
+{
+	if ( player.IsOiled() ) { return currInput.useOil && !prevInput.useOil; }
+	// else
+
+	return ( oilTimer <= 0 && prevInput.useOil );
+}
+bool Player::InputManager::ShouldTrans( const Player &player ) const
+{
+	if ( player.IsOiled() ) { return ShouldShot( player ); }
+	// else
+
+	const auto data = FetchMember();
+	return ( data.transTriggerFrame <= oilTimer && currInput.useOil );
+}
+
 void Player::NormalMover::Init( Player &player )
 {
 	const auto data = FetchMember();
@@ -737,26 +789,31 @@ void Player::Update( float elapsedTime, Input input )
 	UseImGui();
 #endif // USE_IMGUI
 
-	{
-		if ( input.useOil && canUseOil )
-		{
-			( pMover->IsOiled() )
-			? ResetMover<NormalMover>()
-			: ResetMover<OilMover>();
+	inputManager.Update( input );
 
-			canUseOil = false;
-			Donya::Sound::Play( Music::PlayerTrans );
-		}
+	if ( inputManager.ShouldTrans( *this ) && canUseOil )
+	{
+		( pMover->IsOiled() )
+		? ResetMover<NormalMover>()
+		: ResetMover<OilMover>();
+
+		canUseOil = false;
+		Donya::Sound::Play( Music::PlayerTrans );
 	}
 
 	Move( elapsedTime, input );
 
-	if ( input.useJump && onGround )
+	if ( inputManager.ShouldJump( *this ) && onGround )
 	{
 		Jump( elapsedTime );
 	}
 
 	Fall( elapsedTime );
+
+	if ( inputManager.ShouldShot( *this ) )
+	{
+		Shot( elapsedTime );
+	}
 
 	pMover->Update( *this, elapsedTime );
 	motionManager.Update( *this, elapsedTime );
@@ -924,6 +981,17 @@ void Player::AssignLanding()
 	onGround	= true;
 	canUseOil	= true;
 	velocity.y	= 0.0f;
+}
+
+void Player::Shot( float elapsedTime )
+{
+	const auto data	= FetchMember();
+	auto useParam	= ( IsOiled() )
+					? data.oiled.basic.shotDesc
+					: data.normal.shotDesc;
+	useParam.speed *= elapsedTime;
+
+	Bullet::BulletAdmin::Get().Append( useParam );
 }
 
 void Player::Die()

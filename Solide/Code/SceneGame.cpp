@@ -615,8 +615,8 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 
 		moveVector		= controller.LeftStick();
 		useJump			= controller.Trigger( Pad::A );
-		// useOil			= controller.Press( Pad::B ) || controller.Press( Pad::Y );
-		useOil			= controller.Trigger( Pad::B ) || controller.Trigger( Pad::Y );
+		useOil			= controller.Press( Pad::B ) || controller.Press( Pad::Y );
+		// useOil			= controller.Trigger( Pad::B ) || controller.Trigger( Pad::Y );
 	}
 	else
 	{
@@ -627,8 +627,8 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 		moveVector.Normalize();
 
 		useJump			=  Donya::Keyboard::Trigger( 'Z' );
-		// useOil			=  Donya::Keyboard::Press( 'X' );
-		useOil			=  Donya::Keyboard::Trigger( 'X' );
+		useOil			=  Donya::Keyboard::Press( 'X' );
+		// useOil			=  Donya::Keyboard::Trigger( 'X' );
 	}
 
 	if ( nowWaiting )

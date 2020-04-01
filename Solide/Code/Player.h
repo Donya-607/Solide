@@ -41,7 +41,20 @@ private:
 		int  CalcNowKind( Player &player ) const;
 	};
 
-
+	class InputManager
+	{
+	private:
+		int		oilTimer = 0;
+		Input	prevInput;
+		Input	currInput;
+	public:
+		void Init();
+		void Update( const Input &input );
+	public:
+		bool ShouldJump ( const Player &player ) const;
+		bool ShouldShot ( const Player &player ) const;
+		bool ShouldTrans( const Player &player ) const;
+	};
 
 	class MoverBase
 	{
@@ -107,6 +120,7 @@ private:
 	Donya::Quaternion			orientation;
 	std::unique_ptr<MoverBase>	pMover;
 	MotionManager				motionManager;
+	InputManager				inputManager;
 	bool						onGround  = false;
 	bool						canUseOil = true;	// Will recovery when landing.
 public:
@@ -156,6 +170,8 @@ private:
 
 	bool WasCorrectedVertically( const Donya::Vector3 &oldPos, const Donya::Model::PolygonGroup *pTerrain ) const;
 	void AssignLanding();
+
+	void Shot( float elapsedTime );
 
 	void Die();
 private:

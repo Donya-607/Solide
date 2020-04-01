@@ -17,7 +17,7 @@ namespace Bullet
 	namespace
 	{
 		constexpr size_t KIND_COUNT = scast<size_t>( Kind::KindCount );
-		constexpr const char *MODEL_DIRECTORY = "./Data/Models/Bullets/";
+		constexpr const char *MODEL_DIRECTORY = "./Data/Models/Bullet/";
 		constexpr const char *EXTENSION = ".bin";
 		constexpr std::array<const char *, KIND_COUNT> MODEL_NAMES
 		{
@@ -220,12 +220,47 @@ public:
 };
 
 
+namespace
+{
+#if USE_IMGUI
+	std::string GetKindName( Bullet::Kind kind )
+	{
+		return	( kind == Bullet::Kind::KindCount )
+				? "ERROR_KIND"
+				: Bullet::MODEL_NAMES[scast<int>( kind )];
+	}
+#endif // USE_IMGUI
+}
+
+
 namespace Bullet
 {
 #if USE_IMGUI
 	void UseBulletsImGui()
 	{
 		ParamOilBullet::Get().UseImGui();
+	}
+
+	void BulletAdmin::FireDesc::ShowImGuiNode( const std::string &nodeCaption, bool generatePosIsRelative )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		int intKind = scast<int>( kind );
+		ImGui::SliderInt( u8"種類の変更", &intKind, 0, KIND_COUNT - 1 );
+		kind = scast<Kind>( intKind );
+		ImGui::Text( u8"いま：%s", GetKindName( kind ).c_str() );
+
+		ImGui::DragFloat( u8"速度", &speed ); speed = std::max( 0.0f, speed );
+		ImGui::SliderFloat3( u8"方向", &direction.x, -1.0f, 1.0f );
+		if ( ImGui::Button( u8"方向を正規化" ) ) { direction.Normalize(); }
+
+		std::string genPosCaption{ u8"生成位置" };
+		genPosCaption += ( generatePosIsRelative ) ? u8"（相対）" : u8"（絶対）";
+		ImGui::DragFloat3( genPosCaption.c_str(), &generatePos.x );
+
+
+		ImGui::TreePop();
 	}
 #endif // USE_IMGUI
 
@@ -339,11 +374,7 @@ namespace Bullet
 		bool wantRemove = false;
 		if ( ImGui::Button( u8"取り除く" ) ) { wantRemove = true; }
 
-		const std::string kindName =
-			( kind == Kind::KindCount )
-			? "ERROR_KIND"
-			: Bullet::MODEL_NAMES[scast<int>( kind )];
-		ImGui::Text( u8"種類：%s", kindName.c_str() );
+		ImGui::Text( u8"種類：%s", GetKindName( kind ).c_str() );
 
 		ImGui::DragFloat3( u8"ワールド座標", &pos.x,			0.1f );
 		ImGui::DragFloat3( u8"ワールド速度", &velocity.x,		0.1f );
