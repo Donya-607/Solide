@@ -47,13 +47,21 @@ private:
 		int		oilTimer = 0;
 		Input	prevInput;
 		Input	currInput;
+		bool	beginPressWasOiled		= false;	// The status of "isOiled?" when starting the using oil.
+		bool	keepingPressAfterTrans	= false;
+		bool	prevIsOiled				= false;
+		bool	currIsOiled				= false;
 	public:
 		void Init();
-		void Update( const Input &input );
+		void Update( const Player &player, const Input &input );
 	public:
-		bool ShouldJump ( const Player &player ) const;
-		bool ShouldShot ( const Player &player ) const;
-		bool ShouldTrans( const Player &player ) const;
+		bool ShouldJump () const;
+		bool ShouldShot () const;
+		bool ShouldTrans() const;
+	private:
+		bool IsTriggerOil() const;
+		bool IsReleaseOil() const;
+		bool IsPressOil() const;	// Returns "now pressing?", but I chosen consistency.
 	};
 
 	class MoverBase

@@ -571,32 +571,69 @@ void Player::InputManager::Init()
 	currInput.useJump		= false;
 	currInput.useOil		= false;
 	prevInput				= currInput;
+	beginPressWasOiled		= false;
+	keepingPressAfterTrans	= false;
+	prevIsOiled				= false;
+	currIsOiled				= false;
 }
-void Player::InputManager::Update( const Input &input )
+void Player::InputManager::Update( const Player &player, const Input &input )
 {
-	prevInput = currInput;
-	currInput = input;
+	prevInput	= currInput;
+	currInput	= input;
 
-	oilTimer  = ( currInput.useOil ) ? oilTimer + 1 : 0;
+	prevIsOiled	= currIsOiled;
+	currIsOiled	= player.IsOiled();
+
+	oilTimer	= IsPressOil() ? oilTimer + 1 : 0;
+
+	if ( !prevInput.useOil && currInput.useOil )
+	{
+		beginPressWasOiled = currIsOiled;
+	}
+
+	if ( currIsOiled != prevIsOiled && IsPressOil() )
+	{
+		 keepingPressAfterTrans = true;
+	}
+	if ( keepingPressAfterTrans && !IsPressOil() )
+	{
+		 keepingPressAfterTrans = false;
+	}
 }
-bool Player::InputManager::ShouldJump( const Player &player ) const
+bool Player::InputManager::ShouldJump() const
 {
 	return currInput.useJump;
 }
-bool Player::InputManager::ShouldShot( const Player &player ) const
+bool Player::InputManager::ShouldShot() const
 {
-	if ( player.IsOiled() ) { return currInput.useOil && !prevInput.useOil; }
+	if ( currIsOiled ) { return IsTriggerOil(); }
 	// else
 
-	return ( oilTimer <= 0 && prevInput.useOil );
+	// You can not shot if you keep using oil even if you was transed.
+	return ( beginPressWasOiled != currIsOiled ) ? false : IsReleaseOil();
 }
-bool Player::InputManager::ShouldTrans( const Player &player ) const
+bool Player::InputManager::ShouldTrans() const
 {
-	if ( player.IsOiled() ) { return ShouldShot( player ); }
+	if ( currIsOiled ) { return IsTriggerOil(); }
+	// else
+
+	if ( !IsPressOil() || keepingPressAfterTrans ) { return false; }
 	// else
 
 	const auto data = FetchMember();
-	return ( data.transTriggerFrame <= oilTimer && currInput.useOil );
+	return ( data.transTriggerFrame <= oilTimer );
+}
+bool Player::InputManager::IsTriggerOil() const
+{
+	return ( currInput.useOil && !prevInput.useOil );
+}
+bool Player::InputManager::IsReleaseOil() const
+{
+	return ( !currInput.useOil && prevInput.useOil );
+}
+bool Player::InputManager::IsPressOil() const
+{
+	return currInput.useOil;
 }
 
 void Player::NormalMover::Init( Player &player )
@@ -789,9 +826,15 @@ void Player::Update( float elapsedTime, Input input )
 	UseImGui();
 #endif // USE_IMGUI
 
-	inputManager.Update( input );
+	inputManager.Update( *this, input );
 
-	if ( inputManager.ShouldTrans( *this ) && canUseOil )
+	// This method depends on my status(IsOiled()), so I should call this before ShouldTrans() process.
+	if ( inputManager.ShouldShot() )
+	{
+		Shot( elapsedTime );
+	}
+
+	if ( inputManager.ShouldTrans() && canUseOil )
 	{
 		( pMover->IsOiled() )
 		? ResetMover<NormalMover>()
@@ -803,17 +846,12 @@ void Player::Update( float elapsedTime, Input input )
 
 	Move( elapsedTime, input );
 
-	if ( inputManager.ShouldJump( *this ) && onGround )
+	if ( inputManager.ShouldJump( ) && onGround )
 	{
 		Jump( elapsedTime );
 	}
 
 	Fall( elapsedTime );
-
-	if ( inputManager.ShouldShot( *this ) )
-	{
-		Shot( elapsedTime );
-	}
 
 	pMover->Update( *this, elapsedTime );
 	motionManager.Update( *this, elapsedTime );
