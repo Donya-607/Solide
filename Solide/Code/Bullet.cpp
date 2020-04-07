@@ -140,9 +140,10 @@ namespace Bullet
 
 	struct OilMember
 	{
-		float		gravity		= 1.0f;	// Absolute value.
-		float		drawScale	= 1.0f;
-		Donya::AABB	hitBox;
+		float			gravity		= 1.0f;	// Absolute value.
+		float			drawScale	= 1.0f;
+		Donya::AABB		hitBox;
+		Donya::Vector4	color{ 1.0f, 1.0f, 1.0f, 1.0f };
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -160,6 +161,10 @@ namespace Bullet
 			}
 			if ( 2 <= version )
 			{
+				archive( CEREAL_NVP( color ) );
+			}
+			if ( 3 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -170,8 +175,9 @@ namespace Bullet
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
 
-			ImGui::DragFloat( u8"重力", &gravity, 0.01f, 0.0f );
-			ImGui::DragFloat( u8"描画スケール", &drawScale, 0.01f, 0.0f );
+			ImGui::DragFloat( u8"重力",			&gravity,	0.01f, 0.0f );
+			ImGui::DragFloat( u8"描画スケール",	&drawScale,	0.01f, 0.0f );
+			ImGui::ColorEdit4( u8"色",			&color.x );
 
 			ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
 
@@ -180,7 +186,7 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::OilMember, 1 )
+CEREAL_CLASS_VERSION( Bullet::OilMember, 2 )
 
 class ParamOilBullet : public ParameterBase<ParamOilBullet>
 {
@@ -446,9 +452,13 @@ namespace Bullet
 		{
 			BulletBase::PhysicUpdate();
 		}
+		void OilBullet::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+		{
+			BulletBase::Draw( pRenderer, ParamOilBullet::Get().Data().color.Product( color ) );
+		}
 		void OilBullet::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
 		{
-			BulletBase::DrawHitBox( pRenderer, VP, { 0.2f, 0.2f, 0.2f, 0.7f } );
+			BulletBase::DrawHitBox( pRenderer, VP, ParamOilBullet::Get().Data().color.Product( color ) );
 		}
 		void OilBullet::AttachSelfKind() { kind = Kind::Oil; }
 		bool OilBullet::ShouldRemove() const

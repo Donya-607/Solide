@@ -125,6 +125,7 @@ namespace Bullet
 		public:
 			void Update( float elapsedTime ) override;
 			void PhysicUpdate() override;
+			void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 			void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) override;
 		private:
 			void AttachSelfKind() override;
