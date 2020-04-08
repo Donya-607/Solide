@@ -62,7 +62,7 @@ private:
 
 	void	PlayerInit();
 	void	PlayerUpdate( float elapsedTime );
-	void	PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const std::unique_ptr<Terrain> *ppTerrain );
+	void	PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );
 	void	PlayerDraw();
 	void	PlayerDrawHitBox( const Donya::Vector4x4 &matVP );
 	void	PlayerUninit();

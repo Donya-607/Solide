@@ -364,9 +364,15 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	Bullet::BulletAdmin::Get().Update( elapsedTime );
 
-	PlayerPhysicUpdate( pObstacles->GetHitBoxes(), &pTerrain );
+	// Physic updates.
+	{
+		const auto solids = pObstacles->GetHitBoxes();
+		const auto terrain = pTerrain->GetCollisionModel();
+		const Donya::Vector4x4 &terrainMatrix = pTerrain->GetWorldMatrix();
 
-	Bullet::BulletAdmin::Get().PhysicUpdate();
+		PlayerPhysicUpdate( solids, terrain.get(), &terrainMatrix );
+		Bullet::BulletAdmin::Get().PhysicUpdate( solids, terrain.get(), &terrainMatrix );
+	}
 
 	CameraUpdate();
 
@@ -665,18 +671,11 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 
 	pPlayer->Update( elapsedTime, input );
 }
-void SceneGame::PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const std::unique_ptr<Terrain> *ppTerrain )
+void SceneGame::PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	if ( !pPlayer ) { return; }
-	if ( !ppTerrain ) { return; }
-	// else
-
-	const auto &pTerrain = *ppTerrain;
-	if ( !pTerrain ) { return; }
-	// else
-
-	const Donya::Vector4x4 terrainMatrix = pTerrain->GetWorldMatrix();
-	pPlayer->PhysicUpdate( solids, pTerrain->GetCollisionModel().get(), &terrainMatrix );
+	
+	pPlayer->PhysicUpdate( solids, pTerrain, pTerrainMatrix );
 }
 void SceneGame::PlayerDraw()
 {

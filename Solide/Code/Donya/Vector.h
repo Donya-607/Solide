@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint> // Use for std::uint32_t.
+#include <cstdint>		// Use for std::uint32_t.
 #include <DirectXMath.h>
 
 #include "cereal/cereal.hpp"
@@ -36,6 +36,25 @@ namespace Donya
 		{
 			// HACK:Can I prevent slice by this ?
 			return static_cast<XMFLOAT2>( *this );
+		}
+	public:
+		constexpr const float operator [] ( size_t index ) const &
+		{
+			_ASSERT_EXPR( index < 2, L"Error : Vector2 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			return y;
+		}
+		float &operator [] ( size_t index ) &
+		{
+			_ASSERT_EXPR( index < 2, L"Error : Vector2 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			return y;
+		}
+		float operator [] ( size_t index ) &&
+		{
+			_ASSERT_EXPR( index < 2, L"Error : Vector2 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			return y;
 		}
 	public:
 		/// <summary>
@@ -253,6 +272,28 @@ namespace Donya
 			return static_cast<XMFLOAT3>( *this );
 		}
 	public:
+		constexpr const float operator [] ( size_t index ) const &
+		{
+			_ASSERT_EXPR( index < 3, L"Error : Vector3 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			return z;
+		}
+		float &operator [] ( size_t index ) &
+		{
+			_ASSERT_EXPR( index < 3, L"Error : Vector3 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			return z;
+		}
+		float operator [] ( size_t index ) &&
+		{
+			_ASSERT_EXPR( index < 3, L"Error : Vector3 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			return z;
+		}
+	public:
 		/// <summary>
 		/// Multiply each element.
 		/// </summary>
@@ -457,6 +498,31 @@ namespace Donya
 		{
 			// HACK:Can I prevent slice by this ?
 			return static_cast<XMFLOAT4>( *this );
+		}
+	public:
+		constexpr const float operator [] ( size_t index ) const &
+		{
+			_ASSERT_EXPR( index < 4, L"Error : Vector4 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			if ( index == 2 ) { return z; }
+			return w;
+		}
+		float &operator [] ( size_t index ) &
+		{
+			_ASSERT_EXPR( index < 4, L"Error : Vector4 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			if ( index == 2 ) { return z; }
+			return w;
+		}
+		float operator [] ( size_t index ) &&
+		{
+			_ASSERT_EXPR( index < 4, L"Error : Vector4 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			if ( index == 2 ) { return z; }
+			return w;
 		}
 	public:
 		/// <summary>
@@ -844,6 +910,25 @@ namespace Donya
 			archive( CEREAL_NVP( x ), CEREAL_NVP( y ) );
 		}
 	public:
+		constexpr const int operator [] ( size_t index ) const &
+		{
+			_ASSERT_EXPR( index < 2, L"Error : Int2 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			return y;
+		}
+		int &operator [] ( size_t index ) &
+		{
+			_ASSERT_EXPR( index < 2, L"Error : Int2 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			return y;
+		}
+		int operator [] ( size_t index ) &&
+		{
+			_ASSERT_EXPR( index < 2, L"Error : Int2 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			return y;
+		}
+	public:
 		constexpr Int2 operator - () const { return Int2{ -x, -y }; }
 		Int2 operator += ( int   scalar )
 		{
@@ -947,6 +1032,28 @@ namespace Donya
 		void serialize( Archive &archive, std::uint32_t version )
 		{
 			archive( CEREAL_NVP( x ), CEREAL_NVP( y ), CEREAL_NVP( z ) );
+		}
+	public:
+		constexpr const int operator [] ( size_t index ) const &
+		{
+			_ASSERT_EXPR( index < 3, L"Error : Int3 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			return z;
+		}
+		int &operator [] ( size_t index ) &
+		{
+			_ASSERT_EXPR( index < 3, L"Error : Int3 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			return z;
+		}
+		int operator [] ( size_t index ) &&
+		{
+			_ASSERT_EXPR( index < 3, L"Error : Int3 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			return z;
 		}
 	public:
 		constexpr Int3 operator - () const { return Int3{ -x, -y, -z }; }
@@ -1062,6 +1169,31 @@ namespace Donya
 		void serialize( Archive &archive, std::uint32_t version )
 		{
 			archive( CEREAL_NVP( x ), CEREAL_NVP( y ), CEREAL_NVP( z ), CEREAL_NVP( w ) );
+		}
+	public:
+		constexpr const int operator [] ( size_t index ) const &
+		{
+			_ASSERT_EXPR( index < 4, L"Error : Int4 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			if ( index == 2 ) { return z; }
+			return w;
+		}
+		int &operator [] ( size_t index ) &
+		{
+			_ASSERT_EXPR( index < 4, L"Error : Int4 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			if ( index == 2 ) { return z; }
+			return w;
+		}
+		int operator [] ( size_t index ) &&
+		{
+			_ASSERT_EXPR( index < 4, L"Error : Int4 subscript out of range!" );
+			if ( index == 0 ) { return x; }
+			if ( index == 1 ) { return y; }
+			if ( index == 2 ) { return z; }
+			return w;
 		}
 	public:
 		constexpr Int4 operator - () const { return Int4{ -x, -y, -z, -w }; }

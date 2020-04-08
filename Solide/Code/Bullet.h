@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Donya/Collision.h"
+#include "Donya/ModelPolygon.h"
 #include "Donya/Quaternion.h"
 #include "Donya/Serializer.h"
 #include "Donya/Template.h"
@@ -70,7 +71,7 @@ namespace Bullet
 		void Uninit();
 
 		void Update( float elapsedTime );
-		void PhysicUpdate();
+		void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
 		void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
@@ -97,12 +98,23 @@ namespace Bullet
 		virtual void Uninit() {}
 
 		virtual void Update( float elapsedTime );
-		virtual void PhysicUpdate();
+		virtual void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
 		virtual void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
 	protected:
 		virtual void AttachSelfKind() = 0;
+
+		struct RecursionResult
+		{
+			Donya::Vector3				correctedVector;
+			Donya::Model::RaycastResult	raycastResult;
+		};
+		Donya::Vector3  CalcCorrectedVector( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
+		RecursionResult CalcCorrectedVector( int recursionLimit, const Donya::Vector3 &targetVector, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix ) const;
+	private:
+		Donya::Vector3  CalcCorrectedVectorImpl( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
+		RecursionResult CalcCorrectedVectorImpl( int recursionLimit, int recursionCount, RecursionResult prevResult, const Donya::Model::PolygonGroup &terrain, const Donya::Vector4x4 &terrainWorldMatrix ) const;
 	public:
 		virtual bool				ShouldRemove()		const = 0;
 		virtual Kind				GetKind()			const { return kind; }
@@ -124,7 +136,7 @@ namespace Bullet
 		{
 		public:
 			void Update( float elapsedTime ) override;
-			void PhysicUpdate() override;
+			void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 			void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 			void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) override;
 		private:

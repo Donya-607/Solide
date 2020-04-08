@@ -98,7 +98,7 @@ Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Do
 
 	Donya::Vector3 lastNormal{};
 	if ( !xzMovement.IsZero() ) { MoveXZImpl( xzMovement, wsRayOffsets, 0, solids, pTerrain, pTerrainMatrix ); }
-	if ( !yMovement.IsZero()  ) { lastNormal = MoveYImpl ( yMovement,  solids, pTerrain, pTerrainMatrix ); }
+	if ( !yMovement.IsZero()  ) { lastNormal = MoveYImpl( yMovement, solids, pTerrain, pTerrainMatrix ); }
 
 	// If a face is there under from my foot, I correct onto the face for considering a slope.
 	// But this correction is not necessary if the vertical movement is up.
