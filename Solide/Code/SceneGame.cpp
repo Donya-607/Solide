@@ -445,8 +445,8 @@ void SceneGame::Draw( float elapsedTime )
 		PlayerDrawHitBox( VP );
 
 		pGoal->DrawHitBox( pRenderer.get(), VP, data.goalColor );
-		Bullet::BulletAdmin::Get().DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 1.0f } );
-		pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 1.0f } );
+		Bullet::BulletAdmin::Get().DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
+		pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 	}
 	
 	// Drawing to far for avoiding to trans the BG's blue.
