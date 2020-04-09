@@ -461,6 +461,28 @@ public:
 #endif // USE_IMGUI
 };
 
+
+Donya::Vector3		PlayerInitializer::GetInitialPos() const { return wsInitialPos; }
+Donya::Quaternion	PlayerInitializer::GetInitialOrientation() const { return initialOrientation; }
+#if USE_IMGUI
+void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	ImGui::DragFloat3( u8"初期のワールド座標", &wsInitialPos.x );
+	
+	Donya::Vector3 lookDir = initialOrientation.LocalFront();
+	ImGui::SliderFloat3( u8"初期の前方向", &lookDir.x, -1.0f, 1.0f );
+	if ( ImGui::Button( u8"正規化" ) ) { lookDir.Normalize(); }
+
+	initialOrientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), lookDir.Unit(), Donya::Quaternion::Freeze::Up );
+
+	ImGui::TreePop();
+}
+#endif // USE_IMGUI
+
+
 bool Player::LoadModels()
 {
 	return PlayerModel::LoadModel();
@@ -800,14 +822,14 @@ void Player::DeadMover::Move( Player &player, float elapsedTime, Input input ) {
 void Player::DeadMover::Jump( Player &player, float elapsedTime ) {}
 void Player::DeadMover::Fall( Player &player, float elapsedTime ) {}
 
-void Player::Init( const Donya::Vector3 &wsInitialPos )
+void Player::Init( const PlayerInitializer &param )
 {
 	ParamPlayer::Get().Init();
 	const auto data = FetchMember();
 
-	pos			= wsInitialPos;
+	pos			= param.GetInitialPos();
 	velocity	= 0.0f;
-	orientation	= Donya::Quaternion::Identity();
+	orientation	= param.GetInitialOrientation();
 
 	ResetMover<NormalMover>();
 

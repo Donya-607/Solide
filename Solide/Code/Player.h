@@ -1,18 +1,53 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "Donya/ModelMotion.h"
 #include "Donya/ModelPolygon.h"
 #include "Donya/ModelPose.h"
 #include "Donya/Quaternion.h"
+#include "Donya/Serializer.h"
 #include "Donya/SkinnedMesh.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
 #include "ObjectBase.h"
 #include "Renderer.h"
+
+
+class PlayerInitializer
+{
+private:
+	Donya::Vector3		wsInitialPos;
+	Donya::Quaternion	initialOrientation;
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			CEREAL_NVP( wsInitialPos ),
+			CEREAL_NVP( initialOrientation )
+		);
+
+		if ( 1 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
+public:
+	Donya::Vector3		GetInitialPos() const;
+	Donya::Quaternion	GetInitialOrientation() const;
+public:
+#if USE_IMGUI
+	void ShowImGuiNode( const std::string &nodeCaption );
+#endif // USE_IMGUI
+};
+CEREAL_CLASS_VERSION( PlayerInitializer, 0 )
+
 
 class Player : public Actor
 {
@@ -132,7 +167,7 @@ private:
 	bool						onGround  = false;
 	bool						canUseOil = true;	// Will recovery when landing.
 public:
-	void Init( const Donya::Vector3 &wsInitialPos );
+	void Init( const PlayerInitializer &parameter );
 	void Uninit();
 
 	void Update( float elapsedTime, Input input );

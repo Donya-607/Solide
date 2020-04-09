@@ -366,7 +366,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	// Physic updates.
 	{
-		const auto solids = pObstacles->GetHitBoxes();
+		const auto solids  = pObstacles->GetHitBoxes();
 		const auto terrain = pTerrain->GetCollisionModel();
 		const Donya::Vector4x4 &terrainMatrix = pTerrain->GetWorldMatrix();
 
