@@ -53,7 +53,7 @@ namespace Bullet
 					CEREAL_NVP( generatePos	)
 				);
 
-				if ( 0 <= version )
+				if ( 1 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -105,16 +105,21 @@ namespace Bullet
 	protected:
 		virtual void AttachSelfKind() = 0;
 
+		struct AABBResult
+		{
+			Donya::Vector3 correctedVector;
+			bool wasHit = false;
+		};
 		struct RecursionResult
 		{
 			Donya::Vector3				correctedVector;
 			Donya::Model::RaycastResult	raycastResult;
 		};
-		Donya::Vector3  CalcCorrectedVector( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
-		RecursionResult CalcCorrectedVector( int recursionLimit, const Donya::Vector3 &targetVector, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix ) const;
+		AABBResult		CalcCorrectedVector( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
+		RecursionResult	CalcCorrectedVector( int recursionLimit, const Donya::Vector3 &targetVector, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix ) const;
 	private:
-		Donya::Vector3  CalcCorrectedVectorImpl( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
-		RecursionResult CalcCorrectedVectorImpl( int recursionLimit, int recursionCount, RecursionResult prevResult, const Donya::Model::PolygonGroup &terrain, const Donya::Vector4x4 &terrainWorldMatrix ) const;
+		AABBResult		CalcCorrectedVectorImpl( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
+		RecursionResult	CalcCorrectedVectorImpl( int recursionLimit, int recursionCount, RecursionResult prevResult, const Donya::Model::PolygonGroup &terrain, const Donya::Vector4x4 &terrainWorldMatrix ) const;
 	public:
 		virtual bool				ShouldRemove()		const = 0;
 		virtual Kind				GetKind()			const { return kind; }
@@ -134,6 +139,9 @@ namespace Bullet
 	{
 		class OilBullet : public BulletBase
 		{
+		private:
+			int		aliveTime  = 0;
+			bool	shouldStay = false;
 		public:
 			void Update( float elapsedTime ) override;
 			void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;

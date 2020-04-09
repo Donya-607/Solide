@@ -144,6 +144,7 @@ namespace Bullet
 		float			drawScale	= 1.0f;
 		Donya::AABB		hitBox;
 		Donya::Vector4	color{ 1.0f, 1.0f, 1.0f, 1.0f };
+		int				aliveFrame = 1;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -165,6 +166,10 @@ namespace Bullet
 			}
 			if ( 3 <= version )
 			{
+				archive( CEREAL_NVP( aliveFrame ) );
+			}
+			if ( 4 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -175,8 +180,15 @@ namespace Bullet
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
 
-			ImGui::DragFloat( u8"重力",			&gravity,	0.01f, 0.0f );
-			ImGui::DragFloat( u8"描画スケール",	&drawScale,	0.01f, 0.0f );
+			ImGui::DragInt   ( u8"生存時間（フレーム）", &aliveFrame );
+			aliveFrame	= std::max( 0, aliveFrame );
+
+			ImGui::DragFloat ( u8"重力",			&gravity,	0.01f );
+			ImGui::DragFloat ( u8"描画スケール",	&drawScale,	0.01f );
+			gravity		= std::max( 0.0f, gravity );
+			drawScale	= std::max( 0.0f, drawScale );
+
+
 			ImGui::ColorEdit4( u8"色",			&color.x );
 
 			ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
@@ -186,7 +198,7 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::OilMember, 2 )
+CEREAL_CLASS_VERSION( Bullet::OilMember, 3 )
 
 class ParamOilBullet : public ParameterBase<ParamOilBullet>
 {
@@ -232,6 +244,8 @@ public:
 
 namespace
 {
+	static constexpr int RECURSION_RAY_COUNT = 4;
+
 #if USE_IMGUI
 	std::string GetKindName( Bullet::Kind kind )
 	{
@@ -282,7 +296,9 @@ namespace Bullet
 		kind = scast<Kind>( intKind );
 		ImGui::Text( u8"いま：%s", GetKindName( kind ).c_str() );
 
-		ImGui::DragFloat( u8"速度", &speed ); speed = std::max( 0.0f, speed );
+		ImGui::DragFloat( u8"速度", &speed );
+		speed = std::max( 0.0f, speed );
+
 		ImGui::SliderFloat3( u8"方向", &direction.x, -1.0f, 1.0f );
 		if ( ImGui::Button( u8"方向を正規化" ) ) { direction.Normalize(); }
 
@@ -304,7 +320,6 @@ namespace Bullet
 	{
 		bulletPtrs.clear();
 	}
-
 	void BulletAdmin::Update( float elapsedTime )
 	{
 		for ( auto &pIt : bulletPtrs )
@@ -335,7 +350,6 @@ namespace Bullet
 			pIt->PhysicUpdate( solids, pTerrain, pTerrainMatrix );
 		}
 	}
-
 	void BulletAdmin::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 	{
 		for ( auto &pIt : bulletPtrs )
@@ -356,7 +370,6 @@ namespace Bullet
 			pIt->DrawHitBox( pRenderer, VP, color );
 		}
 	}
-
 	void BulletAdmin::Append( const FireDesc &param )
 	{
 		std::shared_ptr<BulletBase> tmp = MakeBullet( param.kind );
@@ -381,22 +394,24 @@ namespace Bullet
 	}
 	void BulletBase::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 	{
-		constexpr int RECURSIVE_LIMIT = 4;
-		auto raycastResult = CalcCorrectedVector( RECURSIVE_LIMIT, velocity, pTerrain, pTerrainMatrix );
+		const auto raycastResult	= CalcCorrectedVector( RECURSION_RAY_COUNT, velocity, pTerrain, pTerrainMatrix );
+		const auto aabbResult		= CalcCorrectedVector( raycastResult.correctedVector, solids );
 
-		raycastResult.correctedVector = CalcCorrectedVector( raycastResult.correctedVector, solids );
-
-		velocity = raycastResult.correctedVector;
+		velocity = aabbResult.correctedVector;
 
 		pos += velocity;
 	}
-	Donya::Vector3 BulletBase::CalcCorrectedVector( const Donya::Vector3 &vector, const std::vector<Donya::AABB> &solids ) const
+	BulletBase::AABBResult		BulletBase::CalcCorrectedVector( const Donya::Vector3 &vector, const std::vector<Donya::AABB> &solids ) const
 	{
+		AABBResult defaultResult{};
+		defaultResult.correctedVector = vector;
+		defaultResult.wasHit = false;
+
 		return	( solids.empty() )
-				? vector
+				? defaultResult
 				: CalcCorrectedVectorImpl( vector, solids );
 	}
-	BulletBase::RecursionResult BulletBase::CalcCorrectedVector( int recursionLimit, const Donya::Vector3 &vector, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix ) const
+	BulletBase::RecursionResult	BulletBase::CalcCorrectedVector( int recursionLimit, const Donya::Vector3 &vector, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix ) const
 	{
 		RecursionResult initial{};
 		initial.correctedVector			= vector;
@@ -406,15 +421,19 @@ namespace Bullet
 				? initial
 				: CalcCorrectedVectorImpl( recursionLimit, 0, initial, *pTerrain, *pTerrainMatrix );
 	}
-	Donya::Vector3 BulletBase::CalcCorrectedVectorImpl( const Donya::Vector3 &vector, const std::vector<Donya::AABB> &solids ) const
+	BulletBase::AABBResult		BulletBase::CalcCorrectedVectorImpl( const Donya::Vector3 &vector, const std::vector<Donya::AABB> &solids ) const
 	{
+		AABBResult result{};
+		result.correctedVector = vector;
+		result.wasHit = false;
+
 		Donya::Vector3 moveSign // The moving direction of myself. Take a value of +1.0f or -1.0f.
 		{
 			scast<float>( Donya::SignBit( vector.x ) ),
 			scast<float>( Donya::SignBit( vector.y ) ),
 			scast<float>( Donya::SignBit( vector.z ) )
 		};
-		if ( moveSign.IsZero() ) { return Donya::Vector3::Zero(); }
+		if ( moveSign.IsZero() ) { return result; }
 		// else
 
 		// HACK : Should I do not use hit-box? Currently, the collision processes does not use hit-box, using the point only.
@@ -556,6 +575,7 @@ namespace Bullet
 
 			movedBody.pos[min] += resolver[min];
 			moveSign[min]		= scast<float>( Donya::SignBit( resolver[min] ) );
+			result.wasHit		= true;
 
 			if ( moveSign.IsZero()  ) { break; }
 			// else
@@ -580,7 +600,8 @@ namespace Bullet
 		const Donya::Vector3 &destination = movedBody.pos;
 		// const Donya::Vector3 &destination = movedBody.pos - hitBox.pos/* Except the offset of hitBox */;
 		
-		return Donya::Vector3{ destination - pos };
+		result.correctedVector = destination - pos;
+		return result;
 	}
 	BulletBase::RecursionResult BulletBase::CalcCorrectedVectorImpl( int recursionLimit, int recursionCount, RecursionResult inheritedResult, const Donya::Model::PolygonGroup &terrain, const Donya::Vector4x4 &terrainMatrix ) const
 	{
@@ -677,12 +698,29 @@ namespace Bullet
 	{
 		void OilBullet::Update( float elapsedTime )
 		{
+			aliveTime++;
+
+			if ( shouldStay ) { velocity = 0.0f; return; }
+			// else
+
 			velocity.y -= ParamOilBullet::Get().Data().gravity;
 			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
 		}
-		void OilBullet::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix )
+		void OilBullet::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 		{
-			BulletBase::PhysicUpdate( solids, pTerrain, pTerrainWorldMatrix );
+			if ( shouldStay ) { return; }
+			// else
+
+			const auto raycastResult	= CalcCorrectedVector( RECURSION_RAY_COUNT, velocity, pTerrain, pTerrainMatrix );
+			const auto aabbResult		= CalcCorrectedVector( raycastResult.correctedVector, solids );
+			if ( raycastResult.raycastResult.wasHit || aabbResult.wasHit )
+			{
+				shouldStay = true;
+			}
+
+			velocity = aabbResult.correctedVector;
+
+			pos += velocity;
 		}
 		void OilBullet::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 		{
@@ -695,9 +733,7 @@ namespace Bullet
 		void OilBullet::AttachSelfKind() { kind = Kind::Oil; }
 		bool OilBullet::ShouldRemove() const
 		{
-		#if DEBUG_MODE
-			return !( rand() % 512 );
-		#endif // DEBUG_MODE
+			return ( ParamOilBullet::Get().Data().aliveFrame <= aliveTime ) ? true : false;
 		}
 		Donya::AABB OilBullet::GetHitBox() const
 		{
