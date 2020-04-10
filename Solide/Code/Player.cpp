@@ -464,8 +464,36 @@ public:
 
 Donya::Vector3		PlayerInitializer::GetInitialPos() const { return wsInitialPos; }
 Donya::Quaternion	PlayerInitializer::GetInitialOrientation() const { return initialOrientation; }
+void PlayerInitializer::LoadParameter( int stageNo )
+{
+#if DEBUG_MODE
+	LoadJson( stageNo );
+#else
+	LoadBin( stageNo );
+#endif // DEBUG_MODE
+}
+void PlayerInitializer::LoadBin ( int stageNo )
+{
+	constexpr bool fromBinary = true;
+	Donya::Serializer::Load( *this, MakeStageParamPath( ID, stageNo, fromBinary ).c_str(), ID, fromBinary );
+}
+void PlayerInitializer::LoadJson( int stageNo )
+{
+	constexpr bool fromBinary = false;
+	Donya::Serializer::Load( *this, MakeStageParamPath( ID, stageNo, fromBinary ).c_str(), ID, fromBinary );
+}
 #if USE_IMGUI
-void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption )
+void PlayerInitializer::SaveBin ( int stageNo )
+{
+	constexpr bool fromBinary = true;
+	Donya::Serializer::Save( *this, MakeStageParamPath( ID, stageNo, fromBinary ).c_str(), ID, fromBinary );
+}
+void PlayerInitializer::SaveJson( int stageNo )
+{
+	constexpr bool fromBinary = false;
+	Donya::Serializer::Save( *this, MakeStageParamPath( ID, stageNo, fromBinary ).c_str(), ID, fromBinary );
+}
+void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
@@ -474,9 +502,38 @@ void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption )
 	
 	Donya::Vector3 lookDir = initialOrientation.LocalFront();
 	ImGui::SliderFloat3( u8"初期の前方向", &lookDir.x, -1.0f, 1.0f );
-	if ( ImGui::Button( u8"正規化" ) ) { lookDir.Normalize(); }
 
 	initialOrientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), lookDir.Unit(), Donya::Quaternion::Freeze::Up );
+
+	auto ShowIONode = [&]()
+	{
+		if ( !ImGui::TreeNode( u8"ファイル I/O" ) ) { return; }
+		// else
+
+		const std::string strIndex = u8"[" + std::to_string( stageNo ) + u8"]";
+
+		static bool isBinary = true;
+		if ( ImGui::RadioButton( "Binary", isBinary ) ) { isBinary = true;  }
+		if ( ImGui::RadioButton( "Json",  !isBinary ) ) { isBinary = false; }
+
+		std::string loadStr = u8"ロード" + strIndex;
+		loadStr += u8"(by:";
+		loadStr += ( isBinary ) ? u8"Binary" : u8"Json";
+		loadStr += u8")";
+
+		if ( ImGui::Button( ( u8"セーブ" + strIndex ).c_str() ) )
+		{
+			SaveBin ( stageNo );
+			SaveJson( stageNo );
+		}
+		if ( ImGui::Button( loadStr.c_str() ) )
+		{
+			( isBinary ) ? LoadBin( stageNo ) : LoadJson( stageNo );
+		}
+
+		ImGui::TreePop();
+	};
+	ShowIONode();
 
 	ImGui::TreePop();
 }

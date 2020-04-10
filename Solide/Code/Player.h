@@ -38,12 +38,20 @@ private:
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
+	static constexpr const char *ID = "PlayerInit";
 public:
 	Donya::Vector3		GetInitialPos() const;
 	Donya::Quaternion	GetInitialOrientation() const;
 public:
+	void LoadParameter( int stageNo );
+private:
+	void LoadBin ( int stageNo );
+	void LoadJson( int stageNo );
 #if USE_IMGUI
-	void ShowImGuiNode( const std::string &nodeCaption );
+	void SaveBin ( int stageNo );
+	void SaveJson( int stageNo );
+public:
+	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( PlayerInitializer, 0 )

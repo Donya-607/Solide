@@ -20,29 +20,29 @@ class SceneTitle : public Scene
 {
 private:
 	Donya::ICamera						iCamera;
-	Donya::XInput						controller;
+	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 
 	std::unique_ptr<BG>					pBG;
 	std::unique_ptr<Terrain>			pTerrain;
 	std::unique_ptr<Player>				pPlayer;
+	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 	std::unique_ptr<ObstacleContainer>	pObstacles;
 	std::unique_ptr<TitleSentence>		pSentence;
 
-	int  timer;
-	bool nowWaiting;
+	int  timer		= 0;
+	bool nowWaiting	= false;
 
 #if DEBUG_MODE
-	bool nowDebugMode;
-	bool isReverseCameraMoveX;
-	bool isReverseCameraMoveY;
-	bool isReverseCameraRotX;
-	bool isReverseCameraRotY;
+	bool nowDebugMode			= false;
+	bool isReverseCameraMoveX	= false;
+	bool isReverseCameraMoveY	= true;
+	bool isReverseCameraRotX	= false;
+	bool isReverseCameraRotY	= false;
 #endif // DEBUG_MODE
 public:
-	SceneTitle();
-	~SceneTitle();
+	SceneTitle() : Scene() {}
 public:
 	void	Init() override;
 	void	Uninit() override;

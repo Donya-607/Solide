@@ -91,32 +91,26 @@ std::vector<Donya::AABB> ObstacleContainer::GetHitBoxes() const
 	return hitBoxes;
 }
 
-std::string ObstacleContainer::MakeSerializePath( int stageNumber, bool fromBinary ) const
-{
-	const std::string postfix = "[" + std::to_string( stageNumber ) + "]";
-	return GenerateSerializePath( ID + postfix, fromBinary );
-}
-
 void ObstacleContainer::LoadBin ( int stageNumber )
 {
 	constexpr bool fromBinary = true;
-	Donya::Serializer::Load( *this, MakeSerializePath( stageNumber, fromBinary ).c_str(), ID, fromBinary );
+	Donya::Serializer::Load( *this, MakeStageParamPath( ID, stageNumber, fromBinary ).c_str(), ID, fromBinary );
 }
 void ObstacleContainer::LoadJson( int stageNumber )
 {
 	constexpr bool fromBinary = false;
-	Donya::Serializer::Load( *this, MakeSerializePath( stageNumber, fromBinary ).c_str(), ID, fromBinary );
+	Donya::Serializer::Load( *this, MakeStageParamPath( ID, stageNumber, fromBinary ).c_str(), ID, fromBinary );
 }
 #if USE_IMGUI
 void ObstacleContainer::SaveBin( int stageNumber )
 {
 	constexpr bool fromBinary = true;
-	Donya::Serializer::Save( *this, MakeSerializePath( stageNumber, fromBinary ).c_str(), ID, fromBinary );
+	Donya::Serializer::Save( *this, MakeStageParamPath( ID, stageNumber, fromBinary ).c_str(), ID, fromBinary );
 }
 void ObstacleContainer::SaveJson( int stageNumber )
 {
 	constexpr bool fromBinary = false;
-	Donya::Serializer::Save( *this, MakeSerializePath( stageNumber, fromBinary ).c_str(), ID, fromBinary );
+	Donya::Serializer::Save( *this, MakeStageParamPath( ID, stageNumber, fromBinary ).c_str(), ID, fromBinary );
 }
 void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 {

@@ -50,8 +50,6 @@ public:
 public:
 	std::vector<Donya::AABB> GetHitBoxes() const;
 private:
-	std::string MakeSerializePath( int stageNo, bool fromBinary ) const;
-
 	void LoadBin ( int stageNo );
 	void LoadJson( int stageNo );
 #if USE_IMGUI

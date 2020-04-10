@@ -231,29 +231,30 @@ namespace
 		return ParamGame::Get().Data();
 	}
 }
-
-SceneGame::SceneGame() : Scene(),
-	iCamera(),
-	controller( Donya::Gamepad::PAD_1 ),
-	pRenderer( nullptr ),
-	pBG( nullptr ),
-	pTerrain( nullptr ),
-	pPlayer( nullptr ),
-	pObstacles( nullptr ),
-	pClearSentence( nullptr ),
-	gameTimer(),
-	clearTimer(),
-	nowWaiting( false )
-
-#if DEBUG_MODE
-	, nowDebugMode( false ),
-	isReverseCameraMoveX( false ),
-	isReverseCameraMoveY( true  ),
-	isReverseCameraRotX( false ),
-	isReverseCameraRotY( false )
-#endif // DEBUG_MODE
-
-{}
+//
+//SceneGame::SceneGame() : Scene(),
+//	iCamera(),
+//	controller( Donya::Gamepad::PAD_1 ),
+//	pRenderer( nullptr ),
+//	pBG( nullptr ),
+//	pTerrain( nullptr ),
+//	pPlayer( nullptr ),
+//	pObstacles( nullptr ),
+//	pClearSentence( nullptr ),
+//	stageNumber( 1 ),
+//	gameTimer(),
+//	clearTimer(),
+//	nowWaiting( false )
+//
+//#if DEBUG_MODE
+//	, nowDebugMode( false ),
+//	isReverseCameraMoveX( false ),
+//	isReverseCameraMoveY( true  ),
+//	isReverseCameraRotX( false ),
+//	isReverseCameraRotY( false )
+//#endif // DEBUG_MODE
+//
+//{}
 
 void SceneGame::Init()
 {
@@ -598,9 +599,14 @@ void SceneGame::CameraUpdate()
 
 void SceneGame::PlayerInit()
 {
-	const auto data = FetchMember();
+	pPlayerIniter = std::make_unique<PlayerInitializer>();
+	pPlayerIniter->LoadParameter( stageNumber );
+
+	// const auto data = FetchMember();
+	// pPlayer = std::make_unique<Player>();
+	// pPlayer->Init( data.playerInitialPos.GetPosition() );
 	pPlayer = std::make_unique<Player>();
-	pPlayer->Init( data.playerInitialPos.GetPosition() );
+	pPlayer->Init( *pPlayerIniter );
 }
 void SceneGame::PlayerUpdate( float elapsedTime )
 {
@@ -868,6 +874,10 @@ void SceneGame::UseImGui()
 		if ( pTerrain )
 		{
 			pTerrain->ShowImGuiNode( u8"ínå`" );
+		}
+		if ( pPlayerIniter )
+		{
+			pPlayerIniter->ShowImGuiNode( u8"é©ã@ÇÃèâä˙âªèÓïÒ", stageNumber );
 		}
 		if ( pGoal )
 		{

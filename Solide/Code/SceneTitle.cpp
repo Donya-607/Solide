@@ -160,28 +160,6 @@ namespace
 	}
 }
 
-SceneTitle::SceneTitle() : Scene(),
-	iCamera(),
-	controller( Donya::Gamepad::PAD_1 ),
-	pBG( nullptr ),
-	pTerrain( nullptr ),
-	pPlayer( nullptr ),
-	pObstacles( nullptr ),
-	pSentence( nullptr ),
-	timer(),
-	nowWaiting( false )
-
-#if DEBUG_MODE
-	, nowDebugMode( false ),
-	isReverseCameraMoveX( false ),
-	isReverseCameraMoveY( true ),
-	isReverseCameraRotX( false ),
-	isReverseCameraRotY( false )
-#endif // DEBUG_MODE
-
-{}
-SceneTitle::~SceneTitle() = default;
-
 void SceneTitle::Init()
 {
 	Donya::Sound::Play( Music::BGM_Title );
@@ -509,9 +487,14 @@ void SceneTitle::CameraUpdate()
 
 void SceneTitle::PlayerInit()
 {
-	const auto data = FetchMember();
+	pPlayerIniter = std::make_unique<PlayerInitializer>();
+	pPlayerIniter->LoadParameter( 0 );
+
+	// const auto data = FetchMember();
+	// pPlayer = std::make_unique<Player>();
+	// pPlayer->Init( data.playerInitialPos.GetPosition() );
 	pPlayer = std::make_unique<Player>();
-	pPlayer->Init( data.playerInitialPos );
+	pPlayer->Init( *pPlayerIniter );
 }
 void SceneTitle::PlayerUpdate( float elapsedTime )
 {
