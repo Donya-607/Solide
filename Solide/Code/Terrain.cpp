@@ -5,11 +5,16 @@
 #include "Donya/Loader.h"
 #include "Donya/Useful.h"
 
-Terrain::Terrain( const std::string &drawModelName, const std::string &collisionModelName ) :
+#include "FilePath.h"
+
+Terrain::Terrain( int stageNo ) :
 	scale( 1.0f, 1.0f, 1.0f ), translation(),
 	matWorld( Donya::Vector4x4::Identity() ),
 	pDrawModel( nullptr ), pPose( nullptr ), pPolygons( nullptr )
 {
+	const std::string drawModelPath			= MakeTerrainModelPath( "Display",   stageNo );
+	const std::string collisionModelPath	= MakeTerrainModelPath( "Collision", stageNo );
+
 	auto Load = []( Donya::Loader *pLoader, const std::string &filePath )
 	{
 		pLoader->ClearData();
@@ -24,7 +29,7 @@ Terrain::Terrain( const std::string &drawModelName, const std::string &collision
 	};
 
 	Donya::Loader loader{};
-	Load( &loader, drawModelName );
+	Load( &loader, drawModelPath );
 
 	const auto drawModel = Donya::Model::StaticModel::Create( loader.GetModelSource(), loader.GetFileDirectory() );
 	pDrawModel = std::make_shared<Donya::Model::StaticModel>( drawModel );
@@ -34,10 +39,7 @@ Terrain::Terrain( const std::string &drawModelName, const std::string &collision
 	pPose->AssignSkeletal( loader.GetModelSource().skeletal );
 	pPose->UpdateTransformMatrices();
 
-	if ( collisionModelName != drawModelName )
-	{
-		Load( &loader, collisionModelName );
-	}
+	Load( &loader, collisionModelPath );
 
 #if DEBUG_MODE
 	const auto collisionModel = Donya::Model::StaticModel::Create( loader.GetModelSource(), loader.GetFileDirectory() );
@@ -75,6 +77,9 @@ void Terrain::BuildWorldMatrix()
 
 void Terrain::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
+	if ( !pDrawModel || !pPose ) { return; }
+	// else
+
 	Donya::Model::Constants::PerModel::Common constant{};
 	constant.drawColor		= color;
 	constant.worldMatrix	= GetWorldMatrix();
@@ -82,6 +87,9 @@ void Terrain::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 	pRenderer->ActivateConstantModel();
 
 #if DEBUG_MODE && 0
+	if ( !pCollisionModel || !pCollisionPose ) { return; }
+	// else
+
 	pRenderer->Render( *pCollisionModel, *pCollisionPose );
 	// pRenderer->Render( *pCollisionModel, *pPose );
 #endif // DEBUG_MODE
@@ -97,7 +105,7 @@ void Terrain::ShowImGuiNode( const std::string &nodeCaption )
 	// else
 
 	ImGui::DragFloat3( u8"スケール", &scale.x,		0.01f );
-	ImGui::DragFloat3( u8"平行移動", &translation.x,	0.1f );
+	ImGui::DragFloat3( u8"平行移動", &translation.x,	0.1f  );
 
 	ImGui::TreePop();
 }

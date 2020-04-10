@@ -58,11 +58,14 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
+	void	InitStage( int stageNo );
+	void	UninitStage();
+
 	void	CameraInit();
 	void	AssignCameraPos();
 	void	CameraUpdate();
 
-	void	PlayerInit();
+	void	PlayerInit( int stageNo );
 	void	PlayerUpdate( float elapsedTime );
 	void	PlayerPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );
 	void	PlayerDraw();

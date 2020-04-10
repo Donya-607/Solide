@@ -226,35 +226,13 @@ public:
 
 namespace
 {
+	static constexpr int FIRST_STAGE_NO = 1;
+
 	Member FetchMember()
 	{
 		return ParamGame::Get().Data();
 	}
 }
-//
-//SceneGame::SceneGame() : Scene(),
-//	iCamera(),
-//	controller( Donya::Gamepad::PAD_1 ),
-//	pRenderer( nullptr ),
-//	pBG( nullptr ),
-//	pTerrain( nullptr ),
-//	pPlayer( nullptr ),
-//	pObstacles( nullptr ),
-//	pClearSentence( nullptr ),
-//	stageNumber( 1 ),
-//	gameTimer(),
-//	clearTimer(),
-//	nowWaiting( false )
-//
-//#if DEBUG_MODE
-//	, nowDebugMode( false ),
-//	isReverseCameraMoveX( false ),
-//	isReverseCameraMoveY( true  ),
-//	isReverseCameraRotX( false ),
-//	isReverseCameraRotY( false )
-//#endif // DEBUG_MODE
-//
-//{}
 
 void SceneGame::Init()
 {
@@ -270,55 +248,59 @@ void SceneGame::Init()
 	assert( result );
 
 	ParamGame::Get().Init();
-	const auto data = FetchMember();
+	//const auto data = FetchMember();
 
 	Bullet::BulletAdmin::Get().Init();
 	Bullet::LoadBulletsResource();
 
-	pBG = std::make_unique<BG>();
-	result = pBG->LoadSprites( L"./Data/Images/BG/Back.png", L"./Data/Images/BG/Cloud.png" );
-	assert( result );
+	//pBG = std::make_unique<BG>();
+	//result = pBG->LoadSprites( L"./Data/Images/BG/Back.png", L"./Data/Images/BG/Cloud.png" );
+	//assert( result );
 
-	pTutorialSentence = std::make_unique<TutorialSentence>();
-	pTutorialSentence->Init();
-	result = pTutorialSentence->LoadSprite( L"./Data/Images/Game/Tutorial.png" );
-	assert( result );
+	//pTutorialSentence = std::make_unique<TutorialSentence>();
+	//pTutorialSentence->Init();
+	//result = pTutorialSentence->LoadSprite( L"./Data/Images/Game/Tutorial.png" );
+	//assert( result );
 	
-	pClearSentence = std::make_unique<ClearSentence>();
-	pClearSentence->Init();
-	result = pClearSentence->LoadSprite( L"./Data/Images/Game/Clear.png" );
-	assert( result );
+	//pClearSentence = std::make_unique<ClearSentence>();
+	//pClearSentence->Init();
+	//result = pClearSentence->LoadSprite( L"./Data/Images/Game/Clear.png" );
+	//assert( result );
 
-	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin",  "./Data/Models/Terrain/ForCollision/Terrain.bin" );
-	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
+	//pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin",  "./Data/Models/Terrain/ForCollision/Terrain.bin" );
+	//pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 
 	result = ObstacleBase::LoadModels();
 	assert( result );
 
 	ObstacleBase::ParameterInit();
-	pGoal = std::make_unique<Goal>();
-	pGoal->Init( data.goalArea.GetPosition() );
-	pObstacles = std::make_unique<ObstacleContainer>();
-	pObstacles->Init( 1 ); // The stage-number is 1-based.(0 is title stage.)
+	//pGoal = std::make_unique<Goal>();
+	//pGoal->Init( data.goalArea.GetPosition() );
+	//pObstacles = std::make_unique<ObstacleContainer>();
+	//pObstacles->Init( 1 ); // The stage-number is 1-based.(0 is title stage.)
 
 	result = Player::LoadModels();
 	assert( result );
-	PlayerInit();
+	//PlayerInit( stageNumber );
 
-	CameraInit();
+	//CameraInit();
+
+	stageNumber = FIRST_STAGE_NO;
+	InitStage( stageNumber );
 }
 void SceneGame::Uninit()
 {
-	pTerrain.reset();
+	UninitStage();
+	//pTerrain.reset();
 
-	if ( pGoal		) { pGoal->Uninit();		}
-	if ( pObstacles	) { pObstacles->Uninit();	}
+	//if ( pGoal		) { pGoal->Uninit();		}
+	//if ( pObstacles	) { pObstacles->Uninit();	}
 
-	PlayerUninit();
+	//PlayerUninit();
 
 	ObstacleBase::ParameterUninit();
 	ParamGame::Get().Uninit();
-	Bullet::BulletAdmin::Get().Uninit();
+	//Bullet::BulletAdmin::Get().Uninit();
 
 	Donya::Sound::Stop( Music::BGM_Game );
 }
@@ -490,6 +472,68 @@ void SceneGame::Draw( float elapsedTime )
 #endif // DEBUG_MODE
 }
 
+void SceneGame::InitStage( int stageNo )
+{
+#if DEBUG_MODE
+	// The parameters re-loading are unnecessary, but if when debugging, that is convenience.
+	ParamGame::Get().Init();
+	Bullet::BulletAdmin::Get().Init();
+	Bullet::LoadBulletsResource();
+	ObstacleBase::ParameterInit();
+#endif // DEBUG_MODE
+
+	bool result{};
+
+	pBG = std::make_unique<BG>();
+	result = pBG->LoadSprites( L"./Data/Images/BG/Back.png", L"./Data/Images/BG/Cloud.png" );
+	assert( result );
+
+	if ( stageNo == FIRST_STAGE_NO )
+	{
+		pTutorialSentence = std::make_unique<TutorialSentence>();
+		pTutorialSentence->Init();
+		result = pTutorialSentence->LoadSprite( L"./Data/Images/Game/Tutorial.png" );
+		assert( result );
+	}
+	else
+	{
+		pTutorialSentence.reset();
+	}
+
+	pClearSentence = std::make_unique<ClearSentence>();
+	pClearSentence->Init();
+	result = pClearSentence->LoadSprite( L"./Data/Images/Game/Clear.png" );
+	assert( result );
+
+	pTerrain = std::make_unique<Terrain>( stageNo );
+	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
+	// HACK : This scale(0.01f) is magic number :( ...That is adjustment of global scale, for other models.
+
+	pGoal = std::make_unique<Goal>();
+	pGoal->Init( FetchMember().goalArea.GetPosition() );
+	pObstacles = std::make_unique<ObstacleContainer>();
+	pObstacles->Init( stageNo );
+
+	PlayerInit( stageNo );
+
+	CameraInit();
+}
+void SceneGame::UninitStage()
+{
+	if ( pGoal		) { pGoal->Uninit();		}
+	if ( pObstacles	) { pObstacles->Uninit();	}
+
+	pBG.reset();
+	pTerrain.reset();
+	PlayerUninit();
+	pObstacles.reset();
+	pGoal.reset();
+	pTutorialSentence.reset();
+	pClearSentence.reset();
+
+	Bullet::BulletAdmin::Get().Uninit();
+}
+
 void SceneGame::CameraInit()
 {
 	iCamera.Init( Donya::ICamera::Mode::Look );
@@ -597,14 +641,11 @@ void SceneGame::CameraUpdate()
 #endif // !DEBUG_MODE
 }
 
-void SceneGame::PlayerInit()
+void SceneGame::PlayerInit( int stageNo )
 {
 	pPlayerIniter = std::make_unique<PlayerInitializer>();
-	pPlayerIniter->LoadParameter( stageNumber );
+	pPlayerIniter->LoadParameter( stageNo );
 
-	// const auto data = FetchMember();
-	// pPlayer = std::make_unique<Player>();
-	// pPlayer->Init( data.playerInitialPos.GetPosition() );
 	pPlayer = std::make_unique<Player>();
 	pPlayer->Init( *pPlayerIniter );
 }
@@ -616,7 +657,7 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	if ( pPlayer->IsDead() )
 	{
 		// Re-generate.
-		PlayerInit();
+		PlayerInit( stageNumber );
 	}
 
 	Donya::Vector2		moveVector{};
@@ -697,10 +738,10 @@ void SceneGame::PlayerDrawHitBox( const Donya::Vector4x4 &matVP )
 }
 void SceneGame::PlayerUninit()
 {
-	if ( !pPlayer ) { return; }
-	// else
-	pPlayer->Uninit();
+	if ( pPlayer ) { pPlayer->Uninit(); }
+	
 	pPlayer.reset();
+	pPlayerIniter.reset();
 }
 
 void SceneGame::TutorialUpdate( float elapsedTime )

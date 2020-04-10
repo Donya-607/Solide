@@ -188,7 +188,7 @@ void SceneTitle::Init()
 	result = pSentence->LoadSprites( L"./Data/Images/Title/Logo.png", L"./Data/Images/Title/Prompt.png" );
 	assert( result );
 
-	pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/TitleTerrain.bin", "./Data/Models/Terrain/ForCollision/TitleTerrain.bin" );
+	pTerrain = std::make_unique<Terrain>( 0 );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 1.0f, 1.0f, 1.0f }, Donya::Vector3::Zero() );
 
 	result = ObstacleBase::LoadModels();

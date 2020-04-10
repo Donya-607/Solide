@@ -26,7 +26,7 @@ private:
 	std::shared_ptr<Donya::Model::Pose>			pCollisionPose;
 #endif // DEBUG_MODE
 public:
-	Terrain( const std::string &drawModelName, const std::string &collisionModelName );
+	Terrain( int stageNumber );
 public:
 	void SetWorldConfig( const Donya::Vector3 &scaling, const Donya::Vector3 &translate );
 	void BuildWorldMatrix();

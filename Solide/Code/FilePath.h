@@ -12,6 +12,7 @@ std::string GenerateSerializePath( std::string identifier, bool useBinaryExtensi
 /// If set false to "useBinaryExtension", returns JSON extension.
 /// </summary>
 std::string MakeStageParamPath( std::string objectName, int stageNumber, bool useBinaryExtension );
+std::string MakeTerrainModelPath( std::string objectName, int stageNumber );
 
 enum class SpriteAttribute
 {

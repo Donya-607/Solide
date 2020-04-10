@@ -5,7 +5,14 @@
 
 namespace
 {
-	static constexpr const char *PARAMETERS_DIRECTORY = "./Data/Parameters/";
+	static constexpr const char *PARAMETERS_DIRECTORY	= "./Data/Parameters/";
+	static constexpr const char *MODELS_DIRECTORY		= "./Data/Models/";
+	static constexpr const char *MODEL_EXTENSION		= ".bin";
+
+	std::string MakeArraySuffix( int index )
+	{
+		return std::string{ "[" + std::to_string( index ) + "]" };
+	}
 }
 
 std::string GenerateSerializePath( std::string identifier, bool useBinary )
@@ -15,8 +22,13 @@ std::string GenerateSerializePath( std::string identifier, bool useBinary )
 }
 std::string MakeStageParamPath( std::string objName, int stageNo, bool useBinary )
 {
-	const std::string folder = "Stage[" + std::to_string( stageNo ) + "]/";
+	const std::string folder = "Stage" + MakeArraySuffix( stageNo ) + "/";
 	return GenerateSerializePath( folder + objName, useBinary );
+}
+std::string MakeTerrainModelPath( std::string objName, int stageNo )
+{
+	const std::string folder = "Terrain/Stage" + MakeArraySuffix( stageNo ) + "/";
+	return MODELS_DIRECTORY + folder + objName + MODEL_EXTENSION;
 }
 
 std::wstring GetSpritePath( SpriteAttribute sprAttribute )
