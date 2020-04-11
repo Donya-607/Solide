@@ -509,7 +509,7 @@ void SceneGame::InitStage( int stageNo )
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 	// HACK : This scale(0.01f) is magic number :( ...That is adjustment of global scale, for other models.
 
-	pGoal = std::make_unique<Goal>();
+	pGoal = std::make_unique<OLD_Goal>();
 	pGoal->Init( FetchMember().goalArea.GetPosition() );
 	pObstacles = std::make_unique<ObstacleContainer>();
 	pObstacles->Init( stageNo );

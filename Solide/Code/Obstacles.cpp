@@ -161,7 +161,7 @@ namespace
 		case Log:	*pOutput = std::make_shared<::Log>();				return;
 		case Tree:	*pOutput = std::make_shared<::Tree>();				return;
 		case Table:	*pOutput = std::make_shared<::Table>();				return;
-		case Goal:	*pOutput = std::make_shared<::Goal>();				return;
+		case Goal:	*pOutput = std::make_shared<::OLD_Goal>();				return;
 		default: _ASSERT_EXPR( 0, L"Error : Unexpected model kind!" );	return;
 		}
 	}
@@ -389,7 +389,7 @@ int Table::GetKind() const
 	return scast<int>( Kind::Table );
 }
 
-void Goal::Update( float elapsedTime )
+void OLD_Goal::Update( float elapsedTime )
 {
 	hitBox = GetModelHitBox( Kind::Goal, ParamObstacle::Get().Data() );
 
@@ -397,7 +397,7 @@ void Goal::Update( float elapsedTime )
 	const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( ROT_ANGLE ) );
 	orientation.RotateBy( rotation );
 }
-void Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+void OLD_Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
 	const Donya::AABB body = GetHitBox();
 	Donya::Vector4x4 W{};
@@ -411,11 +411,11 @@ void Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 
 	DrawModel( Kind::Goal, pRenderer, W, color );
 }
-void Goal::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+void OLD_Goal::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
 	ObstacleBase::DrawHitBox( pRenderer, matVP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 }
-int Goal::GetKind() const
+int OLD_Goal::GetKind() const
 {
 	return scast<int>( Kind::Goal );
 }

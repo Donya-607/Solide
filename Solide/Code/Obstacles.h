@@ -183,7 +183,7 @@ CEREAL_CLASS_VERSION( Table, 0 )
 CEREAL_REGISTER_TYPE( Table )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Table )
 
-class Goal : public ObstacleBase
+class OLD_Goal : public ObstacleBase
 {
 private:
 	Donya::Quaternion orientation;
@@ -208,6 +208,6 @@ public:
 public:
 	int GetKind() const override;
 };
-CEREAL_CLASS_VERSION( Goal, 0 )
-CEREAL_REGISTER_TYPE( Goal )
-CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Goal )
+CEREAL_CLASS_VERSION( OLD_Goal, 0 )
+CEREAL_REGISTER_TYPE( OLD_Goal )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, OLD_Goal )
