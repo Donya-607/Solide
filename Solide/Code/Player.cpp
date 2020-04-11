@@ -486,12 +486,20 @@ void PlayerInitializer::LoadJson( int stageNo )
 void PlayerInitializer::SaveBin ( int stageNo )
 {
 	constexpr bool fromBinary = true;
-	Donya::Serializer::Save( *this, MakeStageParamPath( ID, stageNo, fromBinary ).c_str(), ID, fromBinary );
+
+	const std::string filePath = MakeStageParamPath( ID, stageNo, fromBinary );
+	MakeFileIfNotExists( filePath, fromBinary );
+
+	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
 }
 void PlayerInitializer::SaveJson( int stageNo )
 {
 	constexpr bool fromBinary = false;
-	Donya::Serializer::Save( *this, MakeStageParamPath( ID, stageNo, fromBinary ).c_str(), ID, fromBinary );
+
+	const std::string filePath = MakeStageParamPath( ID, stageNo, fromBinary );
+	MakeFileIfNotExists( filePath, fromBinary );
+
+	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
 }
 void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 {

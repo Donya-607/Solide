@@ -878,26 +878,6 @@ void SceneGame::UseImGui()
 		ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
 		ImGui::Text( "" );
 
-	#if DEBUG_MODE
-		if ( ImGui::TreeNode( u8"出力テスト" ) )
-		{
-			if ( ImGui::Button( u8"./Data/test.bin を出力" ) )
-			{
-				std::ofstream ofs{ "./Data/test.bin", std::ios::out | std::ios::binary };
-				ofs << "testText" << std::endl;
-				ofs.close();
-			}
-			if ( ImGui::Button( u8"./Data/TmpDir/test.bin を出力" ) )
-			{
-				auto result = _mkdir( "./Data/TmpDir/" );
-				std::ofstream ofs{ "./Data/TmpDir/test.bin", std::ios::out | std::ios::binary };
-				ofs << "directoryTest" << std::endl;
-				ofs.close();
-			}
-			ImGui::TreePop();
-		}
-	#endif // DEBUG_MODE
-
 		if ( ImGui::TreeNode( u8"ステージ番号の変更" ) )
 		{
 			static int transitionTarget = 1;
