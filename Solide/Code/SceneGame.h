@@ -11,6 +11,7 @@
 #include "Donya/Vector.h"
 
 #include "BG.h"
+#include "Goal.h"
 #include "ObstacleContainer.h"
 #include "Player.h"
 #include "Renderer.h"
@@ -32,7 +33,7 @@ private:
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 	std::unique_ptr<ObstacleContainer>	pObstacles;
-	std::unique_ptr<OLD_Goal>				pGoal;
+	std::unique_ptr<Goal>				pGoal;
 	std::unique_ptr<TutorialSentence>	pTutorialSentence;
 	std::unique_ptr<ClearSentence>		pClearSentence;
 

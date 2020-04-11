@@ -98,7 +98,7 @@ Donya::Vector4x4	Goal::CalcWorldMatrix( bool useForHitBox ) const
 	W._11 = scale.x;
 	W._22 = scale.y;
 	W._33 = scale.z;
-	W *= orientation.RequireRotationMatrix();
+	if ( !useForHitBox ) { W *= orientation.RequireRotationMatrix(); }
 	W._41 = translation.x;
 	W._42 = translation.y;
 	W._43 = translation.z;
@@ -192,6 +192,9 @@ void Goal::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	ImGui::DragFloat( u8"回転角（Degree，フレーム辺り）", &rotateAngle );
 	ImGui::DragFloat3( u8"ワールド座標", &wsPos.x );
 	ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
+	ImGui::DragFloat( u8"描画スケール",	&drawScale );
+	ImGui::ColorEdit4( u8"描画色",		&drawColor.x );
+	drawScale = std::max( 0.0f, drawScale );
 	
 	auto ShowIONode = [&]()
 	{

@@ -53,10 +53,10 @@ public:
 	Donya::AABB			GetHitBox()		const;
 	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox ) const;
 private:
-	void LoadBin( int stageNo );
+	void LoadBin ( int stageNo );
 	void LoadJson( int stageNo );
 #if USE_IMGUI
-	void SaveBin( int stageNo );
+	void SaveBin ( int stageNo );
 	void SaveJson( int stageNo );
 public:
 	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );

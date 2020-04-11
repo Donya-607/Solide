@@ -273,6 +273,9 @@ void SceneGame::Init()
 	result = ObstacleBase::LoadModels();
 	assert( result );
 
+	result = Goal::LoadResource();
+	assert( result );
+
 	ObstacleBase::ParameterInit();
 	//pGoal = std::make_unique<Goal>();
 	//pGoal->Init( data.goalArea.GetPosition() );
@@ -427,7 +430,7 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		PlayerDrawHitBox( VP );
 
-		pGoal->DrawHitBox( pRenderer.get(), VP, data.goalColor );
+		pGoal->DrawHitBox( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 		Bullet::BulletAdmin::Get().DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 		pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 	}
@@ -509,8 +512,8 @@ void SceneGame::InitStage( int stageNo )
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 	// HACK : This scale(0.01f) is magic number :( ...That is adjustment of global scale, for other models.
 
-	pGoal = std::make_unique<OLD_Goal>();
-	pGoal->Init( FetchMember().goalArea.GetPosition() );
+	pGoal = std::make_unique<Goal>();
+	pGoal->Init( stageNo );
 	pObstacles = std::make_unique<ObstacleContainer>();
 	pObstacles->Init( stageNo );
 
@@ -769,12 +772,14 @@ void SceneGame::TutorialUpdate( float elapsedTime )
 
 bool SceneGame::NowGoalMoment() const
 {
-	if ( !pPlayer ) { return false; }
+	if ( !pPlayer	) { return false; }
+	if ( !pGoal		) { return false; }
 	if ( Fader::Get().IsExist() ) { return false; }
-	if ( nowWaiting ) { return false; }
+	if ( nowWaiting	) { return false; }
 	// else
 
-	const Donya::AABB goalArea   = FetchMember().goalArea.GetHitBox();
+	// const Donya::AABB goalArea   = FetchMember().goalArea.GetHitBox();
+	const Donya::AABB goalArea   = pGoal->GetHitBox();
 	const Donya::AABB playerBody = pPlayer->GetHitBox();
 
 	return Donya::AABB::IsHitAABB( playerBody, goalArea );
@@ -955,7 +960,7 @@ void SceneGame::UseImGui()
 		}
 		if ( pGoal )
 		{
-			pGoal->ShowImGuiNode( u8"ゴールオブジェクト" );
+			pGoal->ShowImGuiNode( u8"ゴールオブジェクト", stageNumber );
 		}
 		if ( pObstacles )
 		{
