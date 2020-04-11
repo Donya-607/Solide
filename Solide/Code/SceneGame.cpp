@@ -39,18 +39,14 @@ namespace
 			Donya::Vector3 offsetFocus;	// The offset of focus from the player position.
 		}
 		camera;
-		Section playerInitialPos;
-		Section goalArea;
-
+		
 		// The threshold member will behave as offset from the player.
 		// That offset will function as: threshold = player.pos.y + offset;
 		RenderingHelper::TransConstant transparency;
 
-		int waitFrameUntilShowTutorial  = 60;
-		int waitFrameUntilSlideTutorial = 60;
-		int waitFrameUntilFade = 60;
-
-		Donya::Vector4 goalColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+		int waitFrameUntilShowTutorial	= 60;
+		int waitFrameUntilSlideTutorial	= 60;
+		int waitFrameUntilFade			= 60;
 
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
 
@@ -70,29 +66,17 @@ namespace
 
 			if ( 1 <= version )
 			{
-				archive
-				(
-					CEREAL_NVP( playerInitialPos ),
-					CEREAL_NVP( goalArea )
-				);
+				archive( CEREAL_NVP( waitFrameUntilFade ) );
 			}
 			if ( 2 <= version )
 			{
-				archive( CEREAL_NVP( waitFrameUntilFade ) );
-			}
-			if ( 3 <= version )
-			{
 				archive
 				(
-					CEREAL_NVP( waitFrameUntilShowTutorial ),
+					CEREAL_NVP( waitFrameUntilShowTutorial  ),
 					CEREAL_NVP( waitFrameUntilSlideTutorial )
 				);
 			}
-			if ( 4 <= version )
-			{
-				archive( CEREAL_NVP( goalColor ) );
-			}
-			if ( 5 <= version )
+			if ( 3 <= version )
 			{
 				archive
 				(
@@ -100,7 +84,7 @@ namespace
 					CEREAL_NVP( directionalLight.direction	)
 				);
 			}
-			if ( 6 <= version )
+			if ( 4 <= version )
 			{
 				archive
 				(
@@ -110,14 +94,14 @@ namespace
 					CEREAL_NVP( transparency.heightThreshold	)
 				);
 			}
-			if ( 7 <= version )
+			if ( 5 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 6 )
+CEREAL_CLASS_VERSION( Member, 4 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -184,32 +168,6 @@ public:
 				ImGui::DragFloat( u8"範囲・奥側",	&m.transparency.zFar,		0.01f, 0.0f );
 				ImGui::SliderFloat( u8"最低透明度",	&m.transparency.lowerAlpha,	0.0f,  1.0f );
 				ImGui::DragFloat( u8"透明を適用する高さ（自機からの相対）",		&m.transparency.heightThreshold, 0.01f );
-
-				ImGui::TreePop();
-			}
-
-			if ( ImGui::TreeNode( u8"セクション" ) )
-			{
-				ImGui::DragFloat3( u8"選択位置", &m.selectingPos.x, 0.1f );
-				ImGui::Text( "" );
-
-				auto ShowSectionGUI = [&]( const std::string &nodeCaption, Section *pSection )
-				{
-					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
-					// else
-
-					if ( ImGui::Button( u8"「選択位置」に設定" ) )
-					{
-						pSection->SetPosition( m.selectingPos );
-					}
-					pSection->ShowImGuiNode( u8"直接変更" );
-
-					ImGui::TreePop();
-				};
-
-				ShowSectionGUI( u8"自機の初期位置",	&m.playerInitialPos	);
-				ShowSectionGUI( u8"ゴール位置",		&m.goalArea			);
-				ImGui::ColorEdit4( u8"ゴールオブジェクトの色", &m.goalColor.x );
 
 				ImGui::TreePop();
 			}
@@ -416,7 +374,7 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->ActivateShaderNormalStatic();
 		Bullet::BulletAdmin::Get().Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 		pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
-		pGoal->Draw( pRenderer.get(), data.goalColor );
+		pGoal->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 		pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 		pRenderer->DeactivateShaderNormalStatic();
 	}
@@ -445,31 +403,25 @@ void SceneGame::Draw( float elapsedTime )
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
-		// Sections
+		Donya::Model::Cube::Constant constant;
+		constant.matViewProj	= VP;
+		constant.drawColor		= Donya::Vector4{ 0.5f, 1.0f, 0.8f, 0.5f };
+		constant.lightDirection	= data.directionalLight.direction.XYZ();
+		
+		auto DrawCube = [&]( const Donya::Vector3 &pos, const Donya::Vector3 &scale = { 1.0f, 1.0f, 1.0f } )
 		{
-			constexpr float selectColorBase  = 0.6f;
-			constexpr float selectColorRange = 0.2f;
+			constant.matWorld._11 = scale.x * 2.0f;
+			constant.matWorld._22 = scale.y * 2.0f;
+			constant.matWorld._33 = scale.z * 2.0f;
+			constant.matWorld._41 = pos.x;
+			constant.matWorld._42 = pos.y;
+			constant.matWorld._43 = pos.z;
+			pRenderer->ProcessDrawingCube( constant );
+		};
 
-			static int  selectColorTimer{}; selectColorTimer++;
-			float sin = sinf( scast<float>( selectColorTimer ) );
-			float selectColor = selectColorBase + sin * selectColorRange;
-
-			// Currently selecting section.
-			Section willAddition{ data.selectingPos };
-			willAddition.DrawHitBox( pRenderer.get(), VP, { 0.7f, 0.7f, 0.7f, 0.5f } );
-
-			struct Bundle { const Section *pSection; Donya::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; };
-			std::vector<Bundle> drawList
-			{
-				Bundle{ &willAddition,			{ selectColor, selectColor, selectColor, 0.5f } },
-				Bundle{ &data.playerInitialPos,	{ 0.5f, 1.0f, 0.8f, 0.7f } },
-				Bundle{ &data.goalArea,			{ 0.8f, 0.8f, 0.1f, 0.7f } },
-			};
-
-			for ( const auto &it : drawList )
-			{
-				it.pSection->DrawHitBox( pRenderer.get(), VP, it.color );
-			}
+		if ( pPlayerIniter )
+		{
+			DrawCube( pPlayerIniter->GetInitialPos() );
 		}
 	}
 #endif // DEBUG_MODE

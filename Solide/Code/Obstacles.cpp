@@ -24,8 +24,6 @@ namespace
 		Tree,
 		Table,
 
-		Goal,
-
 		KindCount
 	};
 	constexpr size_t KIND_COUNT = scast<size_t>( KindCount );
@@ -37,8 +35,6 @@ namespace
 		"Log",
 		"Tree",
 		"Table",
-
-		"Goal",
 	};
 
 	struct ModelData
@@ -161,7 +157,6 @@ namespace
 		case Log:	*pOutput = std::make_shared<::Log>();				return;
 		case Tree:	*pOutput = std::make_shared<::Tree>();				return;
 		case Table:	*pOutput = std::make_shared<::Table>();				return;
-		case Goal:	*pOutput = std::make_shared<::OLD_Goal>();				return;
 		default: _ASSERT_EXPR( 0, L"Error : Unexpected model kind!" );	return;
 		}
 	}
@@ -387,35 +382,4 @@ void Table::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matV
 int Table::GetKind() const
 {
 	return scast<int>( Kind::Table );
-}
-
-void OLD_Goal::Update( float elapsedTime )
-{
-	hitBox = GetModelHitBox( Kind::Goal, ParamObstacle::Get().Data() );
-
-	constexpr float ROT_ANGLE = 1.5f; // ( 360 / 4 )
-	const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( ROT_ANGLE ) );
-	orientation.RotateBy( rotation );
-}
-void OLD_Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
-{
-	const Donya::AABB body = GetHitBox();
-	Donya::Vector4x4 W{};
-	W._11 = body.size.x * 2.0f;
-	W._22 = body.size.y * 2.0f;
-	W._33 = body.size.z * 2.0f;
-	W *= orientation.RequireRotationMatrix();
-	W._41 = body.pos.x;
-	W._42 = body.pos.y;
-	W._43 = body.pos.z;
-
-	DrawModel( Kind::Goal, pRenderer, W, color );
-}
-void OLD_Goal::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
-{
-	ObstacleBase::DrawHitBox( pRenderer, matVP, { 1.0f, 1.0f, 1.0f, 0.5f } );
-}
-int OLD_Goal::GetKind() const
-{
-	return scast<int>( Kind::Goal );
 }

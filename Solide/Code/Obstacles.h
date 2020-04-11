@@ -182,32 +182,3 @@ public:
 CEREAL_CLASS_VERSION( Table, 0 )
 CEREAL_REGISTER_TYPE( Table )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Table )
-
-class OLD_Goal : public ObstacleBase
-{
-private:
-	Donya::Quaternion orientation;
-private:
-	friend class cereal::access;
-	template<class Archive>
-	void serialize( Archive &archive, std::uint32_t version )
-	{
-		archive
-		(
-			cereal::base_class<ObstacleBase>( this )
-		);
-		if ( 1 <= version )
-		{
-			// archive( CEREAL_NVP( x ) );
-		}
-	}
-public:
-	void Update( float elapsedTime ) override;
-	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
-	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
-public:
-	int GetKind() const override;
-};
-CEREAL_CLASS_VERSION( OLD_Goal, 0 )
-CEREAL_REGISTER_TYPE( OLD_Goal )
-CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, OLD_Goal )
