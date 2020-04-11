@@ -14,6 +14,11 @@ Terrain::Terrain( int stageNo ) :
 {
 	const std::string drawModelPath			= MakeTerrainModelPath( "Display",   stageNo );
 	const std::string collisionModelPath	= MakeTerrainModelPath( "Collision", stageNo );
+	if ( !Donya::IsExistFile( drawModelPath ) || !Donya::IsExistFile( collisionModelPath ) )
+	{
+		return;
+	}
+	// else
 
 	auto Load = []( Donya::Loader *pLoader, const std::string &filePath )
 	{

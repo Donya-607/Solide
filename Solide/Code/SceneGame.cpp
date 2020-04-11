@@ -436,8 +436,8 @@ void SceneGame::Draw( float elapsedTime )
 	pBG->Draw( elapsedTime );
 
 	// A draw check of these sentences are doing at internal of these methods.
-	pTutorialSentence->Draw( elapsedTime );
-	pClearSentence->Draw( elapsedTime );
+	if ( pTutorialSentence	) { pTutorialSentence->Draw( elapsedTime );	}
+	if ( pClearSentence		) { pClearSentence->Draw( elapsedTime );	}
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -746,6 +746,9 @@ void SceneGame::PlayerUninit()
 
 void SceneGame::TutorialUpdate( float elapsedTime )
 {
+	if ( !pTutorialSentence ) { return; }
+	// else
+
 	const int showTiming  = FetchMember().waitFrameUntilShowTutorial;
 	const int slideTiming = showTiming + FetchMember().waitFrameUntilSlideTutorial;
 
@@ -861,6 +864,7 @@ Scene::Result SceneGame::ReturnResult()
 }
 
 #if USE_IMGUI
+#include <direct.h>
 void SceneGame::UseImGui()
 {
 	if ( !ImGui::BeginIfAllowed() ) { return; }
@@ -873,6 +877,55 @@ void SceneGame::UseImGui()
 		ImGui::Text( u8"「Ｆ５キー」を押すと，" );
 		ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
 		ImGui::Text( "" );
+
+	#if DEBUG_MODE
+		if ( ImGui::TreeNode( u8"出力テスト" ) )
+		{
+			if ( ImGui::Button( u8"./Data/test.bin を出力" ) )
+			{
+				std::ofstream ofs{ "./Data/test.bin", std::ios::out | std::ios::binary };
+				ofs << "testText" << std::endl;
+				ofs.close();
+			}
+			if ( ImGui::Button( u8"./Data/TmpDir/test.bin を出力" ) )
+			{
+				auto result = _mkdir( "./Data/TmpDir/" );
+				std::ofstream ofs{ "./Data/TmpDir/test.bin", std::ios::out | std::ios::binary };
+				ofs << "directoryTest" << std::endl;
+				ofs.close();
+			}
+			ImGui::TreePop();
+		}
+	#endif // DEBUG_MODE
+
+		if ( ImGui::TreeNode( u8"ステージ番号の変更" ) )
+		{
+			static int transitionTarget = 1;
+			ImGui::InputInt( u8"遷移先ステージ番号", &transitionTarget );
+			transitionTarget = std::max( 0, transitionTarget );
+
+			auto MakeTransitionTargetName = []( int stageNo )->std::string
+			{
+				constexpr const char *prompt = u8"に移動する";
+				std::string stageName = u8"ステージ[" + std::to_string( stageNo ) + u8"]";
+				if ( stageNo < FIRST_STAGE_NO )
+				{
+					stageName += u8"（タイトルステージ）";
+				}
+
+				return stageName + prompt;
+			};
+			if ( ImGui::Button( MakeTransitionTargetName( transitionTarget ).c_str() ) )
+			{
+				UninitStage();
+
+				stageNumber = transitionTarget;
+
+				InitStage( stageNumber );
+			}
+			// else
+			ImGui::TreePop();
+		}
 
 		if ( ImGui::TreeNode( u8"カメラ情報" ) )
 		{

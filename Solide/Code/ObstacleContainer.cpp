@@ -105,12 +105,20 @@ void ObstacleContainer::LoadJson( int stageNumber )
 void ObstacleContainer::SaveBin( int stageNumber )
 {
 	constexpr bool fromBinary = true;
-	Donya::Serializer::Save( *this, MakeStageParamPath( ID, stageNumber, fromBinary ).c_str(), ID, fromBinary );
+
+	const std::string filePath = MakeStageParamPath( ID, stageNumber, fromBinary );
+	MakeFileIfNotExists( filePath, fromBinary );
+
+	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
 }
 void ObstacleContainer::SaveJson( int stageNumber )
 {
 	constexpr bool fromBinary = false;
-	Donya::Serializer::Save( *this, MakeStageParamPath( ID, stageNumber, fromBinary ).c_str(), ID, fromBinary );
+
+	const std::string filePath = MakeStageParamPath( ID, stageNumber, fromBinary );
+	MakeFileIfNotExists( filePath, fromBinary );
+
+	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
 }
 void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 {

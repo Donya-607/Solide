@@ -3,6 +3,7 @@
 #include <cmath>
 #include <crtdbg.h>
 #include <d3d11.h>
+#include <direct.h>		// Use _mkdir(), _wmkdir().
 #include <float.h>
 #include <fstream>
 #include <locale>
@@ -14,7 +15,7 @@
 #include "Constant.h"
 #include "Donya.h"
 
-#pragma comment( lib, "shlwapi.lib" ) // Use PathRemoveFileSpecA(), PathAddBackslashA(), In AcquireDirectoryFromFullPath().
+#pragma comment( lib, "shlwapi.lib" ) // Use PathRemoveFileSpecA(), PathAddBackslashA(), in AcquireDirectoryFromFullPath().
 
 namespace Donya
 {
@@ -144,11 +145,11 @@ namespace Donya
 		return std::string( dest.begin(), dest.end() );
 	}
 
-	const wchar_t *MultiToWide( const char *source )
+	const wchar_t	*MultiToWide( const char *source )
 	{
 		return MultiToWide( std::string( source ) ).c_str();
 	}
-	const char *WideToMulti( const wchar_t *source )
+	const char		*WideToMulti( const wchar_t *source )
 	{
 		return WideToMulti( std::wstring( source ) ).data();
 	}
@@ -268,21 +269,21 @@ namespace Donya
 
 		std::lock_guard<std::mutex> enterCS( mutexFullPathName );
 
-		auto bufferSize = GetFullPathNameA( filePath.c_str(), NULL, NULL, nullptr );
-		std::unique_ptr<char[]> buffer = std::make_unique<char[]>( bufferSize + 1/* Null End */ );
+		const auto bufferSize = GetFullPathNameA( filePath.c_str(), NULL, NULL, nullptr );
+		std::unique_ptr<char[]> buffer = std::make_unique<char[]>( bufferSize + 1/* Null-Terminate */ );
 
-		/* auto result = */GetFullPathNameA( filePath.c_str(), bufferSize, buffer.get(), nullptr );
+		/* auto result = */ GetFullPathNameA( filePath.c_str(), bufferSize, buffer.get(), nullptr );
 
 		return std::string{ buffer.get() };
 	}
 
 	std::string  ExtractFileDirectoryFromFullPath( std::string fullPath )
 	{
-		size_t pathLength = fullPath.size();
+		const size_t pathLength = fullPath.size();
 		if ( !pathLength ) { return ""; }
 		// else
 
-		std::unique_ptr<char[]> directory = std::make_unique<char[]>( pathLength + 1/* Null End */ );
+		std::unique_ptr<char[]> directory = std::make_unique<char[]>( pathLength + 1/* Null-Terminate */ );
 		for ( size_t i = 0; i < pathLength; ++i )
 		{
 			directory[i] = fullPath[i];
@@ -323,5 +324,16 @@ namespace Donya
 				WideToMulti( fullPath )
 			)
 		);
+	}
+
+	bool MakeDirectory( const std::string  &dirPath )
+	{
+		const int result = _mkdir( dirPath.c_str() );
+		return  ( result == 0 ) ? true : false;
+	}
+	bool MakeDirectory( const std::wstring &dirPath )
+	{
+		const int result = _wmkdir( dirPath.c_str() );
+		return  ( result == 0 ) ? true : false;
 	}
 }

@@ -31,6 +31,31 @@ std::string MakeTerrainModelPath( std::string objName, int stageNo )
 	return MODELS_DIRECTORY + folder + objName + MODEL_EXTENSION;
 }
 
+bool MakeDirectoryIfNotExists( const std::string &filePath )
+{
+	const std::string fullPath		= Donya::ToFullPath( filePath );
+	const std::string fileDirectory	= Donya::ExtractFileDirectoryFromFullPath( fullPath );
+	const int result = Donya::MakeDirectory( fileDirectory );
+	return  ( result == 0 ) ? true : false;
+}
+bool MakeFileIfNotExists( const std::string &filePath, bool binaryMode )
+{
+	if ( Donya::IsExistFile( filePath ) ) { return false; }
+	// else
+
+	bool wasCreated = MakeDirectoryIfNotExists( filePath );
+	if ( wasCreated || !Donya::IsExistFile( filePath ) )
+	{
+		const auto openMode = ( binaryMode ) ? std::ios::out | std::ios::binary : std::ios::out;
+		std::ofstream ofs{ filePath, openMode };
+		// The file is created in here.
+		ofs.close();
+
+		wasCreated = true;
+	}
+	return wasCreated;
+}
+
 std::wstring GetSpritePath( SpriteAttribute sprAttribute )
 {
 	switch ( sprAttribute )

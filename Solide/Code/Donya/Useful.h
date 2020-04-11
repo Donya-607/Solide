@@ -150,4 +150,19 @@ namespace Donya
 	/// If fullPath is invalid, returns ""(You can error-check with std::string::empty());
 	/// </summary>
 	std::wstring ExtractFileNameFromFullPath( std::wstring fullPath );
+
+	/// <summary>
+	/// Create the directory by _mkdir() if not exists.<para></para>
+	/// Return value means:<para></para>
+	/// True: The directory was created.<para></para>
+	/// False: The directory was not created. The directory path was not founded(may contain a not exists directory?), or already exists.
+	/// </summary>
+	bool MakeDirectory( const std::string &makingDirectoryPath );
+	/// <summary>
+	/// Create the directory by _wmkdir() if not exists.<para></para>
+	/// Return value means:<para></para>
+	/// True: The directory was created.<para></para>
+	/// False: The directory was not created. The directory path was not founded(may contain a not exists directory?), or already exists.
+	/// </summary>
+	bool MakeDirectory( const std::wstring &makingDirectoryPath );
 }
