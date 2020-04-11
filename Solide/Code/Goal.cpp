@@ -1,25 +1,80 @@
 #include "Goal.h"
 
+#include <memory>
+
+#include "Donya/Loader.h"
+#include "Donya/Model.h"
+#include "Donya/ModelPose.h"
 #include "Donya/Useful.h"
 
+#include "Common.h"
 #include "FilePath.h"
 #include "Parameter.h"
 
 namespace
 {
 	constexpr const char *MODEL_DIRECTORY	= "./Data/Models/Goal/";
-	constexpr const char *MODEL_NAME		= "Goal";
-	constexpr const char *EXTENSION			= ".bin";
+	constexpr const char *MODEL_NAME		= "Goal.bin";
 
 	struct ModelData
 	{
-
+		Donya::Model::StaticModel	model;
+		Donya::Model::Pose			pose;
 	};
+	static std::shared_ptr<ModelData> pModel{};
+
+	bool LoadModel()
+	{
+		bool result		= true;
+		bool succeeded	= true;
+
+		Donya::Loader loader{};
+		auto Load = [&loader]( const std::string &filePath, ModelData *pDest )->bool
+		{
+			loader.ClearData();
+
+			bool result = loader.Load( filePath );
+			if ( !result ) { return false; }
+			// else
+
+			const auto &source = loader.GetModelSource();
+			pDest->model = Donya::Model::StaticModel::Create( source, loader.GetFileDirectory() );
+			pDest->pose.AssignSkeletal( source.skeletal );
+
+			return pDest->model.WasInitializeSucceeded();
+		};
+
+		const std::string filePath{ MODEL_DIRECTORY + std::string{ MODEL_NAME } };
+		if ( !Donya::IsExistFile( filePath ) )
+		{
+			const std::string outputMsgBase{ "Error : The model file does not exist. That is : " };
+			Donya::OutputDebugStr( ( outputMsgBase + "[" + filePath + "]" + "\n" ).c_str() );
+			return false;
+		}
+		// else
+
+		pModel = std::make_shared<ModelData>();
+		result = Load( filePath, &( *pModel ) ); // std::shared_ptr<T> -> T -> T *
+		if ( !result )
+		{
+			const std::wstring errMsgBase{ L"Failed : Loading a model. That is : " };
+			const std::wstring errMsg = errMsgBase + Donya::MultiToWide( filePath );
+			_ASSERT_EXPR( 0, errMsg.c_str() );
+
+			succeeded = false;
+		}
+
+		return succeeded;
+	}
+	std::shared_ptr<ModelData> GetModelPtr()
+	{
+		return pModel;
+	}
 }
 
 bool Goal::LoadResource()
 {
-
+	return LoadModel();
 }
 
 
@@ -70,11 +125,34 @@ void Goal::Update( float elapsedTime )
 
 void Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
+	if ( !pRenderer ) { return; }
+	// else
 
+	const auto pModel = GetModelPtr();
+	if ( !pModel ) { return; }
+	// else
+
+	Donya::Model::Constants::PerModel::Common constant{};
+	constant.drawColor		= drawColor.Product( color );
+	constant.worldMatrix	= CalcWorldMatrix( /* useForHitBox = */ false );
+	pRenderer->UpdateConstant( constant );
+	pRenderer->ActivateConstantModel();
+
+	pRenderer->Render( pModel->model, pModel->pose );
+
+	pRenderer->DeactivateConstantModel();
 }
 void Goal::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
+	if ( !Common::IsShowCollision() ) { return; }
+	// else
 
+	Donya::Model::Cube::Constant constant;
+	constant.matWorld		= CalcWorldMatrix( /* useForHitBox = */ true );
+	constant.matViewProj	= matVP;
+	constant.drawColor		= drawColor.Product( color );
+	constant.lightDirection	= -Donya::Vector3::Up();
+	pRenderer->ProcessDrawingCube( constant );
 }
 
 void Goal::LoadBin ( int stageNo )
