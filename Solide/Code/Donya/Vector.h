@@ -32,10 +32,9 @@ namespace Donya
 			archive( CEREAL_NVP( x ), CEREAL_NVP( y ) );
 		}
 	public:
-		constexpr XMFLOAT2 XMFloat() const
+		constexpr const XMFLOAT2 &XMFloat() const
 		{
-			// HACK:Can I prevent slice by this ?
-			return static_cast<XMFLOAT2>( *this );
+			return *this;
 		}
 	public:
 		constexpr const float operator [] ( size_t index ) const &
@@ -266,10 +265,9 @@ namespace Donya
 			archive( CEREAL_NVP( x ), CEREAL_NVP( y ), CEREAL_NVP( z ) );
 		}
 	public:
-		constexpr XMFLOAT3 XMFloat() const
+		constexpr const XMFLOAT3 &XMFloat() const
 		{
-			// HACK:Can I prevent slice by this ?
-			return static_cast<XMFLOAT3>( *this );
+			return *this;
 		}
 	public:
 		constexpr const float operator [] ( size_t index ) const &
@@ -494,10 +492,9 @@ namespace Donya
 			archive( CEREAL_NVP( x ), CEREAL_NVP( y ), CEREAL_NVP( z ), CEREAL_NVP( w ) );
 		}
 	public:
-		constexpr XMFLOAT4 XMFloat() const
+		constexpr const XMFLOAT4 &XMFloat() const
 		{
-			// HACK:Can I prevent slice by this ?
-			return static_cast<XMFLOAT4>( *this );
+			return *this;
 		}
 	public:
 		constexpr const float operator [] ( size_t index ) const &
@@ -718,11 +715,11 @@ namespace Donya
 		/// <summary>
 		/// Access to element. the index is 0-based, 0~15. row-major.
 		/// </summary>
-		const float &operator [] ( unsigned int index ) const &;
+		const float	&operator [] ( unsigned int index ) const &;
 		/// <summary>
 		/// Access to element. the index is 0-based, 0~15. row-major.
 		/// </summary>
-		float &operator [] ( unsigned int index ) &;
+		float		&operator [] ( unsigned int index ) &;
 		/// <summary>
 		/// Access to element. the index is 0-based, 0~15. row-major.
 		/// </summary>
@@ -730,12 +727,11 @@ namespace Donya
 		/// <summary>
 		/// Access to element. the index is 0-based, 0~3. row-major.
 		/// </summary>
-		float &operator () ( unsigned int row, unsigned int column );
+		float		&operator () ( unsigned int row, unsigned int column );
 	public:
-		constexpr XMFLOAT4X4 XMFloat() const
+		constexpr const XMFLOAT4X4 &XMFloat() const
 		{
-			// HACK:Can I prevent slice by this ?
-			return static_cast<XMFLOAT4X4>( *this );
+			return *this;
 		}
 		/// <summary>
 		/// Returns reference of this.
