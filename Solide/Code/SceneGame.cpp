@@ -206,45 +206,18 @@ void SceneGame::Init()
 	assert( result );
 
 	ParamGame::Get().Init();
-	//const auto data = FetchMember();
 
 	Bullet::BulletAdmin::Get().Init();
 	Bullet::LoadBulletsResource();
 
-	//pBG = std::make_unique<BG>();
-	//result = pBG->LoadSprites( L"./Data/Images/BG/Back.png", L"./Data/Images/BG/Cloud.png" );
-	//assert( result );
-
-	//pTutorialSentence = std::make_unique<TutorialSentence>();
-	//pTutorialSentence->Init();
-	//result = pTutorialSentence->LoadSprite( L"./Data/Images/Game/Tutorial.png" );
-	//assert( result );
-	
-	//pClearSentence = std::make_unique<ClearSentence>();
-	//pClearSentence->Init();
-	//result = pClearSentence->LoadSprite( L"./Data/Images/Game/Clear.png" );
-	//assert( result );
-
-	//pTerrain = std::make_unique<Terrain>( "./Data/Models/Terrain/Terrain.bin",  "./Data/Models/Terrain/ForCollision/Terrain.bin" );
-	//pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
-
-	result = ObstacleBase::LoadModels();
-	assert( result );
-
 	result = Goal::LoadResource();
 	assert( result );
-
+	result = ObstacleBase::LoadModels();
+	assert( result );
 	ObstacleBase::ParameterInit();
-	//pGoal = std::make_unique<Goal>();
-	//pGoal->Init( data.goalArea.GetPosition() );
-	//pObstacles = std::make_unique<ObstacleContainer>();
-	//pObstacles->Init( 1 ); // The stage-number is 1-based.(0 is title stage.)
 
 	result = Player::LoadModels();
 	assert( result );
-	//PlayerInit( stageNumber );
-
-	//CameraInit();
 
 	stageNumber = FIRST_STAGE_NO;
 	InitStage( stageNumber );
@@ -252,16 +225,9 @@ void SceneGame::Init()
 void SceneGame::Uninit()
 {
 	UninitStage();
-	//pTerrain.reset();
-
-	//if ( pGoal		) { pGoal->Uninit();		}
-	//if ( pObstacles	) { pObstacles->Uninit();	}
-
-	//PlayerUninit();
 
 	ObstacleBase::ParameterUninit();
 	ParamGame::Get().Uninit();
-	//Bullet::BulletAdmin::Get().Uninit();
 
 	Donya::Sound::Stop( Music::BGM_Game );
 }
