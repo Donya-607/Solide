@@ -110,6 +110,13 @@ namespace Enemy
 	}
 
 #if USE_IMGUI
+	std::string GetKindName( Kind kind )
+	{
+		if ( IsOutOfRange( kind ) ) { return "ERROR_OUT_OF_RANGE"; }
+		// else
+		return MODEL_NAMES[scast<int>( kind )];
+	}
+
 	void InitializeParam::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
@@ -209,6 +216,19 @@ namespace Enemy
 		W._43 = pos.z;
 		return W;
 	}
+#if USE_IMGUI
+	void AssignDerivedInstance( Kind kind, std::shared_ptr<Base> *pBasePtr )
+	{
+		if ( IsOutOfRange( kind ) ) { pBasePtr->reset(); return; }
+		// else
+
+		switch ( kind )
+		{
+		case Enemy::Kind::Straight:	*pBasePtr = std::make_shared<Straight>();	return;
+		default: pBasePtr->reset(); return;
+		}
+	}
+#endif // USE_IMGUI
 
 
 	void Straight::Init( const InitializeParam &argInitializer )
@@ -259,6 +279,14 @@ namespace Enemy
 	{
 		pos += velocity;
 	}
+	bool Straight::ShouldRemove() const
+	{
+		return false;
+	}
+	Kind Straight::GetKind() const
+	{
+		return Kind::Straight;
+	}
 	Donya::Vector3 Straight::CalcNowMoveDirection( const Donya::Vector3 &targetPos ) const
 	{
 		const float moveSign = ( nowMoveToPositive ) ? 1.0f : -1.0f;
@@ -299,4 +327,35 @@ namespace Enemy
 		default: return;
 		}
 	}
+#if USE_IMGUI
+	void Straight::ShowImGuiNode( const std::string &nodeCaption, bool *pWantRemove )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		if ( pWantRemove && ImGui::Button( std::string{ nodeCaption + u8"を削除" }.c_str() ) )
+		{
+			const  std::string  buttonCaption = nodeCaption + u8"を削除";
+			if ( ImGui::Button( buttonCaption.c_str() ) )
+			{
+				*pWantRemove = true;
+			}
+			else
+			{
+				*pWantRemove = false;
+			}
+		}
+
+		initializer.ShowImGuiNode( u8"初期化情報" );
+		moveParam.ShowImGuiNode( u8"移動パラメータ関連" );
+
+		ImGui::DragFloat3( u8"現在のワールド座標",	&pos.x,				0.01f	);
+		ImGui::DragFloat3( u8"現在の速度",			&velocity.x,		0.01f	);
+		ImGui::DragFloat(  u8"現在の移動量合計",		&moveDistanceSum,	0.01f	);
+		ImGui::Checkbox(   u8"正の方向へ動いているか",&nowMoveToPositive			);
+		ImGui::SliderFloat4( u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
+
+		ImGui::TreePop();
+	}
+#endif // USE_IMGUI
 }

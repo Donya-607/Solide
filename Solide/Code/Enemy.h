@@ -27,7 +27,10 @@ namespace Enemy
 	};
 
 	bool LoadResources();
-	
+#if USE_IMGUI
+	std::string GetKindName( Kind kind );
+#endif // USE_IMGUI
+
 	
 	struct InitializeParam
 	{
@@ -139,12 +142,23 @@ namespace Enemy
 		virtual void Draw( RenderingHelper *pRenderer );
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
 	public:
+		virtual bool ShouldRemove()	const = 0;
+		virtual Kind GetKind()		const = 0;
 		const	InitializeParam	&GetInitializer()	const { return initializer; }
 		const	Donya::Vector3	&GetPosition()		const { return pos; }
 	protected:
 		virtual	Donya::Vector4x4 CalcWorldMatrix( bool useForHitBox ) const;
+	public:
+	#if USE_IMGUI
+		/// <summary>
+		/// You can set nullptr to "outputWantRemove".
+		/// </summary>
+		virtual void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) = 0;
+	#endif // USE_IMGUI
 	};
-
+#if USE_IMGUI
+	void AssignDerivedInstance( Kind kind, std::shared_ptr<Base> *pBasePtr );
+#endif // USE_IMGUI
 
 	/// <summary>
 	/// This class moves by following specified direction.
@@ -179,6 +193,9 @@ namespace Enemy
 
 		void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) override;
 		void PhysicUpdate() override;
+	public:
+		bool ShouldRemove()	const override;
+		Kind GetKind()		const override;
 	private:
 		/// <summary>
 		/// This may return not a unit vector.
@@ -186,6 +203,13 @@ namespace Enemy
 		Donya::Vector3 CalcNowMoveDirection( const Donya::Vector3 &targetPosition ) const;
 		void AssignVelocity( const Donya::Vector3 &targetPosition );
 		void AssignOrientation( const Donya::Vector3 &targetPosition );
+	public:
+	#if USE_IMGUI
+		/// <summary>
+		/// You can set nullptr to "outputWantRemove".
+		/// </summary>
+		void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) override;
+	#endif // USE_IMGUI
 	};
 }
 CEREAL_CLASS_VERSION( Enemy::InitializeParam,	0 )
