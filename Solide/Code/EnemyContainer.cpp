@@ -123,6 +123,9 @@ namespace Enemy
 		ImGui::SliderInt( u8"追加する種類", &addKind, 0, scast<int>( Enemy::Kind::KindCount ) - 1 );
 		ImGui::Text( u8"種類名：%s", Donya::MultiToUTF8( Enemy::GetKindName( scast<Enemy::Kind>( addKind ) ) ).c_str() );
 
+		static Enemy::InitializeParam appendInitializer{};
+		appendInitializer.ShowImGuiNode( u8"追加時に適用する値" );
+
 		if ( ImGui::Button( u8"追加" ) )
 		{
 			std::shared_ptr<Enemy::Base> tmp{};
@@ -130,6 +133,7 @@ namespace Enemy
 			if ( tmp )
 			{
 				enemyPtrs.emplace_back( std::move( tmp ) );
+				enemyPtrs.back()->Init( appendInitializer );
 			}
 		}
 		if ( 1 <= enemyPtrs.size() && ImGui::Button( u8"末尾を削除" ) )

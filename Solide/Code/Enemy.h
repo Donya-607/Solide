@@ -29,6 +29,7 @@ namespace Enemy
 	bool LoadResources();
 #if USE_IMGUI
 	std::string GetKindName( Kind kind );
+	void UseImGui();
 #endif // USE_IMGUI
 
 	
@@ -147,7 +148,8 @@ namespace Enemy
 		const	InitializeParam	&GetInitializer()	const { return initializer; }
 		const	Donya::Vector3	&GetPosition()		const { return pos; }
 	protected:
-		virtual	Donya::Vector4x4 CalcWorldMatrix( bool useForHitBox ) const;
+		virtual void UpdateMotion( float elapsedTime, int useMotionIndex );
+		virtual	Donya::Vector4x4 CalcWorldMatrix( bool useForHitBox, bool useForDrawing ) const;
 	public:
 	#if USE_IMGUI
 		/// <summary>

@@ -260,6 +260,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	ParamGame::Get().UseImGui();
 	UseImGui();
 
+	Enemy::UseImGui();
 	ObstacleBase::UseImGui();
 	Bullet::UseBulletsImGui();
 #endif // USE_IMGUI

@@ -5,11 +5,14 @@
 #include "Donya/Loader.h"
 #include "Donya/Useful.h"
 
+#include "FilePath.h"
+#include "Parameter.h"
+
 namespace
 {
 	constexpr size_t KIND_COUNT = scast<size_t>( Enemy::Kind::KindCount );
 	constexpr const char *MODEL_DIRECTORY = "./Data/Models/Enemy/";
-	constexpr const char *MODEL_EXTENSION = "./Data/Models/Enemy/";
+	constexpr const char *MODEL_EXTENSION = ".bin";
 	constexpr const char *MODEL_NAMES[KIND_COUNT]
 	{
 		"Run",
@@ -100,13 +103,153 @@ namespace
 		return modelPtrs[scast<int>( kind )];
 	}
 }
+namespace
+{
+	struct DrawingParam
+	{
+		// "[i]" of these vectors represents a value of static_cast<enumKind>( i ). This size was guaranteed to: size() == Enemy::KIND_COUNT
+		float				drawScale = 1.0f;
+		Donya::Quaternion	drawRotation;
+		Donya::Vector3		drawOffset;
+		std::vector<float>	accelerations;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( drawScale		),
+				CEREAL_NVP( drawRotation	),
+				CEREAL_NVP( drawOffset		),
+				CEREAL_NVP( accelerations	)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
+	struct Member
+	{
+		DrawingParam drawer;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( drawer )
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
+}
+
+class ParamEnemy : public ParameterBase<ParamEnemy>
+{
+public:
+	static constexpr const char *ID = "Enemy";
+private:
+	Member m;
+public:
+	void Init() override
+	{
+	#if DEBUG_MODE
+		constexpr bool fromBinary = false;
+	#else
+		constexpr bool fromBinary = true;
+	#endif // DEBUG_MODE
+
+		Load( m, fromBinary );
+
+		ResizeMotionVector();
+	}
+	Member Data() const { return m; }
+private:
+	void ResizeMotionVector()
+	{
+		if ( m.drawer.accelerations.size() != KIND_COUNT )
+		{
+			m.drawer.accelerations.resize( KIND_COUNT );
+			for ( auto &it : m.drawer.accelerations )
+			{
+				it = 1.0f;
+			}
+		}
+	}
+private:
+	std::string GetSerializeIdentifier()			override { return ID; }
+	std::string GetSerializePath( bool isBinary )	override { return GenerateSerializePath( ID, isBinary ); }
+public:
+#if USE_IMGUI
+	void UseImGui() override
+	{
+		if ( !ImGui::BeginIfAllowed() ) { return; }
+		// else
+
+		if ( ImGui::TreeNode( u8"敵のパラメータ調整" ) )
+		{
+			if ( ImGui::TreeNode( u8"描画系" ) )
+			{
+				ImGui::DragFloat(		u8"描画スケール",		&m.drawer.drawScale,		0.01f );
+				ImGui::DragFloat3(		u8"描画オフセット",	&m.drawer.drawOffset.x,		0.01f );
+				ImGui::SliderFloat4(	u8"描画姿勢",		&m.drawer.drawRotation.x,	-1.0f, 1.0f );
+				m.drawer.drawScale = std::max( 0.0f, m.drawer.drawScale );
+				if ( ImGui::Button( u8"描画姿勢を正規化" ) ) { m.drawer.drawRotation.Normalize(); }
+
+				if ( ImGui::TreeNode( u8"再生速度の倍率" ) )
+				{
+					ResizeMotionVector();
+
+					std::string caption{};
+					for ( size_t i = 0; i < KIND_COUNT; ++i )
+					{
+						caption = "[" + std::to_string( i ) + ":" + MODEL_NAMES[i] + "]";
+						ImGui::DragFloat( caption.c_str(), &m.drawer.accelerations[i], 0.001f );
+					}
+
+					ImGui::TreePop();
+				}
+
+				ImGui::TreePop();
+			}
+
+			ShowIONode( m );
+
+			ImGui::TreePop();
+		}
+
+		ImGui::End();
+	}
+#endif // USE_IMGUI
+};
+// Internal utility.
+namespace
+{
+	Member FetchMember()
+	{
+		return ParamEnemy::Get().Data();
+	}
+}
 
 
 namespace Enemy
 {
 	bool LoadResources()
 	{
-		return LoadModels();
+		ParamEnemy::Get().Init();
+
+		bool succeeded = true;
+		if ( !LoadModels() ) { succeeded = false; }
+
+		return succeeded;
 	}
 
 #if USE_IMGUI
@@ -115,6 +258,10 @@ namespace Enemy
 		if ( IsOutOfRange( kind ) ) { return "ERROR_OUT_OF_RANGE"; }
 		// else
 		return MODEL_NAMES[scast<int>( kind )];
+	}
+	void UseImGui()
+	{
+		ParamEnemy::Get().UseImGui();
 	}
 
 	void InitializeParam::ShowImGuiNode( const std::string &nodeCaption )
@@ -177,7 +324,7 @@ namespace Enemy
 
 		Donya::Model::Constants::PerModel::Common constant{};
 		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-		constant.worldMatrix	= CalcWorldMatrix( /* useForHitBox = */ false );
+		constant.worldMatrix	= CalcWorldMatrix( /* useForHitBox = */ false, /* useForDrawing = */ true );
 		pRenderer->UpdateConstant( constant );
 		pRenderer->ActivateConstantModel();
 
@@ -188,21 +335,34 @@ namespace Enemy
 	void Base::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP )
 	{
 		Donya::Model::Cube::Constant constant{};
-		constant.matWorld		= CalcWorldMatrix( /* useForHitBox = */ true );
+		constant.matWorld		= CalcWorldMatrix( /* useForHitBox = */ true, /* useForDrawing = */ true );
 		constant.matViewProj	= VP;
 		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 0.5f };
 		pRenderer->ProcessDrawingCube( constant );
 	}
-	Donya::Vector4x4 Base::CalcWorldMatrix( bool useForHitBox ) const
+	void Base::UpdateMotion( float elapsedTime, int useMotionIndex )
 	{
-		// Scales are 1.0f.
-		Donya::Vector4x4 W{};
+		const auto data			= FetchMember();
+		const auto &speedSource = data.drawer.accelerations;
 
+		const size_t intKind	= scast<size_t>( GetKind() );
+		const float  playSpeed	= ( intKind < speedSource.size() ) ? speedSource[intKind] : 1.0f;
+		animator.Update( elapsedTime * playSpeed );
+
+		if ( pModelParam )
+		{
+			pose.AssignSkeletal( animator.CalcCurrentPose( pModelParam->motionHolder.GetMotion( useMotionIndex ) ) );
+		}
+	}
+	Donya::Vector4x4 Base::CalcWorldMatrix( bool useForHitBox, bool useForDrawing ) const
+	{
+		Donya::Vector4x4 W{};
+		
 		if ( useForHitBox )
 		{
-			W._11 *= 2.0f;
-			W._22 *= 2.0f;
-			W._33 *= 2.0f;
+			W._11 = 2.0f;
+			W._22 = 2.0f;
+			W._33 = 2.0f;
 			W._41 = pos.x;
 			W._42 = pos.y;
 			W._43 = pos.z;
@@ -210,10 +370,37 @@ namespace Enemy
 		}
 		// else
 
-		W = orientation.RequireRotationMatrix();
+		if ( useForDrawing )
+		{
+			const auto data = FetchMember();
+			W._11 = data.drawer.drawScale;
+			W._22 = data.drawer.drawScale;
+			W._33 = data.drawer.drawScale;
+		}
+		else
+		{
+			// Scales are 1.0f.
+		}
+
+		W *= orientation.RequireRotationMatrix();
+		if ( useForDrawing )
+		{
+			const auto data = FetchMember();
+			W *= data.drawer.drawRotation.RequireRotationMatrix();
+		}
+
 		W._41 = pos.x;
 		W._42 = pos.y;
 		W._43 = pos.z;
+
+		if ( useForDrawing )
+		{
+			const auto data = FetchMember();
+			W._41 += data.drawer.drawOffset.x;
+			W._42 += data.drawer.drawOffset.y;
+			W._43 += data.drawer.drawOffset.z;
+		}
+
 		return W;
 	}
 #if USE_IMGUI
@@ -263,17 +450,28 @@ namespace Enemy
 		AssignVelocity( targetPos );
 		AssignOrientation( targetPos );
 
-		moveDistanceSum += velocity.Length();
-		if ( moveParam.rangeLimit <= moveDistanceSum )
+		if ( moveParam.alignToTarget )
 		{
-			// To inside of rangeLimit.
-			const Donya::Vector3 movedDir = Donya::Vector3{ pos - initializer.wsPos }.Unit();
-			const Donya::Vector3 correctMovedPos = initializer.wsPos + movedDir * moveParam.rangeLimit;
-			velocity = correctMovedPos - pos;
-
-			moveDistanceSum		= -moveParam.rangeLimit;
-			nowMoveToPositive	= !nowMoveToPositive;
+			moveDistanceSum		= 0.0f;
+			nowMoveToPositive	= true;
 		}
+		else
+		{
+			moveDistanceSum += velocity.Length();
+			if ( moveParam.rangeLimit <= moveDistanceSum )
+			{
+				// To inside of rangeLimit.
+				const Donya::Vector3 movedDir = Donya::Vector3{ pos - initializer.wsPos }.Unit();
+				const Donya::Vector3 correctMovedPos = initializer.wsPos + movedDir * moveParam.rangeLimit;
+				velocity = correctMovedPos - pos;
+
+				moveDistanceSum		= -moveParam.rangeLimit;
+				nowMoveToPositive	= !nowMoveToPositive;
+			}
+		}
+
+		constexpr int USE_MOTION_INDEX = 0;
+		UpdateMotion( elapsedTime, USE_MOTION_INDEX );
 	}
 	void Straight::PhysicUpdate()
 	{
@@ -289,14 +487,17 @@ namespace Enemy
 	}
 	Donya::Vector3 Straight::CalcNowMoveDirection( const Donya::Vector3 &targetPos ) const
 	{
-		const float moveSign = ( nowMoveToPositive ) ? 1.0f : -1.0f;
+		const float moveSign = ( nowMoveToPositive || moveParam.alignToTarget ) ? 1.0f : -1.0f;
 		const Donya::Vector3 moveDirection = moveParam.CalcMoveDirection( pos, targetPos );
-		return moveDirection * moveSign;
+		return moveDirection.Unit() * moveSign;
 	}
 	void Straight::AssignVelocity( const Donya::Vector3 &targetPos )
 	{
 		const Donya::Vector3 moveDirection = CalcNowMoveDirection( targetPos );
 		velocity = moveDirection * moveParam.speed;
+
+		// TODO:自機と同列にあわせているとき，射影ベクトルが速度より小さければ，
+		// ガクガクを防ぐため，ひとおもいに代入してしまう
 	}
 	void Straight::AssignOrientation( const Donya::Vector3 &targetPos )
 	{
@@ -349,11 +550,16 @@ namespace Enemy
 		initializer.ShowImGuiNode( u8"初期化情報" );
 		moveParam.ShowImGuiNode( u8"移動パラメータ関連" );
 
-		ImGui::DragFloat3( u8"現在のワールド座標",	&pos.x,				0.01f	);
-		ImGui::DragFloat3( u8"現在の速度",			&velocity.x,		0.01f	);
-		ImGui::DragFloat(  u8"現在の移動量合計",		&moveDistanceSum,	0.01f	);
-		ImGui::Checkbox(   u8"正の方向へ動いているか",&nowMoveToPositive			);
-		ImGui::SliderFloat4( u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
+		if ( ImGui::TreeNode( u8"現在のパラメータ" ) )
+		{
+			ImGui::DragFloat3( u8"現在のワールド座標",	&pos.x,				0.01f	);
+			ImGui::DragFloat3( u8"現在の速度",			&velocity.x,		0.01f	);
+			ImGui::DragFloat(  u8"現在の移動量合計",		&moveDistanceSum,	0.01f	);
+			ImGui::Checkbox(   u8"正の方向へ動いているか",&nowMoveToPositive			);
+			ImGui::SliderFloat4( u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
+
+			ImGui::TreePop();
+		}
 
 		ImGui::TreePop();
 	}
