@@ -54,6 +54,15 @@ namespace Enemy
 		);
 		enemyPtrs.erase( result, enemyPtrs.end() );
 	}
+	void Container::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+	{
+		for ( auto &pIt : enemyPtrs )
+		{
+			if ( !pIt ) { continue; }
+			// else
+			pIt->PhysicUpdate();
+		}
+	}
 
 	void Container::Draw( RenderingHelper *pRenderer )
 	{

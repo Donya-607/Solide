@@ -11,6 +11,7 @@
 #include "Donya/Vector.h"
 
 #include "BG.h"
+#include "EnemyContainer.h"
 #include "Goal.h"
 #include "ObstacleContainer.h"
 #include "Player.h"
@@ -32,6 +33,7 @@ private:
 	std::unique_ptr<Terrain>			pTerrain;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
+	std::unique_ptr<Enemy::Container>	pEnemies;
 	std::unique_ptr<ObstacleContainer>	pObstacles;
 	std::unique_ptr<Goal>				pGoal;
 	std::unique_ptr<TutorialSentence>	pTutorialSentence;
@@ -72,6 +74,9 @@ private:
 	void	PlayerDraw();
 	void	PlayerDrawHitBox( const Donya::Vector4x4 &matVP );
 	void	PlayerUninit();
+
+	void	EnemyUpdate( float elapsedTime );
+	void	EnemyPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );
 
 	void	TutorialUpdate( float elapsedTime );
 

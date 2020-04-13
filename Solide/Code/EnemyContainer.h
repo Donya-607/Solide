@@ -9,6 +9,8 @@
 #include <cereal/types/memory.hpp>
 #include <cereal/types/vector.hpp>
 
+#include "Donya/Collision.h"
+#include "Donya/ModelPolygon.h"
 #include "Donya/Serializer.h"
 #include "Donya/Vector.h"
 
@@ -46,6 +48,7 @@ namespace Enemy
 		void Uninit();
 
 		void Update( float elapsedTime, const Donya::Vector3 &targetPosition );
+		void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
 		void Draw( RenderingHelper *pRenderer );
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP );

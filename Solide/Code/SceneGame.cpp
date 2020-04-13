@@ -210,6 +210,9 @@ void SceneGame::Init()
 	Bullet::BulletAdmin::Get().Init();
 	Bullet::LoadBulletsResource();
 
+	result = Enemy::LoadResources();
+	assert( result );
+
 	result = Goal::LoadResource();
 	assert( result );
 	result = ObstacleBase::LoadModels();
@@ -267,6 +270,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	pTerrain->BuildWorldMatrix();
 
+	EnemyUpdate( elapsedTime );
+
 	pGoal->Update( elapsedTime );
 	pObstacles->Update( elapsedTime );
 
@@ -282,6 +287,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 		PlayerPhysicUpdate( solids, terrain.get(), &terrainMatrix );
 		Bullet::BulletAdmin::Get().PhysicUpdate( solids, terrain.get(), &terrainMatrix );
+		EnemyPhysicUpdate( solids, terrain.get(), &terrainMatrix );
 	}
 
 	CameraUpdate();
@@ -335,6 +341,7 @@ void SceneGame::Draw( float elapsedTime )
 
 		pRenderer->ActivateShaderNormalSkinning();
 		PlayerDraw();
+		pEnemies->Draw( pRenderer.get() );
 		pRenderer->DeactivateShaderNormalSkinning();
 
 		pRenderer->ActivateShaderNormalStatic();
@@ -350,14 +357,18 @@ void SceneGame::Draw( float elapsedTime )
 	pRenderer->DeactivateRasterizerModel();
 	pRenderer->DeactivateSamplerModel();
 
+#if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
 		PlayerDrawHitBox( VP );
+
+		pEnemies->DrawHitBoxes( pRenderer.get(), VP );
 
 		pGoal->DrawHitBox( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 		Bullet::BulletAdmin::Get().DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 		pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 	}
+#endif // DEBUG_MODE
 	
 	// Drawing to far for avoiding to trans the BG's blue.
 	pBG->Draw( elapsedTime );
@@ -430,6 +441,9 @@ void SceneGame::InitStage( int stageNo )
 	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
 	// HACK : This scale(0.01f) is magic number :( ...That is adjustment of global scale, for other models.
 
+	pEnemies = std::make_unique<Enemy::Container>();
+	pEnemies->Init( stageNo );
+
 	pGoal = std::make_unique<Goal>();
 	pGoal->Init( stageNo );
 	pObstacles = std::make_unique<ObstacleContainer>();
@@ -441,12 +455,14 @@ void SceneGame::InitStage( int stageNo )
 }
 void SceneGame::UninitStage()
 {
+	if ( pEnemies	) { pEnemies->Uninit();		}
 	if ( pGoal		) { pGoal->Uninit();		}
 	if ( pObstacles	) { pObstacles->Uninit();	}
 
 	pBG.reset();
 	pTerrain.reset();
 	PlayerUninit();
+	pEnemies.reset();
 	pObstacles.reset();
 	pGoal.reset();
 	pTutorialSentence.reset();
@@ -665,6 +681,22 @@ void SceneGame::PlayerUninit()
 	pPlayerIniter.reset();
 }
 
+void SceneGame::EnemyUpdate( float elapsedTime )
+{
+	if ( !pEnemies ) { return; }
+	// else
+	
+	const Donya::Vector3 target = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero() /* Fail safe */;
+	pEnemies->Update( elapsedTime, target );
+}
+void SceneGame::EnemyPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+{
+	if ( !pEnemies ) { return; }
+	// else
+
+	pEnemies->PhysicUpdate( solids, pTerrain, pTerrainMatrix );
+}
+
 void SceneGame::TutorialUpdate( float elapsedTime )
 {
 	if ( !pTutorialSentence ) { return; }
@@ -864,31 +896,35 @@ void SceneGame::UseImGui()
 			ImGui::TreePop();
 		}
 
-		if ( pBG )
+		if ( pBG				)
 		{
 			pBG->ShowImGuiNode( u8"ＢＧ" );
 		}
-		if ( pTerrain )
+		if ( pTerrain			)
 		{
 			pTerrain->ShowImGuiNode( u8"地形" );
 		}
-		if ( pPlayerIniter )
+		if ( pPlayerIniter		)
 		{
 			pPlayerIniter->ShowImGuiNode( u8"自機の初期化情報", stageNumber );
 		}
-		if ( pGoal )
+		if ( pGoal				)
 		{
 			pGoal->ShowImGuiNode( u8"ゴールオブジェクト", stageNumber );
 		}
-		if ( pObstacles )
+		if ( pObstacles			)
 		{
 			pObstacles->ShowImGuiNode( u8"障害物の生成・破棄" );
 		}
-		if ( pTutorialSentence )
+		if ( pEnemies			)
+		{
+			pEnemies->ShowImGuiNode( u8"敵の設置・削除" );
+		}
+		if ( pTutorialSentence	)
 		{
 			pTutorialSentence->ShowImGuiNode( u8"チュートリアル画像" );
 		}
-		if ( pClearSentence )
+		if ( pClearSentence		)
 		{
 			pClearSentence->ShowImGuiNode( u8"クリア画像" );
 		}
