@@ -10,6 +10,7 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Serializer.h"
 
+#include "Bullet.h"		// For FireDesc.
 #include "ObjectBase.h"
 
 class RenderingHelper;
@@ -182,3 +183,65 @@ public:
 CEREAL_CLASS_VERSION( Table, 0 )
 CEREAL_REGISTER_TYPE( Table )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Table )
+
+
+
+class Spray : public ObstacleBase
+{
+private:
+	int  shotTimer			= 0;
+	int  startupTimer		= 0;
+	bool nowSpraying		= false;
+private: // Serialize targets. usually do not change.
+	int  startupFrame		= 0;
+	int  sprayingFrame		= 1;
+	int  cooldownFrame		= 1;
+	int  shotGenInterval	= 2;
+	Bullet::BulletAdmin::FireDesc	shotDesc;
+	Donya::Quaternion				orientation;
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			cereal::base_class<ObstacleBase>( this ),
+			CEREAL_NVP( startupFrame	),
+			CEREAL_NVP( sprayingFrame	),
+			CEREAL_NVP( cooldownFrame	),
+			CEREAL_NVP( shotGenInterval	),
+			CEREAL_NVP( shotDesc		),
+			CEREAL_NVP( orientation		)
+		);
+		if ( 1 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
+public:
+	void Update( float elapsedTime ) override;
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
+public:
+	int GetKind() const override;
+private:
+	void UpdateHitBox();
+	void UpdateShot( float elapsedTime );
+private:
+	void UpdateSpray( float elapsedTime );
+	void UpdateCooldown( float elapsedTime );
+	void GenerateShot( float elapsedTime );
+	bool ShouldChangeMode() const;
+public:
+#if USE_IMGUI
+	/// <summary>
+	/// Returns true if I wanna be removed me.
+	/// </summary>
+	bool ShowImGuiNode( const std::string &nodeCaption ) override;
+#endif // USE_IMGUI
+};
+CEREAL_CLASS_VERSION( Spray, 0 )
+CEREAL_REGISTER_TYPE( Spray )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Spray )
+

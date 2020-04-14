@@ -296,7 +296,7 @@ namespace Bullet
 		kind = scast<Kind>( intKind );
 		ImGui::Text( u8"‚¢‚ÜF%s", GetKindName( kind ).c_str() );
 
-		ImGui::DragFloat( u8"‘¬“x", &speed );
+		ImGui::DragFloat( u8"‘¬“x", &speed, 0.01f );
 		speed = std::max( 0.0f, speed );
 
 		ImGui::SliderFloat3( u8"•ûŒü", &direction.x, -1.0f, 1.0f );

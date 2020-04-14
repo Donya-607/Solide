@@ -36,7 +36,7 @@ namespace Bullet
 	public:
 		struct FireDesc
 		{
-			Kind			kind	= Kind::KindCount;
+			Kind			kind	= Kind::Oil;
 			float			speed	= 0.0f;
 			Donya::Vector3	direction;
 			Donya::Vector3	generatePos;

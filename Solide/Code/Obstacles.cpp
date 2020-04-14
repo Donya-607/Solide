@@ -23,6 +23,7 @@ namespace
 		Log,
 		Tree,
 		Table,
+		Spray,
 
 		KindCount
 	};
@@ -35,6 +36,7 @@ namespace
 		"Log",
 		"Tree",
 		"Table",
+		"Spray",
 	};
 
 	struct ModelData
@@ -157,6 +159,7 @@ namespace
 		case Log:	*pOutput = std::make_shared<::Log>();				return;
 		case Tree:	*pOutput = std::make_shared<::Tree>();				return;
 		case Table:	*pOutput = std::make_shared<::Table>();				return;
+		case Spray:	*pOutput = std::make_shared<::Spray>();				return;
 		default: _ASSERT_EXPR( 0, L"Error : Unexpected model kind!" );	return;
 		}
 	}
@@ -383,3 +386,158 @@ int Table::GetKind() const
 {
 	return scast<int>( Kind::Table );
 }
+
+
+
+void Spray::Update( float elapsedTime )
+{
+	UpdateHitBox();
+
+	UpdateShot( elapsedTime );
+}
+void Spray::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+{
+	DrawModel( Kind::Spray, pRenderer, GetWorldMatrix(), color );
+}
+void Spray::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	ObstacleBase::DrawHitBox( pRenderer, matVP, { 0.4f, 0.5f, 0.0f, 0.5f } );
+}
+int  Spray::GetKind() const
+{
+	return scast<int>( Kind::Spray );
+}
+void Spray::UpdateHitBox()
+{
+	hitBox = GetModelHitBox( Kind::Spray, ParamObstacle::Get().Data() );
+}
+void Spray::UpdateShot( float elapsedTime )
+{
+	if ( startupTimer <= startupFrame )
+	{
+		startupTimer++;
+		nowSpraying = true;
+		return;
+	}
+	// else
+
+
+	shotTimer++;
+
+	if ( nowSpraying )
+	{
+		UpdateSpray( elapsedTime );
+	}
+	else
+	{
+		UpdateCooldown( elapsedTime );
+	}
+
+	if ( ShouldChangeMode() )
+	{
+		shotTimer	= 0;
+		nowSpraying	= !nowSpraying;
+	}
+}
+void Spray::UpdateSpray( float elapsedTime )
+{
+	const bool generateTiming = ( shotGenInterval < 2 ) ? true : ( shotTimer % shotGenInterval ) == 1;
+	if ( generateTiming )
+	{
+		GenerateShot( elapsedTime );
+	}
+}
+void Spray::UpdateCooldown( float elapsedTime )
+{
+	// No op.
+}
+void Spray::GenerateShot( float elapsedTime )
+{
+	auto desc = shotDesc;
+	// The "direction", and "generatePos" are local space.
+	desc.direction		=  orientation.RotateVector( desc.direction   );
+	desc.generatePos	=  orientation.RotateVector( desc.generatePos );
+	desc.generatePos	+= GetPosition();
+
+	Bullet::BulletAdmin::Get().Append( desc );
+
+}
+bool Spray::ShouldChangeMode() const
+{
+	return	( nowSpraying )
+			? ( sprayingFrame < shotTimer )
+			: ( cooldownFrame < shotTimer );
+}
+#if USE_IMGUI
+bool Spray::ShowImGuiNode( const std::string &nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return false; }
+	// else
+
+	bool wantRemove = false;
+	wantRemove = ObstacleBase::ShowImGuiNode( nodeCaption + u8"・基底部分" );
+	if ( ImGui::TreeNode( std::string{ nodeCaption + u8"・拡張部分" }.c_str() ) )
+	{
+		auto Clamp = []( int *target, int min, int max )
+		{
+			*target = std::max( min, std::min( max, *target ) );
+		};
+
+		if ( ImGui::TreeNode( u8"調整パラメータ" ) )
+		{
+			if ( ImGui::TreeNode( u8"姿勢" ) )
+			{
+				static Donya::Vector3 degrees;
+				ImGui::DragFloat3( u8"前方向（degree角）", &degrees.x );
+				if ( ImGui::Button( u8"前方向を現在の姿勢に適用" ) )
+				{
+					Donya::Vector3 radians{};
+					radians.x	= ToRadian( degrees.x );
+					radians.y	= ToRadian( degrees.y );
+					radians.z	= ToRadian( degrees.z );
+					orientation	= Donya::Quaternion::Make( radians.x, radians.y, radians.z );
+				}
+				if ( ImGui::Button( u8"現在の姿勢から前方向を算出" ) )
+				{
+					Donya::Vector3 radians = orientation.GetEulerAngles();
+					degrees.x = ToDegree( radians.x );
+					degrees.y = ToDegree( radians.y );
+					degrees.z = ToDegree( radians.z );
+				}
+				ImGui::TreePop();
+			}
+
+			ImGui::DragInt( u8"初回起動にかける時間（フレーム）",	&startupFrame		);
+			ImGui::DragInt( u8"噴射時間（フレーム）",				&sprayingFrame		);
+			ImGui::DragInt( u8"待機時間（フレーム）",				&cooldownFrame		);
+			ImGui::DragInt( u8"噴射物生成間隔",					&shotGenInterval	);
+			Clamp( &startupFrame,		0, startupFrame		);
+			Clamp( &sprayingFrame,		0, sprayingFrame	);
+			Clamp( &cooldownFrame,		0, cooldownFrame	);
+			Clamp( &shotGenInterval,	0, shotGenInterval	);
+
+			shotDesc.ShowImGuiNode( u8"噴射物" );
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"現在の状態" ) )
+		{
+			ImGui::DragInt( u8"ショットタイマ",	&shotTimer		);
+			ImGui::DragInt( u8"起動タイマ",		&startupTimer	);
+			if ( ImGui::Button( u8"タイマ群をリセット" ) )
+			{
+				shotTimer		= 0;
+				startupTimer	= 0;
+			}
+			ImGui::Checkbox( u8"今は噴射中か？",	&nowSpraying	);
+
+			ImGui::TreePop();
+		}
+		ImGui::TreePop();
+	}
+
+	ImGui::TreePop();
+	return wantRemove;
+}
+#endif // USE_IMGUI

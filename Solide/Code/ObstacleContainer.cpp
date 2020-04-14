@@ -153,6 +153,7 @@ void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 		SortByDepth();
 	}
 
+	if ( ImGui::TreeNode( u8"ŽÀ‘Ì‚½‚¿" ) )
 	{
 		const size_t count = data.size();
 		size_t removeIndex = count;
@@ -174,6 +175,8 @@ void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 		{
 			data.erase( data.begin() + removeIndex );
 		}
+
+		ImGui::TreePop();
 	}
 
 	auto ShowIONode = [&]()
@@ -206,7 +209,6 @@ void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 
 		ImGui::TreePop();
 	};
-
 	ShowIONode();
 
 	ImGui::TreePop();
