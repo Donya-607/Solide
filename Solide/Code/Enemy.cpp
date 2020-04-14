@@ -489,15 +489,28 @@ namespace Enemy
 	{
 		const float moveSign = ( nowMoveToPositive || moveParam.alignToTarget ) ? 1.0f : -1.0f;
 		const Donya::Vector3 moveDirection = moveParam.CalcMoveDirection( pos, targetPos );
-		return moveDirection.Unit() * moveSign;
+		return moveDirection * moveSign;
 	}
 	void Straight::AssignVelocity( const Donya::Vector3 &targetPos )
 	{
 		const Donya::Vector3 moveDirection = CalcNowMoveDirection( targetPos );
-		velocity = moveDirection * moveParam.speed;
 
-		// TODO:自機と同列にあわせているとき，射影ベクトルが速度より小さければ，
-		// ガクガクを防ぐため，ひとおもいに代入してしまう
+		if ( moveParam.alignToTarget )
+		{
+			const float distance = moveDirection.Length();
+			if ( distance <= moveParam.speed )
+			{
+				velocity = moveDirection;
+			}
+			else
+			{
+				velocity = moveDirection.Unit() * moveParam.speed;
+			}
+		}
+		else
+		{
+			velocity = moveDirection.Unit() * moveParam.speed;
+		}
 	}
 	void Straight::AssignOrientation( const Donya::Vector3 &targetPos )
 	{
@@ -508,7 +521,7 @@ namespace Enemy
 				const Donya::Vector3 moveDirection = CalcNowMoveDirection( targetPos );
 				orientation = Donya::Quaternion::LookAt
 				(
-					Donya::Vector3::Front(),
+					orientation,
 					moveDirection.Unit(),
 					Donya::Quaternion::Freeze::Up
 				);
@@ -519,7 +532,7 @@ namespace Enemy
 				const Donya::Vector3 toTarget = targetPos - pos;
 				orientation = Donya::Quaternion::LookAt
 				(
-					Donya::Vector3::Front(),
+					orientation,
 					toTarget.Unit(),
 					Donya::Quaternion::Freeze::Up
 				);

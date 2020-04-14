@@ -15,11 +15,11 @@ Quaternion MakeLookAtRotation( const Donya::Vector3 &nFront, const Donya::Vector
 	float cosTheta = Donya::Vector3::Dot( nFront, nLookDir );
 	cosTheta = std::max( -1.0f, std::min( 1.0f, cosTheta ) );	// Prevent NaN.
 		
-	auto IsVectorInverse = []( float dot )
+	auto IsInverseVector = []( float dot )
 	{
 		return ( dot <= ( -1.0f + EPSILON ) ) ? true : false;
 	};
-	if ( IsVectorInverse( cosTheta ) )
+	if ( IsInverseVector( cosTheta ) )
 	{
 		// The "lookDirection" is inverse to front.
 		// Find horizontal-axis by cross to forward, right, and up vector.
@@ -47,7 +47,7 @@ Quaternion MakeLookAtRotation( const Donya::Vector3 &nFront, const Donya::Vector
 	// else
 
 	const float rotAngle = acosf( cosTheta );
-	Donya::Vector3 rotAxis = Donya::Vector3::Cross( nFront, nLookDir ).Unit();
+	const Donya::Vector3 rotAxis = Donya::Vector3::Cross( nFront, nLookDir ).Unit();
 
 	return ( ZeroEqual( rotAngle ) )
 	? Donya::Quaternion::Identity()

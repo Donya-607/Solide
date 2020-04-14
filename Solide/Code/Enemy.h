@@ -66,7 +66,7 @@ namespace Enemy
 			MoveDirection,
 			Target
 		};
-		LookDirection	lookDirection;
+		LookDirection	lookDirection	= LookDirection::MoveDirection;
 		float			speed			= 0.0f;	// The maximum speed per frame.
 		float			rangeLimit		= 0.0f;	// 0.0f means limitless.
 		Donya::Vector3	direction;				// Unit vector.
