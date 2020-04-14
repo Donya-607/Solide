@@ -3,12 +3,12 @@ static const float PI = 3.14159265359f;
 // See https://tech.cygames.co.jp/archives/2339/
 float4 SRGBToLinear( float4 colorSRGB )
 {
-	return pow( colorSRGB, 2.2f );
+	return pow( abs( colorSRGB ), 2.2f );
 }
 // See https://tech.cygames.co.jp/archives/2339/
 float4 LinearToSRGB( float4 colorLinear )
 {
-	return pow( colorLinear, 1.0f / 2.2f );
+	return pow( abs( colorLinear ), 1.0f / 2.2f );
 }
 
 // Calculate diffuse reflection.
