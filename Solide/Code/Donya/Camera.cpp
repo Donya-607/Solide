@@ -106,7 +106,7 @@ namespace Donya
 		virtual Donya::Vector4x4	CalcViewMatrix()		const
 		{
 			Donya::Quaternion invRotation = m.orientation.Conjugate(); // Conjugate() represent inverse rotation only when using to rotation.
-			Donya::Vector4x4  I_R = invRotation.RequireRotationMatrix();
+			Donya::Vector4x4  I_R = invRotation.MakeRotationMatrix();
 			Donya::Vector4x4  I_T = Donya::Vector4x4::MakeTranslation( -m.pos );
 
 			return ( I_T * I_R );

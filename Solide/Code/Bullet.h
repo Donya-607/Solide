@@ -18,6 +18,8 @@ namespace Bullet
 	enum class Kind
 	{
 		Oil,
+		FlameSmoke,
+		IceSmoke,
 
 		KindCount
 	};
@@ -124,7 +126,8 @@ namespace Bullet
 		virtual bool				ShouldRemove()		const = 0;
 		virtual Kind				GetKind()			const { return kind; }
 		virtual Donya::Vector3		GetPosition()		const { return pos; }
-		virtual Donya::AABB			GetHitBox()			const { return Donya::AABB::Nil(); }
+		virtual Donya::AABB			GetHitBoxAABB()		const { return Donya::AABB::Nil();		}
+		virtual Donya::Sphere		GetHitBoxSphere()	const { return Donya::Sphere::Nil();	}
 		virtual Donya::Vector4x4	GetWorldMatrix()	const;
 	public:
 	#if USE_IMGUI
@@ -151,7 +154,48 @@ namespace Bullet
 			void AttachSelfKind() override;
 		public:
 			bool				ShouldRemove()		const override;
-			Donya::AABB			GetHitBox()			const override;
+			Donya::AABB			GetHitBoxAABB()		const override;
+			Donya::Vector4x4	GetWorldMatrix()	const override;
+		};
+
+
+		class SmokeBase : public BulletBase
+		{
+		protected:
+			int  aliveTime = 0;
+		public:
+			virtual void Update( float elapsedTime ) override = 0;
+			void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
+			void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+			void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) override;
+		protected:
+			virtual void AttachSelfKind() override = 0;
+		public:
+			virtual bool				ShouldRemove()		const override = 0;
+			virtual Donya::Sphere		GetHitBoxSphere()	const override = 0;
+			virtual Donya::Vector4x4	GetWorldMatrix()	const override = 0;
+		};
+
+		class FlameSmoke : public SmokeBase
+		{
+		public:
+			void Update( float elapsedTime ) override;
+		private:
+			void AttachSelfKind() override;
+		public:
+			bool				ShouldRemove()		const override;
+			Donya::Sphere		GetHitBoxSphere()	const override;
+			Donya::Vector4x4	GetWorldMatrix()	const override;
+		};
+		class IceSmoke : public SmokeBase
+		{
+		public:
+			void Update( float elapsedTime ) override;
+		private:
+			void AttachSelfKind() override;
+		public:
+			bool				ShouldRemove()		const override;
+			Donya::Sphere		GetHitBoxSphere()	const override;
 			Donya::Vector4x4	GetWorldMatrix()	const override;
 		};
 	}

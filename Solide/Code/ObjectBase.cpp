@@ -21,7 +21,7 @@ namespace
 		m._11 = halfSize.x * 2.0f;
 		m._22 = halfSize.y * 2.0f;
 		m._33 = halfSize.z * 2.0f;
-		m    *= rotation.RequireRotationMatrix();
+		m    *= rotation.MakeRotationMatrix();
 		m._41 = wsPos.x;
 		m._42 = wsPos.y;
 		m._43 = wsPos.z;

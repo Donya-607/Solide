@@ -78,5 +78,6 @@ public:
 namespace ParameterHelper
 {
 	void ShowAABBNode( const std::string &nodeCaption, Donya::AABB *pAABB );
+	void ShowSphereNode( const std::string &nodeCaption, Donya::Sphere *pSphere );
 }
 #endif // USE_IMGUI

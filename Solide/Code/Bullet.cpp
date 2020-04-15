@@ -22,6 +22,8 @@ namespace Bullet
 		constexpr std::array<const char *, KIND_COUNT> MODEL_NAMES
 		{
 			"Oil"
+			"Flame",
+			"Ice",
 		};
 
 		struct StorageBundle
@@ -132,7 +134,9 @@ namespace Bullet
 
 		switch ( kind )
 		{
-		case Kind::Oil:	return std::make_shared<Impl::OilBullet>();
+		case Kind::Oil:			return std::make_shared<Impl::OilBullet>();
+		case Kind::FlameSmoke:	return std::make_shared<Impl::FlameSmoke>();
+		case Kind::IceSmoke:	return std::make_shared<Impl::IceSmoke>();
 		default: _ASSERT_EXPR( 0, L"Error : Unexpected bullet kind!" );	break;
 		}
 		return nullptr;
@@ -197,15 +201,180 @@ namespace Bullet
 		}
 	#endif // USE_IMGUI
 	};
-}
-CEREAL_CLASS_VERSION( Bullet::OilMember, 3 )
+	
+	struct SmokeMember
+	{
+		struct General
+		{
+			int				aliveFrame	= 1;
+			float			drawScale	= 1.0f;
+			Donya::Vector4	color{ 1.0f, 1.0f, 1.0f, 1.0f };
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( aliveFrame	),
+					CEREAL_NVP( drawScale	),
+					CEREAL_NVP( color		)
+				);
 
-class ParamOilBullet : public ParameterBase<ParamOilBullet>
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		
+		struct Flame
+		{
+			General			general;
+			Donya::Sphere	hitBox;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( general	),
+					CEREAL_NVP( hitBox	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		
+		struct Ice
+		{
+			General			general;
+			Donya::Sphere	hitBox;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( general	),
+					CEREAL_NVP( hitBox	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+
+		Flame	flame;
+		Ice		ice;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( flame	),
+				CEREAL_NVP( ice		)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const std::string &nodeCaption )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			auto Clamp = []( auto *pTarget, auto min, auto max )
+			{
+				*pTarget = std::max( min, std::min( max, *pTarget ) );
+			};
+
+			auto GeneralNode = [&Clamp]( const std::string &nodeCaption, General *pTarget )
+			{
+				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+				// else
+				/*
+					int				aliveFrame	= 1;
+					float			drawScale	= 1.0f;
+					Donya::Vector4	color{ 1.0f, 1.0f, 1.0f, 1.0f };
+				*/
+				ImGui::DragInt(		u8"生存時間（フレーム）",	&pTarget->aliveFrame );
+				ImGui::DragFloat(	u8"描画スケール",			&pTarget->drawScale, 0.01f );
+				ImGui::ColorEdit4(	u8"色",					&pTarget->color.x );
+				Clamp( &pTarget->aliveFrame,	0,		pTarget->aliveFrame	);
+				Clamp( &pTarget->drawScale,		0.0f,	pTarget->drawScale	);
+
+				ImGui::TreePop();
+			};
+
+			if ( ImGui::TreeNode( u8"炎" ) )
+			{
+				GeneralNode( u8"共通部分", &flame.general );
+				ParameterHelper::ShowSphereNode( u8"当たり判定", &flame.hitBox );
+
+				ImGui::TreePop();
+			}
+			if ( ImGui::TreeNode( u8"冷気" ) )
+			{
+				GeneralNode( u8"共通部分", &ice.general );
+				ParameterHelper::ShowSphereNode( u8"当たり判定", &ice.hitBox );
+
+				ImGui::TreePop();
+			}
+
+			ImGui::TreePop();
+		}
+	#endif // USE_IMGUI
+	};
+
+	struct Member
+	{
+		OilMember	oil;
+		SmokeMember	smoke;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( oil		),
+				CEREAL_NVP( smoke	)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
+}
+CEREAL_CLASS_VERSION( Bullet::OilMember,			3 )
+CEREAL_CLASS_VERSION( Bullet::SmokeMember,			0 )
+CEREAL_CLASS_VERSION( Bullet::SmokeMember::General,	0 )
+CEREAL_CLASS_VERSION( Bullet::SmokeMember::Flame,	0 )
+CEREAL_CLASS_VERSION( Bullet::SmokeMember::Ice,		0 )
+CEREAL_CLASS_VERSION( Bullet::Member,				0 )
+
+class ParamBullet : public ParameterBase<ParamBullet>
 {
 public:
-	static constexpr const char *ID = "OilBullet";
+	static constexpr const char *ID = "Bullet";
 private:
-	Bullet::OilMember m;
+	Bullet::Member m;
 public:
 	void Init() override
 	{
@@ -217,7 +386,7 @@ public:
 
 		Load( m, fromBinary );
 	}
-	Bullet::OilMember Data() const { return m; }
+	Bullet::Member Data() const { return m; }
 private:
 	std::string GetSerializeIdentifier()			override { return ID; }
 	std::string GetSerializePath( bool isBinary )	override { return GenerateSerializePath( ID, isBinary ); }
@@ -228,11 +397,13 @@ public:
 		if ( !ImGui::BeginIfAllowed() ) { return; }
 		// else
 
-		if ( ImGui::TreeNode( u8"弾・オイル" ) )
+		if ( ImGui::TreeNode( u8"弾関連のパラメータ" ) )
 		{
-			m.ShowImGuiNode( u8"調整" );
-			ShowIONode( m );
+			m.oil.ShowImGuiNode( u8"オイル弾" );
 
+			m.smoke.ShowImGuiNode( u8"ケムリ関係" );
+
+			ShowIONode( m );
 			ImGui::TreePop();
 		}
 
@@ -265,7 +436,7 @@ namespace Bullet
 
 		if ( !LoadModels() ) { succeeded = false; }
 
-		ParamOilBullet::Get().Init();
+		ParamBullet::Get().Init();
 
 		return succeeded;
 	}
@@ -283,7 +454,7 @@ namespace Bullet
 #if USE_IMGUI
 	void UseBulletsImGui()
 	{
-		ParamOilBullet::Get().UseImGui();
+		ParamBullet::Get().UseImGui();
 	}
 
 	void BulletAdmin::FireDesc::ShowImGuiNode( const std::string &nodeCaption, bool generatePosIsRelative )
@@ -437,7 +608,7 @@ namespace Bullet
 		// else
 
 		// HACK : Should I do not use hit-box? Currently, the collision processes does not use hit-box, using the point only.
-		Donya::AABB movedBody = GetHitBox();
+		Donya::AABB movedBody = GetHitBoxAABB();
 		movedBody.pos += vector;
 
 		Donya::AABB other{};
@@ -645,7 +816,7 @@ namespace Bullet
 		if ( !pRenderer ) { return; }
 		// else
 
-		const auto &body = GetHitBox();
+		const auto &body = GetHitBoxAABB();
 		if ( body == Donya::AABB::Nil() ) { return; }
 		// else
 
@@ -665,7 +836,7 @@ namespace Bullet
 	}
 	Donya::Vector4x4 BulletBase::GetWorldMatrix() const
 	{
-		Donya::Vector4x4 world = orientation.RequireRotationMatrix();
+		Donya::Vector4x4 world = orientation.MakeRotationMatrix();
 		world._41 = pos.x;
 		world._42 = pos.y;
 		world._43 = pos.z;
@@ -703,7 +874,7 @@ namespace Bullet
 			if ( shouldStay ) { velocity = 0.0f; return; }
 			// else
 
-			velocity.y -= ParamOilBullet::Get().Data().gravity;
+			velocity.y -= ParamBullet::Get().Data().oil.gravity;
 			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
 		}
 		void OilBullet::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
@@ -724,31 +895,75 @@ namespace Bullet
 		}
 		void OilBullet::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 		{
-			BulletBase::Draw( pRenderer, ParamOilBullet::Get().Data().color.Product( color ) );
+			BulletBase::Draw( pRenderer, ParamBullet::Get().Data().oil.color.Product( color ) );
 		}
 		void OilBullet::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
 		{
-			BulletBase::DrawHitBox( pRenderer, VP, ParamOilBullet::Get().Data().color.Product( color ) );
+			BulletBase::DrawHitBox( pRenderer, VP, ParamBullet::Get().Data().oil.color.Product( color ) );
 		}
 		void OilBullet::AttachSelfKind() { kind = Kind::Oil; }
 		bool OilBullet::ShouldRemove() const
 		{
-			return ( ParamOilBullet::Get().Data().aliveFrame <= aliveTime ) ? true : false;
+			return ( ParamBullet::Get().Data().oil.aliveFrame <= aliveTime ) ? true : false;
 		}
-		Donya::AABB OilBullet::GetHitBox() const
+		Donya::AABB OilBullet::GetHitBoxAABB() const
 		{
-			Donya::AABB tmp = ParamOilBullet::Get().Data().hitBox;
+			Donya::AABB tmp = ParamBullet::Get().Data().oil.hitBox;
 			tmp.pos += GetPosition();
 			return tmp;
 		}
 		Donya::Vector4x4 OilBullet::GetWorldMatrix() const
 		{
-			const auto data = ParamOilBullet::Get().Data();
+			const auto data = ParamBullet::Get().Data().oil;
 			Donya::Vector4x4 world{};
 			world._11 = data.drawScale;
 			world._22 = data.drawScale;
 			world._33 = data.drawScale;
-			world *= orientation.RequireRotationMatrix();
+			world *= orientation.MakeRotationMatrix();
+			world._41 = pos.x;
+			world._42 = pos.y;
+			world._43 = pos.z;
+			return world;
+		}
+
+
+		void SmokeBase::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+		{
+			//Smoke is not collision to anything.
+			pos += velocity;
+		}
+		void SmokeBase::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+		{
+			BulletBase::Draw( pRenderer, ParamBullet::Get().Data().smoke.flame.general.color.Product( color ) );
+		}
+		void SmokeBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+		{
+			BulletBase::DrawHitBox( pRenderer, VP, ParamBullet::Get().Data().smoke.flame.general.color.Product( color ) );
+		}
+		
+		void FlameSmoke::Update( float elapsedTime )
+		{
+			aliveTime++;
+		}
+		void FlameSmoke::AttachSelfKind() { kind = Kind::FlameSmoke; }
+		bool FlameSmoke::ShouldRemove() const
+		{
+			return ( ParamBullet::Get().Data().smoke.flame.general.aliveFrame <= aliveTime ) ? true : false;
+		}
+		Donya::Sphere FlameSmoke::GetHitBoxSphere() const
+		{
+			Donya::Sphere tmp = ParamBullet::Get().Data().smoke.flame.hitBox;
+			tmp.pos += GetPosition();
+			return tmp;
+		}
+		Donya::Vector4x4 FlameSmoke::GetWorldMatrix() const
+		{
+			const auto data = ParamBullet::Get().Data().smoke.flame.general;
+			Donya::Vector4x4 world{};
+			world._11 = data.drawScale;
+			world._22 = data.drawScale;
+			world._33 = data.drawScale;
+			world *= orientation.MakeRotationMatrix();
 			world._41 = pos.x;
 			world._42 = pos.y;
 			world._43 = pos.z;

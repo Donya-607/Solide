@@ -7,23 +7,27 @@
 
 namespace Donya
 {
+	// The move ctors and move operators of XMFLOAT_ are disable
+	// for to be able to type like this:
+	// Donya::Vector_ vector = { /*some literals*/ };
 
 #pragma region Vector2
 
 	struct Vector2 : public DirectX::XMFLOAT2
 	{
 	public:
-		constexpr Vector2() : XMFLOAT2() {}
-		constexpr Vector2( float x, float y ) : XMFLOAT2( x, y ) {}
-		constexpr Vector2( const XMFLOAT2 &ref ) : XMFLOAT2( ref ) {}
-		constexpr Vector2( const XMFLOAT2 &&ref ) : XMFLOAT2( ref ) {}
-		constexpr Vector2( const Vector2 &ref ) : XMFLOAT2( ref ) {}
-		constexpr Vector2( const Vector2 &&ref ) noexcept : XMFLOAT2( ref ) {}
-		Vector2 &operator = ( float scalar ) noexcept { x = y = scalar;       return *this; }
-		Vector2 &operator = ( const XMFLOAT2 &ref ) noexcept { x = ref.x; y = ref.y; return *this; }
-		Vector2 &operator = ( const XMFLOAT2 &&ref ) noexcept { x = ref.x; y = ref.y; return *this; }
-		Vector2 &operator = ( const Vector2 &ref ) noexcept { x = ref.x; y = ref.y; return *this; }
-		Vector2 &operator = ( const Vector2 &&ref ) noexcept { x = ref.x; y = ref.y; return *this; }
+		constexpr Vector2() : XMFLOAT2( 0.0f, 0.0f ) {}
+		constexpr Vector2( float scalar				) : XMFLOAT2( scalar, scalar ) {}
+		constexpr Vector2( float x, float y			) : XMFLOAT2( x, y ) {}
+		constexpr Vector2( const XMFLOAT2 &copy		) : XMFLOAT2( copy ) {}
+		constexpr Vector2( const Vector2  &copy		) : XMFLOAT2( copy ) {}
+		constexpr Vector2(		 Vector2  &&ref		) noexcept : XMFLOAT2( ref ) {}
+		Vector2 &operator = ( float	scalar			) noexcept { x = scalar;	y = scalar;	return *this; }
+		Vector2 &operator = ( const	XMFLOAT2 &copy	) noexcept { x = copy.x;	y = copy.y;	return *this; }
+		Vector2 &operator = ( const	Vector2  &copy	) noexcept { x = copy.x;	y = copy.y;	return *this; }
+		Vector2 &operator = (		Vector2  &&ref	) noexcept { x = ref.x;		y = ref.y;	return *this; }
+//		constexpr Vector2(		 XMFLOAT2 &&ref		) : XMFLOAT2( ref  ) {}
+//		Vector2 &operator = (		XMFLOAT2 &&ref	) noexcept { x = ref.x;		y = ref.y;	return *this; }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -245,18 +249,19 @@ namespace Donya
 	struct Vector3 : public DirectX::XMFLOAT3
 	{
 	public:
-		constexpr Vector3() : XMFLOAT3() {}
-		constexpr Vector3( float x, float y, float z ) : XMFLOAT3( x, y, z ) {}
-		constexpr Vector3( const XMFLOAT3 &ref ) : XMFLOAT3( ref ) {}
-		constexpr Vector3( const XMFLOAT3 &&ref ) : XMFLOAT3( ref ) {}
-		constexpr Vector3( const Vector3 &ref ) : XMFLOAT3( ref ) {}
-		constexpr Vector3( const Vector3 &&ref ) noexcept : XMFLOAT3( ref ) {}
-		constexpr Vector3( const Vector2 &xy, float z ) : XMFLOAT3( xy.x, xy.y, z ) {}
-		Vector3 &operator = ( float scalar ) noexcept { x = y = z = scalar;              return *this; }
-		Vector3 &operator = ( const XMFLOAT3 &ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; return *this; }
-		Vector3 &operator = ( const XMFLOAT3 &&ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; return *this; }
-		Vector3 &operator = ( const Vector3 &ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; return *this; }
-		Vector3 &operator = ( const Vector3 &&ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; return *this; }
+		constexpr Vector3() : XMFLOAT3( 0.0f, 0.0f, 0.0f ) {}
+		constexpr Vector3( float scalar					) : XMFLOAT3( scalar, scalar, scalar ) {}
+		constexpr Vector3( float x, float y, float z	) : XMFLOAT3( x, y, z ) {}
+		constexpr Vector3( const XMFLOAT3 &copy			) : XMFLOAT3( copy ) {}
+		constexpr Vector3( const Vector3  &copy			) : XMFLOAT3( copy ) {}
+		constexpr Vector3(		 Vector3  &&ref			) noexcept : XMFLOAT3( ref ) {}
+		constexpr Vector3( const Vector2 &xy, float z	) : XMFLOAT3( xy.x, xy.y, z ) {}
+		Vector3 &operator = ( float scalar				) noexcept { x = scalar;	y = scalar;	z = scalar;	return *this; }
+		Vector3 &operator = ( const	XMFLOAT3 &copy		) noexcept { x = copy.x;	y = copy.y;	z = copy.z;	return *this; }
+		Vector3 &operator = ( const	Vector3  &copy		) noexcept { x = copy.x;	y = copy.y;	z = copy.z;	return *this; }
+		Vector3 &operator = (		Vector3  &&ref		) noexcept { x = ref.x;		y = ref.y;	z = ref.z;	return *this; }
+//		constexpr Vector3(		 XMFLOAT3 &&ref			) : XMFLOAT3( ref ) {}
+//		Vector3 &operator = (		XMFLOAT3 &&ref		) noexcept { x = ref.x;		y = ref.y;	z = ref.z;	return *this; }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -473,17 +478,18 @@ namespace Donya
 	{
 	public:
 		constexpr Vector4() : XMFLOAT4() {}
-		constexpr Vector4( float x, float y, float z, float w ) : XMFLOAT4( x, y, z, w ) {}
-		constexpr Vector4( const XMFLOAT4 &ref ) : XMFLOAT4( ref ) {}
-		constexpr Vector4( const XMFLOAT4 &&ref ) : XMFLOAT4( ref ) {}
-		constexpr Vector4( const Vector4 &ref ) : XMFLOAT4( ref ) {}
-		constexpr Vector4( const Vector4 &&ref ) noexcept : XMFLOAT4( ref ) {}
-		constexpr Vector4( const Vector3 &xyz, float w ) : XMFLOAT4( xyz.x, xyz.y, xyz.z, w ) {}
-		Vector4 &operator = ( float scalar ) noexcept { x = y = z = w = scalar; return *this; }
-		Vector4 &operator = ( const XMFLOAT4 &ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; w = ref.w; return *this; }
-		Vector4 &operator = ( const XMFLOAT4 &&ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; w = ref.w; return *this; }
-		Vector4 &operator = ( const Vector4 &ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; w = ref.w; return *this; }
-		Vector4 &operator = ( const Vector4 &&ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; w = ref.w; return *this; }
+		constexpr Vector4( float scalar							) : XMFLOAT4( scalar, scalar, scalar, scalar ) {}
+		constexpr Vector4( float x, float y, float z, float w	) : XMFLOAT4( x, y, z, w ) {}
+		constexpr Vector4( const XMFLOAT4 &copy					) : XMFLOAT4( copy ) {}
+		constexpr Vector4( const Vector4  &copy					) : XMFLOAT4( copy ) {}
+		constexpr Vector4(		 Vector4  &&ref					) noexcept : XMFLOAT4( ref ) {}
+		constexpr Vector4( const Vector3 &xyz, float w			) : XMFLOAT4( xyz.x, xyz.y, xyz.z, w ) {}
+		Vector4 &operator = ( float scalar						) noexcept { x = scalar;	y = scalar;	z = scalar;	w = scalar;	return *this; }
+		Vector4 &operator = ( const	XMFLOAT4 &copy				) noexcept { x = copy.x;	y = copy.y;	z = copy.z;	w = copy.w;	return *this; }
+		Vector4 &operator = ( const	Vector4  &copy				) noexcept { x = copy.x;	y = copy.y;	z = copy.z;	w = copy.w;	return *this; }
+		Vector4 &operator = (		Vector4  &&ref				) noexcept { x = ref.x;		y = ref.y;	z = ref.z;	w = ref.w;	return *this; }
+//		constexpr Vector4(		 XMFLOAT4 &&ref					) : XMFLOAT4( ref ) {}
+//		Vector4 &operator = (		XMFLOAT4 &&ref				) noexcept { x = ref.x;		y = ref.y;	z = ref.z;	w = ref.w;	return *this; }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -661,7 +667,15 @@ namespace Donya
 	struct Vector4x4 : public DirectX::XMFLOAT4X4
 	{
 	public:
-		constexpr Vector4x4() : XMFLOAT4X4( 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ) {}
+		constexpr Vector4x4() :
+			XMFLOAT4X4
+			(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f
+			)
+		{}
 		constexpr Vector4x4
 		(
 			float _11, float _12, float _13, float _14,
@@ -676,11 +690,27 @@ namespace Donya
 				_31, _32, _33, _34,
 				_41, _42, _43, _44
 			)
+		{}
+		constexpr Vector4x4( const XMFLOAT4X4 &copy ) : XMFLOAT4X4( copy ) {}
+		constexpr Vector4x4( const Vector4x4  &copy ) : XMFLOAT4X4( copy ) {}
+		constexpr Vector4x4(	   Vector4x4  &&ref ) noexcept : XMFLOAT4X4( ref  ) {}
+		Vector4x4 &operator = ( const XMFLOAT4X4 &copy ) noexcept
 		{
+			_11 = copy._11;	_12 = copy._12;	_13 = copy._13;	_14 = copy._14;
+			_21 = copy._21;	_22 = copy._22;	_23 = copy._23;	_24 = copy._24;
+			_31 = copy._31;	_32 = copy._32;	_33 = copy._33;	_34 = copy._34;
+			_41 = copy._41;	_42 = copy._42;	_43 = copy._43;	_44 = copy._44;
+			return *this;
 		}
-		constexpr Vector4x4( const XMFLOAT4X4 &ref ) : XMFLOAT4X4( ref ) {}
-		constexpr Vector4x4( const XMFLOAT4X4 &&ref ) : XMFLOAT4X4( ref ) {}
-		Vector4x4 &operator = ( const XMFLOAT4X4 &ref ) noexcept
+		Vector4x4 &operator = ( const Vector4x4  &copy ) noexcept
+		{
+			_11 = copy._11;	_12 = copy._12;	_13 = copy._13;	_14 = copy._14;
+			_21 = copy._21;	_22 = copy._22;	_23 = copy._23;	_24 = copy._24;
+			_31 = copy._31;	_32 = copy._32;	_33 = copy._33;	_34 = copy._34;
+			_41 = copy._41;	_42 = copy._42;	_43 = copy._43;	_44 = copy._44;
+			return *this;
+		}
+		Vector4x4 &operator = (		  Vector4x4  &&ref ) noexcept
 		{
 			_11 = ref._11;	_12 = ref._12;	_13 = ref._13;	_14 = ref._14;
 			_21 = ref._21;	_22 = ref._22;	_23 = ref._23;	_24 = ref._24;
@@ -688,14 +718,15 @@ namespace Donya
 			_41 = ref._41;	_42 = ref._42;	_43 = ref._43;	_44 = ref._44;
 			return *this;
 		}
-		Vector4x4 &operator = ( const XMFLOAT4X4 &&ref ) noexcept
-		{
-			_11 = ref._11;	_12 = ref._12;	_13 = ref._13;	_14 = ref._14;
-			_21 = ref._21;	_22 = ref._22;	_23 = ref._23;	_24 = ref._24;
-			_31 = ref._31;	_32 = ref._32;	_33 = ref._33;	_34 = ref._34;
-			_41 = ref._41;	_42 = ref._42;	_43 = ref._43;	_44 = ref._44;
-			return *this;
-		}
+//		constexpr Vector4x4(	   XMFLOAT4X4 &&ref ) : XMFLOAT4X4( ref  ) {}
+// 		Vector4x4 &operator = (		  XMFLOAT4X4 &&ref ) noexcept
+// 		{
+// 			_11 = ref._11;	_12 = ref._12;	_13 = ref._13;	_14 = ref._14;
+// 			_21 = ref._21;	_22 = ref._22;	_23 = ref._23;	_24 = ref._24;
+// 			_31 = ref._31;	_32 = ref._32;	_33 = ref._33;	_34 = ref._34;
+// 			_41 = ref._41;	_42 = ref._42;	_43 = ref._43;	_44 = ref._44;
+// 			return *this;
+// 		}
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -893,11 +924,13 @@ namespace Donya
 		int y{};
 	public:
 		constexpr Int2() : x( 0 ), y( 0 ) {}
-		constexpr Int2( int x, int y ) : x( x ), y( y ) {}
-		constexpr Int2( const Int2 &ref ) : x( ref.x ), y( ref.y ) {}
-		Int2 &operator = ( int scalar ) noexcept { x = y = scalar;       return *this; }
-		Int2 &operator = ( const Int2 &ref ) noexcept { x = ref.x; y = ref.y; return *this; }
-		Int2 &operator = ( const Int2 &&ref ) noexcept { x = ref.x; y = ref.y; return *this; }
+		constexpr Int2( int scalar			) : x( scalar	), y( scalar	) {}
+		constexpr Int2( int x, int y		) : x( x		), y( y			) {}
+		constexpr Int2( const Int2 &copy	) : x( copy.x	), y( copy.y	) {}
+		constexpr Int2(		  Int2 &&ref	) noexcept : x( ref.x	),	y( ref.y	) {}
+		Int2 &operator = ( int scalar		) noexcept { x = scalar;	y = scalar;	return *this; }
+		Int2 &operator = ( const Int2 &copy ) noexcept { x = copy.x;	y = copy.y;	return *this; }
+		Int2 &operator = (		 Int2 &&ref ) noexcept { x = ref.x;		y = ref.y;	return *this; }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -1017,11 +1050,13 @@ namespace Donya
 		int z{};
 	public:
 		constexpr Int3() : x( 0 ), y( 0 ), z( 0 ) {}
-		constexpr Int3( int x, int y, int z ) : x( x ), y( y ), z( z ) {}
-		constexpr Int3( const Int3 &ref ) : x( ref.x ), y( ref.y ), z( ref.z ) {}
-		Int3 &operator = ( int scalar ) noexcept { x = y = z = scalar;              return *this; }
-		Int3 &operator = ( const Int3 &ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; return *this; }
-		Int3 &operator = ( const Int3 &&ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; return *this; }
+		constexpr Int3( int scalar			) : x( scalar	), y( scalar	), z( scalar	) {}
+		constexpr Int3( int x, int y, int z	) : x( x		), y( y			), z( z			) {}
+		constexpr Int3( const Int3 &copy	) : x( copy.x	), y( copy.y	), z( copy.z	) {}
+		constexpr Int3(		  Int3 &&ref	) : x( ref.x	), y( ref.y		), z( ref.z		) {}
+		Int3 &operator = ( int scalar		) noexcept { x = scalar;	y = scalar;	z = scalar;	return *this; }
+		Int3 &operator = ( const Int3 &copy ) noexcept { x = copy.x;	y = copy.y;	z = copy.z;	return *this; }
+		Int3 &operator = (		 Int3 &&ref ) noexcept { x = ref.x;		y = ref.y;	z = ref.z;	return *this; }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -1154,11 +1189,13 @@ namespace Donya
 		int w{};
 	public:
 		constexpr Int4() : x( 0 ), y( 0 ), z( 0 ), w( 0 ) {}
-		constexpr Int4( int x, int y, int z, int w ) : x( x ), y( y ), z( z ), w( w ) {}
-		constexpr Int4( const Int4 &ref ) : x( ref.x ), y( ref.y ), z( ref.z ), w( ref.w ) {}
-		Int4 &operator = ( int scalar ) noexcept { x = y = z = w = scalar;                     return *this; }
-		Int4 &operator = ( const Int4 &ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; w = ref.w; return *this; }
-		Int4 &operator = ( const Int4 &&ref ) noexcept { x = ref.x; y = ref.y; z = ref.z; w = ref.w; return *this; }
+		constexpr Int4( int scalar					) : x( scalar	), y( scalar	), z( scalar	), w( scalar	) {}
+		constexpr Int4( int x, int y, int z, int w	) : x( x		), y( y			), z( z			), w( w			) {}
+		constexpr Int4( const Int4 &copy			) : x( copy.x	), y( copy.y	), z( copy.z	), w( copy.w	) {}
+		constexpr Int4(		  Int4 &&ref			) : x( ref.x	), y( ref.y		), z( ref.z		), w( ref.w		) {}
+		Int4 &operator = ( int scalar				) noexcept { x = scalar;	y = scalar;	z = scalar;	w = scalar;	return *this; }
+		Int4 &operator = ( const Int4 &copy			) noexcept { x = copy.x;	y = copy.y;	z = copy.z;	w = copy.w;	return *this; }
+		Int4 &operator = (		 Int4 &&ref			) noexcept { x = ref.x;		y = ref.y;	z = ref.z;	w = ref.w;	return *this; }
 	private:
 		friend class cereal::access;
 		template<class Archive>

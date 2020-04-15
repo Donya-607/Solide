@@ -244,6 +244,16 @@ namespace Donya
 		/// The "ignoreExistFlag" is specify disable of exist flag.
 		/// </summary>
 		static bool IsHitAABB( const Sphere &worldSpaceSphere, const AABB &worldSpaceBox, bool ignoreExistFlag = false );
+	public:
+		static Sphere Nil()
+		{
+			return Sphere
+			{
+				Donya::Vector3{ 0.0f, 0.0f, 0.0f },
+				0.0f,
+				false
+			};
+		}
 	};
 
 	/// <summary>

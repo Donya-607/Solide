@@ -12,7 +12,7 @@ namespace Donya
 				m._11 = scale.x;
 				m._22 = scale.y;
 				m._33 = scale.z;
-				m *= rotation.RequireRotationMatrix();
+				m *= rotation.MakeRotationMatrix();
 				m._41 = translation.x;
 				m._42 = translation.y;
 				m._43 = translation.z;

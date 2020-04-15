@@ -1019,7 +1019,7 @@ void Player::Draw( RenderingHelper *pRenderer )
 	W._11 = data.drawScale;
 	W._22 = data.drawScale;
 	W._33 = data.drawScale;
-	W *= actualOrientation.RequireRotationMatrix();
+	W *= actualOrientation.MakeRotationMatrix();
 	W._41 = pos.x + drawOffset.x;
 	W._42 = pos.y + drawOffset.y;
 	W._43 = pos.z + drawOffset.z;

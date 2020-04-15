@@ -1097,7 +1097,7 @@ namespace Donya
 			Donya::Quaternion lookRotation = FRONT.LookAt( lookDirection, freezeDirection, /* returnsRotatedQuaternion = */ false );
 			lookRotation.RotateBy( ROLL );
 
-			return lookRotation.RequireRotationMatrix();
+			return lookRotation.MakeRotationMatrix();
 		}
 
 		Donya::Vector2 GetTextureSize( const D3D11_TEXTURE2D_DESC &textureDesc )
@@ -1497,7 +1497,7 @@ namespace Donya
 			instances[reserveCount].scaling		= ( wsEnd - wsStart ).Length();
 			instances[reserveCount].translation	= wsStart;
 			Donya::Quaternion rotation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), ( wsEnd - wsStart ).Unit() );
-			instances[reserveCount].rotation	= rotation.RequireRotationMatrix();
+			instances[reserveCount].rotation	= rotation.MakeRotationMatrix().XMFloat();
 			instances[reserveCount].color		= color;
 			
 			reserveCount++;

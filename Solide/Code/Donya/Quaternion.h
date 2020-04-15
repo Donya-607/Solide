@@ -239,29 +239,29 @@ namespace Donya
 		/// <summary>
 		/// The fourth-elements are same to identity.
 		/// </summary>
-		constexpr DirectX::XMFLOAT4X4 RequireRotationMatrix() const
+		constexpr Donya::Vector4x4 MakeRotationMatrix() const
 		{
-			DirectX::XMFLOAT4X4 m{};
+			Donya::Vector4x4 m{};
 
 			m._11 = 1.0f -	( 2.0f * y * y ) - ( 2.0f * z * z );
 			m._12 =			( 2.0f * x * y ) + ( 2.0f * w * z );
 			m._13 =			( 2.0f * x * z ) - ( 2.0f * w * y );
-			m._14 = 0.0f;
+			// m._14 = 0.0f;
 
 			m._21 =			( 2.0f * x * y ) - ( 2.0f * w * z );
 			m._22 = 1.0f -	( 2.0f * x * x ) - ( 2.0f * z * z );
 			m._23 =			( 2.0f * y * z ) + ( 2.0f * w * x );
-			m._24 = 0.0f;
+			// m._24 = 0.0f;
 
 			m._31 =			( 2.0f * x * z ) + ( 2.0f * w * y );
 			m._32 =			( 2.0f * y * z ) - ( 2.0f * w * x );
 			m._33 = 1.0f -	( 2.0f * x * x ) - ( 2.0f * y * y );
-			m._34 = 0.0f;
+			// m._34 = 0.0f;
 
-			m._41 = 0.0f;
-			m._42 = 0.0f;
-			m._43 = 0.0f;
-			m._44 = 1.0f;
+			// m._41 = 0.0f;
+			// m._42 = 0.0f;
+			// m._43 = 0.0f;
+			// m._44 = 1.0f;
 
 			return m;
 		}
@@ -394,9 +394,9 @@ namespace Donya
 		/// <summary>
 		/// The fourth-elements are same to identity.
 		/// </summary>
-		static constexpr DirectX::XMFLOAT4X4 RequireRotationMatrix( const Quaternion &Q )
+		static constexpr Donya::Vector4x4 MakeRotationMatrix( const Quaternion &Q )
 		{
-			return Q.RequireRotationMatrix();
+			return Q.MakeRotationMatrix();
 		}
 	};
 #pragma region Arithmetic

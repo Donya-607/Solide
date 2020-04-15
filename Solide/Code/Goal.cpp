@@ -98,7 +98,7 @@ Donya::Vector4x4	Goal::CalcWorldMatrix( bool useForHitBox ) const
 	W._11 = scale.x;
 	W._22 = scale.y;
 	W._33 = scale.z;
-	if ( !useForHitBox ) { W *= orientation.RequireRotationMatrix(); }
+	if ( !useForHitBox ) { W *= orientation.MakeRotationMatrix(); }
 	W._41 = translation.x;
 	W._42 = translation.y;
 	W._43 = translation.z;

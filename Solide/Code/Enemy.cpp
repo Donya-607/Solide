@@ -382,11 +382,11 @@ namespace Enemy
 			// Scales are 1.0f.
 		}
 
-		W *= orientation.RequireRotationMatrix();
+		W *= orientation.MakeRotationMatrix();
 		if ( useForDrawing )
 		{
 			const auto data = FetchMember();
-			W *= data.drawer.drawRotation.RequireRotationMatrix();
+			W *= data.drawer.drawRotation.MakeRotationMatrix();
 		}
 
 		W._41 = pos.x;
