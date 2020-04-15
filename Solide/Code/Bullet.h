@@ -162,7 +162,8 @@ namespace Bullet
 		class SmokeBase : public BulletBase
 		{
 		protected:
-			int  aliveTime = 0;
+			int				aliveTime = 0;
+			Donya::Vector4	color{ 1.0f, 1.0f, 1.0f, 1.0f };
 		public:
 			virtual void Update( float elapsedTime ) override = 0;
 			void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;

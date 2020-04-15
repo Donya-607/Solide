@@ -21,7 +21,7 @@ namespace Bullet
 		constexpr const char *EXTENSION = ".bin";
 		constexpr std::array<const char *, KIND_COUNT> MODEL_NAMES
 		{
-			"Oil"
+			"Oil",
 			"Flame",
 			"Ice",
 		};
@@ -932,9 +932,9 @@ namespace Bullet
 			//Smoke is not collision to anything.
 			pos += velocity;
 		}
-		void SmokeBase::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+		void SmokeBase::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &argColor )
 		{
-			BulletBase::Draw( pRenderer, ParamBullet::Get().Data().smoke.flame.general.color.Product( color ) );
+			BulletBase::Draw( pRenderer, color.Product( argColor ) );
 		}
 		void SmokeBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
 		{
@@ -944,6 +944,7 @@ namespace Bullet
 		void FlameSmoke::Update( float elapsedTime )
 		{
 			aliveTime++;
+			color = ParamBullet::Get().Data().smoke.flame.general.color;
 		}
 		void FlameSmoke::AttachSelfKind() { kind = Kind::FlameSmoke; }
 		bool FlameSmoke::ShouldRemove() const
@@ -973,6 +974,7 @@ namespace Bullet
 		void IceSmoke::Update( float elapsedTime )
 		{
 			aliveTime++;
+			color = ParamBullet::Get().Data().smoke.ice.general.color;
 		}
 		void IceSmoke::AttachSelfKind() { kind = Kind::IceSmoke; }
 		bool IceSmoke::ShouldRemove() const
