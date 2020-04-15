@@ -969,5 +969,34 @@ namespace Bullet
 			world._43 = pos.z;
 			return world;
 		}
+
+		void IceSmoke::Update( float elapsedTime )
+		{
+			aliveTime++;
+		}
+		void IceSmoke::AttachSelfKind() { kind = Kind::IceSmoke; }
+		bool IceSmoke::ShouldRemove() const
+		{
+			return ( ParamBullet::Get().Data().smoke.ice.general.aliveFrame <= aliveTime ) ? true : false;
+		}
+		Donya::Sphere IceSmoke::GetHitBoxSphere() const
+		{
+			Donya::Sphere tmp = ParamBullet::Get().Data().smoke.ice.hitBox;
+			tmp.pos += GetPosition();
+			return tmp;
+		}
+		Donya::Vector4x4 IceSmoke::GetWorldMatrix() const
+		{
+			const auto data = ParamBullet::Get().Data().smoke.ice.general;
+			Donya::Vector4x4 world{};
+			world._11 = data.drawScale;
+			world._22 = data.drawScale;
+			world._33 = data.drawScale;
+			world *= orientation.MakeRotationMatrix();
+			world._41 = pos.x;
+			world._42 = pos.y;
+			world._43 = pos.z;
+			return world;
+		}
 	}
 }
