@@ -441,6 +441,7 @@ namespace Enemy
 		switch ( kind )
 		{
 		case Enemy::Kind::Straight:	*pBasePtr = std::make_shared<Straight>();	return;
+		case Enemy::Kind::Archer:	*pBasePtr = std::make_shared<Archer>();		return;
 		default: pBasePtr->reset(); return;
 		}
 	}
@@ -598,6 +599,7 @@ namespace Enemy
 	{
 		target.timer = 0;
 		target.animator.ResetTimer();
+		target.animator.DisableLoop();
 
 		if ( target.pModelParam )
 		{
@@ -605,6 +607,18 @@ namespace Enemy
 			target.animator.SetRepeatRange( initialMotion );
 			target.pose.AssignSkeletal( target.animator.CalcCurrentPose( initialMotion ) );
 		}
+	}
+	void Archer::MoverBase::LookToTarget( Archer &target, const Donya::Vector3 &targetPos )
+	{
+		Donya::Vector3 toTarget = targetPos - target.pos;
+		toTarget.y = 0.0f; // Disallow x-axis rotation.
+
+		target.orientation = Donya::Quaternion::LookAt
+		(
+			target.orientation,
+			toTarget.Unit(),
+			Donya::Quaternion::Freeze::Up
+		);
 	}
 
 	void Archer::Wait::Init( Archer &target )
@@ -625,6 +639,16 @@ namespace Enemy
 				wasSearched = true;
 			}
 		}
+
+		if ( target.aimToTarget && wasSearched )
+		{
+			if ( target.waitFrame <= target.timer )
+			{
+				LookToTarget( target, targetPos );
+
+				target.UpdateMotion( elapsedTime, AcquireMotionIndex() );
+			}
+		}
 	}
 	int  Archer::Wait::AcquireMotionIndex() const
 	{
@@ -632,15 +656,22 @@ namespace Enemy
 	}
 	bool Archer::Wait::ShouldChangeState( Archer &target ) const
 	{
-		const bool waitWasFinished = ( target.waitFrame <= target.timer );
 		return	( target.aimToTarget )
-				? waitWasFinished && wasSearched
-				: waitWasFinished;
+				? target.animator.WasEnded()
+				: target.waitFrame <= target.timer;
 	}
 	std::function<void()> Archer::Wait::GetChangeStateMethod( Archer &target ) const
 	{
+		if ( target.aimToTarget && !wasSearched )
+		{
+			return [&]() { target.AssignMover<Wait>(); };
+		}
+		// else
 		return [&]() { target.AssignMover<Aim>(); };
 	}
+	#if USE_IMGUI
+	std::string Archer::Wait::GetStateName() const { return u8"待機"; }
+	#endif // USE_IMGUI
 
 	void Archer::Aim::Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos )
 	{
@@ -648,16 +679,10 @@ namespace Enemy
 
 		if ( target.aimToTarget )
 		{
-			Donya::Vector3 toTarget = targetPos - target.pos;
-			toTarget.y = 0.0f; // Disallow x-axis rotation.
-
-			target.orientation = Donya::Quaternion::LookAt
-			(
-				target.orientation,
-				toTarget.Unit(),
-				Donya::Quaternion::Freeze::Up
-			);
+			MoverBase::LookToTarget( target, targetPos );
 		}
+
+		target.UpdateMotion( elapsedTime, AcquireMotionIndex() );
 	}
 	int  Archer::Aim::AcquireMotionIndex() const
 	{
@@ -671,10 +696,23 @@ namespace Enemy
 	{
 		return [&]() { target.AssignMover<Fire>(); };
 	}
+#if USE_IMGUI
+	std::string Archer::Aim::GetStateName() const { return u8"狙い"; }
+#endif // USE_IMGUI
 
 	void Archer::Fire::Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos )
 	{
-		
+		target.timer++;
+
+		if ( target.intervalFrame <= target.timer )
+		{
+			if ( target.timer == target.intervalFrame )
+			{
+				target.GenerateShot();
+			}
+
+			target.UpdateMotion( elapsedTime, AcquireMotionIndex() );
+		}
 	}
 	int  Archer::Fire::AcquireMotionIndex() const
 	{
@@ -688,6 +726,9 @@ namespace Enemy
 	{
 		return [&]() { target.AssignMover<Wait>(); };
 	}
+#if USE_IMGUI
+	std::string Archer::Fire::GetStateName() const { return u8"ショット"; }
+#endif // USE_IMGUI
 
 	void Archer::Init( const InitializeParam &argInitializer )
 	{
@@ -700,7 +741,11 @@ namespace Enemy
 	{
 		pMover->Update( *this, elapsedTime, targetPos );
 
-		UpdateMotion( elapsedTime, pMover->AcquireMotionIndex() );
+		if ( pMover->ShouldChangeState( *this ) )
+		{
+			auto ChangeMover = pMover->GetChangeStateMethod( *this );
+			ChangeMover();
+		}
 	}
 	void Archer::PhysicUpdate()
 	{
@@ -747,15 +792,19 @@ namespace Enemy
 		{
 			initializer.ShowImGuiNode( u8"初期化情報" );
 			shotDesc.ShowImGuiNode( u8"ショット情報" );
-			ImGui::DragInt(		u8"狙いを定める時間（フレーム）",	&aimingFrame  );
-			ImGui::Checkbox(	u8"自機を狙うか",					&aimToTarget  );
-			ImGui::DragFloat(	u8"索敵範囲（半径）",				&searchRadius );
+			ImGui::DragInt(		u8"待機時間（フレーム）",			&waitFrame		);
+			ImGui::DragInt(		u8"狙いを定める時間（フレーム）",	&aimingFrame	);
+			ImGui::DragInt(		u8"向き確定から攻撃までの時間（フレーム）",		&intervalFrame	);
+			ImGui::Checkbox(	u8"自機を狙うか",					&aimToTarget	);
+			ImGui::DragFloat(	u8"索敵範囲（半径）",				&searchRadius	);
 
 			ImGui::TreePop();
 		}
 
 		if ( ImGui::TreeNode( u8"現在のパラメータ" ) )
 		{
+			std::string stateCaption = u8"現在のステート：" + pMover->GetStateName();
+			ImGui::Text( stateCaption.c_str() );
 			ImGui::DragFloat3(		u8"現在のワールド座標",	&pos.x, 0.01f );
 			ImGui::SliderFloat4(	u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
 			ImGui::DragInt(			u8"内部タイマ",			&timer );
@@ -765,7 +814,8 @@ namespace Enemy
 
 		if ( ImGui::Button( u8"撃つ" ) )
 		{
-			GenerateShot();
+			// GenerateShot();
+			AssignMover<Fire>();
 		}
 
 		ImGui::TreePop();

@@ -233,6 +233,12 @@ namespace Enemy
 			virtual int  AcquireMotionIndex() const = 0;
 			virtual bool ShouldChangeState( Archer &target ) const = 0;
 			virtual std::function<void()> GetChangeStateMethod( Archer &target ) const = 0;
+		protected:
+			void LookToTarget( Archer &target, const Donya::Vector3 &targetPos );
+		public:
+		#if USE_IMGUI
+			virtual std::string GetStateName() const = 0;
+		#endif // USE_IMGUI
 		};
 		class Wait : public MoverBase
 		{
@@ -244,6 +250,10 @@ namespace Enemy
 			int  AcquireMotionIndex() const override;
 			bool ShouldChangeState( Archer &target ) const override;
 			std::function<void()> GetChangeStateMethod( Archer &target ) const override;
+		public:
+		#if USE_IMGUI
+			std::string GetStateName() const override;
+		#endif // USE_IMGUI
 		};
 		class Aim : public MoverBase
 		{
@@ -252,6 +262,10 @@ namespace Enemy
 			int  AcquireMotionIndex() const override;
 			bool ShouldChangeState( Archer &target ) const override;
 			std::function<void()> GetChangeStateMethod( Archer &target ) const override;
+		public:
+		#if USE_IMGUI
+			std::string GetStateName() const override;
+		#endif // USE_IMGUI
 		};
 		class Fire : public MoverBase
 		{
@@ -260,6 +274,10 @@ namespace Enemy
 			int  AcquireMotionIndex() const override;
 			bool ShouldChangeState( Archer &target ) const override;
 			std::function<void()> GetChangeStateMethod( Archer &target ) const override;
+		public:
+		#if USE_IMGUI
+			std::string GetStateName() const override;
+		#endif // USE_IMGUI
 		};
 	private:
 		Bullet::BulletAdmin::FireDesc shotDesc; // Usually do not change this.
@@ -323,5 +341,9 @@ CEREAL_CLASS_VERSION( Enemy::InitializeParam,	0 )
 CEREAL_CLASS_VERSION( Enemy::MoveParam,			0 )
 
 CEREAL_CLASS_VERSION( Enemy::Straight,			0 )
-CEREAL_REGISTER_TYPE( Enemy::Straight			  )
+CEREAL_REGISTER_TYPE( Enemy::Straight )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Straight )
+
+CEREAL_CLASS_VERSION( Enemy::Archer,			0 )
+CEREAL_REGISTER_TYPE( Enemy::Archer )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Archer )
