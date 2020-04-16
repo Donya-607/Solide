@@ -1,7 +1,8 @@
 #pragma once
 
-#include <string>
+#include <functional>
 #include <memory>
+#include <string>
 
 #undef max
 #undef min
@@ -15,6 +16,7 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+#include "Bullet.h"
 #include "Renderer.h"
 
 namespace Enemy
@@ -22,6 +24,7 @@ namespace Enemy
 	enum class Kind
 	{
 		Straight,
+		Archer,
 
 		KindCount
 	};
@@ -134,7 +137,7 @@ namespace Enemy
 			}
 		}
 	public:
-		virtual void Init( const InitializeParam &initializer ) = 0;
+		virtual void Init( const InitializeParam &initializer );
 		virtual void Uninit() {}
 
 		virtual void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) = 0;
@@ -161,6 +164,7 @@ namespace Enemy
 #if USE_IMGUI
 	void AssignDerivedInstance( Kind kind, std::shared_ptr<Base> *pBasePtr );
 #endif // USE_IMGUI
+
 
 	/// <summary>
 	/// This class moves by following specified direction.
@@ -205,6 +209,107 @@ namespace Enemy
 		Donya::Vector3 CalcNowMoveDirection( const Donya::Vector3 &targetPosition ) const;
 		void AssignVelocity( const Donya::Vector3 &targetPosition );
 		void AssignOrientation( const Donya::Vector3 &targetPosition );
+	public:
+	#if USE_IMGUI
+		/// <summary>
+		/// You can set nullptr to "outputWantRemove".
+		/// </summary>
+		void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) override;
+	#endif // USE_IMGUI
+	};
+
+
+	/// <summary>
+	/// This class shots some bullet.
+	/// </summary>
+	class Archer : public Base
+	{
+	private:
+		class MoverBase
+		{
+		public:
+			virtual void Init( Archer &target );
+			virtual void Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos ) = 0;
+			virtual int  AcquireMotionIndex() const = 0;
+			virtual bool ShouldChangeState( Archer &target ) const = 0;
+			virtual std::function<void()> GetChangeStateMethod( Archer &target ) const = 0;
+		};
+		class Wait : public MoverBase
+		{
+		private:
+			bool wasSearched = false;
+		public:
+			void Init( Archer &target ) override;
+			void Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+			int  AcquireMotionIndex() const override;
+			bool ShouldChangeState( Archer &target ) const override;
+			std::function<void()> GetChangeStateMethod( Archer &target ) const override;
+		};
+		class Aim : public MoverBase
+		{
+		public:
+			void Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+			int  AcquireMotionIndex() const override;
+			bool ShouldChangeState( Archer &target ) const override;
+			std::function<void()> GetChangeStateMethod( Archer &target ) const override;
+		};
+		class Fire : public MoverBase
+		{
+		public:
+			void Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+			int  AcquireMotionIndex() const override;
+			bool ShouldChangeState( Archer &target ) const override;
+			std::function<void()> GetChangeStateMethod( Archer &target ) const override;
+		};
+	private:
+		Bullet::BulletAdmin::FireDesc shotDesc; // Usually do not change this.
+		int		waitFrame		= 1;
+		int		aimingFrame		= 1;
+		int		intervalFrame	= 1;
+		float	searchRadius	= 0.0f;
+		bool	aimToTarget		= false;
+	private:
+		int		timer			= 0;
+		std::unique_ptr<MoverBase> pMover = nullptr;
+	public:
+		Archer() : Base() {}
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				cereal::base_class<Base>( this ),
+				CEREAL_NVP( shotDesc		),
+				CEREAL_NVP( waitFrame		),
+				CEREAL_NVP( aimingFrame		),
+				CEREAL_NVP( intervalFrame	),
+				CEREAL_NVP( searchRadius	),
+				CEREAL_NVP( aimToTarget		)
+			);
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	public:
+		void Init( const InitializeParam &initializer ) override;
+
+		void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) override;
+		void PhysicUpdate() override;
+	public:
+		bool ShouldRemove()	const override;
+		Kind GetKind()		const override;
+	private:
+		template<class Mover>
+		void AssignMover()
+		{
+			pMover = std::make_unique<Mover>();
+			pMover->Init( *this );
+		}
+
+		void GenerateShot();
 	public:
 	#if USE_IMGUI
 		/// <summary>

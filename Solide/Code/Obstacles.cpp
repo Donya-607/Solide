@@ -444,14 +444,14 @@ void Spray::UpdateSpray( float elapsedTime )
 	const bool generateTiming = ( shotGenInterval < 2 ) ? true : ( shotTimer % shotGenInterval ) == 1;
 	if ( generateTiming )
 	{
-		GenerateShot( elapsedTime );
+		GenerateShot();
 	}
 }
 void Spray::UpdateCooldown( float elapsedTime )
 {
 	// No op.
 }
-void Spray::GenerateShot( float elapsedTime )
+void Spray::GenerateShot()
 {
 	auto desc = shotDesc;
 	// The "direction", and "generatePos" are local space.

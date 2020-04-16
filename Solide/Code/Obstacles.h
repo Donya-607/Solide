@@ -231,7 +231,7 @@ private:
 private:
 	void UpdateSpray( float elapsedTime );
 	void UpdateCooldown( float elapsedTime );
-	void GenerateShot( float elapsedTime );
+	void GenerateShot();
 	bool ShouldChangeMode() const;
 public:
 #if USE_IMGUI

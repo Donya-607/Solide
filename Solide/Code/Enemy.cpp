@@ -16,6 +16,7 @@ namespace
 	constexpr const char *MODEL_NAMES[KIND_COUNT]
 	{
 		"Run",
+		"Archer",
 	};
 
 	static std::vector<std::shared_ptr<Enemy::ModelParam>> modelPtrs{};
@@ -233,6 +234,10 @@ public:
 // Internal utility.
 namespace
 {
+	static constexpr int MOTION_INDEX_BEGIN		= 0;
+	static constexpr int MOTION_INDEX_PROCESS	= 1;
+	static constexpr int MOTION_INDEX_END		= 2;
+
 	Member FetchMember()
 	{
 		return ParamEnemy::Get().Data();
@@ -317,6 +322,30 @@ namespace Enemy
 #endif // USE_IMGUI
 
 
+	void Base::Init( const InitializeParam &argInitializer )
+	{
+		initializer	= argInitializer;
+
+		pos			= initializer.wsPos;
+		orientation	= initializer.orientation;
+
+		animator.ResetTimer();
+
+		pModelParam	= GetModelPtr( GetKind() );
+		if ( pModelParam )
+		{
+			const auto &initialMotion = pModelParam->motionHolder.GetMotion( 0 );
+			animator.SetRepeatRange( initialMotion );
+			pose.AssignSkeletal
+			(
+				animator.CalcCurrentPose
+				(
+					initialMotion
+				)
+			);
+		}
+
+	}
 	void Base::Draw( RenderingHelper *pRenderer )
 	{
 		if ( !pModelParam ) { return; }
@@ -420,26 +449,7 @@ namespace Enemy
 
 	void Straight::Init( const InitializeParam &argInitializer )
 	{
-		initializer	= argInitializer;
-
-		pos			= initializer.wsPos;
-		orientation	= initializer.orientation;
-
-		animator.ResetTimer();
-
-		pModelParam	= GetModelPtr( Kind::Straight );
-		if ( pModelParam )
-		{
-			const auto &initialMotion = pModelParam->motionHolder.GetMotion( 0 );
-			animator.SetRepeatRange( initialMotion );
-			pose.AssignSkeletal
-			(
-				animator.CalcCurrentPose
-				(
-					initialMotion
-				)
-			);
-		}
+		Base::Init( argInitializer );
 
 		velocity			= 0.0f;
 		moveDistanceSum		= 0.0f;
@@ -471,7 +481,7 @@ namespace Enemy
 		}
 
 		constexpr int USE_MOTION_INDEX = 0;
-		UpdateMotion( elapsedTime, USE_MOTION_INDEX );
+		Base::UpdateMotion( elapsedTime, USE_MOTION_INDEX );
 	}
 	void Straight::PhysicUpdate()
 	{
@@ -547,7 +557,7 @@ namespace Enemy
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		if ( pWantRemove && ImGui::Button( std::string{ nodeCaption + u8"を削除" }.c_str() ) )
+		if ( pWantRemove )
 		{
 			const  std::string  buttonCaption = nodeCaption + u8"を削除";
 			if ( ImGui::Button( buttonCaption.c_str() ) )
@@ -560,8 +570,13 @@ namespace Enemy
 			}
 		}
 
-		initializer.ShowImGuiNode( u8"初期化情報" );
-		moveParam.ShowImGuiNode( u8"移動パラメータ関連" );
+		if ( ImGui::TreeNode( u8"調整パラメータ" ) )
+		{
+			initializer.ShowImGuiNode( u8"初期化情報" );
+			moveParam.ShowImGuiNode( u8"移動パラメータ関連" );
+
+			ImGui::TreePop();
+		}
 
 		if ( ImGui::TreeNode( u8"現在のパラメータ" ) )
 		{
@@ -572,6 +587,185 @@ namespace Enemy
 			ImGui::SliderFloat4( u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
 
 			ImGui::TreePop();
+		}
+
+		ImGui::TreePop();
+	}
+#endif // USE_IMGUI
+
+
+	void Archer::MoverBase::Init( Archer &target )
+	{
+		target.timer = 0;
+		target.animator.ResetTimer();
+
+		if ( target.pModelParam )
+		{
+			const auto &initialMotion = target.pModelParam->motionHolder.GetMotion( AcquireMotionIndex() );
+			target.animator.SetRepeatRange( initialMotion );
+			target.pose.AssignSkeletal( target.animator.CalcCurrentPose( initialMotion ) );
+		}
+	}
+
+	void Archer::Wait::Init( Archer &target )
+	{
+		MoverBase::Init( target );
+
+		wasSearched = false;
+	}
+	void Archer::Wait::Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		target.timer++;
+
+		if ( !wasSearched )
+		{
+			const float distance = Donya::Vector3{ targetPos - target.pos }.Length();
+			if ( distance < target.searchRadius )
+			{
+				wasSearched = true;
+			}
+		}
+	}
+	int  Archer::Wait::AcquireMotionIndex() const
+	{
+		return MOTION_INDEX_BEGIN;
+	}
+	bool Archer::Wait::ShouldChangeState( Archer &target ) const
+	{
+		const bool waitWasFinished = ( target.waitFrame <= target.timer );
+		return	( target.aimToTarget )
+				? waitWasFinished && wasSearched
+				: waitWasFinished;
+	}
+	std::function<void()> Archer::Wait::GetChangeStateMethod( Archer &target ) const
+	{
+		return [&]() { target.AssignMover<Aim>(); };
+	}
+
+	void Archer::Aim::Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		target.timer++;
+
+		if ( target.aimToTarget )
+		{
+			Donya::Vector3 toTarget = targetPos - target.pos;
+			toTarget.y = 0.0f; // Disallow x-axis rotation.
+
+			target.orientation = Donya::Quaternion::LookAt
+			(
+				target.orientation,
+				toTarget.Unit(),
+				Donya::Quaternion::Freeze::Up
+			);
+		}
+	}
+	int  Archer::Aim::AcquireMotionIndex() const
+	{
+		return MOTION_INDEX_PROCESS;
+	}
+	bool Archer::Aim::ShouldChangeState( Archer &target ) const
+	{
+		return ( target.aimingFrame <= target.timer );
+	}
+	std::function<void()> Archer::Aim::GetChangeStateMethod( Archer &target ) const
+	{
+		return [&]() { target.AssignMover<Fire>(); };
+	}
+
+	void Archer::Fire::Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		
+	}
+	int  Archer::Fire::AcquireMotionIndex() const
+	{
+		return MOTION_INDEX_END;
+	}
+	bool Archer::Fire::ShouldChangeState( Archer &target ) const
+	{
+		return target.animator.WasEnded();
+	}
+	std::function<void()> Archer::Fire::GetChangeStateMethod( Archer &target ) const
+	{
+		return [&]() { target.AssignMover<Wait>(); };
+	}
+
+	void Archer::Init( const InitializeParam &argInitializer )
+	{
+		Base::Init( argInitializer );
+
+		timer = 0;
+		AssignMover<Wait>();
+	}
+	void Archer::Update( float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		pMover->Update( *this, elapsedTime, targetPos );
+
+		UpdateMotion( elapsedTime, pMover->AcquireMotionIndex() );
+	}
+	void Archer::PhysicUpdate()
+	{
+		// No op.
+	}
+	bool Archer::ShouldRemove() const
+	{
+		return false;
+	}
+	Kind Archer::GetKind() const
+	{
+		return Kind::Archer;
+	}
+	void Archer::GenerateShot()
+	{
+		auto desc = shotDesc;
+		// The "direction", and "generatePos" are local space.
+		desc.direction		=  orientation.RotateVector( desc.direction   );
+		desc.generatePos	=  orientation.RotateVector( desc.generatePos );
+		desc.generatePos	+= GetPosition();
+
+		Bullet::BulletAdmin::Get().Append( desc );
+	}
+#if USE_IMGUI
+	void Archer::ShowImGuiNode( const std::string &nodeCaption, bool *pWantRemove )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		if ( pWantRemove )
+		{
+			const  std::string  buttonCaption = nodeCaption + u8"を削除";
+			if ( ImGui::Button( buttonCaption.c_str() ) )
+			{
+				*pWantRemove = true;
+			}
+			else
+			{
+				*pWantRemove = false;
+			}
+		}
+
+		if ( ImGui::TreeNode( u8"調整パラメータ" ) )
+		{
+			initializer.ShowImGuiNode( u8"初期化情報" );
+			shotDesc.ShowImGuiNode( u8"ショット情報" );
+			ImGui::DragInt(		u8"狙いを定める時間（フレーム）",	&aimingFrame  );
+			ImGui::Checkbox(	u8"自機を狙うか",					&aimToTarget  );
+			ImGui::DragFloat(	u8"索敵範囲（半径）",				&searchRadius );
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"現在のパラメータ" ) )
+		{
+			ImGui::DragFloat3(		u8"現在のワールド座標",	&pos.x, 0.01f );
+			ImGui::SliderFloat4(	u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
+			ImGui::DragInt(			u8"内部タイマ",			&timer );
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::Button( u8"撃つ" ) )
+		{
+			GenerateShot();
 		}
 
 		ImGui::TreePop();
