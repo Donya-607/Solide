@@ -471,7 +471,7 @@ namespace Enemy
 			virtual bool ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const = 0;
 			virtual std::function<void()> GetChangeStateMethod( Chaser &target ) const = 0;
 		protected:
-			bool IsTargetClose( Chaser &target, const Donya::Vector3 &targetPos );
+			bool IsTargetClose( Chaser &target, const Donya::Vector3 &targetPos ) const;
 			void LookToVelocity( Chaser &target );
 		public:
 		#if USE_IMGUI
@@ -567,3 +567,7 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Archer )
 CEREAL_CLASS_VERSION( Enemy::GateKeeper,		0 )
 CEREAL_REGISTER_TYPE( Enemy::GateKeeper )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::GateKeeper )
+
+CEREAL_CLASS_VERSION( Enemy::Chaser,			0 )
+CEREAL_REGISTER_TYPE( Enemy::Chaser )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Chaser )

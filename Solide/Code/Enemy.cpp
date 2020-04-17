@@ -335,7 +335,7 @@ namespace Enemy
 		animator.ResetTimer();
 
 		pModelParam	= GetModelPtr( GetKind() );
-		if ( pModelParam )
+		if ( pModelParam && pModelParam->motionHolder.GetMotionCount() )
 		{
 			const auto &initialMotion = pModelParam->motionHolder.GetMotion( 0 );
 			animator.SetRepeatRange( initialMotion );
@@ -1027,15 +1027,15 @@ namespace Enemy
 
 		if ( target.pModelParam )
 		{
-			const auto &initialMotion = target.pModelParam->motionHolder.GetMotion( AcquireMotionIndex() );
-			target.animator.SetRepeatRange( initialMotion );
-			target.pose.AssignSkeletal( target.animator.CalcCurrentPose( initialMotion ) );
+			//const auto &initialMotion = target.pModelParam->motionHolder.GetMotion( AcquireMotionIndex() );
+			//target.animator.SetRepeatRange( initialMotion );
+			//target.pose.AssignSkeletal( target.animator.CalcCurrentPose( initialMotion ) );
 		}
 	}
-	bool Chaser::MoverBase::IsTargetClose( Chaser &target, const Donya::Vector3 &targetPos )
+	bool Chaser::MoverBase::IsTargetClose( Chaser &target, const Donya::Vector3 &targetPos ) const
 	{
 		const Donya::Vector3 toTarget = targetPos - target.GetPosition();
-		if ( toTarget.Length() < target.initializer.searchRadius ) ? true : false;
+		return ( toTarget.Length() < target.initializer.searchRadius ) ? true : false;
 	}
 	void Chaser::MoverBase::LookToVelocity( Chaser &target )
 	{
@@ -1053,7 +1053,8 @@ namespace Enemy
 
 		if ( ZeroEqual( distance ) )
 		{
-			target.orientation = target.initializer.orientation;
+			target.velocity		= 0.0f;
+			target.orientation	= target.initializer.orientation;
 			return;
 		}
 		// else
@@ -1064,7 +1065,7 @@ namespace Enemy
 		}
 		else
 		{
-			target.velocity = returnVec;
+			target.velocity = returnVec.Unit() * target.returnSpeed;
 		}
 
 		LookToVelocity( target );
@@ -1095,7 +1096,11 @@ namespace Enemy
 		const Donya::Vector3 chaseVec = target.destPos - target.pos;
 		const float distance = chaseVec.Length();
 
-		if ( ZeroEqual( distance ) ) { return; }
+		if ( ZeroEqual( distance ) )
+		{
+			target.velocity = 0.0f;
+			return;
+		}
 		// else
 
 		if ( distance < target.chaseSpeed )
@@ -1104,7 +1109,7 @@ namespace Enemy
 		}
 		else
 		{
-			target.velocity = chaseVec;
+			target.velocity = chaseVec.Unit() * target.chaseSpeed;
 		}
 
 		LookToVelocity( target );
@@ -1115,7 +1120,7 @@ namespace Enemy
 	}
 	bool Chaser::Chase::ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const
 	{
-		return ( target.pos == target.destPos );
+		return ( target.pos == target.destPos && !IsTargetClose( target, targetPos ) );
 	}
 	std::function<void()> Chaser::Chase::GetChangeStateMethod( Chaser &target ) const
 	{
