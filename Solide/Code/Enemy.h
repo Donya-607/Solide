@@ -26,6 +26,7 @@ namespace Enemy
 		Straight,
 		Archer,
 		GateKeeper,
+		Chaser,
 
 		KindCount
 	};
@@ -453,6 +454,104 @@ namespace Enemy
 		void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) override;
 	#endif // USE_IMGUI
 	};
+
+
+	/// <summary>
+	/// This class blocks on the spot.
+	/// </summary>
+	class Chaser : public Base
+	{
+	private:
+		class MoverBase
+		{
+		public:
+			virtual void Init( Chaser &target );
+			virtual void Update( Chaser &target, float elapsedTime, const Donya::Vector3 &targetPos ) = 0;
+			virtual int  AcquireMotionIndex() const = 0;
+			virtual bool ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const = 0;
+			virtual std::function<void()> GetChangeStateMethod( Chaser &target ) const = 0;
+		protected:
+			bool IsTargetClose( Chaser &target, const Donya::Vector3 &targetPos );
+			void LookToVelocity( Chaser &target );
+		public:
+		#if USE_IMGUI
+			virtual std::string GetStateName() const = 0;
+		#endif // USE_IMGUI
+		};
+		class Return : public MoverBase
+		{
+		public:
+			void Update( Chaser &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+			int  AcquireMotionIndex() const override;
+			bool ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const override;
+			std::function<void()> GetChangeStateMethod( Chaser &target ) const override;
+		public:
+		#if USE_IMGUI
+			std::string GetStateName() const override;
+		#endif // USE_IMGUI
+		};
+		class Chase : public MoverBase
+		{
+		public:
+			void Update( Chaser &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+			int  AcquireMotionIndex() const override;
+			bool ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const override;
+			std::function<void()> GetChangeStateMethod( Chaser &target ) const override;
+		public:
+		#if USE_IMGUI
+			std::string GetStateName() const override;
+		#endif // USE_IMGUI
+		};
+	private: // Usually do not change these member.
+		float	chaseSpeed	= 1.0f;
+		float	returnSpeed	= 1.0f;
+	private:
+		Donya::Vector3 destPos;
+		Donya::Vector3 velocity;
+		std::unique_ptr<MoverBase> pMover = nullptr;
+	public:
+		Chaser() : Base() {}
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				cereal::base_class<Base>( this ),
+				CEREAL_NVP( chaseSpeed	),
+				CEREAL_NVP( returnSpeed	)
+			);
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	public:
+		void Init( const InitializeParam &initializer ) override;
+
+		void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) override;
+		void PhysicUpdate() override;
+	public:
+		bool ShouldRemove()	const override;
+		Kind GetKind()		const override;
+	private:
+		template<class Mover>
+		void AssignMover()
+		{
+			pMover = std::make_unique<Mover>();
+			pMover->Init( *this );
+		}
+	public:
+	#if USE_IMGUI
+		/// <summary>
+		/// You can set nullptr to "outputWantRemove".
+		/// </summary>
+		void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) override;
+	#endif // USE_IMGUI
+	};
+
+
 }
 CEREAL_CLASS_VERSION( Enemy::InitializeParam,	1 )
 CEREAL_CLASS_VERSION( Enemy::MoveParam,			0 )

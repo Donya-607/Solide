@@ -18,6 +18,7 @@ namespace
 		"Run",
 		"Archer",
 		"GateKeeper",
+		"Chaser",
 	};
 
 	static std::vector<std::shared_ptr<Enemy::ModelParam>> modelPtrs{};
@@ -445,6 +446,7 @@ namespace Enemy
 		case Enemy::Kind::Straight:		*pBasePtr = std::make_shared<Straight>();	return;
 		case Enemy::Kind::Archer:		*pBasePtr = std::make_shared<Archer>();		return;
 		case Enemy::Kind::GateKeeper:	*pBasePtr = std::make_shared<GateKeeper>();	return;
+		case Enemy::Kind::Chaser:		*pBasePtr = std::make_shared<Chaser>();		return;
 		default: pBasePtr->reset(); return;
 		}
 	}
@@ -1013,6 +1015,190 @@ namespace Enemy
 #endif // USE_IMGUI
 
 // region GateKeeper
+#pragma endregion
+
+
+#pragma region Chaser
+
+	void Chaser::MoverBase::Init( Chaser &target )
+	{
+		target.animator.ResetTimer();
+		target.animator.DisableLoop();
+
+		if ( target.pModelParam )
+		{
+			const auto &initialMotion = target.pModelParam->motionHolder.GetMotion( AcquireMotionIndex() );
+			target.animator.SetRepeatRange( initialMotion );
+			target.pose.AssignSkeletal( target.animator.CalcCurrentPose( initialMotion ) );
+		}
+	}
+	bool Chaser::MoverBase::IsTargetClose( Chaser &target, const Donya::Vector3 &targetPos )
+	{
+		const Donya::Vector3 toTarget = targetPos - target.GetPosition();
+		if ( toTarget.Length() < target.initializer.searchRadius ) ? true : false;
+	}
+	void Chaser::MoverBase::LookToVelocity( Chaser &target )
+	{
+		target.orientation = Donya::Quaternion::LookAt
+		(
+			target.orientation,
+			target.velocity.Unit()
+		);
+	}
+
+	void Chaser::Return::Update( Chaser &target, float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		const Donya::Vector3 returnVec = target.initializer.wsPos - target.pos;
+		const float distance = returnVec.Length();
+
+		if ( ZeroEqual( distance ) )
+		{
+			target.orientation = target.initializer.orientation;
+			return;
+		}
+		// else
+
+		if ( distance < target.returnSpeed )
+		{
+			target.velocity = returnVec.Unit() * distance;
+		}
+		else
+		{
+			target.velocity = returnVec;
+		}
+
+		LookToVelocity( target );
+	}
+	int  Chaser::Return::AcquireMotionIndex() const
+	{
+		return MOTION_INDEX_BEGIN;
+	}
+	bool Chaser::Return::ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const
+	{
+		return IsTargetClose( target, targetPos );
+	}
+	std::function<void()> Chaser::Return::GetChangeStateMethod( Chaser &target ) const
+	{
+		return [&]() { target.AssignMover<Chase>(); };
+	}
+	#if USE_IMGUI
+	std::string Chaser::Return::GetStateName() const { return u8"戻り＆待機"; }
+	#endif // USE_IMGUI
+
+	void Chaser::Chase::Update( Chaser &target, float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		if ( IsTargetClose( target, targetPos ) )
+		{
+			target.destPos = targetPos;
+		}
+
+		const Donya::Vector3 chaseVec = target.destPos - target.pos;
+		const float distance = chaseVec.Length();
+
+		if ( ZeroEqual( distance ) ) { return; }
+		// else
+
+		if ( distance < target.chaseSpeed )
+		{
+			target.velocity = chaseVec.Unit() * distance;
+		}
+		else
+		{
+			target.velocity = chaseVec;
+		}
+
+		LookToVelocity( target );
+	}
+	int  Chaser::Chase::AcquireMotionIndex() const
+	{
+		return MOTION_INDEX_BEGIN;
+	}
+	bool Chaser::Chase::ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const
+	{
+		return ( target.pos == target.destPos );
+	}
+	std::function<void()> Chaser::Chase::GetChangeStateMethod( Chaser &target ) const
+	{
+		return [&]() { target.AssignMover<Return>(); };
+	}
+#if USE_IMGUI
+	std::string Chaser::Chase::GetStateName() const { return u8"追跡"; }
+#endif // USE_IMGUI
+
+	void Chaser::Init( const InitializeParam &argInitializer )
+	{
+		Base::Init( argInitializer );
+
+		destPos  = pos;
+		velocity = 0.0f;
+		AssignMover<Return>();
+	}
+	void Chaser::Update( float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		pMover->Update( *this, elapsedTime, targetPos );
+
+		if ( pMover->ShouldChangeState( *this, targetPos ) )
+		{
+			auto ChangeMover = pMover->GetChangeStateMethod( *this );
+			ChangeMover();
+		}
+	}
+	void Chaser::PhysicUpdate()
+	{
+		pos += velocity;
+	}
+	bool Chaser::ShouldRemove() const
+	{
+		return false;
+	}
+	Kind Chaser::GetKind() const
+	{
+		return Kind::Chaser;
+	}
+#if USE_IMGUI
+	void Chaser::ShowImGuiNode( const std::string &nodeCaption, bool *pWantRemove )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		if ( pWantRemove )
+		{
+			const  std::string  buttonCaption = nodeCaption + u8"を削除";
+			if ( ImGui::Button( buttonCaption.c_str() ) )
+			{
+				*pWantRemove = true;
+			}
+			else
+			{
+				*pWantRemove = false;
+			}
+		}
+
+		if ( ImGui::TreeNode( u8"調整パラメータ" ) )
+		{
+			initializer.ShowImGuiNode( u8"初期化情報" );
+			ImGui::DragFloat(	u8"追跡速度",	&chaseSpeed		);
+			ImGui::DragFloat(	u8"戻る速度",	&returnSpeed	);
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"現在のパラメータ" ) )
+		{
+			std::string stateCaption = u8"現在のステート：" + pMover->GetStateName();
+			ImGui::Text( stateCaption.c_str() );
+			ImGui::DragFloat3(		u8"現在のワールド座標",	&pos.x,			0.01f );
+			ImGui::DragFloat3(		u8"現在の速度",			&velocity.x,	0.01f );
+			ImGui::SliderFloat4(	u8"現在の姿勢",			&orientation.x,	-1.0f, 1.0f );
+
+			ImGui::TreePop();
+		}
+
+		ImGui::TreePop();
+	}
+#endif // USE_IMGUI
+
+// region Chaser
 #pragma endregion
 
 }
