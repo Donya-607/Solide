@@ -285,12 +285,11 @@ namespace Enemy
 			std::string GetStateName() const override;
 		#endif // USE_IMGUI
 		};
-	private:
-		Bullet::BulletAdmin::FireDesc shotDesc; // Usually do not change this.
+	private: // Usually do not change these member.
+		Bullet::BulletAdmin::FireDesc shotDesc;
 		int		waitFrame		= 1;
 		int		aimingFrame		= 1;
 		int		intervalFrame	= 1;
-		//float	searchRadius	= 0.0f;
 		bool	aimToTarget		= false;
 	private:
 		int		timer			= 0;
@@ -309,7 +308,6 @@ namespace Enemy
 				CEREAL_NVP( waitFrame		),
 				CEREAL_NVP( aimingFrame		),
 				CEREAL_NVP( intervalFrame	),
-				//CEREAL_NVP( searchRadius	),
 				CEREAL_NVP( aimToTarget		)
 			);
 			if ( 1 <= version )
@@ -344,7 +342,117 @@ namespace Enemy
 	};
 
 
-	
+	/// <summary>
+	/// This class blocks on the spot.
+	/// </summary>
+	class GateKeeper : public Base
+	{
+	private:
+		class MoverBase
+		{
+		public:
+			virtual void Init( GateKeeper &target );
+			virtual void Update( GateKeeper &target, float elapsedTime, const Donya::Vector3 &targetPos ) = 0;
+			virtual int  AcquireMotionIndex() const = 0;
+			virtual bool ShouldChangeState( GateKeeper &target ) const = 0;
+			virtual std::function<void()> GetChangeStateMethod( GateKeeper &target ) const = 0;
+		public:
+			virtual Donya::Quaternion GetRotation() const { return Donya::Quaternion::Identity(); }
+		#if USE_IMGUI
+			virtual std::string GetStateName() const = 0;
+		#endif // USE_IMGUI
+		};
+		class Wait : public MoverBase
+		{
+		public:
+			void Update( GateKeeper &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+			int  AcquireMotionIndex() const override;
+			bool ShouldChangeState( GateKeeper &target ) const override;
+			std::function<void()> GetChangeStateMethod( GateKeeper &target ) const override;
+		public:
+		#if USE_IMGUI
+			std::string GetStateName() const override;
+		#endif // USE_IMGUI
+		};
+		class Attack : public MoverBase
+		{
+		private:
+			float yaw = 0.0f; // Degree.
+		public:
+			void Init( GateKeeper &target ) override;
+			void Update( GateKeeper &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+			int  AcquireMotionIndex() const override;
+			bool ShouldChangeState( GateKeeper &target ) const override;
+			std::function<void()> GetChangeStateMethod( GateKeeper &target ) const override;
+		public:
+			virtual Donya::Quaternion GetRotation() const override;
+		#if USE_IMGUI
+			std::string GetStateName() const override;
+		#endif // USE_IMGUI
+		};
+		class Rest : public MoverBase
+		{
+		public:
+			void Update( GateKeeper &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+			int  AcquireMotionIndex() const override;
+			bool ShouldChangeState( GateKeeper &target ) const override;
+			std::function<void()> GetChangeStateMethod( GateKeeper &target ) const override;
+		public:
+		#if USE_IMGUI
+			std::string GetStateName() const override;
+		#endif // USE_IMGUI
+		};
+	private: // Usually do not change these member.
+		int		waitFrame	= 1;
+		int		attackFrame	= 1;
+		float	rotateSpeed = 10.0f; // Rotate degree per frame.
+	private:
+		int		timer		= 0;
+		std::unique_ptr<MoverBase> pMover = nullptr;
+	public:
+		GateKeeper() : Base() {}
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				cereal::base_class<Base>( this ),
+				CEREAL_NVP( waitFrame	),
+				CEREAL_NVP( attackFrame	),
+				CEREAL_NVP( rotateSpeed	)
+			);
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	public:
+		void Init( const InitializeParam &initializer ) override;
+
+		void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) override;
+		void PhysicUpdate() override;
+
+		void Draw( RenderingHelper *pRenderer ) override;
+	public:
+		bool ShouldRemove()	const override;
+		Kind GetKind()		const override;
+	private:
+		template<class Mover>
+		void AssignMover()
+		{
+			pMover = std::make_unique<Mover>();
+			pMover->Init( *this );
+		}
+	public:
+	#if USE_IMGUI
+		/// <summary>
+		/// You can set nullptr to "outputWantRemove".
+		/// </summary>
+		void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) override;
+	#endif // USE_IMGUI
+	};
 }
 CEREAL_CLASS_VERSION( Enemy::InitializeParam,	1 )
 CEREAL_CLASS_VERSION( Enemy::MoveParam,			0 )
@@ -356,3 +464,7 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Straight )
 CEREAL_CLASS_VERSION( Enemy::Archer,			0 )
 CEREAL_REGISTER_TYPE( Enemy::Archer )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Archer )
+
+CEREAL_CLASS_VERSION( Enemy::GateKeeper,		0 )
+CEREAL_REGISTER_TYPE( Enemy::GateKeeper )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::GateKeeper )

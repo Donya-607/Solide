@@ -442,8 +442,9 @@ namespace Enemy
 
 		switch ( kind )
 		{
-		case Enemy::Kind::Straight:	*pBasePtr = std::make_shared<Straight>();	return;
-		case Enemy::Kind::Archer:	*pBasePtr = std::make_shared<Archer>();		return;
+		case Enemy::Kind::Straight:		*pBasePtr = std::make_shared<Straight>();	return;
+		case Enemy::Kind::Archer:		*pBasePtr = std::make_shared<Archer>();		return;
+		case Enemy::Kind::GateKeeper:	*pBasePtr = std::make_shared<GateKeeper>();	return;
 		default: pBasePtr->reset(); return;
 		}
 	}
@@ -834,6 +835,184 @@ namespace Enemy
 #pragma endregion
 
 
+#pragma region GateKeeper
 
+	void GateKeeper::MoverBase::Init( GateKeeper &target )
+	{
+		target.timer = 0;
+		target.animator.ResetTimer();
+		target.animator.DisableLoop();
+
+		if ( target.pModelParam )
+		{
+			const auto &initialMotion = target.pModelParam->motionHolder.GetMotion( AcquireMotionIndex() );
+			target.animator.SetRepeatRange( initialMotion );
+			target.pose.AssignSkeletal( target.animator.CalcCurrentPose( initialMotion ) );
+		}
+	}
+
+	void GateKeeper::Wait::Update( GateKeeper &target, float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		target.timer++;
+
+		if ( target.waitFrame <= target.timer )
+		{
+			target.UpdateMotion( elapsedTime, AcquireMotionIndex() );
+		}
+	}
+	int  GateKeeper::Wait::AcquireMotionIndex() const
+	{
+		return MOTION_INDEX_BEGIN;
+	}
+	bool GateKeeper::Wait::ShouldChangeState( GateKeeper &target ) const
+	{
+		return ( target.waitFrame <= target.timer && target.animator.WasEnded() );
+	}
+	std::function<void()> GateKeeper::Wait::GetChangeStateMethod( GateKeeper &target ) const
+	{
+		return [&]() { target.AssignMover<Attack>(); };
+	}
+	#if USE_IMGUI
+	std::string GateKeeper::Wait::GetStateName() const { return u8"待機"; }
+	#endif // USE_IMGUI
+
+	void GateKeeper::Attack::Init( GateKeeper &target )
+	{
+		MoverBase::Init( target );
+
+		yaw = 0.0f;
+	}
+	void GateKeeper::Attack::Update( GateKeeper &target, float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		yaw += target.rotateSpeed;
+
+		target.timer++;
+		target.UpdateMotion( elapsedTime, AcquireMotionIndex() );
+	}
+	int  GateKeeper::Attack::AcquireMotionIndex() const
+	{
+		return MOTION_INDEX_PROCESS;
+	}
+	bool GateKeeper::Attack::ShouldChangeState( GateKeeper &target ) const
+	{
+		return ( target.attackFrame <= target.timer );
+	}
+	std::function<void()> GateKeeper::Attack::GetChangeStateMethod( GateKeeper &target ) const
+	{
+		return [&]() { target.AssignMover<Rest>(); };
+	}
+	Donya::Quaternion GateKeeper::Attack::GetRotation() const
+	{
+		return Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( yaw ) );
+	}
+#if USE_IMGUI
+	std::string GateKeeper::Attack::GetStateName() const { return u8"攻撃"; }
+#endif // USE_IMGUI
+
+	void GateKeeper::Rest::Update( GateKeeper &target, float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		target.timer++;
+		target.UpdateMotion( elapsedTime, AcquireMotionIndex() );
+	}
+	int  GateKeeper::Rest::AcquireMotionIndex() const
+	{
+		return MOTION_INDEX_END;
+	}
+	bool GateKeeper::Rest::ShouldChangeState( GateKeeper &target ) const
+	{
+		return target.animator.WasEnded();
+	}
+	std::function<void()> GateKeeper::Rest::GetChangeStateMethod( GateKeeper &target ) const
+	{
+		return [&]() { target.AssignMover<Wait>(); };
+	}
+#if USE_IMGUI
+	std::string GateKeeper::Rest::GetStateName() const { return u8"休憩"; }
+#endif // USE_IMGUI
+
+	void GateKeeper::Init( const InitializeParam &argInitializer )
+	{
+		Base::Init( argInitializer );
+
+		timer = 0;
+		AssignMover<Wait>();
+	}
+	void GateKeeper::Update( float elapsedTime, const Donya::Vector3 &targetPos )
+	{
+		pMover->Update( *this, elapsedTime, targetPos );
+
+		if ( pMover->ShouldChangeState( *this ) )
+		{
+			auto ChangeMover = pMover->GetChangeStateMethod( *this );
+			ChangeMover();
+		}
+	}
+	void GateKeeper::PhysicUpdate()
+	{
+		// No op.
+	}
+	void GateKeeper::Draw( RenderingHelper *pRenderer )
+	{
+		const Donya::Quaternion physicOrientation = orientation;
+		orientation.RotateBy( pMover->GetRotation() );
+
+		Base::Draw( pRenderer );
+
+		orientation = physicOrientation;
+	}
+	bool GateKeeper::ShouldRemove() const
+	{
+		return false;
+	}
+	Kind GateKeeper::GetKind() const
+	{
+		return Kind::GateKeeper;
+	}
+#if USE_IMGUI
+	void GateKeeper::ShowImGuiNode( const std::string &nodeCaption, bool *pWantRemove )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		if ( pWantRemove )
+		{
+			const  std::string  buttonCaption = nodeCaption + u8"を削除";
+			if ( ImGui::Button( buttonCaption.c_str() ) )
+			{
+				*pWantRemove = true;
+			}
+			else
+			{
+				*pWantRemove = false;
+			}
+		}
+
+		if ( ImGui::TreeNode( u8"調整パラメータ" ) )
+		{
+			initializer.ShowImGuiNode( u8"初期化情報" );
+			ImGui::DragInt(		u8"待機時間（フレーム）",		&waitFrame		);
+			ImGui::DragInt(		u8"攻撃する時間（フレーム）",	&attackFrame	);
+			ImGui::DragFloat(	u8"回転角度（degree）",		&rotateSpeed	);
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"現在のパラメータ" ) )
+		{
+			std::string stateCaption = u8"現在のステート：" + pMover->GetStateName();
+			ImGui::Text( stateCaption.c_str() );
+			ImGui::DragFloat3(		u8"現在のワールド座標",	&pos.x, 0.01f );
+			ImGui::SliderFloat4(	u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
+			ImGui::DragInt(			u8"内部タイマ",			&timer );
+
+			ImGui::TreePop();
+		}
+
+		ImGui::TreePop();
+	}
+#endif // USE_IMGUI
+
+// region GateKeeper
+#pragma endregion
 
 }
