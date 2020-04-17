@@ -17,6 +17,7 @@ namespace
 	{
 		"Run",
 		"Archer",
+		"GateKeeper",
 	};
 
 	static std::vector<std::shared_ptr<Enemy::ModelParam>> modelPtrs{};
@@ -274,7 +275,8 @@ namespace Enemy
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		ImGui::DragFloat3( u8"初期のワールド座標", &wsPos.x );
+		ImGui::DragFloat ( u8"索敵範囲（半径）",		&searchRadius,	0.01f );
+		ImGui::DragFloat3( u8"初期のワールド座標",	&wsPos.x,		0.01f );
 
 		Donya::Vector3 lookDir = orientation.LocalFront();
 		ImGui::SliderFloat3( u8"初期の前方向", &lookDir.x, -1.0f, 1.0f );
@@ -448,6 +450,8 @@ namespace Enemy
 #endif // USE_IMGUI
 
 
+#pragma region Straight
+
 	void Straight::Init( const InitializeParam &argInitializer )
 	{
 		Base::Init( argInitializer );
@@ -594,6 +598,11 @@ namespace Enemy
 	}
 #endif // USE_IMGUI
 
+// region Straight
+#pragma endregion
+
+
+#pragma region Archer
 
 	void Archer::MoverBase::Init( Archer &target )
 	{
@@ -634,7 +643,7 @@ namespace Enemy
 		if ( !wasSearched )
 		{
 			const float distance = Donya::Vector3{ targetPos - target.pos }.Length();
-			if ( distance < target.searchRadius )
+			if ( distance < target.initializer.searchRadius )
 			{
 				wasSearched = true;
 			}
@@ -796,7 +805,6 @@ namespace Enemy
 			ImGui::DragInt(		u8"狙いを定める時間（フレーム）",	&aimingFrame	);
 			ImGui::DragInt(		u8"向き確定から攻撃までの時間（フレーム）",		&intervalFrame	);
 			ImGui::Checkbox(	u8"自機を狙うか",					&aimToTarget	);
-			ImGui::DragFloat(	u8"索敵範囲（半径）",				&searchRadius	);
 
 			ImGui::TreePop();
 		}
@@ -821,4 +829,11 @@ namespace Enemy
 		ImGui::TreePop();
 	}
 #endif // USE_IMGUI
+
+// region Archer
+#pragma endregion
+
+
+
+
 }

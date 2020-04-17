@@ -25,6 +25,7 @@ namespace Enemy
 	{
 		Straight,
 		Archer,
+		GateKeeper,
 
 		KindCount
 	};
@@ -38,6 +39,7 @@ namespace Enemy
 	
 	struct InitializeParam
 	{
+		float				searchRadius = 1.0f;
 		Donya::Vector3		wsPos;
 		Donya::Quaternion	orientation;
 	private:
@@ -52,6 +54,10 @@ namespace Enemy
 			);
 
 			if ( 1 <= version )
+			{
+				archive( CEREAL_NVP( searchRadius ) );
+			}
+			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -284,7 +290,7 @@ namespace Enemy
 		int		waitFrame		= 1;
 		int		aimingFrame		= 1;
 		int		intervalFrame	= 1;
-		float	searchRadius	= 0.0f;
+		//float	searchRadius	= 0.0f;
 		bool	aimToTarget		= false;
 	private:
 		int		timer			= 0;
@@ -303,7 +309,7 @@ namespace Enemy
 				CEREAL_NVP( waitFrame		),
 				CEREAL_NVP( aimingFrame		),
 				CEREAL_NVP( intervalFrame	),
-				CEREAL_NVP( searchRadius	),
+				//CEREAL_NVP( searchRadius	),
 				CEREAL_NVP( aimToTarget		)
 			);
 			if ( 1 <= version )
@@ -336,8 +342,11 @@ namespace Enemy
 		void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) override;
 	#endif // USE_IMGUI
 	};
+
+
+	
 }
-CEREAL_CLASS_VERSION( Enemy::InitializeParam,	0 )
+CEREAL_CLASS_VERSION( Enemy::InitializeParam,	1 )
 CEREAL_CLASS_VERSION( Enemy::MoveParam,			0 )
 
 CEREAL_CLASS_VERSION( Enemy::Straight,			0 )
