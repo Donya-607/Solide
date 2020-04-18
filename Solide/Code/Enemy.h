@@ -160,8 +160,8 @@ namespace Enemy
 		virtual void AcquireHitBoxes ( std::vector<Donya::AABB> *pAppendDest ) const;
 		virtual void AcquireHurtBoxes( std::vector<Donya::AABB> *pAppendDest ) const;
 	protected: // Hit/Hurt box acquisition method of open to outside is only whole hit/hurt boxes..
-		virtual Donya::AABB AcquireHitBox() const;
-		virtual Donya::AABB AcquireHurtBox() const;
+		virtual Donya::AABB AcquireHitBox( bool wantWorldSpace ) const;
+		virtual Donya::AABB AcquireHurtBox( bool wantWorldSpace ) const;
 	protected:
 		virtual void UpdateMotion( float elapsedTime, int useMotionIndex );
 		virtual	Donya::Vector4x4 CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;

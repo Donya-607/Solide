@@ -477,16 +477,16 @@ namespace Enemy
 		if ( !pAppendDest ) { return; }
 		// else
 
-		pAppendDest->emplace_back( std::move( AcquireHitBox() ) );
+		pAppendDest->emplace_back( std::move( AcquireHitBox( /* wantWorldSpace = */ true ) ) );
 	}
 	void Base::AcquireHurtBoxes( std::vector<Donya::AABB> *pAppendDest ) const
 	{
 		if ( !pAppendDest ) { return; }
 		// else
 
-		pAppendDest->emplace_back( std::move( AcquireHurtBox() ) );
+		pAppendDest->emplace_back( std::move( AcquireHurtBox( /* wantWorldSpace = */ true ) ) );
 	}
-	Donya::AABB Base::AcquireHitBox() const
+	Donya::AABB Base::AcquireHitBox( bool wantWorldSpace ) const
 	{
 		const auto	data		= FetchMember();
 		const auto	&collisions	= data.collider.collisions;
@@ -496,10 +496,13 @@ namespace Enemy
 		// else
 
 		Donya::AABB wsHitBox = collisions[intKind].hitBox;
-		wsHitBox.pos += GetPosition();
+		if ( wantWorldSpace )
+		{
+			wsHitBox.pos += GetPosition();
+		}
 		return wsHitBox;
 	}
-	Donya::AABB Base::AcquireHurtBox() const
+	Donya::AABB Base::AcquireHurtBox( bool wantWorldSpace ) const
 	{
 		const auto	data		= FetchMember();
 		const auto	&collisions	= data.collider.collisions;
@@ -509,7 +512,11 @@ namespace Enemy
 		// else
 
 		Donya::AABB wsHurtBox = collisions[intKind].hurtBox;
-		wsHurtBox.pos += GetPosition();
+		if ( wantWorldSpace )
+		{
+			wsHurtBox.pos += GetPosition();
+		}
+
 		return wsHurtBox;
 	}
 	void Base::UpdateMotion( float elapsedTime, int useMotionIndex )
@@ -629,9 +636,7 @@ namespace Enemy
 		// else
 
 		// HACK : Should I do not use hit-box? Currently, the collision processes does not use hit-box, using the point only.
-		const Donya::AABB hitBox = AcquireHitBox();
-
-		Donya::AABB movedBody = hitBox;
+		Donya::AABB movedBody = AcquireHitBox( /* wantWorldSpace = */ true );
 		movedBody.pos += vector;
 
 		Donya::AABB other{};
@@ -791,7 +796,7 @@ namespace Enemy
 			*/
 		}
 
-		const Donya::Vector3 &destination = movedBody.pos - hitBox.pos/* Except the offset of hitBox */;
+		const Donya::Vector3 &destination = movedBody.pos - AcquireHitBox( /* wantWorldSpace = */ false ).pos/* Except the offset of hitBox */;
 		
 		result.correctedVector = destination - pos;
 		return result;
@@ -869,6 +874,12 @@ namespace Enemy
 		}
 		else
 		{
+			// TODO : Enemy::Straight
+			// 当たり判定にて補正された際に，総移動距離が正しくなくなる。
+			// 正しくするには，移動距離の取得を補正後の移動ベクトルで行い，
+			// 移動制限を超えた際の処理（if文内）を，補正無しで想定される位置に代入するのではなく，
+			// 移動ベクトルの長さを「総移動距離 == 移動制限」となるような値に縮小する必要がある。
+
 			moveDistanceSum += velocity.Length();
 			if ( moveParam.rangeLimit <= moveDistanceSum )
 			{
@@ -883,7 +894,7 @@ namespace Enemy
 		}
 
 		constexpr int USE_MOTION_INDEX = 0;
-		Base::UpdateMotion( elapsedTime, USE_MOTION_INDEX );
+		UpdateMotion( elapsedTime, USE_MOTION_INDEX );
 	}
 	void Straight::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 	{
