@@ -52,6 +52,9 @@ namespace Enemy
 
 		void Draw( RenderingHelper *pRenderer );
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP );
+	public:
+		void AcquireHitBoxes( std::vector<Donya::AABB> *pAppendDest ) const;
+		void AcquireHurtBoxes( std::vector<Donya::AABB> *pAppendDest ) const;
 	private:
 		void LoadBin ( int stageNo );
 		void LoadJson( int stageNo );

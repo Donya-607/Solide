@@ -148,7 +148,7 @@ namespace Enemy
 		virtual void Uninit() {}
 
 		virtual void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) = 0;
-		virtual void PhysicUpdate() = 0;
+		virtual void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) = 0;
 
 		virtual void Draw( RenderingHelper *pRenderer );
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
@@ -159,9 +159,28 @@ namespace Enemy
 		const	Donya::Vector3	&GetPosition()		const { return pos; }
 		virtual void AcquireHitBoxes ( std::vector<Donya::AABB> *pAppendDest ) const;
 		virtual void AcquireHurtBoxes( std::vector<Donya::AABB> *pAppendDest ) const;
+	protected: // Hit/Hurt box acquisition method of open to outside is only whole hit/hurt boxes..
+		virtual Donya::AABB AcquireHitBox() const;
+		virtual Donya::AABB AcquireHurtBox() const;
 	protected:
 		virtual void UpdateMotion( float elapsedTime, int useMotionIndex );
 		virtual	Donya::Vector4x4 CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
+	protected:
+		struct AABBResult
+		{
+			Donya::Vector3 correctedVector;
+			bool wasHit = false;
+		};
+		struct RecursionResult
+		{
+			Donya::Vector3				correctedVector;
+			Donya::Model::RaycastResult	raycastResult;
+		};
+		AABBResult		CalcCorrectedVector( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
+		RecursionResult	CalcCorrectedVector( int recursionLimit, const Donya::Vector3 &targetVector, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix ) const;
+	private:
+		AABBResult		CalcCorrectedVectorImpl( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
+		RecursionResult	CalcCorrectedVectorImpl( int recursionLimit, int recursionCount, RecursionResult prevResult, const Donya::Model::PolygonGroup &terrain, const Donya::Vector4x4 &terrainWorldMatrix ) const;
 	public:
 	#if USE_IMGUI
 		/// <summary>
@@ -207,7 +226,7 @@ namespace Enemy
 		void Init( const InitializeParam &initializer ) override;
 
 		void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) override;
-		void PhysicUpdate() override;
+		void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 	public:
 		bool ShouldRemove()	const override;
 		Kind GetKind()		const override;
@@ -322,7 +341,7 @@ namespace Enemy
 		void Init( const InitializeParam &initializer ) override;
 
 		void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) override;
-		void PhysicUpdate() override;
+		void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 	public:
 		bool ShouldRemove()	const override;
 		Kind GetKind()		const override;
@@ -435,7 +454,7 @@ namespace Enemy
 		void Init( const InitializeParam &initializer ) override;
 
 		void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) override;
-		void PhysicUpdate() override;
+		void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 
 		void Draw( RenderingHelper *pRenderer ) override;
 	public:
@@ -533,7 +552,7 @@ namespace Enemy
 		void Init( const InitializeParam &initializer ) override;
 
 		void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) override;
-		void PhysicUpdate() override;
+		void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 	public:
 		bool ShouldRemove()	const override;
 		Kind GetKind()		const override;

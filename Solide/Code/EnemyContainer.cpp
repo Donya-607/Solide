@@ -60,7 +60,7 @@ namespace Enemy
 		{
 			if ( !pIt ) { continue; }
 			// else
-			pIt->PhysicUpdate();
+			pIt->PhysicUpdate( solids, pTerrain, pTerrainMatrix );
 		}
 	}
 
@@ -83,6 +83,31 @@ namespace Enemy
 			pIt->DrawHitBox( pRenderer, VP );
 		}
 	#endif // DEBUG_MODE
+	}
+
+	void Container::AcquireHitBoxes( std::vector<Donya::AABB> *pAppendDest ) const
+	{
+		if ( !pAppendDest ) { return; }
+		// else
+
+		for ( const auto pIt : enemyPtrs )
+		{
+			if ( !pIt ) { continue; }
+			// else
+			pIt->AcquireHitBoxes( pAppendDest );
+		}
+	}
+	void Container::AcquireHurtBoxes( std::vector<Donya::AABB> *pAppendDest ) const
+	{
+		if ( !pAppendDest ) { return; }
+		// else
+
+		for ( const auto pIt : enemyPtrs )
+		{
+			if ( !pIt ) { continue; }
+			// else
+			pIt->AcquireHurtBoxes( pAppendDest );
+		}
 	}
 
 	void Container::LoadBin ( int stageNumber )

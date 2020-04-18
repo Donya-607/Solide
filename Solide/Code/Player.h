@@ -184,6 +184,8 @@ public:
 	void Draw( RenderingHelper *pRenderer );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
 public:
+	void KillMe();
+public:
 	bool IsDead() const
 	{
 		return pMover->IsDead();
@@ -223,8 +225,6 @@ private:
 	void AssignLanding();
 
 	void Shot( float elapsedTime );
-
-	void Die();
 private:
 	void StartHopping();
 	void UpdateHopping( float elapsedTime );

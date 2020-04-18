@@ -293,6 +293,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	CameraUpdate();
 
+	ProcessPlayerCollision();
+
 	if ( NowGoalMoment() )
 	{
 		WaitInit();
@@ -721,21 +723,6 @@ void SceneGame::TutorialUpdate( float elapsedTime )
 	pTutorialSentence->Update( elapsedTime );
 }
 
-bool SceneGame::NowGoalMoment() const
-{
-	if ( !pPlayer	) { return false; }
-	if ( !pGoal		) { return false; }
-	if ( Fader::Get().IsExist() ) { return false; }
-	if ( nowWaiting	) { return false; }
-	// else
-
-	// const Donya::AABB goalArea   = FetchMember().goalArea.GetHitBox();
-	const Donya::AABB goalArea   = pGoal->GetHitBox();
-	const Donya::AABB playerBody = pPlayer->GetHitBox();
-
-	return Donya::AABB::IsHitAABB( playerBody, goalArea );
-}
-
 void SceneGame::WaitInit()
 {
 	clearTimer = 0;
@@ -758,6 +745,45 @@ void SceneGame::WaitUpdate( float elapsedTime )
 bool SceneGame::NowWaiting() const
 {
 	return nowWaiting;
+}
+
+void SceneGame::ProcessPlayerCollision()
+{
+	if ( !pPlayer			) { return; }	// Do only player related collision.
+	if ( pPlayer->IsDead()	) { return; }	// Unnecessary if player already dead.
+	if ( nowWaiting			) { return; }	// Exempt if now is cleared.
+	// else
+
+	const Donya::AABB playerBody = pPlayer->GetHitBox();
+
+	if ( pEnemies )
+	{
+		std::vector<Donya::AABB>    enemyBodies{};
+		pEnemies->AcquireHitBoxes( &enemyBodies );
+
+		for ( const auto &it : enemyBodies )
+		{
+			if ( Donya::AABB::IsHitAABB( playerBody, it ) )
+			{
+				pPlayer->KillMe();
+				return;
+			}
+		}
+	}
+}
+
+bool SceneGame::NowGoalMoment() const
+{
+	if ( !pPlayer	) { return false; }
+	if ( !pGoal		) { return false; }
+	if ( Fader::Get().IsExist() ) { return false; }
+	if ( nowWaiting	) { return false; }
+	// else
+
+	const Donya::AABB goalArea   = pGoal->GetHitBox();
+	const Donya::AABB playerBody = pPlayer->GetHitBox();
+
+	return Donya::AABB::IsHitAABB( playerBody, goalArea );
 }
 
 void SceneGame::ClearBackGround() const

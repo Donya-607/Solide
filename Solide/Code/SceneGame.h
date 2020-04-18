@@ -80,11 +80,13 @@ private:
 
 	void	TutorialUpdate( float elapsedTime );
 
-	bool	NowGoalMoment() const;
-
 	void	WaitInit();
 	void	WaitUpdate( float elapsedTime );
 	bool	NowWaiting() const;
+
+	void	ProcessPlayerCollision();
+
+	bool	NowGoalMoment() const;
 
 	void	ClearBackGround() const;
 	void	StartFade() const;

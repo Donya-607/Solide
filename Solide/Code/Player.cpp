@@ -991,7 +991,7 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 
 	if ( IsUnderFalloutBorder() )
 	{
-		Die();
+		KillMe();
 	}
 }
 
@@ -1045,6 +1045,13 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 	constexpr Donya::Vector4 color{ 0.1f, 1.0f, 0.3f, 0.7f };
 	Actor::DrawHitBox( pRenderer, matVP, Donya::Quaternion::Identity(), color );
 #endif // DEBUG_MODE
+}
+
+void Player::KillMe()
+{
+	ResetMover<DeadMover>();
+	onGround  = false;
+	canUseOil = false;
 }
 
 void Player::LookToInput( float elapsedTime, Input input )
@@ -1119,13 +1126,6 @@ void Player::Shot( float elapsedTime )
 	useParam.generatePos	+= GetPosition();
 
 	Bullet::BulletAdmin::Get().Append( useParam );
-}
-
-void Player::Die()
-{
-	ResetMover<DeadMover>();
-	onGround  = false;
-	canUseOil = false;
 }
 
 void Player::StartHopping()
