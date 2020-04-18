@@ -2,6 +2,9 @@
 
 #include <vector>
 
+#include <cereal/types/vector.hpp>
+
+#include "Donya/Color.h"
 #include "Donya/Loader.h"
 #include "Donya/Useful.h"
 
@@ -108,9 +111,11 @@ namespace
 }
 namespace
 {
+	// The vector of parameters contain some value per kind of enemy.
+	// "[i]" of these vectors represents a value of static_cast<enumKind>( i ). This size was guaranteed to: size() == Enemy::KIND_COUNT
+
 	struct DrawingParam
 	{
-		// "[i]" of these vectors represents a value of static_cast<enumKind>( i ). This size was guaranteed to: size() == Enemy::KIND_COUNT
 		float				drawScale = 1.0f;
 		Donya::Quaternion	drawRotation;
 		Donya::Vector3		drawOffset;
@@ -134,9 +139,50 @@ namespace
 			}
 		}
 	};
+	struct CollisionParam
+	{
+		struct PerKind
+		{
+			Donya::AABB hitBox;
+			Donya::AABB hurtBox;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( hitBox  ),
+					CEREAL_NVP( hurtBox )
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		std::vector<PerKind> collisions;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( collisions )
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
 	struct Member
 	{
-		DrawingParam drawer;
+		DrawingParam	drawer;
+		CollisionParam	collider;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -149,11 +195,19 @@ namespace
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( collider ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
+CEREAL_CLASS_VERSION( DrawingParam,				0 )
+CEREAL_CLASS_VERSION( CollisionParam,			0 )
+CEREAL_CLASS_VERSION( CollisionParam::PerKind,	0 )
+CEREAL_CLASS_VERSION( Member,					1 )
 
 class ParamEnemy : public ParameterBase<ParamEnemy>
 {
@@ -172,18 +226,40 @@ public:
 
 		Load( m, fromBinary );
 
-		ResizeMotionVector();
+		ResizeKindVectors();
 	}
 	Member Data() const { return m; }
 private:
-	void ResizeMotionVector()
+	void ResizeKindVectors()
 	{
-		if ( m.drawer.accelerations.size() != KIND_COUNT )
+		// Returns true if was resized.
+		auto ResizeIfNeeded = []( auto *pVector )->bool
 		{
-			m.drawer.accelerations.resize( KIND_COUNT );
-			for ( auto &it : m.drawer.accelerations )
+			if ( pVector->size() != KIND_COUNT )
+			{
+				pVector->resize( KIND_COUNT );
+				return true;
+			}
+			// else
+			return false;
+		};
+
+		if ( ResizeIfNeeded( &m.drawer.accelerations ) )
+		{
+			for ( auto &it :  m.drawer.accelerations )
 			{
 				it = 1.0f;
+			}
+		}
+		
+		if ( ResizeIfNeeded( &m.collider.collisions ) )
+		{
+			for ( auto &it : m.collider.collisions )
+			{
+				it.hitBox.size		= 0.5f;
+				it.hitBox.exist		= true;
+				it.hurtBox.size		= 0.5f;
+				it.hurtBox.exist	= true;
 			}
 		}
 	}
@@ -199,6 +275,8 @@ public:
 
 		if ( ImGui::TreeNode( u8"ìGÇÃÉpÉâÉÅÅ[É^í≤êÆ" ) )
 		{
+			ResizeKindVectors();
+
 			if ( ImGui::TreeNode( u8"ï`âÊån" ) )
 			{
 				ImGui::DragFloat(		u8"ï`âÊÉXÉPÅ[Éã",		&m.drawer.drawScale,		0.01f );
@@ -209,8 +287,6 @@ public:
 
 				if ( ImGui::TreeNode( u8"çƒê∂ë¨ìxÇÃî{ó¶" ) )
 				{
-					ResizeMotionVector();
-
 					std::string caption{};
 					for ( size_t i = 0; i < KIND_COUNT; ++i )
 					{
@@ -219,6 +295,20 @@ public:
 					}
 
 					ImGui::TreePop();
+				}
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"ìñÇΩÇËîªíËån" ) )
+			{
+				std::string caption{};
+				for ( size_t i = 0; i < KIND_COUNT; ++i )
+				{
+					caption = "[" + std::to_string( i ) + ":" + MODEL_NAMES[i] + "]";
+					
+					ParameterHelper::ShowAABBNode( caption + u8"ìñÇΩÇËîªíË", &m.collider.collisions[i].hitBox  );
+					ParameterHelper::ShowAABBNode( caption + u8"ãÚÇÁÇ¢îªíË", &m.collider.collisions[i].hurtBox );
 				}
 
 				ImGui::TreePop();
@@ -356,7 +446,7 @@ namespace Enemy
 
 		Donya::Model::Constants::PerModel::Common constant{};
 		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-		constant.worldMatrix	= CalcWorldMatrix( /* useForHitBox = */ false, /* useForDrawing = */ true );
+		constant.worldMatrix	= CalcWorldMatrix( /* useForHitBox = */ false, /* useForHurtBox = */ false, /* useForDrawing = */ true );
 		pRenderer->UpdateConstant( constant );
 		pRenderer->ActivateConstantModel();
 
@@ -367,9 +457,17 @@ namespace Enemy
 	void Base::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP )
 	{
 		Donya::Model::Cube::Constant constant{};
-		constant.matWorld		= CalcWorldMatrix( /* useForHitBox = */ true, /* useForDrawing = */ true );
 		constant.matViewProj	= VP;
-		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 0.5f };
+
+		constexpr float	boxAlpha		= 0.5f;
+		constexpr auto	hitBoxColor		= Donya::Color::Code::RED;
+		constant.matWorld		= CalcWorldMatrix( /* useForHitBox = */ true, /* useForHurtBox = */ false, /* useForDrawing = */ true );
+		constant.drawColor		= Donya::Vector4{ Donya::Color::MakeColor( hitBoxColor ), boxAlpha };
+		pRenderer->ProcessDrawingCube( constant );
+
+		constexpr auto	hurtBoxColor	= Donya::Color::Code::LIME;
+		constant.matWorld		= CalcWorldMatrix( /* useForHitBox = */ false, /* useForHurtBox = */ true, /* useForDrawing = */ true );
+		constant.drawColor		= Donya::Vector4{ Donya::Color::MakeColor( hurtBoxColor ), boxAlpha };
 		pRenderer->ProcessDrawingCube( constant );
 	}
 	void Base::UpdateMotion( float elapsedTime, int useMotionIndex )
@@ -386,11 +484,11 @@ namespace Enemy
 			pose.AssignSkeletal( animator.CalcCurrentPose( pModelParam->motionHolder.GetMotion( useMotionIndex ) ) );
 		}
 	}
-	Donya::Vector4x4 Base::CalcWorldMatrix( bool useForHitBox, bool useForDrawing ) const
+	Donya::Vector4x4 Base::CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const
 	{
 		Donya::Vector4x4 W{};
 		
-		if ( useForHitBox )
+		if ( useForHitBox || useForHurtBox )
 		{
 			W._11 = 2.0f;
 			W._22 = 2.0f;
@@ -398,6 +496,24 @@ namespace Enemy
 			W._41 = pos.x;
 			W._42 = pos.y;
 			W._43 = pos.z;
+
+			const auto	data		= FetchMember();
+			const auto	&collisions	= data.collider.collisions;
+			const int	intKind		= scast<int>( GetKind() );
+
+			if ( intKind < 0 || scast<int>( collisions.size() ) <= intKind ) { return W; }
+			// else
+
+			const auto	&perKind	= data.collider.collisions[intKind];
+			const auto	&applyBox	= ( useForHitBox ) ? perKind.hitBox : perKind.hurtBox;
+
+			W._11 *= applyBox.size.x;
+			W._22 *= applyBox.size.y;
+			W._33 *= applyBox.size.z;
+			W._41 += applyBox.pos.x;
+			W._42 += applyBox.pos.y;
+			W._43 += applyBox.pos.z;
+
 			return W;
 		}
 		// else

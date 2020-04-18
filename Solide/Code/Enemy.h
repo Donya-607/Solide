@@ -159,7 +159,7 @@ namespace Enemy
 		const	Donya::Vector3	&GetPosition()		const { return pos; }
 	protected:
 		virtual void UpdateMotion( float elapsedTime, int useMotionIndex );
-		virtual	Donya::Vector4x4 CalcWorldMatrix( bool useForHitBox, bool useForDrawing ) const;
+		virtual	Donya::Vector4x4 CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
 	public:
 	#if USE_IMGUI
 		/// <summary>
