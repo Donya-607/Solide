@@ -470,6 +470,40 @@ namespace Enemy
 		constant.drawColor		= Donya::Vector4{ Donya::Color::MakeColor( hurtBoxColor ), boxAlpha };
 		pRenderer->ProcessDrawingCube( constant );
 	}
+	void Base::AcquireHitBoxes( std::vector<Donya::AABB> *pAppendDest ) const
+	{
+		if ( !pAppendDest ) { return; }
+		// else
+
+		const auto	data		= FetchMember();
+		const auto	&collisions	= data.collider.collisions;
+		const int	intKind		= scast<int>( GetKind() );
+
+		if ( intKind < 0 || scast<int>( collisions.size() ) <= intKind ) { return; }
+		// else
+
+		Donya::AABB wsHitBox = collisions[intKind].hitBox;
+		wsHitBox.pos += GetPosition();
+
+		pAppendDest->emplace_back( std::move( wsHitBox ) );
+	}
+	void Base::AcquireHurtBoxes( std::vector<Donya::AABB> *pAppendDest ) const
+	{
+		if ( !pAppendDest ) { return; }
+		// else
+
+		const auto	data		= FetchMember();
+		const auto	&collisions	= data.collider.collisions;
+		const int	intKind		= scast<int>( GetKind() );
+
+		if ( intKind < 0 || scast<int>( collisions.size() ) <= intKind ) { return; }
+		// else
+
+		Donya::AABB wsHurtBox = collisions[intKind].hitBox;
+		wsHurtBox.pos += GetPosition();
+
+		pAppendDest->emplace_back( std::move( wsHurtBox ) );
+	}
 	void Base::UpdateMotion( float elapsedTime, int useMotionIndex )
 	{
 		const auto data			= FetchMember();

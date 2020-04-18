@@ -157,6 +157,8 @@ namespace Enemy
 		virtual Kind GetKind()		const = 0;
 		const	InitializeParam	&GetInitializer()	const { return initializer; }
 		const	Donya::Vector3	&GetPosition()		const { return pos; }
+		virtual void AcquireHitBoxes ( std::vector<Donya::AABB> *pAppendDest ) const;
+		virtual void AcquireHurtBoxes( std::vector<Donya::AABB> *pAppendDest ) const;
 	protected:
 		virtual void UpdateMotion( float elapsedTime, int useMotionIndex );
 		virtual	Donya::Vector4x4 CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
