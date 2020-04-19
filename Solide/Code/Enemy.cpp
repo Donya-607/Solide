@@ -423,6 +423,7 @@ namespace Enemy
 
 		pos			= initializer.wsPos;
 		orientation	= initializer.orientation;
+		element		= Element::Type::Nil;
 
 		animator.ResetTimer();
 

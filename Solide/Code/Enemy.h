@@ -17,6 +17,7 @@
 #include "Donya/Vector.h"
 
 #include "Bullet.h"
+#include "Element.h"
 #include "Renderer.h"
 
 namespace Enemy
@@ -127,10 +128,10 @@ namespace Enemy
 	protected:
 		Donya::Vector3				pos;
 		Donya::Quaternion			orientation;
+		Element						element;
 		std::shared_ptr<ModelParam>	pModelParam;
 		Donya::Model::Pose			pose;
 		Donya::Model::Animator		animator;
-		
 	public:
 		Base() = default;
 		virtual ~Base() = default;
@@ -159,10 +160,11 @@ namespace Enemy
 		virtual void Draw( RenderingHelper *pRenderer );
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
 	public:
-		virtual bool ShouldRemove()	const = 0;
-		virtual Kind GetKind()		const = 0;
-		const	InitializeParam	&GetInitializer()	const { return initializer; }
-		const	Donya::Vector3	&GetPosition()		const { return pos; }
+		virtual bool			ShouldRemove()		const = 0;
+		virtual Kind			GetKind()			const = 0;
+		virtual Element			GetElement()		const { return element;		}
+		const	InitializeParam	&GetInitializer()	const { return initializer;	}
+		const	Donya::Vector3	&GetPosition()		const { return pos;			}
 		virtual void AcquireHitBoxes ( std::vector<Donya::AABB> *pAppendDest ) const;
 		virtual void AcquireHurtBoxes( std::vector<Donya::AABB> *pAppendDest ) const;
 	protected: // Hit/Hurt box acquisition method of open to outside is only whole hit/hurt boxes..
