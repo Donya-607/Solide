@@ -94,6 +94,9 @@ namespace Bullet
 		Donya::Vector3		pos;
 		Donya::Vector3		velocity;
 		Donya::Quaternion	orientation;
+
+		// Will changes by const method.
+		mutable bool		wasHitToObject = false;
 	public:
 		BulletBase()									= default;
 		BulletBase( const BulletBase & )				= default;
@@ -142,6 +145,7 @@ namespace Bullet
 		/// </summary>
 		virtual Donya::Sphere		GetHitBoxSphere()	const { return Donya::Sphere::Nil();	}
 		virtual Donya::Vector4x4	GetWorldMatrix()	const;
+		virtual void				HitToObject()		const;
 	public:
 	#if USE_IMGUI
 		/// <summary>

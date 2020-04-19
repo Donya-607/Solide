@@ -856,6 +856,10 @@ namespace Bullet
 		world._43 = pos.z;
 		return world;
 	}
+	void BulletBase::HitToObject() const
+	{
+		wasHitToObject = true;
+	}
 #if USE_IMGUI
 	bool BulletBase::ShowImGuiNode( const std::string &nodeCaption )
 	{
@@ -922,7 +926,7 @@ namespace Bullet
 		}
 		bool OilBullet::ShouldRemove() const
 		{
-			return ( ParamBullet::Get().Data().oil.aliveFrame <= aliveTime ) ? true : false;
+			return ( ParamBullet::Get().Data().oil.aliveFrame <= aliveTime || wasHitToObject ) ? true : false;
 		}
 		Donya::AABB OilBullet::GetHitBoxAABB() const
 		{
@@ -971,7 +975,7 @@ namespace Bullet
 		}
 		bool FlameSmoke::ShouldRemove() const
 		{
-			return ( ParamBullet::Get().Data().smoke.flame.general.aliveFrame <= aliveTime ) ? true : false;
+			return ( ParamBullet::Get().Data().smoke.flame.general.aliveFrame <= aliveTime || wasHitToObject ) ? true : false;
 		}
 		Donya::Sphere FlameSmoke::GetHitBoxSphere() const
 		{
@@ -1005,7 +1009,7 @@ namespace Bullet
 		}
 		bool IceSmoke::ShouldRemove() const
 		{
-			return ( ParamBullet::Get().Data().smoke.ice.general.aliveFrame <= aliveTime ) ? true : false;
+			return ( ParamBullet::Get().Data().smoke.ice.general.aliveFrame <= aliveTime || wasHitToObject ) ? true : false;
 		}
 		Donya::Sphere IceSmoke::GetHitBoxSphere() const
 		{

@@ -839,6 +839,7 @@ void SceneGame::ProcessBulletCollision()
 				if ( pCollidedBullet )
 				{
 					pEnemy->MakeDamage( pCollidedBullet->GetElement() );
+					pCollidedBullet->HitToObject();
 					break;
 				}
 			}
