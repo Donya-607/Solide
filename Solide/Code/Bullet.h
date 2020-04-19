@@ -11,6 +11,7 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+#include "Element.h"
 #include "Renderer.h"
 
 namespace Bullet
@@ -88,7 +89,8 @@ namespace Bullet
 	class BulletBase
 	{
 	protected:
-		Kind				kind = Kind::KindCount;
+		Kind				kind	= Kind::KindCount;
+		Element				element	= Element::Type::Nil;
 		Donya::Vector3		pos;
 		Donya::Vector3		velocity;
 		Donya::Quaternion	orientation;
@@ -128,8 +130,9 @@ namespace Bullet
 		RecursionResult	CalcCorrectedVectorImpl( int recursionLimit, int recursionCount, RecursionResult prevResult, const Donya::Model::PolygonGroup &terrain, const Donya::Vector4x4 &terrainWorldMatrix ) const;
 	public:
 		virtual bool				ShouldRemove()		const = 0;
-		virtual Kind				GetKind()			const { return kind; }
-		virtual Donya::Vector3		GetPosition()		const { return pos; }
+		virtual Kind				GetKind()			const { return kind;	}
+		virtual Element				GetElement()		const { return element;	}
+		virtual Donya::Vector3		GetPosition()		const { return pos;		}
 		virtual Donya::AABB			GetHitBoxAABB()		const { return Donya::AABB::Nil();		}
 		virtual Donya::Sphere		GetHitBoxSphere()	const { return Donya::Sphere::Nil();	}
 		virtual Donya::Vector4x4	GetWorldMatrix()	const;

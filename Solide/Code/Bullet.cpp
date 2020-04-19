@@ -915,7 +915,11 @@ namespace Bullet
 		{
 			BulletBase::DrawHitBox( pRenderer, VP, ParamBullet::Get().Data().oil.color.Product( color ) );
 		}
-		void OilBullet::AttachSelfKind() { kind = Kind::Oil; }
+		void OilBullet::AttachSelfKind()
+		{
+			kind	= Kind::Oil;
+			element	= Element::Type::Oil;
+		}
 		bool OilBullet::ShouldRemove() const
 		{
 			return ( ParamBullet::Get().Data().oil.aliveFrame <= aliveTime ) ? true : false;
@@ -960,7 +964,11 @@ namespace Bullet
 			aliveTime++;
 			color = ParamBullet::Get().Data().smoke.flame.general.color;
 		}
-		void FlameSmoke::AttachSelfKind() { kind = Kind::FlameSmoke; }
+		void FlameSmoke::AttachSelfKind()
+		{
+			kind	= Kind::FlameSmoke;
+			element	= Element::Type::Flame;
+		}
 		bool FlameSmoke::ShouldRemove() const
 		{
 			return ( ParamBullet::Get().Data().smoke.flame.general.aliveFrame <= aliveTime ) ? true : false;
@@ -990,7 +998,11 @@ namespace Bullet
 			aliveTime++;
 			color = ParamBullet::Get().Data().smoke.ice.general.color;
 		}
-		void IceSmoke::AttachSelfKind() { kind = Kind::IceSmoke; }
+		void IceSmoke::AttachSelfKind()
+		{
+			kind	= Kind::IceSmoke;
+			element	= Element::Type::Ice;
+		}
 		bool IceSmoke::ShouldRemove() const
 		{
 			return ( ParamBullet::Get().Data().smoke.ice.general.aliveFrame <= aliveTime ) ? true : false;
