@@ -1063,6 +1063,8 @@ namespace Enemy
 		MoverBase::Init( target );
 
 		wasSearched = false;
+
+		target.element.Subtract( Element::Type::Flame );
 	}
 	void Archer::Wait::Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos )
 	{
@@ -1110,6 +1112,12 @@ namespace Enemy
 	std::string Archer::Wait::GetStateName() const { return u8"‘Ò‹@"; }
 	#endif // USE_IMGUI
 
+	void Archer::Aim::Init( Archer &target )
+	{
+		MoverBase::Init( target );
+
+		target.element.Add( Element::Type::Flame );
+	}
 	void Archer::Aim::Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos )
 	{
 		target.timer++;
@@ -1146,6 +1154,7 @@ namespace Enemy
 			if ( target.timer == target.intervalFrame )
 			{
 				target.GenerateShot();
+				target.element.Subtract( Element::Type::Flame );
 			}
 
 			target.UpdateMotion( elapsedTime, AcquireMotionIndex() );
@@ -1362,6 +1371,7 @@ namespace Enemy
 		Base::Init( argInitializer );
 
 		timer = 0;
+		element.Add( Element::Type::Flame );
 		AssignMover<Wait>();
 	}
 	void GateKeeper::Update( float elapsedTime, const Donya::Vector3 &targetPos )

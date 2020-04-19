@@ -297,6 +297,7 @@ namespace Enemy
 		class Aim : public MoverBase
 		{
 		public:
+			void Init( Archer &target ) override;
 			void Update( Archer &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
 			int  AcquireMotionIndex() const override;
 			bool ShouldChangeState( Archer &target ) const override;
