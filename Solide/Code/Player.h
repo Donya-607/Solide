@@ -14,6 +14,7 @@
 #include "Donya/Vector.h"
 
 #include "ObjectBase.h"
+#include "Element.h"
 #include "Renderer.h"
 
 
@@ -119,7 +120,6 @@ private:
 		virtual void Fall( Player &player, float elapsedTime ) = 0;
 	public:
 		virtual bool IsDead() const { return false; }
-		virtual bool IsOiled() const { return false; }
 		virtual Donya::Quaternion GetExtraRotation( Player &player ) const
 		{
 			return Donya::Quaternion::Identity();
@@ -149,7 +149,6 @@ private:
 		void Jump( Player &player, float elapsedTime ) override;
 		void Fall( Player &player, float elapsedTime ) override;
 	public:
-		bool IsOiled() const override { return true; }
 		Donya::Quaternion GetExtraRotation( Player &player ) const override;
 	};
 	class DeadMover : public MoverBase
@@ -167,6 +166,7 @@ private:
 	};
 private:
 	float						hopPitching = 0.0f;	// Radian. Use when hopping that will happen when used an oil.
+	Element						element;
 	Donya::Vector3				velocity;
 	Donya::Quaternion			orientation;
 	std::unique_ptr<MoverBase>	pMover;
@@ -190,12 +190,9 @@ public:
 	{
 		return pMover->IsDead();
 	}
-
-	// These IsOiled() and GetOrientation() are used for controll when title scene.
-
 	bool IsOiled() const
 	{
-		return pMover->IsOiled();
+		return element.Has( Element::Type::Oil );
 	}
 	Donya::Quaternion GetOrientation() const
 	{

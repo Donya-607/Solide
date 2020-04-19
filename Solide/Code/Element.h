@@ -21,7 +21,8 @@ private:
 	Type type; // The type stored by bitwise operation.
 public:
 	constexpr Element() : type( Type::Nil ) {}
-	constexpr Element( const Type &type ) : type( type ) {}
+	constexpr Element( Type type ) : type( type ) {}
+	Element &operator = ( Type newType ) { type = newType; return *this; }
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -39,9 +40,11 @@ private:
 	}
 public:
 	constexpr Type Get() const { return type; }
-	Element Add( Type addition );
-	Element Assign( Type newType );
-	Element Subtract( Type subtraction );
+public:
+	bool	Has		( Type validation	) const;
+	Element	Add		( Type addition		);
+	Element	Assign	( Type newType		);
+	Element	Subtract( Type subtraction	);
 };
 
 DEFINE_ENUM_FLAG_OPERATORS( Element::Type );

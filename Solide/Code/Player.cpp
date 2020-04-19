@@ -640,7 +640,7 @@ int  Player::MotionManager::CalcNowKind( Player &player ) const
 	if ( IsJump() ) { return PlayerModel::Kind::Jump; }
 	if ( IsRun()  )
 	{
-		return	( player.pMover->IsOiled() )
+		return	( player.IsOiled() )
 				? PlayerModel::Kind::Slide
 				: PlayerModel::Kind::Run;
 	}
@@ -725,6 +725,8 @@ bool Player::InputManager::IsPressOil() const
 
 void Player::NormalMover::Init( Player &player )
 {
+	player.element.Subtract( Element::Type::Oil );
+
 	const auto data = FetchMember();
 	player.hitBox = data.normal.hitBoxStage;
 }
@@ -777,6 +779,7 @@ void Player::OilMover::Init( Player &player )
 {
 	tilt  = 0.0f;
 	player.StartHopping();
+	player.element.Add( Element::Type::Oil );
 
 	const auto data = FetchMember();
 	player.hitBox = data.oiled.basic.hitBoxStage;
@@ -878,6 +881,7 @@ Donya::Quaternion Player::OilMover::GetExtraRotation( Player &player ) const
 
 void Player::DeadMover::Init( Player &player )
 {
+	player.element.Subtract( Element::Type::Oil );
 	player.velocity = 0.0f;
 	player.hitBox.exist = false;
 }
@@ -893,6 +897,7 @@ void Player::Init( const PlayerInitializer &param )
 	const auto data = FetchMember();
 
 	pos			= param.GetInitialPos();
+	element		= Element::Type::Nil;
 	velocity	= 0.0f;
 	orientation	= param.GetInitialOrientation();
 
@@ -923,7 +928,7 @@ void Player::Update( float elapsedTime, Input input )
 
 	if ( inputManager.ShouldTrans() && canUseOil )
 	{
-		( pMover->IsOiled() )
+		( IsOiled() )
 		? ResetMover<NormalMover>()
 		: ResetMover<OilMover>();
 
@@ -1161,7 +1166,7 @@ void Player::UseImGui()
 			velocity.y	= 0.0f;
 		}
 
-		bool nowOiled = pMover->IsOiled(); // Immutable.
+		bool nowOiled = IsOiled(); // Immutable.
 		ImGui::Checkbox( u8"地上にいる？",		&onGround	);
 		ImGui::Checkbox( u8"あぶらを使えるか？",	&canUseOil	);
 		ImGui::Checkbox( u8"あぶら状態か？",		&nowOiled	);
