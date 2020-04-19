@@ -857,6 +857,16 @@ namespace Enemy
 #endif // USE_IMGUI
 
 
+	bool WillSlip( const Element &element, const Donya::Vector3 &velocity )
+	{
+		return element.Has( Element::Type::Oil ) && !velocity.IsZero();
+	}
+	bool WillBurn( const Element &element )
+	{
+		return element.Has( Element::Type::Flame ) && element.Has( Element::Type::Oil );
+	}
+
+
 #pragma region Straight
 
 	void Straight::Init( const InitializeParam &argInitializer )
@@ -912,7 +922,7 @@ namespace Enemy
 	}
 	bool Straight::ShouldRemove() const
 	{
-		return false;
+		return WillSlip( element, velocity ) || WillBurn( element );
 	}
 	Kind Straight::GetKind() const
 	{
@@ -1180,7 +1190,7 @@ namespace Enemy
 	}
 	bool Archer::ShouldRemove() const
 	{
-		return false;
+		return WillBurn( element );
 	}
 	Kind Archer::GetKind() const
 	{
@@ -1379,7 +1389,7 @@ namespace Enemy
 	}
 	bool GateKeeper::ShouldRemove() const
 	{
-		return false;
+		return WillBurn( element );
 	}
 	Kind GateKeeper::GetKind() const
 	{
@@ -1574,7 +1584,7 @@ namespace Enemy
 	}
 	bool Chaser::ShouldRemove() const
 	{
-		return false;
+		return false; // Chaser can't defeat.
 	}
 	Kind Chaser::GetKind() const
 	{
