@@ -475,7 +475,7 @@ namespace Bullet
 
 		std::string genPosCaption{ u8"生成位置" };
 		genPosCaption += ( generatePosIsRelative ) ? u8"（相対）" : u8"（絶対）";
-		ImGui::DragFloat3( genPosCaption.c_str(), &generatePos.x );
+		ImGui::DragFloat3( genPosCaption.c_str(), &generatePos.x, 0.01f );
 
 
 		ImGui::TreePop();

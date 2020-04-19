@@ -1,8 +1,10 @@
 #pragma once
 
-#include <windows.h> // Use for enable bitwise operation of enum class.
+#include <string>		// Use for ShowImGuiNode().
+#include <windows.h>	// Use for enable bitwise operation of enum class.
 
 #include "Donya/Serializer.h"
+#include "Donya/UseImGui.h"
 
 class Element
 {
@@ -16,6 +18,8 @@ public:
 		Oil		= 1 << 0,
 		Flame	= 1 << 1,
 		Ice		= 1 << 2,
+
+		_TypeCount
 	};
 private:
 	Type type; // The type stored by bitwise operation.
@@ -45,6 +49,10 @@ public:
 	Element	Add		( Type addition		);
 	Element	Assign	( Type newType		);
 	Element	Subtract( Type subtraction	);
+public:
+#if USE_IMGUI
+	void ShowImGuiNode( bool useTreeNode, const std::string &nodeCaption );
+#endif // USE_IMGUI
 };
 
 DEFINE_ENUM_FLAG_OPERATORS( Element::Type );

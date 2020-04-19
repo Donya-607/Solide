@@ -6,6 +6,16 @@
 
 #include "FilePath.h"
 
+
+namespace
+{
+#if USE_IMGUI
+	bool wantPauseUpdates = false;
+#endif // USE_IMGUI
+
+}
+
+
 namespace Enemy
 {
 	void Container::Init( int stageNumber )
@@ -37,6 +47,10 @@ namespace Enemy
 
 	void Container::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	{
+	#if USE_IMGUI
+		if ( wantPauseUpdates ) { return; }
+	#endif // USE_IMGUI
+
 		for ( auto &pIt : enemyPtrs )
 		{
 			if ( !pIt ) { continue; }
@@ -56,6 +70,10 @@ namespace Enemy
 	}
 	void Container::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 	{
+	#if USE_IMGUI
+		if ( wantPauseUpdates ) { return; }
+	#endif // USE_IMGUI
+
 		for ( auto &pIt : enemyPtrs )
 		{
 			if ( !pIt ) { continue; }
@@ -158,6 +176,8 @@ namespace Enemy
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
+
+		ImGui::Checkbox( u8"ìGÇΩÇøÇÃçXêVÇé~ÇﬂÇÈ", &wantPauseUpdates );
 
 		static int addKind = 0;
 		ImGui::SliderInt( u8"í«â¡Ç∑ÇÈéÌóﬁ", &addKind, 0, scast<int>( Enemy::Kind::KindCount ) - 1 );

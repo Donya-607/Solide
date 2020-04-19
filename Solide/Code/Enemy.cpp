@@ -1018,6 +1018,7 @@ namespace Enemy
 			ImGui::DragFloat(  u8"現在の移動量合計",		&moveDistanceSum,	0.01f	);
 			ImGui::Checkbox(   u8"正の方向へ動いているか",&nowMoveToPositive			);
 			ImGui::SliderFloat4( u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
+			element.ShowImGuiNode( /* useTreeNode = */ false, "" );
 
 			ImGui::TreePop();
 		}
@@ -1253,6 +1254,7 @@ namespace Enemy
 			ImGui::DragFloat3(		u8"現在のワールド座標",	&pos.x, 0.01f );
 			ImGui::SliderFloat4(	u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
 			ImGui::DragInt(			u8"内部タイマ",			&timer );
+			element.ShowImGuiNode( /* useTreeNode = */ false, "" );
 
 			ImGui::TreePop();
 		}
@@ -1441,6 +1443,7 @@ namespace Enemy
 			ImGui::DragFloat3(		u8"現在のワールド座標",	&pos.x, 0.01f );
 			ImGui::SliderFloat4(	u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
 			ImGui::DragInt(			u8"内部タイマ",			&timer );
+			element.ShowImGuiNode( /* useTreeNode = */ false, "" );
 
 			ImGui::TreePop();
 		}
@@ -1635,6 +1638,7 @@ namespace Enemy
 			ImGui::DragFloat3(		u8"現在のワールド座標",	&pos.x,			0.01f );
 			ImGui::DragFloat3(		u8"現在の速度",			&velocity.x,	0.01f );
 			ImGui::SliderFloat4(	u8"現在の姿勢",			&orientation.x,	-1.0f, 1.0f );
+			element.ShowImGuiNode( /* useTreeNode = */ false, "" );
 
 			ImGui::TreePop();
 		}
