@@ -114,6 +114,11 @@ namespace Enemy
 		Donya::Model::MotionHolder	motionHolder;
 	};
 
+	struct HurtDesc
+	{
+		Bullet::Kind bulletKind = Bullet::Kind::Oil/* Fail safe */;
+	};
+
 
 	class Base
 	{
@@ -125,6 +130,7 @@ namespace Enemy
 		std::shared_ptr<ModelParam>	pModelParam;
 		Donya::Model::Pose			pose;
 		Donya::Model::Animator		animator;
+		
 	public:
 		Base() = default;
 		virtual ~Base() = default;

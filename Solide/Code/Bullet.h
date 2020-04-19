@@ -79,6 +79,10 @@ namespace Bullet
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
 	public:
 		void Append( const FireDesc &fireParameter );
+	public:
+		size_t GetBulletCount() const;
+		bool IsOutOfRange( size_t index ) const;
+		const std::shared_ptr<BulletBase> GetBulletPtrOrNull( size_t index ) const;
 	};
 
 	class BulletBase

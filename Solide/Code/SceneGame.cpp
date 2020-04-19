@@ -293,6 +293,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	CameraUpdate();
 
+	ProcessBulletCollision();
 	ProcessPlayerCollision();
 
 	if ( NowGoalMoment() )
@@ -749,9 +750,9 @@ bool SceneGame::NowWaiting() const
 
 void SceneGame::ProcessPlayerCollision()
 {
+	if ( nowWaiting			) { return; }	// Exempt if now is cleared.
 	if ( !pPlayer			) { return; }	// Do only player related collision.
 	if ( pPlayer->IsDead()	) { return; }	// Unnecessary if player already dead.
-	if ( nowWaiting			) { return; }	// Exempt if now is cleared.
 	// else
 
 	const Donya::AABB playerBody = pPlayer->GetHitBox();
@@ -769,6 +770,17 @@ void SceneGame::ProcessPlayerCollision()
 				return;
 			}
 		}
+	}
+}
+void SceneGame::ProcessBulletCollision()
+{
+	if ( nowWaiting	) { return; }	// Exempt if now is cleared.
+	
+	const auto &bullet = Bullet::BulletAdmin::Get();
+
+	if ( pEnemies )
+	{
+		
 	}
 }
 

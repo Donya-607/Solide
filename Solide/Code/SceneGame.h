@@ -85,6 +85,7 @@ private:
 	bool	NowWaiting() const;
 
 	void	ProcessPlayerCollision();
+	void	ProcessBulletCollision();
 
 	bool	NowGoalMoment() const;
 

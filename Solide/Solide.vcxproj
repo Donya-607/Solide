@@ -173,6 +173,7 @@
     <ClCompile Include="Code\Donya\UseImGui.cpp" />
     <ClCompile Include="Code\Donya\Vector.cpp" />
     <ClCompile Include="Code\Donya\WindowsUtil.cpp" />
+    <ClCompile Include="Code\Element.cpp" />
     <ClCompile Include="Code\Enemy.cpp" />
     <ClCompile Include="Code\EnemyContainer.cpp" />
     <ClCompile Include="Code\Fader.cpp" />
@@ -257,6 +258,7 @@
     <ClInclude Include="Code\Donya\UseImGui.h" />
     <ClInclude Include="Code\Donya\Vector.h" />
     <ClInclude Include="Code\Donya\WindowsUtil.h" />
+    <ClInclude Include="Code\Element.h" />
     <ClInclude Include="Code\Enemy.h" />
     <ClInclude Include="Code\EnemyContainer.h" />
     <ClInclude Include="Code\Fader.h" />

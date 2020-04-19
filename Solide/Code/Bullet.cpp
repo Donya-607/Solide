@@ -550,6 +550,20 @@ namespace Bullet
 		bulletPtrs.emplace_back( std::move( tmp ) );
 		bulletPtrs.back()->Init( param );
 	}
+	size_t BulletAdmin::GetBulletCount() const
+	{
+		return bulletPtrs.size();
+	}
+	bool BulletAdmin::IsOutOfRange( size_t index ) const
+	{
+		return ( index < GetBulletCount() ) ? false : true;
+	}
+	const std::shared_ptr<BulletBase> BulletAdmin::GetBulletPtrOrNull( size_t index ) const
+	{
+		if ( IsOutOfRange( index ) ) { return nullptr; }
+		// else
+		return bulletPtrs[index];
+	}
 
 
 	void BulletBase::Init( const BulletAdmin::FireDesc &param )
