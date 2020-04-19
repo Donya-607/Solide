@@ -776,11 +776,73 @@ void SceneGame::ProcessBulletCollision()
 {
 	if ( nowWaiting	) { return; }	// Exempt if now is cleared.
 	
-	const auto &bullet = Bullet::BulletAdmin::Get();
+	const auto		&bullet		= Bullet::BulletAdmin::Get();
+	const size_t	bulletCount	= bullet.GetBulletCount();
+
+	// Returns the collided bullet or nullptr.
+	auto FindCollideBulletAABB = [&]( const Donya::AABB &other )->std::shared_ptr<Bullet::BulletBase>
+	{
+		Donya::AABB		bulletAABB{};
+		Donya::Sphere	bulletSphere{};
+		std::shared_ptr<Bullet::BulletBase> pBullet;
+
+		for ( size_t i = 0; i < bulletCount; ++i )
+		{
+			pBullet = bullet.GetBulletPtrOrNull( i );
+			if ( !pBullet ) { continue; }
+			// else
+
+			// The bullets hit-box is either an AABB or a Sphere.
+
+			bulletSphere = pBullet->GetHitBoxSphere();
+			if ( bulletSphere != Donya::Sphere::Nil() )
+			{
+				if ( Donya::Sphere::IsHitAABB( bulletSphere, other ) )
+				{ return pBullet; }
+				// else
+				continue;
+			}
+			// else
+
+			bulletAABB = pBullet->GetHitBoxAABB();
+			if ( bulletAABB != Donya::AABB::Nil() )
+			{
+				if ( Donya::AABB::IsHitAABB( bulletAABB, other ) )
+				{ return pBullet; }
+				// else
+				continue;
+			}
+			// else
+		}
+
+		return nullptr;
+	};
 
 	if ( pEnemies )
 	{
-		
+		std::vector<Donya::AABB> enemyBodies{};
+		std::shared_ptr<Enemy::Base> pEnemy = nullptr;
+
+		const size_t enemyCount = pEnemies->GetEnemyCount();
+		for ( size_t i = 0; i < enemyCount; ++i )
+		{
+			pEnemy = pEnemies->GetEnemyPtrOrNull( i );
+			if ( !pEnemy ) { continue; }
+			// else
+
+			enemyBodies.clear();
+			pEnemy->AcquireHurtBoxes( &enemyBodies );
+
+			for ( const auto &it : enemyBodies )
+			{
+				const auto pCollidedBullet = FindCollideBulletAABB( it );
+				if ( pCollidedBullet )
+				{
+					pEnemy->MakeDamage( pCollidedBullet->GetElement() );
+					break;
+				}
+			}
+		}
 	}
 }
 

@@ -473,6 +473,10 @@ namespace Enemy
 		constant.drawColor		= Donya::Vector4{ Donya::Color::MakeColor( hurtBoxColor ), boxAlpha };
 		pRenderer->ProcessDrawingCube( constant );
 	}
+	void Base::MakeDamage( const Element &effect ) const
+	{
+		element.Add( effect.Get() );
+	}
 	void Base::AcquireHitBoxes( std::vector<Donya::AABB> *pAppendDest ) const
 	{
 		if ( !pAppendDest ) { return; }

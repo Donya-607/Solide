@@ -117,7 +117,7 @@ namespace Enemy
 
 	struct HurtDesc
 	{
-		Bullet::Kind bulletKind = Bullet::Kind::Oil/* Fail safe */;
+		Element hurtElement;
 	};
 
 
@@ -128,10 +128,12 @@ namespace Enemy
 	protected:
 		Donya::Vector3				pos;
 		Donya::Quaternion			orientation;
-		Element						element;
 		std::shared_ptr<ModelParam>	pModelParam;
 		Donya::Model::Pose			pose;
 		Donya::Model::Animator		animator;
+
+		// Will changes by const method.
+		mutable Element				element;
 	public:
 		Base() = default;
 		virtual ~Base() = default;
@@ -165,6 +167,7 @@ namespace Enemy
 		virtual Element			GetElement()		const { return element;		}
 		const	InitializeParam	&GetInitializer()	const { return initializer;	}
 		const	Donya::Vector3	&GetPosition()		const { return pos;			}
+		virtual void MakeDamage( const Element &effect ) const;
 		virtual void AcquireHitBoxes ( std::vector<Donya::AABB> *pAppendDest ) const;
 		virtual void AcquireHurtBoxes( std::vector<Donya::AABB> *pAppendDest ) const;
 	protected: // Hit/Hurt box acquisition method of open to outside is only whole hit/hurt boxes..

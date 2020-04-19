@@ -110,6 +110,21 @@ namespace Enemy
 		}
 	}
 
+	size_t Container::GetEnemyCount() const
+	{
+		return enemyPtrs.size();
+	}
+	bool   Container::IsOutOfRange( size_t index ) const
+	{
+		return ( index < GetEnemyCount() ) ? false : true;
+	}
+	const  std::shared_ptr<Enemy::Base> Container::GetEnemyPtrOrNull( size_t index ) const
+	{
+		if ( IsOutOfRange( index ) ) { return nullptr; };
+		// else
+		return enemyPtrs[index];
+	}
+
 	void Container::LoadBin ( int stageNumber )
 	{
 		constexpr bool fromBinary = true;

@@ -82,8 +82,8 @@ namespace Bullet
 		void Append( const FireDesc &fireParameter );
 	public:
 		size_t GetBulletCount() const;
-		bool IsOutOfRange( size_t index ) const;
-		const std::shared_ptr<BulletBase> GetBulletPtrOrNull( size_t index ) const;
+		bool   IsOutOfRange( size_t index ) const;
+		const  std::shared_ptr<BulletBase> GetBulletPtrOrNull( size_t index ) const;
 	};
 
 	class BulletBase
@@ -133,7 +133,13 @@ namespace Bullet
 		virtual Kind				GetKind()			const { return kind;	}
 		virtual Element				GetElement()		const { return element;	}
 		virtual Donya::Vector3		GetPosition()		const { return pos;		}
+		/// <summary>
+		/// Returns a nil if I didn't have AABB.
+		/// </summary>
 		virtual Donya::AABB			GetHitBoxAABB()		const { return Donya::AABB::Nil();		}
+		/// <summary>
+		/// Returns a nil if I didn't have Sphere.
+		/// </summary>
 		virtual Donya::Sphere		GetHitBoxSphere()	const { return Donya::Sphere::Nil();	}
 		virtual Donya::Vector4x4	GetWorldMatrix()	const;
 	public:
