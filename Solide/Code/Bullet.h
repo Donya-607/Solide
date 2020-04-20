@@ -39,8 +39,9 @@ namespace Bullet
 	public:
 		struct FireDesc
 		{
-			Kind			kind	= Kind::Oil;
-			float			speed	= 0.0f;
+			Kind			kind		= Kind::Oil;
+			Element			addElement	= Element::Type::Oil;
+			float			speed		= 0.0f;
 			Donya::Vector3	direction;
 			Donya::Vector3	generatePos;
 		private:
@@ -57,6 +58,10 @@ namespace Bullet
 				);
 
 				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( addElement ) );
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -218,4 +223,4 @@ namespace Bullet
 		};
 	}
 }
-CEREAL_CLASS_VERSION( Bullet::BulletAdmin::FireDesc, 0 )
+CEREAL_CLASS_VERSION( Bullet::BulletAdmin::FireDesc, 1 )

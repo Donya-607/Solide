@@ -467,6 +467,8 @@ namespace Bullet
 		kind = scast<Kind>( intKind );
 		ImGui::Text( u8"Ç¢Ç‹ÅF%s", GetKindName( kind ).c_str() );
 
+		addElement.ShowImGuiNode( /* useTreeNode = */ true, u8"í«â¡ëÆê´" );
+
 		ImGui::DragFloat( u8"ë¨ìx", &speed, 0.01f );
 		speed = std::max( 0.0f, speed );
 
@@ -569,6 +571,7 @@ namespace Bullet
 	void BulletBase::Init( const BulletAdmin::FireDesc &param )
 	{
 		AttachSelfKind();
+		element.Add(  param.addElement.Get() );
 		pos			= param.generatePos;
 		velocity	= param.direction * param.speed;
 		orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), param.direction );

@@ -927,7 +927,12 @@ void Player::Update( float elapsedTime, Input input )
 	UseImGui();
 #endif // USE_IMGUI
 
+	if ( IsDead() ) { return; }
+	// else
+
 	inputManager.Update( *this, input );
+
+	BurnUpdate( elapsedTime );
 
 	// This method depends on my status(IsOiled()), so I should call this before ShouldTrans() process.
 	if ( inputManager.ShouldShot() )
@@ -958,6 +963,11 @@ void Player::Update( float elapsedTime, Input input )
 	motionManager.Update( *this, elapsedTime );
 
 	UpdateHopping( elapsedTime );
+
+	if ( WillDie() )
+	{
+		KillMe();
+	}
 }
 
 void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMat )
@@ -1148,6 +1158,12 @@ void Player::Shot( float elapsedTime )
 	useParam.speed			*= elapsedTime;
 	useParam.direction		=  orientation.RotateVector( useParam.direction );
 	useParam.generatePos	+= GetPosition();
+
+	if ( element.Has( Element::Type::Flame ) )
+	{
+		element.Subtract( Element::Type::Flame );
+		useParam.addElement.Add( Element::Type::Flame );
+	}
 
 	Bullet::BulletAdmin::Get().Append( useParam );
 }
