@@ -188,7 +188,7 @@ public:
 	void MakeDamage( const Element &effect ) const;
 	void KillMe();
 public:
-	bool IsCollidableElement( const Element &element ) const;
+	std::vector<Element::Type> GetUncollidableTypes() const;
 	bool IsDead() const
 	{
 		return pMover->IsDead();

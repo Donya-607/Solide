@@ -748,8 +748,21 @@ bool SceneGame::NowWaiting() const
 	return nowWaiting;
 }
 
-std::shared_ptr<Bullet::BulletBase> SceneGame::FindCollidedBulletOrNullptr( const Donya::AABB &other ) const
+std::shared_ptr<Bullet::BulletBase> SceneGame::FindCollidedBulletOrNullptr( const Donya::AABB &other, const std::vector<Element::Type> &exceptTypes ) const
 {
+	auto IsExceptType = [&exceptTypes]( const Element &element )
+	{
+		for ( const auto &it : exceptTypes )
+		{
+			if ( element.Get() == it )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	};
+
 	const auto		&bullet		= Bullet::BulletAdmin::Get();
 	const size_t	bulletCount	= bullet.GetBulletCount();
 
@@ -761,6 +774,7 @@ std::shared_ptr<Bullet::BulletBase> SceneGame::FindCollidedBulletOrNullptr( cons
 	{
 		pBullet = bullet.GetBulletPtrOrNull( i );
 		if ( !pBullet ) { continue; }
+		if ( IsExceptType( pBullet->GetElement() ) ) { continue; }
 		// else
 
 		// The bullets hit-box is either an AABB or a Sphere.
@@ -800,6 +814,7 @@ void SceneGame::ProcessPlayerCollision()
 	// else
 
 	const Donya::AABB playerBody = pPlayer->GetHitBox();
+	const auto exceptTypes = pPlayer->GetUncollidableTypes();
 
 	// VS. enemies body.
 	if ( pEnemies )
@@ -822,7 +837,7 @@ void SceneGame::ProcessPlayerCollision()
 
 	// VS. bullets.
 	{
-		const auto pCollidedBullet = FindCollidedBulletOrNullptr( playerBody );
+		const auto pCollidedBullet = FindCollidedBulletOrNullptr( playerBody, exceptTypes );
 		if ( pCollidedBullet )
 		{
 			pPlayer->MakeDamage( pCollidedBullet->GetElement() );

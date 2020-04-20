@@ -1073,7 +1073,11 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 
 void Player::MakeDamage( const Element &effect ) const
 {
-	element.Add( effect.Get() );
+	// Except an oil element.
+	Element notOilyEffect = effect;
+	notOilyEffect.Subtract( Element::Type::Oil );
+
+	element.Add( notOilyEffect.Get() );
 }
 void Player::KillMe()
 {
@@ -1082,10 +1086,10 @@ void Player::KillMe()
 	canUseOil = false;
 }
 
-bool Player::IsCollidableElement( const Element &element ) const
+std::vector<Element::Type> Player::GetUncollidableTypes() const
 {
-	// Except an oil type.
-	return ( element.Get() == Element::Type::Oil ) ? false : true;
+	// Only once type.
+	return std::vector<Element::Type>{ Element::Type::Oil };
 }
 
 void Player::LookToInput( float elapsedTime, Input input )
