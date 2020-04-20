@@ -320,7 +320,7 @@ namespace Enemy
 		#endif // USE_IMGUI
 		};
 	private: // Usually do not change these member.
-		Bullet::BulletAdmin::FireDesc shotDesc;
+		Bullet::BulletAdmin::FireDesc shotDesc{};
 		int		waitFrame		= 1;
 		int		aimingFrame		= 1;
 		int		intervalFrame	= 1;

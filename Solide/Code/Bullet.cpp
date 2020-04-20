@@ -467,7 +467,8 @@ namespace Bullet
 		kind = scast<Kind>( intKind );
 		ImGui::Text( u8"‚¢‚ÜF%s", GetKindName( kind ).c_str() );
 
-		addElement.ShowImGuiNode( /* useTreeNode = */ true, u8"’Ç‰Á‘®«" );
+		addElement.ShowImGuiNode( /* useTreeNode = */ false, u8"’Ç‰Á‘®«" );
+		ImGui::Text( "" );
 
 		ImGui::DragFloat( u8"‘¬“x", &speed, 0.01f );
 		speed = std::max( 0.0f, speed );

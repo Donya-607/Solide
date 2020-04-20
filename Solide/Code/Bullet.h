@@ -42,7 +42,7 @@ namespace Bullet
 			Kind			kind		= Kind::Oil;
 			Element			addElement	= Element::Type::Oil;
 			float			speed		= 0.0f;
-			Donya::Vector3	direction;
+			Donya::Vector3	direction{ 0.0f, 0.0f, 1.0f };
 			Donya::Vector3	generatePos;
 		private:
 			friend class cereal::access;
@@ -52,16 +52,13 @@ namespace Bullet
 				archive
 				(
 					CEREAL_NVP( kind		),
+					CEREAL_NVP( addElement	),
 					CEREAL_NVP( speed		),
 					CEREAL_NVP( direction	),
 					CEREAL_NVP( generatePos	)
 				);
 
 				if ( 1 <= version )
-				{
-					archive( CEREAL_NVP( addElement ) );
-				}
-				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -223,4 +220,4 @@ namespace Bullet
 		};
 	}
 }
-CEREAL_CLASS_VERSION( Bullet::BulletAdmin::FireDesc, 1 )
+CEREAL_CLASS_VERSION( Bullet::BulletAdmin::FireDesc, 0 )

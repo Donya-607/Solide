@@ -252,7 +252,12 @@ namespace Enemy
 			}
 			if ( ImGui::Button( loadStr.c_str() ) )
 			{
+				for ( auto &pIt : enemyPtrs ) { if ( pIt ) { pIt->Uninit(); } }
+				enemyPtrs.clear();
+
 				( isBinary ) ? LoadBin( stageNo ) : LoadJson( stageNo );
+
+				for ( auto &pIt : enemyPtrs ) { if ( pIt ) { pIt->Init( pIt->GetInitializer() ); } }
 			}
 
 			ImGui::TreePop();

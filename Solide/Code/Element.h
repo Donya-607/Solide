@@ -54,5 +54,5 @@ public:
 	void ShowImGuiNode( bool useTreeNode, const std::string &nodeCaption );
 #endif // USE_IMGUI
 };
-
+CEREAL_CLASS_VERSION( Element, 0 )
 DEFINE_ENUM_FLAG_OPERATORS( Element::Type );
