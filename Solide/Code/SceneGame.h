@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Donya/Camera.h"
+#include "Donya/Collision.h"
 #include "Donya/ModelCommon.h"
 #include "Donya/ModelRenderer.h"
 #include "Donya/GamepadXInput.h"
@@ -84,8 +85,9 @@ private:
 	void	WaitUpdate( float elapsedTime );
 	bool	NowWaiting() const;
 
+	std::shared_ptr<Bullet::BulletBase> FindCollidedBulletOrNullptr( const Donya::AABB &other ) const;
 	void	ProcessPlayerCollision();
-	void	ProcessBulletCollision();
+	void	ProcessEnemyCollision();
 
 	bool	NowGoalMoment() const;
 

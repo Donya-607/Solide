@@ -164,6 +164,7 @@ namespace
 			float		hopStrength			= 0.1f;
 			float		hopRotation			= 0.1f;	// Degree.
 			float		hopRotationDegree	= 0.1f;	// Degree.
+			int			burnUpFrame		= 1;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -189,6 +190,10 @@ namespace
 					);
 				}
 				if ( 2 <= version )
+				{
+					archive( CEREAL_NVP( burnUpFrame ) );
+				}
+				if ( 3 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -268,7 +273,7 @@ namespace
 }
 CEREAL_CLASS_VERSION( Member,				8 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	1 )
-CEREAL_CLASS_VERSION( Member::OilMember,	1 )
+CEREAL_CLASS_VERSION( Member::OilMember,	2 )
 
 class ParamPlayer : public ParameterBase<ParamPlayer>
 {
@@ -355,6 +360,9 @@ public:
 				ImGui::DragFloat( u8"”­“®E’µ‚Ë‚é‹­‚³",		&m.oiled.hopStrength, 0.1f, 0.0f	);
 				ImGui::DragFloat( u8"”­“®E‰ñ“]—Ê",			&m.oiled.hopRotation, 0.1f, 0.0f	);
 				ImGui::DragFloat( u8"”­“®E‚P‚e‚Ì‰ñ“]Šp“x",	&m.oiled.hopRotationDegree, 0.1f, 0.0f	);
+				ImGui::Text( "" );
+				ImGui::DragInt  ( u8"”R‚¦s‚«‚éŠÔiƒtƒŒ[ƒ€j", &m.oiled.burnUpFrame );
+				m.oiled.burnUpFrame = std::max( 0, m.oiled.burnUpFrame );
 
 				ImGui::TreePop();
 			}
@@ -896,6 +904,7 @@ void Player::Init( const PlayerInitializer &param )
 	ParamPlayer::Get().Init();
 	const auto data = FetchMember();
 
+	burnTimer	= 0;
 	pos			= param.GetInitialPos();
 	element		= Element::Type::Nil;
 	velocity	= 0.0f;
@@ -1052,11 +1061,21 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 #endif // DEBUG_MODE
 }
 
+void Player::MakeDamage( const Element &effect ) const
+{
+	element.Add( effect.Get() );
+}
 void Player::KillMe()
 {
 	ResetMover<DeadMover>();
 	onGround  = false;
 	canUseOil = false;
+}
+
+bool Player::IsCollidableElement( const Element &element ) const
+{
+	// Except an oil type.
+	return ( element.Get() == Element::Type::Oil ) ? false : true;
 }
 
 void Player::LookToInput( float elapsedTime, Input input )
@@ -1133,6 +1152,22 @@ void Player::Shot( float elapsedTime )
 	Bullet::BulletAdmin::Get().Append( useParam );
 }
 
+bool Player::WillDie() const
+{
+	const auto data = FetchMember();
+
+	if ( element.Has( Element::Type::Flame ) )
+	{
+		if ( !element.Has( Element::Type::Oil ) ) { return true; }
+		// else
+
+		if ( data.oiled.burnUpFrame <= burnTimer ) { return true; }
+		// else
+	}
+
+	return false;
+}
+
 void Player::StartHopping()
 {
 	const auto data = FetchMember();
@@ -1148,6 +1183,14 @@ void Player::UpdateHopping( float elapsedTime )
 	const auto data = FetchMember();
 	hopPitching += ToRadian( data.oiled.hopRotationDegree ) * elapsedTime;
 	hopPitching = std::min( 0.0f, hopPitching );
+}
+
+void Player::BurnUpdate( float elapsedTime )
+{
+	if ( !element.Has( Element::Type::Flame ) ) { return; }
+	// else
+
+	burnTimer++;
 }
 
 #if USE_IMGUI

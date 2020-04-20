@@ -165,15 +165,16 @@ private:
 		bool IsDead() const override { return true; }
 	};
 private:
-	float						hopPitching = 0.0f;	// Radian. Use when hopping that will happen when used an oil.
-	Element						element;
+	int							burnTimer	= 0;
+	float						hopPitching	= 0.0f;	// Radian. Use when hopping that will happen when used an oil.
+	mutable Element				element;			// Will change in const method.
 	Donya::Vector3				velocity;
 	Donya::Quaternion			orientation;
 	std::unique_ptr<MoverBase>	pMover;
 	MotionManager				motionManager;
 	InputManager				inputManager;
-	bool						onGround  = false;
-	bool						canUseOil = true;	// Will recovery when landing.
+	bool						onGround	= false;
+	bool						canUseOil	= true;	// Will recovery when landing.
 public:
 	void Init( const PlayerInitializer &parameter );
 	void Uninit();
@@ -184,8 +185,10 @@ public:
 	void Draw( RenderingHelper *pRenderer );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
 public:
+	void MakeDamage( const Element &effect ) const;
 	void KillMe();
 public:
+	bool IsCollidableElement( const Element &element ) const;
 	bool IsDead() const
 	{
 		return pMover->IsDead();
@@ -222,9 +225,13 @@ private:
 	void AssignLanding();
 
 	void Shot( float elapsedTime );
+
+	bool WillDie() const;
 private:
 	void StartHopping();
 	void UpdateHopping( float elapsedTime );
+
+	void BurnUpdate( float elapsedTime );
 private:
 #if USE_IMGUI
 	void UseImGui();
