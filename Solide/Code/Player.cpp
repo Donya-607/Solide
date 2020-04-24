@@ -224,6 +224,8 @@ namespace
 		std::vector<int> useMotionIndices;	// This size was guaranteed to: size() == PlayerModel::KIND_COUNT
 
 		int transTriggerFrame = 1;			// The trigger of transform to oil. Will be compared to press length.
+
+		Donya::Vector4 drawDeadColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -272,12 +274,16 @@ namespace
 			}
 			if ( 9 <= version )
 			{
+				archive( CEREAL_NVP( drawDeadColor ) );
+			}
+			if ( 10 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				8 )
+CEREAL_CLASS_VERSION( Member,				9 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	2 )
 CEREAL_CLASS_VERSION( Member::OilMember,	2 )
 
@@ -378,11 +384,13 @@ public:
 			{
 				ImGui::DragFloat( u8"描画スケール", &m.drawScale, 0.01f, 0.0f );
 				ImGui::DragFloat3( u8"描画オフセット", &m.drawOffset.x, 0.01f );
+				ImGui::ColorEdit4( u8"死亡時の描画色", &m.drawDeadColor.x );
 				ImGui::DragFloat( u8"落下死となるＹ座標しきい値", &m.falloutBorderPosY, 0.1f );
 				ImGui::SliderFloat( u8"乗ることができる坂のしきい値", &m.canRideSlopeBorder, 0.0f, 1.0f );
 				ImGui::Text( "" );
 				ImGui::DragInt( u8"オイル長押しの発動フレーム", &m.transTriggerFrame );
 				m.transTriggerFrame = std::max( 1, m.transTriggerFrame );
+
 
 				if ( ImGui::TreeNode( u8"レイピック時のレイのオフセット" ) )
 				{
@@ -1042,10 +1050,10 @@ void Player::Draw( RenderingHelper *pRenderer )
 			)
 		);
 	const Donya::Vector4 bodyColor = ( pMover->IsDead() )
-		? Donya::Vector4{ 1.0f, 0.5f, 0.0f, 1.0f }
+		? data.drawDeadColor
 		: ( IsOiled() )
 		? data.oiled.basic.drawColor
-		: data.normal.drawColor; // Donya::Vector4{ 0.1f, 1.0f, 0.3f, 1.0f };
+		: data.normal.drawColor;
 	const Donya::Vector3 drawOffset = actualOrientation.RotateVector( data.drawOffset );
 
 	Donya::Vector4x4 W{};
