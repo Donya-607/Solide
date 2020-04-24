@@ -22,10 +22,20 @@ public:
 		float lowerAlpha		= 0.1f;
 		float heightThreshold	= 0.0f;	// I don't wanna transparentize a pixel that under the threshold.
 	};
+	struct AdjustColorConstant
+	{
+		Donya::Vector4 addSpecular{ 0.0f, 0.0f, 0.0f, 0.0f };
+	public:
+		static AdjustColorConstant MakeDefault()
+		{
+			return {};
+		}
+	};
 private:
 	struct CBuffer
 	{
-		Donya::CBuffer<TransConstant> trans;
+		Donya::CBuffer<TransConstant>		trans;
+		Donya::CBuffer<AdjustColorConstant>	adjustColor;
 		Donya::CBuffer<Donya::Model::Constants::PerScene::Common> scene;
 		Donya::CBuffer<Donya::Model::Constants::PerModel::Common> model;
 	public:
@@ -84,16 +94,19 @@ public:
 	bool Init();
 public:
 	void UpdateConstant( const TransConstant &constant );
+	void UpdateConstant( const AdjustColorConstant &constant );
 	void UpdateConstant( const Donya::Model::Constants::PerScene::Common &constant );
 	void UpdateConstant( const Donya::Model::Constants::PerModel::Common &constant );
 	void UpdateConstant( const Donya::Model::Cube::Constant		&constant );	// For primitive.
 	void UpdateConstant( const Donya::Model::Sphere::Constant	&constant );	// For primitive.
 	void ActivateConstantTrans();
+	void ActivateConstantAdjustColor();
 	void ActivateConstantScene();
 	void ActivateConstantModel();
 	void ActivateConstantCube();	// For primitive.
 	void ActivateConstantSphere();	// For primitive.
 	void DeactivateConstantTrans();
+	void DeactivateConstantAdjustColor();
 	void DeactivateConstantScene();
 	void DeactivateConstantModel();
 	void DeactivateConstantCube();	// For primitive.
@@ -153,3 +166,36 @@ public:
 	/// </summary>
 	void ProcessDrawingSphere( const Donya::Model::Sphere::Constant &constant );
 };
+
+#include "Donya/Serializer.h"
+template<class Archive>
+void serialize( Archive &archive, RenderingHelper::TransConstant &constant, std::uint32_t version )
+{
+	archive
+	(
+		cereal::make_nvp( "zNear",				constant.zNear				),
+		cereal::make_nvp( "zFar",				constant.zFar				),
+		cereal::make_nvp( "lowerAlpha",			constant.lowerAlpha			),
+		cereal::make_nvp( "heightThreshold",	constant.heightThreshold	)
+	);
+
+	if ( 1 <= version )
+	{
+		// archive( CEREAL_NVP( x ) );
+	}
+}
+template<class Archive>
+void serialize( Archive &archive, RenderingHelper::AdjustColorConstant &constant, std::uint32_t version )
+{
+	archive
+	(
+		cereal::make_nvp( "addSpecular", constant.addSpecular )
+	);
+
+	if ( 1 <= version )
+	{
+		// archive( CEREAL_NVP( x ) );
+	}
+}
+CEREAL_CLASS_VERSION( RenderingHelper::TransConstant, 0 )
+CEREAL_CLASS_VERSION( RenderingHelper::AdjustColorConstant, 0 )

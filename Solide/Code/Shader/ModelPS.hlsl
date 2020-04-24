@@ -10,10 +10,15 @@ cbuffer CBPerSubset : register( b3 )
 
 cbuffer CBForTransparency : register( b4 )
 {
-	float cbTransNear;
-	float cbTransFar;
-	float cbTransLowerAlpha;
-	float cbTransHeightThreshold;
+	float	cbTransNear;
+	float	cbTransFar;
+	float	cbTransLowerAlpha;
+	float	cbTransHeightThreshold;
+};
+	
+cbuffer CBForColorAdjustment : register( b5 )
+{
+	float4	cbAddSpecular;
 };
 
 float CalcTransparency( float3 pixelPos )
@@ -33,11 +38,14 @@ float CalcTransparency( float3 pixelPos )
 float3 CalcLightInfluence( float4 lightColor, float3 nwsPixelToLightVec, float3 nwsPixelNormal, float3 nwsEyeVector )
 {
 	float3	ambientColor	= cbAmbient.rgb;
+	
 	float	diffuseFactor	= HalfLambert( nwsPixelNormal, nwsPixelToLightVec );
 	//		diffuseFactor	= pow( diffuseFactor, 2.0f );
 	float3	diffuseColor	= cbDiffuse.rgb * diffuseFactor;
+	
 	float	specularFactor	= Phong( nwsPixelNormal, nwsPixelToLightVec, nwsEyeVector );
-	float3	specularColor	= cbSpecular.rgb * specularFactor * cbSpecular.w;
+	float4	inputSpecular	= cbSpecular + cbAddSpecular;
+	float3	specularColor	= inputSpecular.rgb * specularFactor * inputSpecular.w;
 
 	float3	Ka				= ambientColor;
 	float3	Kd				= diffuseColor;

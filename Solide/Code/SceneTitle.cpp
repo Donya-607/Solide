@@ -132,15 +132,7 @@ public:
 				ImGui::TreePop();
 			}
 
-			if ( ImGui::TreeNode( u8"近くのオブジェクトに適用する透明度" ) )
-			{
-				ImGui::DragFloat( u8"範囲・手前側",	&m.transparency.zNear,		0.01f, 0.0f );
-				ImGui::DragFloat( u8"範囲・奥側",	&m.transparency.zFar,		0.01f, 0.0f );
-				ImGui::SliderFloat( u8"最低透明度",	&m.transparency.lowerAlpha, 0.0f,  1.0f );
-				ImGui::DragFloat( u8"透明を適用する高さ（自機からの相対）", &m.transparency.heightThreshold, 0.01f );
-
-				ImGui::TreePop();
-			}
+			ParameterHelper::ShowConstantNode( u8"近くのオブジェクトに適用する透明度", &m.transparency );
 
 			ShowIONode( m );
 

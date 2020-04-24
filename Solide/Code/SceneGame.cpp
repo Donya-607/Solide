@@ -162,15 +162,7 @@ public:
 				ImGui::TreePop();
 			}
 
-			if ( ImGui::TreeNode( u8"近くのオブジェクトに適用する透明度" ) )
-			{
-				ImGui::DragFloat( u8"範囲・手前側",	&m.transparency.zNear,		0.01f, 0.0f );
-				ImGui::DragFloat( u8"範囲・奥側",	&m.transparency.zFar,		0.01f, 0.0f );
-				ImGui::SliderFloat( u8"最低透明度",	&m.transparency.lowerAlpha,	0.0f,  1.0f );
-				ImGui::DragFloat( u8"透明を適用する高さ（自機からの相対）",		&m.transparency.heightThreshold, 0.01f );
-
-				ImGui::TreePop();
-			}
+			ParameterHelper::ShowConstantNode( u8"近くのオブジェクトに適用する透明度", &m.transparency );
 
 			ShowIONode( m );
 
@@ -317,6 +309,7 @@ void SceneGame::Draw( float elapsedTime )
 	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
 	const auto data = FetchMember();
 	
+	// Update scene constant.
 	{
 		Donya::Model::Constants::PerScene::Common constant{};
 		constant.directionalLight	= data.directionalLight;
@@ -325,6 +318,7 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->UpdateConstant( constant );
 	}
 
+	// Update transparency constant.
 	{
 		const auto &trans = data.transparency;
 		RenderingHelper::TransConstant constant{};
@@ -335,6 +329,13 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->UpdateConstant( constant );
 	}
 
+	auto EnableDefaultColorAdjustment = [&]()
+	{
+		pRenderer->UpdateConstant( RenderingHelper::AdjustColorConstant::MakeDefault() );
+		pRenderer->ActivateConstantAdjustColor();
+	};
+	EnableDefaultColorAdjustment();
+
 	pRenderer->ActivateDepthStencilModel();
 	pRenderer->ActivateRasterizerModel();
 	pRenderer->ActivateSamplerModel();
@@ -344,15 +345,23 @@ void SceneGame::Draw( float elapsedTime )
 		// The drawing priority is determined by the priority of the information.
 
 		pRenderer->ActivateShaderNormalSkinning();
-		PlayerDraw();
-		pEnemies->Draw( pRenderer.get() );
+		{
+			PlayerDraw();
+			EnableDefaultColorAdjustment();
+
+			pEnemies->Draw( pRenderer.get() );
+			EnableDefaultColorAdjustment();
+		}
 		pRenderer->DeactivateShaderNormalSkinning();
+		
 
 		pRenderer->ActivateShaderNormalStatic();
-		Bullet::BulletAdmin::Get().Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
-		pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
-		pGoal->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
-		pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+		{
+			Bullet::BulletAdmin::Get().Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+			pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+			pGoal->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+			pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+		}
 		pRenderer->DeactivateShaderNormalStatic();
 	}
 	pRenderer->DeactivateConstantTrans();

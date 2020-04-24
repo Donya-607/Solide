@@ -51,6 +51,10 @@ namespace
 	{
 		return Donya::Model::RegisterDesc::Make( 4, /* setVS = */ false, /* setPS = */ true );
 	}
+	static constexpr Donya::Model::RegisterDesc AdjustColorSetting()
+	{
+		return Donya::Model::RegisterDesc::Make( 5, /* setVS = */ false, /* setPS = */ true );
+	}
 
 	static constexpr Donya::Model::RegisterDesc SceneSetting()
 	{
@@ -83,9 +87,10 @@ namespace
 bool RenderingHelper::CBuffer::Create()
 {
 	bool succeeded = true;
-	if ( !trans.Create() ) { succeeded = false; }
-	if ( !scene.Create() ) { succeeded = false; }
-	if ( !model.Create() ) { succeeded = false; }
+	if ( !trans.Create()		) { succeeded = false; }
+	if ( !adjustColor.Create()	) { succeeded = false; }
+	if ( !scene.Create()		) { succeeded = false; }
+	if ( !model.Create()		) { succeeded = false; }
 	return succeeded;
 }
 
@@ -214,6 +219,10 @@ void RenderingHelper::UpdateConstant( const TransConstant &constant )
 {
 	pCBuffer->trans.data = constant;
 }
+void RenderingHelper::UpdateConstant( const AdjustColorConstant &constant )
+{
+	pCBuffer->adjustColor.data = constant;
+}
 void RenderingHelper::UpdateConstant( const Donya::Model::Constants::PerScene::Common &constant )
 {
 	pCBuffer->scene.data = constant;
@@ -234,6 +243,11 @@ void RenderingHelper::ActivateConstantTrans()
 {
 	constexpr auto desc = TransSetting();
 	pCBuffer->trans.Activate( desc.setSlot, desc.setVS, desc.setPS );
+}
+void RenderingHelper::ActivateConstantAdjustColor()
+{
+	constexpr auto desc = AdjustColorSetting();
+	pCBuffer->adjustColor.Activate( desc.setSlot, desc.setVS, desc.setPS );
 }
 void RenderingHelper::ActivateConstantScene()
 {
@@ -256,6 +270,10 @@ void RenderingHelper::ActivateConstantSphere()
 void RenderingHelper::DeactivateConstantTrans()
 {
 	pCBuffer->trans.Deactivate();
+}
+void RenderingHelper::DeactivateConstantAdjustColor()
+{
+	pCBuffer->adjustColor.Deactivate();
 }
 void RenderingHelper::DeactivateConstantScene()
 {

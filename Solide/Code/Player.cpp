@@ -130,6 +130,7 @@ namespace
 			Bullet::BulletAdmin::FireDesc shotDesc;
 
 			Donya::Vector4 drawColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+			RenderingHelper::AdjustColorConstant drawColorAdjustment;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -154,6 +155,10 @@ namespace
 					archive( CEREAL_NVP( drawColor ) );
 				}
 				if ( 3 <= version )
+				{
+					archive( CEREAL_NVP( drawColorAdjustment ) );
+				}
+				if ( 4 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -284,7 +289,7 @@ namespace
 	};
 }
 CEREAL_CLASS_VERSION( Member,				9 )
-CEREAL_CLASS_VERSION( Member::BasicMember,	2 )
+CEREAL_CLASS_VERSION( Member::BasicMember,	3 )
 CEREAL_CLASS_VERSION( Member::OilMember,	2 )
 
 class ParamPlayer : public ParameterBase<ParamPlayer>
@@ -353,6 +358,7 @@ public:
 				ParameterHelper::ShowAABBNode( prefix + u8"F“–‚½‚è”»’èE‚u‚r’nŒ`", &p->hitBoxStage );
 				p->shotDesc.ShowImGuiNode( { prefix + u8"FƒVƒ‡ƒbƒgÚ×" } );
 				ImGui::ColorEdit4( u8"•`‰æF", &p->drawColor.x );
+				ParameterHelper::ShowConstantNode( u8"‰ÁŽZ•`‰æF", &p->drawColorAdjustment );
 
 				ImGui::TreePop();
 			};
@@ -361,7 +367,7 @@ public:
 
 			if ( ImGui::TreeNode( u8"ƒIƒCƒ‹Žž" ) )
 			{
-				ShowBasicNode( u8"•¨—‹““®", &m.oiled.basic );
+				ShowBasicNode( u8"Šî’ê•”•ª", &m.oiled.basic );
 
 				ImGui::DragFloat( u8"‹È‚°‚é‚µ‚«‚¢’lŠp“x",		&m.oiled.turnThreshold,	0.1f, 0.0f, 180.0f	);
 				ImGui::DragFloat( u8"‚P‚e‚É‹È‚ª‚éŠp“x",		&m.oiled.turnDegree,	0.1f, 0.0f, 180.0f	);
@@ -1068,15 +1074,25 @@ void Player::Draw( RenderingHelper *pRenderer )
 	const auto &drawModel = PlayerModel::GetModel();
 	const auto &drawPose  = motionManager.GetPose();
 
-	Donya::Model::Constants::PerModel::Common constant{};
-	constant.drawColor		= bodyColor;
-	constant.worldMatrix	= W;
-	pRenderer->UpdateConstant( constant );
+	Donya::Model::Constants::PerModel::Common modelConstant{};
+	modelConstant.drawColor		= bodyColor;
+	modelConstant.worldMatrix	= W;
+	RenderingHelper::AdjustColorConstant colorConstant = ( IsOiled() )
+		? data.oiled.basic.drawColorAdjustment
+		: data.normal.drawColorAdjustment;
+	pRenderer->UpdateConstant( modelConstant );
+	pRenderer->UpdateConstant( colorConstant );
 	pRenderer->ActivateConstantModel();
+	pRenderer->ActivateConstantAdjustColor();
 
 	pRenderer->Render( drawModel, drawPose );
 
+	pRenderer->DeactivateConstantAdjustColor();
 	pRenderer->DeactivateConstantModel();
+
+	colorConstant = RenderingHelper::AdjustColorConstant::MakeDefault();
+	pRenderer->UpdateConstant( colorConstant );
+	pRenderer->ActivateConstantAdjustColor();
 }
 void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP )
 {

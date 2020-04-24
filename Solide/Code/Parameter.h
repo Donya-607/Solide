@@ -75,9 +75,13 @@ public:
 
 #if USE_IMGUI
 #include "Donya/Collision.h"
+#include "Renderer.h"
 namespace ParameterHelper
 {
 	void ShowAABBNode( const std::string &nodeCaption, Donya::AABB *pAABB );
 	void ShowSphereNode( const std::string &nodeCaption, Donya::Sphere *pSphere );
+
+	void ShowConstantNode( const std::string &nodeCaption, RenderingHelper::TransConstant *pConstant );
+	void ShowConstantNode( const std::string &nodeCaption, RenderingHelper::AdjustColorConstant *pConstant );
 }
 #endif // USE_IMGUI

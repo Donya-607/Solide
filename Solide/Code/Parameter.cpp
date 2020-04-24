@@ -25,5 +25,27 @@ namespace ParameterHelper
 
 		ImGui::TreePop();
 	}
+
+	void ShowConstantNode( const std::string &nodeCaption, RenderingHelper::TransConstant *pConstant )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		ImGui::DragFloat( u8"範囲・手前側",	&pConstant->zNear,		0.01f, 0.0f );
+		ImGui::DragFloat( u8"範囲・奥側",	&pConstant->zFar,		0.01f, 0.0f );
+		ImGui::SliderFloat( u8"最低透明度",	&pConstant->lowerAlpha,	0.0f,  1.0f );
+		ImGui::DragFloat( u8"透明を適用する高さ（自機からの相対）",		&pConstant->heightThreshold, 0.01f );
+
+		ImGui::TreePop();
+	}
+	void ShowConstantNode( const std::string &nodeCaption, RenderingHelper::AdjustColorConstant *pConstant )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		ImGui::ColorEdit4( u8"加算するスペキュラ値", &pConstant->addSpecular.x );
+
+		ImGui::TreePop();
+	}
 }
 #endif // USE_IMGUI
