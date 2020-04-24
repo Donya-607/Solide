@@ -120,6 +120,9 @@ namespace
 		Donya::Quaternion	drawRotation;
 		Donya::Vector3		drawOffset;
 		std::vector<float>	accelerations;
+
+		Donya::Vector4 oilColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+		RenderingHelper::AdjustColorConstant oilAdjustment;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -134,6 +137,14 @@ namespace
 			);
 
 			if ( 1 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( oilColor		),
+					CEREAL_NVP( oilAdjustment	)
+				);
+			}
+			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -204,7 +215,7 @@ namespace
 		}
 	};
 }
-CEREAL_CLASS_VERSION( DrawingParam,				0 )
+CEREAL_CLASS_VERSION( DrawingParam,				1 )
 CEREAL_CLASS_VERSION( CollisionParam,			0 )
 CEREAL_CLASS_VERSION( CollisionParam::PerKind,	0 )
 CEREAL_CLASS_VERSION( Member,					1 )
@@ -294,6 +305,14 @@ public:
 						ImGui::DragFloat( caption.c_str(), &m.drawer.accelerations[i], 0.001f );
 					}
 
+					ImGui::TreePop();
+				}
+
+				if ( ImGui::TreeNode( u8"状態毎の描画色" ) )
+				{
+					ImGui::ColorEdit4( u8"オイル時・描画色", &m.drawer.oilColor.x );
+					ParameterHelper::ShowConstantNode( u8"オイル時・加算マテリアル色", &m.drawer.oilAdjustment );
+					
 					ImGui::TreePop();
 				}
 
@@ -447,14 +466,22 @@ namespace Enemy
 		if ( !pModelParam ) { return; }
 		// else
 
-		Donya::Model::Constants::PerModel::Common constant{};
-		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-		constant.worldMatrix	= CalcWorldMatrix( /* useForHitBox = */ false, /* useForHurtBox = */ false, /* useForDrawing = */ true );
-		pRenderer->UpdateConstant( constant );
+		const auto drawData = FetchMember().drawer;
+		Donya::Model::Constants::PerModel::Common modelConstant{};
+		modelConstant.drawColor		= CalcDrawColor();
+		modelConstant.worldMatrix	= CalcWorldMatrix( /* useForHitBox = */ false, /* useForHurtBox = */ false, /* useForDrawing = */ true );
+		RenderingHelper::AdjustColorConstant colorConstant =
+			( element.Has( Element::Type::Oil ) )
+			? drawData.oilAdjustment
+			: RenderingHelper::AdjustColorConstant::MakeDefault();
+		pRenderer->UpdateConstant( modelConstant );
+		pRenderer->UpdateConstant( colorConstant );
 		pRenderer->ActivateConstantModel();
+		pRenderer->ActivateConstantAdjustColor();
 
 		pRenderer->Render( pModelParam->model, pose );
 
+		pRenderer->DeactivateConstantAdjustColor();
 		pRenderer->DeactivateConstantModel();
 	}
 	void Base::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP )
@@ -537,6 +564,15 @@ namespace Enemy
 		{
 			pose.AssignSkeletal( animator.CalcCurrentPose( pModelParam->motionHolder.GetMotion( useMotionIndex ) ) );
 		}
+	}
+	Donya::Vector4			Base::CalcDrawColor() const
+	{
+		const auto data = FetchMember();
+		Donya::Vector4 baseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+		if ( element.Has( Element::Type::Oil	) ) { baseColor.Product( data.drawer.oilColor	); }
+		
+		return baseColor;
 	}
 	Donya::Vector4x4		Base::CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const
 	{

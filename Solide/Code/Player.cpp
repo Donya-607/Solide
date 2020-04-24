@@ -1090,10 +1090,6 @@ void Player::Draw( RenderingHelper *pRenderer )
 
 	pRenderer->DeactivateConstantAdjustColor();
 	pRenderer->DeactivateConstantModel();
-
-	colorConstant = RenderingHelper::AdjustColorConstant::MakeDefault();
-	pRenderer->UpdateConstant( colorConstant );
-	pRenderer->ActivateConstantAdjustColor();
 }
 void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP )
 {

@@ -175,7 +175,8 @@ namespace Enemy
 		virtual Donya::AABB AcquireHurtBox( bool wantWorldSpace ) const;
 	protected:
 		virtual void UpdateMotion( float elapsedTime, int useMotionIndex );
-		virtual	Donya::Vector4x4 CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
+		virtual Donya::Vector4		CalcDrawColor() const;
+		virtual	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
 	protected:
 		struct AABBResult
 		{
