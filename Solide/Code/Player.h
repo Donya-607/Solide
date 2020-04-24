@@ -227,6 +227,8 @@ private:
 	void Shot( float elapsedTime );
 
 	bool WillDie() const;
+
+	Donya::Vector4 CalcDrawColor() const;
 private:
 	void StartHopping();
 	void UpdateHopping( float elapsedTime );

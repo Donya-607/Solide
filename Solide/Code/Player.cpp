@@ -230,6 +230,7 @@ namespace
 
 		int transTriggerFrame = 1;			// The trigger of transform to oil. Will be compared to press length.
 
+		Donya::Vector4 burningColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 		Donya::Vector4 drawDeadColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 	private:
 		friend class cereal::access;
@@ -283,12 +284,16 @@ namespace
 			}
 			if ( 10 <= version )
 			{
+				archive( CEREAL_NVP( burningColor ) );
+			}
+			if ( 11 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				9 )
+CEREAL_CLASS_VERSION( Member,				10 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	3 )
 CEREAL_CLASS_VERSION( Member::OilMember,	2 )
 
@@ -388,9 +393,10 @@ public:
 
 			if ( ImGui::TreeNode( u8"共通" ) )
 			{
-				ImGui::DragFloat( u8"描画スケール", &m.drawScale, 0.01f, 0.0f );
-				ImGui::DragFloat3( u8"描画オフセット", &m.drawOffset.x, 0.01f );
-				ImGui::ColorEdit4( u8"死亡時の描画色", &m.drawDeadColor.x );
+				ImGui::DragFloat( u8"描画スケール",		&m.drawScale, 0.01f, 0.0f );
+				ImGui::DragFloat3( u8"描画オフセット",	&m.drawOffset.x, 0.01f );
+				ImGui::ColorEdit4( u8"燃えている色",		&m.burningColor.x );
+				ImGui::ColorEdit4( u8"死亡時の描画色",	&m.drawDeadColor.x );
 				ImGui::DragFloat( u8"落下死となるＹ座標しきい値", &m.falloutBorderPosY, 0.1f );
 				ImGui::SliderFloat( u8"乗ることができる坂のしきい値", &m.canRideSlopeBorder, 0.0f, 1.0f );
 				ImGui::Text( "" );
@@ -1055,11 +1061,6 @@ void Player::Draw( RenderingHelper *pRenderer )
 				pMover->GetExtraRotation( *this )
 			)
 		);
-	const Donya::Vector4 bodyColor = ( pMover->IsDead() )
-		? data.drawDeadColor
-		: ( IsOiled() )
-		? data.oiled.basic.drawColor
-		: data.normal.drawColor;
 	const Donya::Vector3 drawOffset = actualOrientation.RotateVector( data.drawOffset );
 
 	Donya::Vector4x4 W{};
@@ -1075,7 +1076,7 @@ void Player::Draw( RenderingHelper *pRenderer )
 	const auto &drawPose  = motionManager.GetPose();
 
 	Donya::Model::Constants::PerModel::Common modelConstant{};
-	modelConstant.drawColor		= bodyColor;
+	modelConstant.drawColor		= CalcDrawColor();
 	modelConstant.worldMatrix	= W;
 	RenderingHelper::AdjustColorConstant colorConstant = ( IsOiled() )
 		? data.oiled.basic.drawColorAdjustment
@@ -1219,6 +1220,18 @@ bool Player::WillDie() const
 	}
 
 	return false;
+}
+
+Donya::Vector4 Player::CalcDrawColor() const
+{
+	const auto data = FetchMember();
+	if ( pMover->IsDead() ) { return data.drawDeadColor; }
+	// else
+
+	const Donya::Vector4 baseColor =	( IsOiled() )
+										? data.oiled.basic.drawColor
+										: data.normal.drawColor;
+	return ( element.Has( Element::Type::Flame ) ) ? data.burningColor.Product( baseColor ) : baseColor;
 }
 
 void Player::StartHopping()
