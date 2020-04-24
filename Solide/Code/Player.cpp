@@ -128,6 +128,8 @@ namespace
 			Donya::AABB hitBoxStage{ {}, { 0.5f, 0.5f, 0.5f }, true }; // Collide to a stage.
 
 			Bullet::BulletAdmin::FireDesc shotDesc;
+
+			Donya::Vector4 drawColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -148,6 +150,10 @@ namespace
 					archive( CEREAL_NVP( shotDesc ) );
 				}
 				if ( 2 <= version )
+				{
+					archive( CEREAL_NVP( drawColor ) );
+				}
+				if ( 3 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -272,7 +278,7 @@ namespace
 	};
 }
 CEREAL_CLASS_VERSION( Member,				8 )
-CEREAL_CLASS_VERSION( Member::BasicMember,	1 )
+CEREAL_CLASS_VERSION( Member::BasicMember,	2 )
 CEREAL_CLASS_VERSION( Member::OilMember,	2 )
 
 class ParamPlayer : public ParameterBase<ParamPlayer>
@@ -340,6 +346,7 @@ public:
 				ImGui::DragFloat( ( prefix + u8"：重力"		).c_str(),		&p->gravity,		0.01f, 0.0f );
 				ParameterHelper::ShowAABBNode( prefix + u8"：当たり判定・ＶＳ地形", &p->hitBoxStage );
 				p->shotDesc.ShowImGuiNode( { prefix + u8"：ショット詳細" } );
+				ImGui::ColorEdit4( u8"描画色", &p->drawColor.x );
 
 				ImGui::TreePop();
 			};
@@ -1036,7 +1043,9 @@ void Player::Draw( RenderingHelper *pRenderer )
 		);
 	const Donya::Vector4 bodyColor = ( pMover->IsDead() )
 		? Donya::Vector4{ 1.0f, 0.5f, 0.0f, 1.0f }
-		: Donya::Vector4{ 0.1f, 1.0f, 0.3f, 1.0f };
+		: ( IsOiled() )
+		? data.oiled.basic.drawColor
+		: data.normal.drawColor; // Donya::Vector4{ 0.1f, 1.0f, 0.3f, 1.0f };
 	const Donya::Vector3 drawOffset = actualOrientation.RotateVector( data.drawOffset );
 
 	Donya::Vector4x4 W{};
@@ -1066,7 +1075,7 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 	// else
 #if DEBUG_MODE
-	constexpr Donya::Vector4 color{ 0.1f, 1.0f, 0.3f, 0.7f };
+	constexpr Donya::Vector4 color{ 0.0f, 1.0f, 0.0f, 0.5f };
 	Actor::DrawHitBox( pRenderer, matVP, Donya::Quaternion::Identity(), color );
 #endif // DEBUG_MODE
 }
