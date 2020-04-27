@@ -824,8 +824,6 @@ namespace Donya
 	public:
 		Vector4x4 Inverse()   const;
 		Vector4x4 Transpose() const;
-		Vector4x4 OrthographicLH( const Vector2 &viewSize, float zNear, float zFar ) const;
-		Vector4x4 PerspectiveFovLH( float FOVAngleRadianY, float aspectRatio, float zNear, float zFar ) const;
 	public:
 		static Vector4x4 FromMatrix( const DirectX::XMMATRIX &M );
 		static DirectX::XMMATRIX ToMatrix( const Vector4x4 &V )
@@ -883,6 +881,14 @@ namespace Donya
 		}
 
 		static Vector4x4 MakeTransformation( const Vector3 &scaling, const Quaternion &rotation, const Vector3 translation );
+		
+		/// <summary>
+		/// Make view matrix.
+		/// </summary>
+		static Vector4x4 MakeLookAtLH( const Vector3 &eyePos, const Vector3 &focusPoint, const Vector3 &worldUpDirection = { 0.0f, 1.0f, 0.0f } );
+
+		static Vector4x4 MakeOrthographicLH( const Vector2 &viewSize, float zNear, float zFar );
+		static Vector4x4 MakePerspectiveFovLH( float FOVAngleRadianY, float aspectRatio, float zNear, float zFar );
 	};
 
 	static Vector4x4			operator * ( const Vector4x4 &lhs, const Vector4x4 &rhs ) { return lhs.Mul( rhs ); }
