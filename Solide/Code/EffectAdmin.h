@@ -16,8 +16,6 @@ namespace Effekseer
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 
-class EffectHandle;
-
 class EffectAdmin : public Donya::Singleton<EffectAdmin>
 {
 	friend Donya::Singleton<EffectAdmin>;

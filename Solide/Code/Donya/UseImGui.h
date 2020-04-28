@@ -28,6 +28,16 @@ namespace Donya
 #include <imgui_impl_win32.h>
 #include <imgui_internal.h>
 
+#include "Vector.h"
+
+namespace Donya
+{
+	Donya::Vector2 FromImVec( const ImVec2 &v );
+	Donya::Vector4 FromImVec( const ImVec4 &v );
+	ImVec2 ToImVec( const Donya::Vector2 &v );
+	ImVec4 ToImVec( const Donya::Vector4 &v );
+}
+
 namespace ImGui
 {
 	/// <summary>

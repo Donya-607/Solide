@@ -1,13 +1,17 @@
 #include "FilePath.h"
 
+#include "Effekseer.h"		// Use EFK_CHAR.
+
 #include "Donya/Constant.h"	// Use DEBUG_MODE.
 #include "Donya/Useful.h"	// Use IsExistFile().
 
 namespace
 {
-	static constexpr const char *PARAMETERS_DIRECTORY	= "./Data/Parameters/";
-	static constexpr const char *MODELS_DIRECTORY		= "./Data/Models/";
-	static constexpr const char *MODEL_EXTENSION		= ".bin";
+	static constexpr const char		*PARAMETERS_DIRECTORY	= "./Data/Parameters/";	// Relative path.
+	static constexpr const wchar_t	*SPRITE_DIRECTORY		= L"./Data/Images/";	// Relative path.
+	static constexpr const EFK_CHAR	*EFFECT_DIRECTORY		= u"./Data/Images/";	// Relative path.
+	static constexpr const char		*MODELS_DIRECTORY		= "./Data/Models/";		// Relative path.
+	static constexpr const char		*MODEL_EXTENSION		= ".bin";
 
 	std::string MakeArraySuffix( int index )
 	{
@@ -58,16 +62,21 @@ bool MakeFileIfNotExists( const std::string &filePath, bool binaryMode )
 
 std::wstring GetSpritePath( SpriteAttribute attr )
 {
+	auto ToRelPath = []( const std::wstring &fileName )
+	{
+		return SPRITE_DIRECTORY + fileName;
+	};
+
 	switch ( attr )
 	{
 	case SpriteAttribute::FMODLogoBlack:
-		return L"./Data/Images/Rights/FMOD Logo Black - White Background.png";	// break;
+		return ToRelPath( L"Rights/FMOD Logo Black - White Background.png" );	// break;
 	case SpriteAttribute::FMODLogoWhite:
-		return L"./Data/Images/Rights/FMOD Logo White - Black Background.png";	// break;
+		return ToRelPath( L"Rights/FMOD Logo White - Black Background.png" );	// break;
 	default: break;
 	}
 
-	_ASSERT_EXPR( 0, L"Error : Specified unexpect sprite type." );
+	_ASSERT_EXPR( 0, L"Error: Specified unexpect sprite type." );
 	return L"ERROR_ATTRIBUTE";
 }
 
@@ -75,10 +84,15 @@ std::wstring GetSpritePath( SpriteAttribute attr )
 #include "EffectUtil.h"
 std::basic_string<EFK_CHAR> GetEffectPath( EffectAttribute attr )
 {
+	auto ToRelPath = []( const std::basic_string<EFK_CHAR> &fileName )
+	{
+		return EFFECT_DIRECTORY + fileName;
+	};
+
 	switch ( attr )
 	{
 	case EffectAttribute::TEST:
-		return u"test";
+		return ToRelPath( u"TEST/Laser01.efk" );
 	default: break;
 	}
 

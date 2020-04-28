@@ -7,6 +7,7 @@
 #include "Donya/Sound.h"
 
 #include "Common.h"
+#include "EffectAdmin.h"
 #include "Framework.h"
 #include "Icon.h"
 
@@ -39,6 +40,10 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 
 	Donya::SetWindowIcon( instance, IDI_ICON );
 
+	const bool effectResult = EffectAdmin::Get().Init( Donya::GetDevice(), Donya::GetImmediateContext() );
+	if ( !effectResult ) { return Donya::Uninit(); }
+	// else
+
 	Framework framework{};
 	framework.Init();
 
@@ -54,6 +59,8 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 	}
 
 	framework.Uninit();
+
+	EffectAdmin::Get().Uninit();
 
 	auto   returnValue = Donya::Uninit();
 	return returnValue;

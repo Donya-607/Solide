@@ -2,5 +2,7 @@
 
 enum class EffectAttribute
 {
-	TEST
+	TEST,
+
+	AttributeCount
 };

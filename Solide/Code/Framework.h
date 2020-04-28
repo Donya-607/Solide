@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "Donya/UseImGui.h"	// Use for USE_IMGUI macro.
+
 #include "SceneManager.h"
 
 class Framework
@@ -24,8 +26,9 @@ public:
 	void Draw( float elapsed_time /* Elapsed seconds from last frame */ );
 private:
 	bool LoadSounds();
-	/// <summary>
-	/// Valid only when Debug-mode.
-	/// </summary>
+	bool LoadEffects();
+	
+#if USE_IMGUI
 	void DebugShowInformation();
+#endif // USE_IMGUI
 };
