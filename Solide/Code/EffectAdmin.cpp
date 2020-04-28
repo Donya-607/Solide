@@ -1,62 +1,63 @@
 #include "EffectAdmin.h"
 
 #include <d3d11.h>
+#include <unordered_map>
 
 #include "Effekseer.h"
 #include "EffekseerRendererDX11.h"
 
 #include "Donya/Useful.h"
 
+#include "EffectUtil.h"
+
+
 namespace Fx			= Effekseer;
 namespace FxRenderer	= EffekseerRendererDX11;
 
-namespace
+
+class EffectWrapper
 {
-	Fx::Vector2D		ToFxVector( const Donya::Vector2 &v )	{ return Fx::Vector2D{ v.x, v.y };			}
-	Fx::Vector3D		ToFxVector( const Donya::Vector3 &v )	{ return Fx::Vector3D{ v.x, v.y, v.z };		}
-	Fx::Matrix44		ToFxMatrix( const Donya::Vector4x4 &m )
+private:
+	Fx::Effect *pFx = nullptr;
+public:
+	EffectWrapper( Fx::Manager *pManager, const std::basic_string<EFK_CHAR> &filePath, float magnification = 1.0f, const std::basic_string<EFK_CHAR> &materialPath = {} )
 	{
-		Fx::Matrix44 fx{};
-
-		for ( int row = 0; row < 4; ++row )
-		{
-			for ( int column = 0; column < 4; ++column )
-			{
-				fx.Values[row][column] = m.m[row][column];
-			}
-		}
-
-		return fx;
+		const EFK_CHAR *materialPathOrNullptr = ( materialPath.empty() ) ? nullptr : materialPath.c_str();
+		pFx = Fx::Effect::Create( pManager, filePath.c_str(), magnification, materialPathOrNullptr );
 	}
-	Donya::Vector2		ToVector( const Fx::Vector2D &v )		{ return Donya::Vector2{ v.X, v.Y };		}
-	Donya::Vector3		ToVector( const Fx::Vector3D &v )		{ return Donya::Vector3{ v.X, v.Y, v.Z };	}
-	Donya::Vector4x4	ToMatrix( const Fx::Matrix44 &fx )
+	~EffectWrapper()
 	{
-		Donya::Vector4x4 m{};
-
-		for ( int row = 0; row < 4; ++row )
-		{
-			for ( int column = 0; column < 4; ++column )
-			{
-				m.m[row][column] = fx.Values[row][column];
-			}
-		}
-
-		return m;
+		ES_SAFE_RELEASE( pFx );
 	}
-}
+public:
+	bool		IsValid() const
+	{
+		return ( pFx );
+	}
+	Fx::Effect	*GetEffectOrNullptr() const
+	{
+		return ( IsValid() ) ? pFx : nullptr;
+	}
+};
+
 
 struct EffectAdmin::Impl
 {
-public:
-	const int		maxInstanceCount	= 4096;
-	const int32_t	maxSpriteCount		= 4096;
-public:
-	Fx::Manager				*pManager	= nullptr;
-	FxRenderer::Renderer	*pRenderer	= nullptr;
+private:
+	const int				maxInstanceCount	= 4096;
+	const int32_t			maxSpriteCount		= 4096;
+private:
+	Fx::Manager				*pManager			= nullptr;
+	FxRenderer::Renderer	*pRenderer			= nullptr;
+	bool					wasInitialized		= false;
+private:
+	std::unordered_map<std::basic_string<EFK_CHAR>, std::shared_ptr<EffectWrapper>> fxMap;
 public:
 	bool Init( ID3D11Device *pDevice, ID3D11DeviceContext *pImmediateContext )
 	{
+		if ( wasInitialized ) { return true; }
+		// else
+
 		constexpr const wchar_t *ERR_MSG = L"Error: Effect initialize is failed.";
 
 		if ( !pDevice || !pImmediateContext ) { _ASSERT_EXPR( 0, ERR_MSG ); return false; }
@@ -69,6 +70,9 @@ public:
 		}
 		if ( !pRenderer || !pManager ) { _ASSERT_EXPR( 0, ERR_MSG ); return false; }
 		// else
+
+		// Specidy coordinate system
+		pManager->SetCoordinateSystem( Fx::CoordinateSystem::LH );
 
 		// Sprcify rendering modules
 		{
@@ -115,42 +119,111 @@ public:
 			);
 		}
 
+		fxMap.clear();
+		wasInitialized = true;
 		return true;
 	}
 	void Uninit()
 	{
+		fxMap.clear();
+
 		pManager->Destroy();
 		pRenderer->Destroy();
+
+		wasInitialized = false;
 	}
 
-	void Update( float elapsedTime )
+	void Update( float updateSpeedMagnification )
 	{
-
+		assert( wasInitialized );
+		pManager->Update( updateSpeedMagnification );
 	}
 	
-	void Draw( float elapsedTime )
+	void Draw()
 	{
-
+		assert( wasInitialized );
+		pRenderer->BeginRendering();
+		pManager->Draw();
+		pRenderer->EndRendering();
 	}
 public:
 	void SetViewMatrix( const Donya::Vector4x4 &m )
 	{
+		assert( wasInitialized );
 		pRenderer->SetCameraMatrix( ToFxMatrix( m ) );
 	}
 	void SetProjectionMatrix( const Donya::Vector4x4 &m )
 	{
+		assert( wasInitialized );
 		pRenderer->SetProjectionMatrix( ToFxMatrix( m ) );
+	}
+public:
+	Fx::Manager *GetManagerOrNullptr() const
+	{
+		assert( wasInitialized );
+		return pManager;
+	}
+public:
+	bool LoadEffect( EffectAttribute attr )
+	{
+		assert( wasInitialized );
+		const std::basic_string<EFK_CHAR> filePath = GetEffectPath( attr );
+
+		// Has already loaded?
+		const auto find = fxMap.find( filePath );
+		if ( find != fxMap.end() ) { return true; }
+		// else
+
+		auto pointer = std::make_shared<EffectWrapper>( pManager, filePath );
+		auto result  = fxMap.insert( std::make_pair( filePath, std::move( pointer ) ) );
+		return result.second;
+	}
+	void UnloadEffect( EffectAttribute attr )
+	{
+		assert( wasInitialized );
+		fxMap.erase( GetEffectPath( attr ) );
+	}
+	void UnloadEffectAll()
+	{
+		assert( wasInitialized );
+		fxMap.clear();
+	}
+public:
+	Effekseer::Effect *GetEffectOrNullptr( EffectAttribute attr )
+	{
+		assert( wasInitialized );
+		
+		const auto find = fxMap.find( GetEffectPath( attr ) );
+		if ( find == fxMap.end() ) { return nullptr; }
+		// else
+
+		return find->second->GetEffectOrNullptr();
 	}
 };
 
 
-EffectAdmin::EffectAdmin() : Singleton(), pImpl( std::make_unique<EffectAdmin::Impl>() ) {}
+EffectAdmin::EffectAdmin()  : Singleton(), pImpl( std::make_unique<EffectAdmin::Impl>() ) {}
+EffectAdmin::~EffectAdmin() = default;
 
 bool EffectAdmin::Init( ID3D11Device *pDevice, ID3D11DeviceContext *pImmediateContext )
-												{ return pImpl->Init( pDevice, pImmediateContext ); }
-void EffectAdmin::Uninit()						{ pImpl->Uninit(); }
-void EffectAdmin::Update( float elapsedTime )	{ pImpl->Update( elapsedTime ); }
-void EffectAdmin::Draw( float elapsedTime )		{ pImpl->Draw( elapsedTime ); }
-
-void EffectAdmin::SetViewMatrix( const Donya::Vector4x4 &m )		{ pImpl->SetViewMatrix( m ); }
-void EffectAdmin::SetProjectionMatrix( const Donya::Vector4x4 &m )	{ pImpl->SetProjectionMatrix( m ); }
+							{ return pImpl->Init( pDevice, pImmediateContext );	}
+void EffectAdmin::Uninit()
+							{ pImpl->Uninit();									}
+void EffectAdmin::Update( float updateSpeedMagni )
+							{ pImpl->Update( updateSpeedMagni );				}
+void EffectAdmin::Draw()
+							{ pImpl->Draw();									}
+void EffectAdmin::SetViewMatrix( const Donya::Vector4x4 &m )
+							{ pImpl->SetViewMatrix( m );						}
+void EffectAdmin::SetProjectionMatrix( const Donya::Vector4x4 &m )
+							{ pImpl->SetProjectionMatrix( m );					}
+Fx::Manager *EffectAdmin::GetManagerOrNullptr() const
+							{ return pImpl->GetManagerOrNullptr();				}
+bool EffectAdmin::LoadEffect( EffectAttribute attr )
+							{ return pImpl->LoadEffect( attr );					}
+void EffectAdmin::UnloadEffect( EffectAttribute attr )
+							{ pImpl->UnloadEffect( attr );						}
+void EffectAdmin::UnloadEffectAll()
+							{ pImpl->UnloadEffectAll();							}
+Effekseer::Effect *EffectAdmin::GetEffectOrNullptr( EffectAttribute attr )
+							{ return pImpl->GetEffectOrNullptr( attr );			}

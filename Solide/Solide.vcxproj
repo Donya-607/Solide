@@ -178,6 +178,7 @@
     <ClCompile Include="Code\Donya\UseImGui.cpp" />
     <ClCompile Include="Code\Donya\Vector.cpp" />
     <ClCompile Include="Code\Donya\WindowsUtil.cpp" />
+    <ClCompile Include="Code\Effect.cpp" />
     <ClCompile Include="Code\EffectAdmin.cpp" />
     <ClCompile Include="Code\Element.cpp" />
     <ClCompile Include="Code\Enemy.cpp" />
@@ -264,7 +265,10 @@
     <ClInclude Include="Code\Donya\UseImGui.h" />
     <ClInclude Include="Code\Donya\Vector.h" />
     <ClInclude Include="Code\Donya\WindowsUtil.h" />
+    <ClInclude Include="Code\Effect.h" />
     <ClInclude Include="Code\EffectAdmin.h" />
+    <ClInclude Include="Code\EffectAttribute.h" />
+    <ClInclude Include="Code\EffectUtil.h" />
     <ClInclude Include="Code\Element.h" />
     <ClInclude Include="Code\Enemy.h" />
     <ClInclude Include="Code\EnemyContainer.h" />

@@ -56,18 +56,32 @@ bool MakeFileIfNotExists( const std::string &filePath, bool binaryMode )
 	return wasCreated;
 }
 
-std::wstring GetSpritePath( SpriteAttribute sprAttribute )
+std::wstring GetSpritePath( SpriteAttribute attr )
 {
-	switch ( sprAttribute )
+	switch ( attr )
 	{
 	case SpriteAttribute::FMODLogoBlack:
 		return L"./Data/Images/Rights/FMOD Logo Black - White Background.png";	// break;
 	case SpriteAttribute::FMODLogoWhite:
 		return L"./Data/Images/Rights/FMOD Logo White - Black Background.png";	// break;
-
-	default:
-		assert( !"Error : Specified unexpect sprite type." ); break;
+	default: break;
 	}
 
+	_ASSERT_EXPR( 0, L"Error : Specified unexpect sprite type." );
 	return L"ERROR_ATTRIBUTE";
+}
+
+
+#include "EffectUtil.h"
+std::basic_string<EFK_CHAR> GetEffectPath( EffectAttribute attr )
+{
+	switch ( attr )
+	{
+	case EffectAttribute::TEST:
+		return u"test";
+	default: break;
+	}
+
+	_ASSERT_EXPR( 0, L"Error : Unexpect effect type." );
+	return u"ERROR_ATTRIBUTE";
 }
