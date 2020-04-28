@@ -9,7 +9,7 @@ namespace
 {
 	static constexpr const char		*PARAMETERS_DIRECTORY	= "./Data/Parameters/";	// Relative path.
 	static constexpr const wchar_t	*SPRITE_DIRECTORY		= L"./Data/Images/";	// Relative path.
-	static constexpr const EFK_CHAR	*EFFECT_DIRECTORY		= u"./Data/Images/";	// Relative path.
+	static constexpr const EFK_CHAR	*EFFECT_DIRECTORY		= u"./Data/Effects/";	// Relative path.
 	static constexpr const char		*MODELS_DIRECTORY		= "./Data/Models/";		// Relative path.
 	static constexpr const char		*MODEL_EXTENSION		= ".bin";
 
@@ -92,7 +92,7 @@ std::basic_string<EFK_CHAR> GetEffectPath( EffectAttribute attr )
 	switch ( attr )
 	{
 	case EffectAttribute::TEST:
-		return ToRelPath( u"TEST/Laser01.efk" );
+		return ToRelPath( u"TEST/Fire.efkefc" );
 	default: break;
 	}
 

@@ -187,16 +187,18 @@ void Framework::DebugShowInformation()
 		static std::shared_ptr<EffectHandle> pHandle = nullptr;
 		static Donya::Vector3 genPos{};
 		static Donya::Vector3 velocity{};
-		ImGui::DragFloat( u8"生成位置",	&genPos.x,		0.1f );
-		ImGui::DragFloat( u8"移動速度",	&velocity.x,	0.1f );
+		ImGui::DragFloat3( u8"生成位置",	&genPos.x,		0.1f );
+		ImGui::DragFloat3( u8"移動速度",	&velocity.x,	0.1f );
 
 		if ( ImGui::Button( u8"生成" ) )
 		{
+			if ( pHandle ) { pHandle->Stop(); }
 			pHandle.reset();
+
 			pHandle = std::make_shared<EffectHandle>( EffectHandle::Generate( EffectAttribute::TEST, genPos ) );
 			if ( !pHandle->IsValid() ) { pHandle.reset(); }
 		}
-		if ( ImGui::Button( u8"ストップ" ) )
+		if ( ImGui::Button( u8"ストップ" ) && pHandle )
 		{
 			pHandle->Stop();
 			pHandle.reset();

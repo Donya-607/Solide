@@ -227,6 +227,9 @@ void SceneGame::Uninit()
 	Donya::Sound::Stop( Music::BGM_Game );
 }
 
+#if DEBUG_MODE
+#include "EffectAdmin.h"
+#endif // DEBUG_MODE
 Scene::Result SceneGame::Update( float elapsedTime )
 {
 	elapsedTime = 1.0f; // Disable
@@ -296,6 +299,11 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	TutorialUpdate( elapsedTime );
 	WaitUpdate( elapsedTime );
+
+#if DEBUG_MODE
+	EffectAdmin::Get().SetViewMatrix( iCamera.CalcViewMatrix() );
+	EffectAdmin::Get().SetProjectionMatrix( iCamera.GetProjectionMatrix() );
+#endif // DEBUG_MODE
 
 	return ReturnResult();
 }

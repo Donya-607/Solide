@@ -95,26 +95,34 @@ public:
 			constexpr Donya::Vector2 defaultWindowSize{ 800.0f, 608.0f };
 			constexpr float defaultAspect	= defaultWindowSize.x / defaultWindowSize.y;
 			constexpr float defaultNear		= 1.0f;
-			constexpr float defaultFar		= 1.0f;
+			constexpr float defaultFar		= 1000.0f;
 
-			SetProjectionMatrix
+			// Now the "wasInitialized" is false, so I don't use SetXXXMatrix() method.
+
+			pRenderer->SetProjectionMatrix
 			(
-				Donya::Vector4x4::MakePerspectiveFovLH
+				ToFxMatrix
 				(
-					ToRadian( 90.0f ),
-					defaultAspect,
-					defaultNear,
-					defaultFar
+					Donya::Vector4x4::MakePerspectiveFovLH
+					(
+						ToRadian( 90.0f ),
+						defaultAspect,
+						defaultNear,
+						defaultFar
+					)
 				)
 			);
 
-			SetViewMatrix
+			pRenderer->SetCameraMatrix
 			(
-				Donya::Vector4x4::MakeLookAtLH
+				ToFxMatrix
 				(
-					-Donya::Vector3::Front(),
-					Donya::Vector3::Zero(),
-					Donya::Vector3::Up()
+					Donya::Vector4x4::MakeLookAtLH
+					(
+						-Donya::Vector3::Front(),
+						Donya::Vector3::Zero(),
+						Donya::Vector3::Up()
+					)
 				)
 			);
 		}
