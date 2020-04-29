@@ -16,7 +16,7 @@ private: // Serializer member.
 	int					destStageNo	= 1;
 	float				drawScale	= 1.0f;
 	Donya::Vector3		wsPos;
-	Donya::Vector4		drawColor;
+	Donya::Vector4		drawColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 	Donya::AABB			hitBox;
 private:
 	friend class cereal::access;
@@ -86,7 +86,7 @@ public:
 	void Update( float elapsedTime );
 
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
-	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
+	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
 public:
 	size_t		GetWarpCount() const;
 	bool		IsOutOfRange( size_t warpIndex ) const;

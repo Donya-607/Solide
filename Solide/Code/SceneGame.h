@@ -21,6 +21,7 @@
 #include "Sentence.h"
 #include "Scene.h"
 #include "Terrain.h"
+#include "Warp.h"
 
 class SceneGame : public Scene
 {
@@ -37,6 +38,7 @@ private:
 	std::unique_ptr<Enemy::Container>	pEnemies;
 	std::unique_ptr<ObstacleContainer>	pObstacles;
 	std::unique_ptr<Goal>				pGoal;
+	std::unique_ptr<WarpContainer>		pWarps;
 	std::unique_ptr<TutorialSentence>	pTutorialSentence;
 	std::unique_ptr<ClearSentence>		pClearSentence;
 

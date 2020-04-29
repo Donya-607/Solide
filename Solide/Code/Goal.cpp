@@ -190,9 +190,9 @@ void Goal::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	// else
 
 	ImGui::DragFloat( u8"回転角（Degree，フレーム辺り）", &rotateAngle );
-	ImGui::DragFloat3( u8"ワールド座標", &wsPos.x );
+	ImGui::DragFloat3( u8"ワールド座標", &wsPos.x, 0.01f );
 	ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
-	ImGui::DragFloat( u8"描画スケール",	&drawScale );
+	ImGui::DragFloat( u8"描画スケール",	&drawScale, 0.01f );
 	ImGui::ColorEdit4( u8"描画色",		&drawColor.x );
 	drawScale = std::max( 0.0f, drawScale );
 	

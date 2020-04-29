@@ -153,9 +153,9 @@ void Warp::ShowImGuiNode( const std::string &nodeCaption, bool *wantRemoveMe )
 	ImGui::Text( u8"-1：タイトル画面" );
 	ImGui::Text( "" );
 
-	ImGui::DragFloat3( u8"ワールド座標", &wsPos.x );
+	ImGui::DragFloat3( u8"ワールド座標", &wsPos.x, 0.01f );
 	ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
-	ImGui::DragFloat( u8"描画スケール",	&drawScale );
+	ImGui::DragFloat( u8"描画スケール",	&drawScale, 0.01f );
 	ImGui::ColorEdit4( u8"描画色",		&drawColor.x );
 	drawScale = std::max( 0.0f, drawScale );
 
@@ -208,7 +208,7 @@ void WarpContainer::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &colo
 		it.Draw( pRenderer, color );
 	}
 }
-void WarpContainer::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+void WarpContainer::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
 	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 	// else

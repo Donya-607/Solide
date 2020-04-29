@@ -216,6 +216,9 @@ void SceneGame::Init()
 	result = ObstacleBase::LoadModels();
 	assert( result );
 	ObstacleBase::ParameterInit();
+	
+	result = WarpContainer::LoadResource();
+	assert( result );
 
 	result = Player::LoadModels();
 	assert( result );
@@ -276,6 +279,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	pGoal->Update( elapsedTime );
 	pObstacles->Update( elapsedTime );
+	pWarps->Update( elapsedTime );
 
 	PlayerUpdate( elapsedTime );
 
@@ -375,6 +379,7 @@ void SceneGame::Draw( float elapsedTime )
 			pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 			pGoal->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 			pObstacles->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+			pWarps->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
 		}
 		pRenderer->DeactivateShaderNormalStatic();
 	}
@@ -394,6 +399,7 @@ void SceneGame::Draw( float elapsedTime )
 		pGoal->DrawHitBox( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 		Bullet::BulletAdmin::Get().DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 		pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
+		pWarps->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 	}
 #endif // DEBUG_MODE
 	
@@ -476,6 +482,9 @@ void SceneGame::InitStage( int stageNo )
 	pObstacles = std::make_unique<ObstacleContainer>();
 	pObstacles->Init( stageNo );
 
+	pWarps = std::make_unique<WarpContainer>();
+	pWarps->Init( stageNo );
+
 	PlayerInit( stageNo );
 
 	CameraInit();
@@ -485,6 +494,7 @@ void SceneGame::UninitStage()
 	if ( pEnemies	) { pEnemies->Uninit();		}
 	if ( pGoal		) { pGoal->Uninit();		}
 	if ( pObstacles	) { pObstacles->Uninit();	}
+	if ( pWarps		) { pWarps->Uninit();		}
 
 	pBG.reset();
 	pTerrain.reset();
@@ -492,6 +502,7 @@ void SceneGame::UninitStage()
 	pEnemies.reset();
 	pObstacles.reset();
 	pGoal.reset();
+	pWarps.reset();
 	pTutorialSentence.reset();
 	pClearSentence.reset();
 
@@ -977,7 +988,6 @@ Scene::Result SceneGame::ReturnResult()
 }
 
 #if USE_IMGUI
-#include <direct.h>
 void SceneGame::UseImGui()
 {
 	if ( !ImGui::BeginIfAllowed() ) { return; }
@@ -1073,6 +1083,10 @@ void SceneGame::UseImGui()
 		if ( pObstacles			)
 		{
 			pObstacles->ShowImGuiNode( u8"障害物の生成・破棄" );
+		}
+		if ( pWarps				)
+		{
+			pWarps->ShowImGuiNode( u8"ワープオブジェクトの設置・破棄", stageNumber );
 		}
 		if ( pEnemies			)
 		{
