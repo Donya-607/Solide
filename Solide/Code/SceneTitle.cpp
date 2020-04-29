@@ -146,6 +146,8 @@ public:
 
 namespace
 {
+	static constexpr int TITLE_STAGE_NO = -1;
+
 	Member FetchMember()
 	{
 		return ParamTitle::Get().Data();
@@ -180,7 +182,7 @@ void SceneTitle::Init()
 	result = pSentence->LoadSprites( L"./Data/Images/Title/Logo.png", L"./Data/Images/Title/Prompt.png" );
 	assert( result );
 
-	pTerrain = std::make_unique<Terrain>( 0 );
+	pTerrain = std::make_unique<Terrain>( TITLE_STAGE_NO );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 1.0f, 1.0f, 1.0f }, Donya::Vector3::Zero() );
 
 	result = ObstacleBase::LoadModels();
@@ -188,7 +190,7 @@ void SceneTitle::Init()
 
 	ObstacleBase::ParameterInit();
 	pObstacles = std::make_unique<ObstacleContainer>();
-	pObstacles->Init( 0 );
+	pObstacles->Init( TITLE_STAGE_NO );
 
 	result = Player::LoadModels();
 	assert( result );
@@ -480,7 +482,7 @@ void SceneTitle::CameraUpdate()
 void SceneTitle::PlayerInit()
 {
 	pPlayerIniter = std::make_unique<PlayerInitializer>();
-	pPlayerIniter->LoadParameter( 0 );
+	pPlayerIniter->LoadParameter( TITLE_STAGE_NO );
 
 	// const auto data = FetchMember();
 	// pPlayer = std::make_unique<Player>();

@@ -176,7 +176,13 @@ public:
 
 namespace
 {
-	static constexpr int FIRST_STAGE_NO = 1;
+	static constexpr int SELECT_STAGE_NO	= 0;
+	static constexpr int FIRST_STAGE_NO		= 1;
+
+	constexpr bool ShouldGotoTitleScene( int nextStageNo )
+	{
+		return ( nextStageNo < 0 ) ? true : false;
+	}
 
 	Member FetchMember()
 	{
@@ -953,9 +959,9 @@ Scene::Result SceneGame::ReturnResult()
 		return change;
 	}
 
-	bool requestPause	= controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT ) || Donya::Keyboard::Trigger( 'P' );
-	bool allowPause		= !Fader::Get().IsExist();
-	if ( 0 && requestPause && allowPause )
+	const bool requestPause	= Donya::Keyboard::Trigger( 'P' ) || controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT );
+	const bool allowPause	= 0 && !Fader::Get().IsExist();
+	if ( requestPause && allowPause )
 	{
 		Donya::Sound::Play( Music::ItemDecision );
 

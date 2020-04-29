@@ -141,7 +141,7 @@ bool Framework::LoadSounds()
 bool Framework::LoadEffects()
 {
 	constexpr size_t attrCount = scast<size_t>( EffectAttribute::AttributeCount );
-	const std::array<EffectAttribute, attrCount> attributes
+	constexpr std::array<EffectAttribute, attrCount> attributes
 	{
 		EffectAttribute::TEST
 	};

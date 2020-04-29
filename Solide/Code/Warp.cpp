@@ -1,4 +1,4 @@
-#include "Goal.h"
+#include "Warp.h"
 
 #include <memory>
 
@@ -11,10 +11,11 @@
 #include "FilePath.h"
 #include "Parameter.h"
 
+
 namespace
 {
 	constexpr const char *MODEL_DIRECTORY	= "./Data/Models/Landmark/";
-	constexpr const char *MODEL_NAME		= "Goal.bin";
+	constexpr const char *MODEL_NAME		= "Warp.bin";
 
 	struct ModelData
 	{
@@ -72,20 +73,16 @@ namespace
 	}
 }
 
-bool Goal::LoadResource()
-{
-	return LoadModel();
-}
 
-
-Donya::Vector3		Goal::GetPosition()	const { return wsPos; }
-Donya::AABB			Goal::GetHitBox()	const
+int					Warp::GetDestinationStageNo()	const { return destStageNo;	}
+Donya::Vector3		Warp::GetPosition()				const { return wsPos;		}
+Donya::AABB			Warp::GetHitBox()				const
 {
 	Donya::AABB tmp = hitBox;
 	tmp.pos += wsPos;
 	return tmp;
 }
-Donya::Vector4x4	Goal::CalcWorldMatrix( bool useForHitBox ) const
+Donya::Vector4x4	Warp::CalcWorldMatrix( bool useForHitBox ) const
 {
 	const Donya::Vector3 scale = ( useForHitBox )
 		? hitBox.size * 2.0f
@@ -98,32 +95,16 @@ Donya::Vector4x4	Goal::CalcWorldMatrix( bool useForHitBox ) const
 	W._11 = scale.x;
 	W._22 = scale.y;
 	W._33 = scale.z;
-	if ( !useForHitBox ) { W *= orientation.MakeRotationMatrix(); }
 	W._41 = translation.x;
 	W._42 = translation.y;
 	W._43 = translation.z;
 	return W;
 }
 
-void Goal::Init( int stageNo )
-{
-#if DEBUG_MODE
-	LoadJson( stageNo );
-#else
-	LoadBin( stageNo );
-#endif // DEBUG_MODE
-
-	orientation = Donya::Quaternion::Identity();
-}
-void Goal::Uninit() {}
-
-void Goal::Update( float elapsedTime )
-{
-	const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( rotateAngle ) );
-	orientation.RotateBy( rotation );
-}
-
-void Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+void Warp::Init() {}
+void Warp::Uninit() {}
+void Warp::Update( float elapsedTime ) {}
+void Warp::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
 	if ( !pRenderer ) { return; }
 	// else
@@ -142,7 +123,7 @@ void Goal::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 
 	pRenderer->DeactivateConstantModel();
 }
-void Goal::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+void Warp::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
 	if ( !Common::IsShowCollision() ) { return; }
 	// else
@@ -155,46 +136,171 @@ void Goal::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP
 	pRenderer->ProcessDrawingCube( constant );
 }
 
-void Goal::LoadBin ( int stageNo )
-{
-	constexpr bool fromBinary = true;
-	Donya::Serializer::Load( *this, MakeStageParamPath( ID, stageNo, fromBinary ).c_str(), ID, fromBinary );
-}
-void Goal::LoadJson( int stageNo )
-{
-	constexpr bool fromBinary = false;
-	Donya::Serializer::Load( *this, MakeStageParamPath( ID, stageNo, fromBinary ).c_str(), ID, fromBinary );
-}
 #if USE_IMGUI
-void Goal::SaveBin ( int stageNo )
-{
-	constexpr bool fromBinary = true;
-
-	const std::string filePath = MakeStageParamPath( ID, stageNo, fromBinary );
-	MakeFileIfNotExists( filePath, fromBinary );
-
-	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
-}
-void Goal::SaveJson( int stageNo )
-{
-	constexpr bool fromBinary = false;
-
-	const std::string filePath = MakeStageParamPath( ID, stageNo, fromBinary );
-	MakeFileIfNotExists( filePath, fromBinary );
-
-	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
-}
-void Goal::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
+void Warp::ShowImGuiNode( const std::string &nodeCaption, bool *wantRemoveMe )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::DragFloat( u8"回転角（Degree，フレーム辺り）", &rotateAngle );
+	if ( wantRemoveMe )
+	{
+		const std::string caption = nodeCaption + u8"を削除";
+		*wantRemoveMe = ImGui::Button( caption.c_str() );
+	}
+
+	ImGui::InputInt( u8"遷移先ステージ番号", &destStageNo );
+	ImGui::Text( u8"0：セレクト画面" );
+	ImGui::Text( u8"-1：タイトル画面" );
+	ImGui::Text( "" );
+
 	ImGui::DragFloat3( u8"ワールド座標", &wsPos.x );
 	ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
 	ImGui::DragFloat( u8"描画スケール",	&drawScale );
 	ImGui::ColorEdit4( u8"描画色",		&drawColor.x );
 	drawScale = std::max( 0.0f, drawScale );
+
+	ImGui::TreePop();
+}
+#endif // USE_IMGUI
+
+
+
+bool WarpContainer::LoadResource()
+{
+	return LoadModel();
+}
+
+void WarpContainer::Init( int stageNumber )
+{
+	stageNo = stageNumber;
+#if DEBUG_MODE
+	LoadJson( stageNumber );
+#else
+	LoadBin( stageNumber );
+#endif // DEBUG_MODE
+
+	for ( auto &it : warps )
+	{
+		it.Init();
+	}
+}
+void WarpContainer::Uninit()
+{
+	for ( auto &it : warps )
+	{
+		it.Uninit();
+	}
+}
+void WarpContainer::Update( float elapsedTime )
+{
+	for ( auto &it : warps )
+	{
+		it.Init();
+	}
+}
+void WarpContainer::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+{
+	if ( !pRenderer ) { return; }
+	// else
+
+	for ( auto &it : warps )
+	{
+		it.Draw( pRenderer, color );
+	}
+}
+void WarpContainer::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
+	// else
+
+	for ( auto &it : warps )
+	{
+		it.DrawHitBox( pRenderer, matVP, color );
+	}
+}
+
+size_t		WarpContainer::GetWarpCount() const { return warps.size(); }
+bool		WarpContainer::IsOutOfRange( size_t warpIndex ) const
+{
+	return ( GetWarpCount() <= warpIndex ) ? true : false;
+}
+const Warp *WarpContainer::GetWarpPtrOrNullptr( size_t warpIndex ) const
+{
+	if ( IsOutOfRange( warpIndex ) ) { return nullptr; }
+	// else
+	return &warps[warpIndex];
+}
+
+void WarpContainer::LoadBin ( int stageNo )
+{
+	constexpr bool fromBinary = true;
+	Donya::Serializer::Load( *this, MakeStageParamPath( ID, stageNo, fromBinary ).c_str(), ID, fromBinary );
+}
+void WarpContainer::LoadJson( int stageNo )
+{
+	constexpr bool fromBinary = false;
+	Donya::Serializer::Load( *this, MakeStageParamPath( ID, stageNo, fromBinary ).c_str(), ID, fromBinary );
+}
+#if USE_IMGUI
+void WarpContainer::SaveBin ( int stageNo )
+{
+	constexpr bool fromBinary = true;
+
+	const std::string filePath = MakeStageParamPath( ID, stageNo, fromBinary );
+	MakeFileIfNotExists( filePath, fromBinary );
+
+	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
+}
+void WarpContainer::SaveJson( int stageNo )
+{
+	constexpr bool fromBinary = false;
+
+	const std::string filePath = MakeStageParamPath( ID, stageNo, fromBinary );
+	MakeFileIfNotExists( filePath, fromBinary );
+
+	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
+}
+void WarpContainer::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
+{
+	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	if ( ImGui::Button( u8"ワープを追加" ) )
+	{
+		warps.emplace_back( Warp{} );
+		warps.back().Init();
+	}
+	if ( 1 < warps.size() && ImGui::Button( u8"末尾を削除" ) )
+	{
+		warps.pop_back();
+	}
+
+	if ( ImGui::TreeNode( u8"各々の設定" ) )
+	{
+		const size_t warpCount = GetWarpCount();
+		size_t eraseIndex = warpCount;
+
+		std::string caption{};
+		for ( size_t i = 0; i < warpCount; ++i )
+		{
+			caption = u8"[" + std::to_string( i ) + u8"]番";
+
+			bool wantRemove = false;
+			warps[i].ShowImGuiNode( caption, &wantRemove );
+
+			if ( wantRemove )
+			{
+				eraseIndex = i;
+			}
+		}
+
+		if ( eraseIndex != warpCount )
+		{
+			warps.erase( warps.begin() + eraseIndex );
+		}
+
+		ImGui::TreePop();
+	}
 	
 	auto ShowIONode = [&]()
 	{
