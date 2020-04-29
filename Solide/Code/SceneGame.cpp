@@ -269,6 +269,12 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Bullet::UseBulletsImGui();
 #endif // USE_IMGUI
 
+	if ( Fader::Get().IsClosed() && !ShouldGotoTitleScene( stageNumber ) )
+	{
+		UninitStage();
+		InitStage( stageNumber );
+	}
+
 	controller.Update();
 
 	pBG->Update( elapsedTime );
@@ -298,17 +304,18 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	CameraUpdate();
 
+	ProcessWarpCollision();
 	ProcessEnemyCollision();
 	ProcessPlayerCollision();
 
 	if ( NowGoalMoment() )
 	{
-		WaitInit();
+		ClearInit();
 		Donya::Sound::Play( Music::UI_Goal );
 	}
 
+	ClearUpdate( elapsedTime );
 	TutorialUpdate( elapsedTime );
-	WaitUpdate( elapsedTime );
 
 #if DEBUG_MODE
 	EffectAdmin::Get().SetViewMatrix( iCamera.CalcViewMatrix() );
@@ -488,6 +495,8 @@ void SceneGame::InitStage( int stageNo )
 	PlayerInit( stageNo );
 
 	CameraInit();
+
+	nowWaiting = false;
 }
 void SceneGame::UninitStage()
 {
@@ -663,9 +672,10 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 
 	if ( nowWaiting )
 	{
+
 		moveVector	= Donya::Vector2::Zero();
 		useJump		= false;
-		useOil		= ( pPlayer->IsOiled() ) ? true : false;
+		useOil		= ( pPlayer->IsOiled() && pPlayer->OnGround() ) ? true : false;
 	}
 
 #if DEBUG_MODE
@@ -746,7 +756,7 @@ void SceneGame::TutorialUpdate( float elapsedTime )
 	gameTimer++;
 	gameTimer = std::min( INT_MAX - 1, gameTimer );
 
-	if ( gameTimer == showTiming )
+	if ( gameTimer == showTiming  )
 	{
 		pTutorialSentence->Appear();
 	}
@@ -758,15 +768,16 @@ void SceneGame::TutorialUpdate( float elapsedTime )
 	pTutorialSentence->Update( elapsedTime );
 }
 
-void SceneGame::WaitInit()
+void SceneGame::ClearInit()
 {
 	clearTimer = 0;
-	nowWaiting = true;
 	pClearSentence->Appear();
+
+	nowWaiting = true;
 }
-void SceneGame::WaitUpdate( float elapsedTime )
+void SceneGame::ClearUpdate( float elapsedTime )
 {
-	if ( !nowWaiting ) { return; }
+	if ( !pClearSentence || pClearSentence->NowHidden() ) { return; }
 	// else
 
 	pClearSentence->Update( elapsedTime );
@@ -913,6 +924,35 @@ void SceneGame::ProcessEnemyCollision()
 		}
 	}
 }
+void SceneGame::ProcessWarpCollision()
+{
+	if ( Fader::Get().IsExist()	) { return; }	// except hit as continuously.
+	if ( nowWaiting				) { return; }	// Exempt if now is cleared.
+	if ( !pPlayer				) { return; }	// Do only player related collision.
+	if ( pPlayer->IsDead()		) { return; }	// Unnecessary if player already dead.
+	if ( !pWarps				) { return; }
+	// else
+
+	const Donya::AABB playerBody = pPlayer->GetHitBox();
+	Donya::AABB warpBody{};
+
+	const size_t warpCount = pWarps->GetWarpCount();
+	for ( size_t i = 0;  i < warpCount; ++i )
+	{
+		const auto *pWarp = pWarps->GetWarpPtrOrNullptr( i );
+		if ( !pWarp ) { continue; }
+		// else
+
+		warpBody = pWarp->GetHitBox();
+		if ( Donya::AABB::IsHitAABB( playerBody, warpBody ) )
+		{
+			stageNumber = pWarp->GetDestinationStageNo();
+			nowWaiting  = true;
+			StartFade();
+			break;
+		}
+	}
+}
 
 bool SceneGame::NowGoalMoment() const
 {
@@ -962,7 +1002,7 @@ Scene::Result SceneGame::ReturnResult()
 	}
 #endif // DEBUG_MODE
 
-	if ( Fader::Get().IsClosed() )
+	if ( Fader::Get().IsClosed() && ShouldGotoTitleScene( stageNumber ) )
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );

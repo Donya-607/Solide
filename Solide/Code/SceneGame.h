@@ -83,13 +83,14 @@ private:
 
 	void	TutorialUpdate( float elapsedTime );
 
-	void	WaitInit();
-	void	WaitUpdate( float elapsedTime );
+	void	ClearInit();
+	void	ClearUpdate( float elapsedTime );
 	bool	NowWaiting() const;
 
 	std::shared_ptr<Bullet::BulletBase> FindCollidedBulletOrNullptr( const Donya::AABB &other, const std::vector<Element::Type> &exceptTypes = {} ) const;
 	void	ProcessPlayerCollision();
 	void	ProcessEnemyCollision();
+	void	ProcessWarpCollision();
 
 	bool	NowGoalMoment() const;
 

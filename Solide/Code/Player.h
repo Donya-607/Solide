@@ -197,6 +197,10 @@ public:
 	{
 		return element.Has( Element::Type::Oil );
 	}
+	bool OnGround() const
+	{
+		return onGround;
+	}
 	Donya::Quaternion GetOrientation() const
 	{
 		return orientation;

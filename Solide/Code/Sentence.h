@@ -252,6 +252,7 @@ public:
 	/// Will reset a performance state.
 	/// </summary>
 	void Hide();
+	bool NowHidden() const { return nowHidden; }
 	/// <summary>
 	/// Will start a performance.
 	/// </summary>

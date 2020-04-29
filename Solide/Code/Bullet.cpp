@@ -35,6 +35,20 @@ namespace Bullet
 
 		bool LoadModels()
 		{
+			auto  HasLoaded = []( const std::array<std::shared_ptr<StorageBundle>, KIND_COUNT> &models)
+			{
+				for ( const auto &it : models )
+				{
+					if ( it )
+					{
+						return false;
+					}
+				}
+				return true;
+			};
+			if ( !HasLoaded( models ) ) { return true; }
+			// else
+
 			Donya::Loader loader{};
 			auto Load = [&loader]( const std::string &filePath, StorageBundle *pDest )->bool
 			{
@@ -77,6 +91,7 @@ namespace Bullet
 					_ASSERT_EXPR( 0, errMsg.c_str() );
 
 					succeeded = false;
+					models[i].reset(); // Indicates that it has not been loaded.
 				}
 			}
 
