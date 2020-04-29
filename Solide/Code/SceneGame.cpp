@@ -768,10 +768,11 @@ void SceneGame::TutorialUpdate( float elapsedTime )
 
 void SceneGame::ClearInit()
 {
-	clearTimer = 0;
+	clearTimer	= 0;
 	pClearSentence->Appear();
 
-	nowWaiting = true;
+	stageNumber	= SELECT_STAGE_NO;
+	nowWaiting	= true;
 }
 void SceneGame::ClearUpdate( float elapsedTime )
 {
