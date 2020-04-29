@@ -478,9 +478,7 @@ void SceneGame::InitStage( int stageNo )
 	assert( result );
 
 	pTerrain = std::make_unique<Terrain>( stageNo );
-	pTerrain->SetWorldConfig( Donya::Vector3{ 0.01f, 0.01f, 0.01f }, Donya::Vector3::Zero() );
-	// HACK : This scale(0.01f) is magic number :( ...That is adjustment of global scale, for other models.
-
+	
 	pEnemies = std::make_unique<Enemy::Container>();
 	pEnemies->Init( stageNo );
 
