@@ -705,7 +705,7 @@ namespace Donya
 		wcex.hInstance		= hInstance;
 		wcex.hIcon			= LoadIcon( hInstance, MAKEINTRESOURCE( 316 ) );
 		wcex.hCursor		= LoadCursor( NULL, IDC_ARROW );
-		wcex.hbrBackground	= ( HBRUSH )( COLOR_WINDOW + 1 );
+		wcex.hbrBackground	= ( HBRUSH )( GetStockObject( GRAY_BRUSH ) ); // WHITE is too dazzling.
 		wcex.lpszMenuName	= NULL;
 		wcex.lpszClassName	= windowCaption.c_str();
 		wcex.hIconSm		= 0;

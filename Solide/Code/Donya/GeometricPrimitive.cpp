@@ -1338,6 +1338,8 @@ namespace Donya
 			pVertexBuffer(), pInstanceBuffer()
 		{}
 		Line::~Line() = default;
+		
+		Line::Line( const Line & ) = default;
 
 		bool Line::Init()
 		{

@@ -11,6 +11,8 @@
 #include "Framework.h"
 #include "Icon.h"
 
+void ClearBackGround();
+
 INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _In_ LPWSTR cmdLine, _In_ INT cmdShow )
 {
 #if defined( DEBUG ) | defined( _DEBUG )
@@ -39,6 +41,7 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 	Donya::Init( cmdShow, desc );
 
 	Donya::SetWindowIcon( instance, IDI_ICON );
+	ClearBackGround();
 
 	const bool effectResult = EffectAdmin::Get().Init( Donya::GetDevice(), Donya::GetImmediateContext() );
 	if ( !effectResult ) { return Donya::Uninit(); }
@@ -49,7 +52,7 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 
 	while ( Donya::MessageLoop() )
 	{
-		Donya::ClearViews();
+		ClearBackGround();
 
 		Donya::SystemUpdate();
 		framework.Update( Donya::GetElapsedTime() );
@@ -64,4 +67,11 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 
 	auto   returnValue = Donya::Uninit();
 	return returnValue;
+}
+
+void ClearBackGround()
+{
+	// 1.0f is too dazzling.
+	constexpr FLOAT color[4]{ 0.7f, 0.7f, 0.7f, 1.0f };
+	Donya::ClearViews( color );
 }
