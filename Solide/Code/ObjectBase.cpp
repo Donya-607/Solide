@@ -276,7 +276,7 @@ Actor::AABBResult		Actor::CalcCorrectedVectorImpl( const Donya::Vector3 &vector,
 				vector[2] < penetration[2]
 			)
 		{
-			// tO bury.
+			// Bury. For prevent resolving as long distance.
 			result.correctedVector = Donya::Vector3::Zero();
 			result.wasHit = true;
 			return result;
@@ -341,19 +341,6 @@ Actor::AABBResult		Actor::CalcCorrectedVectorImpl( const Donya::Vector3 &vector,
 			return lowestAxis;
 		};
 		const AXIS min		= CalcLowestAxis( penetration );
-
-		/*
-		if ( vector.Length() * 2.0f < penetration[min] )
-		{
-			// If this resolver is too large, and now moving on only one dimension,
-			// I regard as impossible that collision.
-
-			// But I have to uncollidable this other.
-			pOther->exist = false;
-			continue;
-		}
-		// else
-		*/
 
 		movedBody.pos[min] += resolver[min];
 		moveSign[min]		= scast<float>( Donya::SignBit( resolver[min] ) );
@@ -442,11 +429,9 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 {
 	// The hit-box size of projected to movement component.
 	const Donya::Vector3 extendSize	= MakeSizeOffset( hitBox.size, xzMovement );
-	// const Donya::Vector3 extendSize	= 0.0f;
-
+	
 	// For prevent the ray-start overs a polygon, start from behind myself.
-	static float TEMP_MAGNI = 0.5f;
-	const Donya::Vector3 rayOffset	= xzMovement * TEMP_MAGNI;
+	const Donya::Vector3 rayOffset	= xzMovement * 0.5f;
 	const Donya::Vector3 rayStart	= pos + hitBox.pos - rayOffset;
 	const Donya::Vector3 rayVector	= xzMovement + extendSize + rayOffset;
 #if DEBUG_MODE
@@ -468,11 +453,8 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 	}
 #endif // DEBUG_MODE
 
-	// auto aabbResult = CalcCorrectedVector( rayVector, solids );
-
 	constexpr int RECURSIVE_LIMIT	= 4;
 	auto result = CalcCorrectedVector( rayStart, RECURSIVE_LIMIT, rayVector, pTerrain, pTerrainMatrix );
-	// auto result = CalcCorrectedVector( rayStart, RECURSIVE_LIMIT, aabbResult.correctedVector, pTerrain, pTerrainMatrix );
 	if ( result.raycastResult.wasHit )
 	{
 	#if DEBUG_MODE
@@ -511,42 +493,38 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 	}
 	else
 	{
-		result.correctedVector -= extendSize; // These process is equivalence.
-		// result.correctedVector = xzMovement;
+		result.correctedVector -= extendSize;
 	}
 
-	static bool enablePreCorrect = true; if(enablePreCorrect )
 	result.correctedVector = CalcCorrectedVectorByMyHitBox( result.correctedVector, wsRayOffsets, pTerrain, pTerrainMatrix );
-
-#if DEBUG_MODE
-	{
-		ReserveLine( rayStart, rayStart + result.correctedVector, { 0.7f, 0.3f, 0.7f, 0.8f } );
-	}
-
-	const auto prevPos = pos + result.correctedVector;
-#endif // DEBUG_MODE
 
 	auto aabbResult = CalcCorrectedVector( result.correctedVector, solids );
 
-	static bool enablePostCorrect = true; if ( enablePostCorrect )
 	aabbResult.correctedVector = CalcCorrectedVectorByMyHitBox( aabbResult.correctedVector, wsRayOffsets, pTerrain, pTerrainMatrix );
 
-	const Donya::Vector3 applyVelocity = aabbResult.correctedVector;
-	result = CalcCorrectedVector( rayStart, 1, applyVelocity, pTerrain, pTerrainMatrix );
-	aabbResult = CalcCorrectedVector( applyVelocity, solids );
-	const auto resultVec = CalcCorrectedVectorByMyHitBox( applyVelocity, wsRayOffsets, pTerrain, pTerrainMatrix );
-	int hitCount = 0;
-	if ( result.raycastResult.wasHit	) { hitCount++; }
-	if ( aabbResult.wasHit				) { hitCount++; }
-	if ( resultVec != applyVelocity		) { hitCount++; }
-	// if ( 1 < hitCount )
-	if ( 0 < hitCount )
-	{
-		// We regard as can not move to wanted velocity.
-		return;
-	}
+	// If still colliding to something, we regard as can not move to wanted velocity.
 
-	pos += aabbResult.correctedVector;
+	const Donya::Vector3 applyVelocity = aabbResult.correctedVector;
+	auto IsHitToAnything = [&]( const Donya::Vector3 &validateVelocity )
+	{
+		const auto vsSolids = CalcCorrectedVector( validateVelocity, solids );
+		if ( vsSolids.wasHit ) { return true; }
+		// else
+
+		const auto vsTerrain = CalcCorrectedVector( rayStart, 1, validateVelocity, pTerrain, pTerrainMatrix );
+		if ( vsTerrain.raycastResult.wasHit ) { return true; }
+		// else
+
+		const auto hitBoxVsTerrain = CalcCorrectedVectorByMyHitBox( validateVelocity, wsRayOffsets, pTerrain, pTerrainMatrix );
+		if ( hitBoxVsTerrain != validateVelocity ) { return true; }
+		// else
+
+		return false;
+	};
+	if ( IsHitToAnything( applyVelocity ) ) { return; }
+	// else
+
+	pos += applyVelocity;
 }
 Donya::Vector3 Actor::MoveYImpl( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
