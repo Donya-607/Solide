@@ -636,7 +636,7 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	if ( !pPlayer ) { return; }
 	// else
 
-	if ( pPlayer->IsDead() )
+	if ( pPlayer->IsDead() && !nowWaiting )
 	{
 		// Re-generate.
 		PlayerInit( stageNumber );
