@@ -51,6 +51,22 @@ public:
 	/// Returns face's normal of last collided by vertical move.
 	/// </summary>
 	virtual Donya::Vector3 Move( const Donya::Vector3 &wsMovement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+public:
+	struct AABBResult
+	{
+		Donya::Vector3 correctedVector;
+		bool wasHit = false;
+	};
+	struct RecursionResult
+	{
+		Donya::Vector3				correctedVector;
+		Donya::Model::RaycastResult	raycastResult;
+	};
+	AABBResult		CalcCorrectedVector( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
+	RecursionResult	CalcCorrectedVector( int recursionLimit, const Donya::Vector3 &targetVector, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix ) const;
+private:
+	AABBResult		CalcCorrectedVectorImpl( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
+	RecursionResult	CalcCorrectedVectorImpl( int recursionLimit, int recursionCount, RecursionResult prevResult, const Donya::Model::PolygonGroup &terrain, const Donya::Vector4x4 &terrainWorldMatrix ) const;
 private:
 	void MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Donya::Vector3> &wsRayOffsets, int recursionCount, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 	Donya::Vector3 MoveYImpl ( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
@@ -68,7 +84,7 @@ private:
 	};
 	CalcedRayResult CalcCorrectVelocity( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix, CalcedRayResult recursionResult, int recursionCount, int recursionLimit ) const;
 
-	void CorrectByHitBox( const std::vector<Donya::Vector3> &wsRayOriginOffsets, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix, int recursiveCount );
+	void CorrectByHitBox( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOriginOffsets, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix, int recursiveCount );
 public:
 	virtual bool IsRiding( const Solid &onto ) const;
 	/// <summary>

@@ -1019,10 +1019,10 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	bool wasCorrectedV = !standingNormal.IsZero();
 	if ( wasCorrectedV )
 	{
-		const float	dot = Donya::Dot( standingNormal, Donya::Vector3::Up() );
+		const float	tilt = Donya::Dot( standingNormal, Donya::Vector3::Up() );
 		const bool	ridableFace = ( standingNormal.IsZero() )
 					? false 
-					: data.canRideSlopeBorder <= fabsf( std::max( 0.0f, dot ) );
+					: data.canRideSlopeBorder <= fabsf( std::max( 0.0f, tilt ) );
 
 		// I want erase the vertical velocity If collided to ceil or ridable floor.
 
