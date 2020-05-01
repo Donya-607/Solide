@@ -659,7 +659,7 @@ Donya::Vector4x4 Actor::GetWorldMatrix() const
 void Actor::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Quaternion &rotation, const Donya::Vector4 &color ) const
 {
 #if DEBUG_MODE
-	FlushLine( VP );
+	//FlushLine( VP );
 #endif // DEBUG_MODE
 
 	const auto body = GetHitBox();

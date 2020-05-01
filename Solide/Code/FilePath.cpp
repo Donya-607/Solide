@@ -70,9 +70,11 @@ std::wstring GetSpritePath( SpriteAttribute attr )
 	switch ( attr )
 	{
 	case SpriteAttribute::FMODLogoBlack:
-		return ToRelPath( L"Rights/FMOD Logo Black - White Background.png" );	// break;
+		return ToRelPath( L"Rights/FMOD Logo Black - White Background.png" );
 	case SpriteAttribute::FMODLogoWhite:
-		return ToRelPath( L"Rights/FMOD Logo White - Black Background.png" );	// break;
+		return ToRelPath( L"Rights/FMOD Logo White - Black Background.png" );
+	case SpriteAttribute::CircleShadow:
+		return ToRelPath( L"Shadow/Circle.png" );
 	default: break;
 	}
 

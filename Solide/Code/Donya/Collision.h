@@ -311,6 +311,14 @@ namespace Donya
 	
 	bool		operator == ( const OBB &L,		const OBB &R );
 	static bool	operator != ( const OBB &L,		const OBB &R ) { return !( L == R ); }
+
+
+	struct RayIntersectResult
+	{
+		Donya::Vector3 intersection;
+		bool isIntersect = false;
+	};
+	RayIntersectResult CalcIntersectionPoint( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd, const AABB &box );
 }
 
 CEREAL_CLASS_VERSION( Donya::Box,		1 );

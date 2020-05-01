@@ -203,6 +203,7 @@
     <ClCompile Include="Code\SceneTitle.cpp" />
     <ClCompile Include="Code\Section.cpp" />
     <ClCompile Include="Code\Sentence.cpp" />
+    <ClCompile Include="Code\Shadow.cpp" />
     <ClCompile Include="Code\StorageForScene.cpp" />
     <ClCompile Include="Code\Terrain.cpp" />
     <ClCompile Include="Code\UI.cpp" />
@@ -295,6 +296,7 @@
     <ClInclude Include="Code\SceneTitle.h" />
     <ClInclude Include="Code\Section.h" />
     <ClInclude Include="Code\Sentence.h" />
+    <ClInclude Include="Code\Shadow.h" />
     <ClInclude Include="Code\StorageForScene.h" />
     <ClInclude Include="Code\Terrain.h" />
     <ClInclude Include="Code\TexPart.h" />

@@ -312,7 +312,7 @@ namespace Donya
 		float distanceSq = CalcShortestDistanceSq( L, R.pos );
 		return ( distanceSq < ( R.radius * R.radius ) );
 	}
-
+	
 	bool Sphere::IsHitPoint	( const Sphere &L, const Donya::Vector3 &R, bool ignoreExistFlag )
 	{
 		if ( !ignoreExistFlag && !L.exist ) { return false; }
@@ -572,5 +572,37 @@ namespace Donya
 		if ( L.exist != R.exist ) { return false; }
 		// else
 		return true;
+	}
+
+
+	RayIntersectResult CalcIntersectionPoint( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd, const AABB &box )
+	{
+		const auto &a  = rayStart;
+		const auto &b  = rayEnd;
+		const auto dir = ( rayEnd - rayStart ).Unit();
+
+		const auto boxMin = box.pos - box.size;
+		const auto boxMax = box.pos + box.size;
+		
+		Donya::Vector3 tMin;
+		Donya::Vector3 tMax;
+		for ( int i = 0; i < 3; ++i )
+		{
+			tMin[i] = ( boxMin[i] - a[i] ) / dir[i];
+			tMax[i] = ( boxMax[i] - a[i] ) / dir[i];
+		}
+
+		float lateMin = -FLT_MAX;
+		float fastMax = +FLT_MAX;
+		for ( int i = 0; i < 3; ++i )
+		{
+			lateMin = std::max( tMin[i], lateMin );
+			fastMax = std::min( tMax[i], fastMax );
+		}
+
+		RayIntersectResult result;
+		result.isIntersect = ( 0.0f <= fastMax - lateMin ) ? true : false;
+		result.intersection = a +  dir.Product( tMin );
+		return result;
 	}
 }
