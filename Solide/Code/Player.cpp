@@ -619,12 +619,20 @@ void Player::MotionManager::Init()
 }
 void Player::MotionManager::Update( Player &player, float elapsedTime )
 {
-	const auto  data			= FetchMember();
+	prevKind = currKind;
+	currKind = CalcNowKind( player );
+	if ( currKind != prevKind )
+	{
+		animator.ResetTimer();
+	}
+	
+	ShouldEnableLoop( currKind )
+	? animator.EnableLoop()
+	: animator.DisableLoop();
 
-	const int   nowKind			= CalcNowKind( player );
-	const int   nowMotion		= data.useMotionIndices[nowKind];
-
-	const float acceleration	= data.motionAccelerations[nowMotion];
+	const auto	data			= FetchMember();
+	const int	nowMotion		= data.useMotionIndices[currKind];
+	const float	acceleration	= data.motionAccelerations[nowMotion];
 
 	animator.Update( elapsedTime * acceleration );
 	AssignPose( nowMotion );
@@ -633,30 +641,59 @@ const Donya::Model::Pose &Player::MotionManager::GetPose() const
 {
 	return pose;
 }
+bool Player::MotionManager::ShouldEnableLoop( int intKind ) const
+{
+	const PlayerModel::Kind kind = scast<PlayerModel::Kind>( intKind );
+	switch ( kind )
+	{
+	case PlayerModel::Kind::Idle:	return true;
+	case PlayerModel::Kind::Run:	return true;
+	case PlayerModel::Kind::Slide:	return false;
+	case PlayerModel::Kind::Jump:	return false;
+	case PlayerModel::Kind::Fall:	return false;
+	default: break;
+	}
+
+	assert( !"Error: Unexpected kind!" );
+	return false;
+}
 void Player::MotionManager::AssignPose( int motionIndex )
 {
 	const auto &motionHolder  = PlayerModel::GetMotions();
-	_ASSERT_EXPR( !motionHolder.IsOutOfRange( motionIndex ), L"Error : Passed motion index out of range!" );
+	if ( motionHolder.IsOutOfRange( motionIndex ) )
+	{
+		_ASSERT_EXPR( 0, L"Error: Passed motion index out of range!" );
+		return;
+	}
+	// else
 
 	const auto &currentMotion = motionHolder.GetMotion( motionIndex );
+	animator.SetRepeatRange( currentMotion );
 	pose.AssignSkeletal( animator.CalcCurrentPose( currentMotion ) );
 }
 int  Player::MotionManager::CalcNowKind( Player &player ) const
 {
-	// TODO: To separate between the Jump and the Fall.
-
 	auto NowMoving	= [&]()
 	{
 		const Donya::Vector2 velocityXZ{ player.velocity.x, player.velocity.z };
 		return ( velocityXZ.IsZero() ) ? false : true;
 	};
+
 	auto IsDead		= [&]()
 	{
 		return player.IsDead();
 	};
 	auto IsJump		= [&]()
 	{
-		return ( player.onGround ) ? false : true;
+		if ( player.onGround ) { return false; }
+		// else
+		return ( 0.0f <= player.velocity.y );
+	};
+	auto IsFall		= [&]()
+	{
+		if ( player.onGround ) { return false; }
+		// else
+		return ( player.velocity.y < 0.0f );
 	};
 	auto IsRun		= [&]()
 	{
@@ -673,6 +710,7 @@ int  Player::MotionManager::CalcNowKind( Player &player ) const
 
 	// if ( IsDead() ) { return PlayerModel::Kind::Dead; }
 	if ( IsJump() ) { return PlayerModel::Kind::Jump; }
+	if ( IsFall() ) { return PlayerModel::Kind::Fall; }
 	if ( IsRun()  )
 	{
 		return	( player.IsOiled() )
@@ -682,7 +720,7 @@ int  Player::MotionManager::CalcNowKind( Player &player ) const
 	if ( IsIdle() ) { return PlayerModel::Kind::Idle; }
 	// else
 
-	assert( !"Error : Now is unexpected status!" );
+	assert( !"Error: Now is unexpected status!" );
 	return PlayerModel::Kind::KindCount;
 }
 
@@ -986,15 +1024,14 @@ void Player::Update( float elapsedTime, Input input )
 
 	Fall( elapsedTime );
 
-	pMover->Update( *this, elapsedTime );
-	motionManager.Update( *this, elapsedTime );
-
 	UpdateHopping( elapsedTime );
 
 	if ( WillDie() )
 	{
 		KillMe();
 	}
+
+	motionManager.Update( *this, elapsedTime );
 }
 
 void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMat )
@@ -1133,6 +1170,7 @@ void Player::LookToInput( float elapsedTime, Input input )
 
 void Player::Move( float elapsedTime, Input input )
 {
+	pMover->Update( *this, elapsedTime );
 	pMover->Move( *this, elapsedTime, input );
 }
 

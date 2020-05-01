@@ -73,6 +73,8 @@ private:
 	class MotionManager
 	{
 	private:
+		int prevKind = 0;
+		int currKind = 0;
 		Donya::Model::Animator	animator;
 		Donya::Model::Pose		pose;
 	public:
@@ -81,6 +83,7 @@ private:
 	public:
 		const Donya::Model::Pose &GetPose() const;
 	private:
+		bool ShouldEnableLoop( int kind ) const;
 		void AssignPose( int motionIndex );
 		int  CalcNowKind( Player &player ) const;
 	};
