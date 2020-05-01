@@ -16,6 +16,7 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 #if DEBUG_MODE
+#include "Donya/GeometricPrimitive.h"
 #include "Donya/Mouse.h"
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
@@ -422,7 +423,7 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		Donya::Model::Cube::Constant constant;
 		constant.matViewProj	= VP;
-		constant.drawColor		= Donya::Vector4{ 0.5f, 1.0f, 0.8f, 0.5f };
+		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 0.5f };
 		constant.lightDirection	= data.directionalLight.direction.XYZ();
 		
 		auto DrawCube = [&]( const Donya::Vector3 &pos, const Donya::Vector3 &scale = { 1.0f, 1.0f, 1.0f } )
@@ -438,7 +439,55 @@ void SceneGame::Draw( float elapsedTime )
 
 		if ( pPlayerIniter )
 		{
+			constant.drawColor = { 0.5f, 1.0f, 0.8f, 0.5f };
 			DrawCube( pPlayerIniter->GetInitialPos() );
+		}
+
+		// Ray vs AABB test.
+		{
+			static Donya::AABB box{};
+			static Donya::AABB hitCube{};
+			static bool initFlag = false;
+			if ( !initFlag )
+			{
+				box.pos  = { 0.0f, 0.0f, -110.0f };
+				box.size = { 1.0f, 1.0f, 1.0f };
+				box.exist = true;
+				hitCube.size = { 1.0f, 1.0f, 1.0f };
+				hitCube.exist = true;
+				initFlag = true;
+			}
+
+			box.exist = true;
+
+			static Donya::Vector3 rayStart{ -2.0f, 0.0f, -110.0f };
+			static Donya::Vector3 rayEnd  { +6.0f, 0.0f, -110.0f };
+			static Donya::Geometric::Line line{ 32U }; line.Init();
+			line.Reserve( rayStart, rayEnd, { 1.0f, 0.0f, 0.0f, 1.0f } );
+			line.Flush( VP );
+
+			const auto result = Donya::CalcIntersectionPoint( rayStart, rayEnd, box );
+
+			const Donya::Vector4 boxColor = ( result.isIntersect )
+				? Donya::Vector4{ 0.0f, 1.0f, 0.0f, 0.7f }
+				: Donya::Vector4{ 1.0f, 1.0f, 1.0f, 0.7f };
+			constant.drawColor = boxColor;
+			DrawCube( box.pos, box.size );
+
+			if ( result.isIntersect )
+			{
+				constant.drawColor = { 0.0f, 1.0f, 0.0f, 1.0f };
+				DrawCube( result.intersection, hitCube.size );
+			}
+
+			if ( ImGui::BeginIfAllowed( "Ray vs AABB test" ) )
+			{
+				ParameterHelper::ShowAABBNode( u8"AABB", &box );
+				ParameterHelper::ShowAABBNode( u8"当たった目印", &hitCube );
+				ImGui::DragFloat3( u8"レイ・始点", &rayStart.x, 0.01f );
+				ImGui::DragFloat3( u8"レイ・終点", &rayEnd.x, 0.01f );
+				ImGui::End();
+			}
 		}
 	}
 #endif // DEBUG_MODE

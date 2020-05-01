@@ -579,7 +579,14 @@ namespace Donya
 	{
 		const auto &a  = rayStart;
 		const auto &b  = rayEnd;
-		const auto dir = ( rayEnd - rayStart ).Unit();
+		// const auto dir = ( rayEnd - rayStart ).Unit();
+		const auto dir = ( rayEnd - rayStart );
+		const Donya::Vector3 invDir
+		{
+			1.0f / dir.x,
+			1.0f / dir.y,
+			1.0f / dir.z,
+		};
 
 		const auto boxMin = box.pos - box.size;
 		const auto boxMax = box.pos + box.size;
@@ -588,21 +595,38 @@ namespace Donya
 		Donya::Vector3 tMax;
 		for ( int i = 0; i < 3; ++i )
 		{
-			tMin[i] = ( boxMin[i] - a[i] ) / dir[i];
-			tMax[i] = ( boxMax[i] - a[i] ) / dir[i];
+			tMin[i] = ( boxMin[i] - a[i] ) * invDir[i];
+			tMax[i] = ( boxMax[i] - a[i] ) * invDir[i];
+
+			if ( tMax[i] < tMin[i] )
+			{
+				auto tmp = tMax[i];
+				tMax[i] = tMin[i];
+				tMin[i] = tmp;
+			}
 		}
 
-		float lateMin = -FLT_MAX;
-		float fastMax = +FLT_MAX;
+		float greatestMin = -FLT_MAX;
+		float smallestMax = +FLT_MAX;
 		for ( int i = 0; i < 3; ++i )
 		{
-			lateMin = std::max( tMin[i], lateMin );
-			fastMax = std::min( tMax[i], fastMax );
+			greatestMin = std::max( tMin[i], greatestMin );
+			smallestMax = std::min( tMax[i], smallestMax );
+		}
+
+		bool isIntersect = true;
+		for ( int i = 0; i < 3; ++i )
+		{
+			if ( tMax[i] < tMin[i] ) { isIntersect = false; break; }
+			if ( tMax[i] < greatestMin ) { isIntersect = false; break; }
+			if ( smallestMax < tMin[i] ) { isIntersect = false; break; }
 		}
 
 		RayIntersectResult result;
-		result.isIntersect = ( 0.0f <= fastMax - lateMin ) ? true : false;
-		result.intersection = a +  dir.Product( tMin );
+		// result.isIntersect = ( greatestMin <= smallestMax ) ? true : false;
+		result.isIntersect = isIntersect;
+		// result.intersection = a + dir.Product( tMin );
+		result.intersection = a + dir * greatestMin;
 		return result;
 	}
 }
