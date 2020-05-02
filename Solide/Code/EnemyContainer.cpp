@@ -53,7 +53,11 @@ namespace Enemy
 
 		for ( auto &pIt : enemyPtrs )
 		{
-			if ( !pIt ) { continue; }
+			if ( !pIt )
+			{
+				bool breakpoint = 0;
+				continue;
+			}
 			// else
 			pIt->Update( elapsedTime, targetPos );
 		}
@@ -66,6 +70,10 @@ namespace Enemy
 				return ( !pElement ) ? true : pElement->ShouldRemove();
 			}
 		);
+		for ( auto it = result; it != enemyPtrs.end(); ++it )
+		{
+			if ( *it ) { ( *it )->Uninit(); }
+		}
 		enemyPtrs.erase( result, enemyPtrs.end() );
 	}
 	void Container::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )

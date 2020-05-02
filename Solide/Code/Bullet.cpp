@@ -8,6 +8,7 @@
 #include "Donya/ModelPose.h"
 #include "Donya/Useful.h"
 
+#include "Effect.h"
 #include "FilePath.h"
 #include "Section.h" // Use for DrawHitBox.
 #include "Parameter.h"
@@ -527,6 +528,10 @@ namespace Bullet
 				return ( !pElement ) ? true : pElement->ShouldRemove();
 			}
 		);
+		for ( auto it = result; it != bulletPtrs.end(); ++it )
+		{
+			if ( *it ) { ( *it )->Uninit(); }
+		}
 		bulletPtrs.erase( result, bulletPtrs.end() );
 	}
 	void BulletAdmin::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
@@ -904,6 +909,34 @@ namespace Bullet
 {
 	namespace Impl
 	{
+		OilBullet::~OilBullet()
+		{
+			if ( pEffect )
+			{
+				pEffect->Stop();
+				pEffect.reset();
+			}
+		}
+		void OilBullet::Init( const BulletAdmin::FireDesc &param )
+		{
+			BulletBase::Init( param );
+
+			if ( element.Has( Element::Type::Flame ) )
+			{
+				pEffect = std::make_shared<EffectHandle>
+				(
+					EffectHandle::Generate( EffectAttribute::Flame, pos )
+				);
+			}
+		}
+		void OilBullet::Uninit()
+		{
+			if ( pEffect )
+			{
+				pEffect->Stop();
+				pEffect.reset();
+			}
+		}
 		void OilBullet::Update( float elapsedTime )
 		{
 			aliveTime++;
@@ -913,6 +946,11 @@ namespace Bullet
 
 			velocity.y -= ParamBullet::Get().Data().oil.gravity;
 			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
+
+			if ( pEffect )
+			{
+				pEffect->SetPosition( pos );
+			}
 		}
 		void OilBullet::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 		{

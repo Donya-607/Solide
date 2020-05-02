@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -13,6 +14,8 @@
 
 #include "Element.h"
 #include "Renderer.h"
+
+class EffectHandle;
 
 namespace Bullet
 {
@@ -164,7 +167,12 @@ namespace Bullet
 		private:
 			int		aliveTime  = 0;
 			bool	shouldStay = false;
+			std::shared_ptr<EffectHandle> pEffect = nullptr; // Will used as burning effect.
 		public:
+			~OilBullet();
+		public:
+			void Init( const Bullet::BulletAdmin::FireDesc &initializeParameter ) override;
+			void Uninit() override;
 			void Update( float elapsedTime ) override;
 			void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 			void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;

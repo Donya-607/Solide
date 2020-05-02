@@ -8,6 +8,7 @@
 #include "Donya/Loader.h"
 #include "Donya/Useful.h"
 
+#include "Effect.h"
 #include "FilePath.h"
 #include "Parameter.h"
 
@@ -435,7 +436,14 @@ namespace Enemy
 	}
 #endif // USE_IMGUI
 
-
+	Base::~Base()
+	{
+		if ( pEffect )
+		{
+			pEffect->Stop();
+			pEffect.reset();
+		}
+	}
 	void Base::Init( const InitializeParam &argInitializer )
 	{
 		initializer	= argInitializer;
@@ -460,6 +468,14 @@ namespace Enemy
 			);
 		}
 
+	}
+	void Base::Uninit()
+	{
+		if ( pEffect )
+		{
+			pEffect->Stop();
+			pEffect.reset();
+		}
 	}
 	void Base::Draw( RenderingHelper *pRenderer )
 	{
@@ -550,6 +566,21 @@ namespace Enemy
 		}
 
 		return wsHurtBox;
+	}
+	void Base::BurningUpdate()
+	{
+		if ( !pEffect && element.Has( Element::Type::Flame ) )
+		{
+			pEffect = std::make_shared<EffectHandle>
+			(
+				EffectHandle::Generate( EffectAttribute::Flame, pos )
+			);
+		}
+
+		if ( !pEffect ) { return; }
+		// else
+
+		pEffect->SetPosition( pos );
 	}
 	void Base::UpdateMotion( float elapsedTime, int useMotionIndex )
 	{
@@ -946,6 +977,7 @@ namespace Enemy
 
 		constexpr int USE_MOTION_INDEX = 0;
 		UpdateMotion( elapsedTime, USE_MOTION_INDEX );
+		BurningUpdate();
 	}
 	void Straight::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 	{
@@ -1229,6 +1261,8 @@ namespace Enemy
 			auto ChangeMover = pMover->GetChangeStateMethod( *this );
 			ChangeMover();
 		}
+
+		BurningUpdate();
 	}
 	void Archer::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 	{
@@ -1421,6 +1455,8 @@ namespace Enemy
 			auto ChangeMover = pMover->GetChangeStateMethod( *this );
 			ChangeMover();
 		}
+
+		BurningUpdate();
 	}
 	void GateKeeper::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 	{
@@ -1621,6 +1657,8 @@ namespace Enemy
 			auto ChangeMover = pMover->GetChangeStateMethod( *this );
 			ChangeMover();
 		}
+
+		BurningUpdate();
 	}
 	void Chaser::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 	{

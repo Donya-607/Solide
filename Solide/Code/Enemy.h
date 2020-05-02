@@ -20,6 +20,8 @@
 #include "Element.h"
 #include "Renderer.h"
 
+class EffectHandle;
+
 namespace Enemy
 {
 	enum class Kind
@@ -124,19 +126,20 @@ namespace Enemy
 	class Base
 	{
 	protected:
-		InitializeParam				initializer; // Usually do not change this.
+		InitializeParam					initializer; // Usually do not change this.
 	protected:
-		Donya::Vector3				pos;
-		Donya::Quaternion			orientation;
-		std::shared_ptr<ModelParam>	pModelParam;
-		Donya::Model::Pose			pose;
-		Donya::Model::Animator		animator;
+		Donya::Vector3					pos;
+		Donya::Quaternion				orientation;
+		std::shared_ptr<ModelParam>		pModelParam;
+		Donya::Model::Pose				pose;
+		Donya::Model::Animator			animator;
 
 		// Will changes by const method.
-		mutable Element				element;
+		mutable Element					element;
+		std::shared_ptr<EffectHandle>	pEffect; // Will used as burning effect.
 	public:
 		Base() = default;
-		virtual ~Base() = default;
+		virtual ~Base();
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -154,7 +157,7 @@ namespace Enemy
 		}
 	public:
 		virtual void Init( const InitializeParam &initializer );
-		virtual void Uninit() {}
+		virtual void Uninit();
 
 		virtual void Update( float elapsedTime, const Donya::Vector3 &targetPosition ) = 0;
 		virtual void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) = 0;
@@ -174,6 +177,7 @@ namespace Enemy
 		virtual Donya::AABB AcquireHitBox( bool wantWorldSpace ) const;
 		virtual Donya::AABB AcquireHurtBox( bool wantWorldSpace ) const;
 	protected:
+		virtual void BurningUpdate();
 		virtual void UpdateMotion( float elapsedTime, int useMotionIndex );
 		virtual Donya::Vector4		CalcDrawColor() const;
 		virtual	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
