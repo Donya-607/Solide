@@ -143,7 +143,7 @@ bool Framework::LoadEffects()
 	constexpr size_t attrCount = scast<size_t>( EffectAttribute::AttributeCount );
 	constexpr std::array<EffectAttribute, attrCount> attributes
 	{
-		EffectAttribute::TEST
+		EffectAttribute::Flame
 	};
 
 	bool succeeded = true;
@@ -186,8 +186,10 @@ void Framework::DebugShowInformation()
 	{
 		static std::shared_ptr<EffectHandle> pHandle = nullptr;
 		static Donya::Vector3 genPos{};
+		static Donya::Vector3 setPos{};
 		static Donya::Vector3 velocity{};
 		ImGui::DragFloat3( u8"生成位置",	&genPos.x,		0.1f );
+		ImGui::DragFloat3( u8"設定位置",	&setPos.x,		0.1f );
 		ImGui::DragFloat3( u8"移動速度",	&velocity.x,	0.1f );
 
 		if ( ImGui::Button( u8"生成" ) )
@@ -195,8 +197,12 @@ void Framework::DebugShowInformation()
 			if ( pHandle ) { pHandle->Stop(); }
 			pHandle.reset();
 
-			pHandle = std::make_shared<EffectHandle>( EffectHandle::Generate( EffectAttribute::TEST, genPos ) );
+			pHandle = std::make_shared<EffectHandle>( EffectHandle::Generate( EffectAttribute::Flame, genPos ) );
 			if ( !pHandle->IsValid() ) { pHandle.reset(); }
+		}
+		if ( ImGui::Button( u8"設定位置を代入" ) && pHandle )
+		{
+			pHandle->SetPosition( setPos );
 		}
 		if ( ImGui::Button( u8"ストップ" ) && pHandle )
 		{

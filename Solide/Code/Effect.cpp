@@ -46,6 +46,17 @@ namespace
 		method( pManager );
 	}
 }
+void EffectHandle::SetPosition( const Donya::Vector3 &pos )
+{
+	OperateIfManagerIsAvailable
+	(
+		[&]( Fx::Manager *pManager )
+		{
+			pManager->SetLocation( handle, ToFxVector( pos ) );
+
+		}
+	);
+}
 void EffectHandle::Move( const Donya::Vector3 &velocity )
 {
 	OperateIfManagerIsAvailable

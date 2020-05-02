@@ -2,7 +2,7 @@
 
 enum class EffectAttribute
 {
-	TEST,
+	Flame,
 
 	AttributeCount
 };

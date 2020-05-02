@@ -93,8 +93,8 @@ std::basic_string<EFK_CHAR> GetEffectPath( EffectAttribute attr )
 
 	switch ( attr )
 	{
-	case EffectAttribute::TEST:
-		return ToRelPath( u"TEST/Fire.efkefc" );
+	case EffectAttribute::Flame:
+		return ToRelPath( u"Flame/Fire.efkefc" );
 	default: break;
 	}
 
