@@ -649,6 +649,7 @@ void SceneGame::PlayerInit( int stageNo )
 	pPlayerIniter = std::make_unique<PlayerInitializer>();
 	pPlayerIniter->LoadParameter( stageNo );
 
+	if ( pPlayer ) { pPlayer->Uninit(); }
 	pPlayer = std::make_unique<Player>();
 	pPlayer->Init( *pPlayerIniter );
 }

@@ -21,6 +21,7 @@
 
 #include "Bullet.h"
 #include "Common.h"
+#include "Effect.h"
 #include "FilePath.h"
 #include "Music.h"
 #include "Parameter.h"
@@ -981,6 +982,12 @@ void Player::Init( const PlayerInitializer &param )
 }
 void Player::Uninit()
 {
+	if ( pEffect )
+	{
+		pEffect->Stop();
+		pEffect.reset();
+	}
+
 	pMover->Uninit( *this );
 	ParamPlayer::Get().Uninit();
 }
@@ -1235,6 +1242,12 @@ void Player::Shot( float elapsedTime )
 	{
 		element.Subtract( Element::Type::Flame );
 		useParam.addElement.Add( Element::Type::Flame );
+
+		if ( pEffect )
+		{
+			pEffect->Stop();
+			pEffect.reset();
+		}
 	}
 
 	Bullet::BulletAdmin::Get().Append( useParam );
@@ -1291,6 +1304,18 @@ void Player::BurnUpdate( float elapsedTime )
 	// else
 
 	burnTimer++;
+
+	if ( !pEffect )
+	{
+		pEffect = std::make_shared<EffectHandle>
+		(
+			EffectHandle::Generate( EffectAttribute::Flame, pos )
+		);
+	}
+	else
+	{
+		pEffect->SetPosition( pos );
+	}
 }
 
 #if USE_IMGUI

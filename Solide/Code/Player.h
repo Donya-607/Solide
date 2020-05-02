@@ -57,7 +57,7 @@ public:
 };
 CEREAL_CLASS_VERSION( PlayerInitializer, 0 )
 
-
+class EffectHandle;
 class Player : public Actor
 {
 public:
@@ -168,16 +168,17 @@ private:
 		bool IsDead() const override { return true; }
 	};
 private:
-	int							burnTimer	= 0;
-	float						hopPitching	= 0.0f;	// Radian. Use when hopping that will happen when used an oil.
-	mutable Element				element;			// Will change in const method.
-	Donya::Vector3				velocity;
-	Donya::Quaternion			orientation;
-	std::unique_ptr<MoverBase>	pMover;
-	MotionManager				motionManager;
-	InputManager				inputManager;
-	bool						onGround	= false;
-	bool						canUseOil	= true;	// Will recovery when landing.
+	int								burnTimer	= 0;
+	float							hopPitching	= 0.0f;		// Radian. Use when hopping that will happen when used an oil.
+	mutable Element					element;				// Will change in const method.
+	Donya::Vector3					velocity;
+	Donya::Quaternion				orientation;
+	std::unique_ptr<MoverBase>		pMover;
+	MotionManager					motionManager;
+	InputManager					inputManager;
+	std::shared_ptr<EffectHandle>	pEffect		= nullptr;	// Will used as burning effect.
+	bool							onGround	= false;
+	bool							canUseOil	= true;		// Will recovery when landing.
 public:
 	void Init( const PlayerInitializer &parameter );
 	void Uninit();
