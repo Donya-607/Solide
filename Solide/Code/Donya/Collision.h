@@ -316,6 +316,7 @@ namespace Donya
 	struct RayIntersectResult
 	{
 		Donya::Vector3 intersection;
+		Donya::Vector3 normal;
 		bool isIntersect = false;
 	};
 	RayIntersectResult CalcIntersectionPoint( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd, const AABB &box );

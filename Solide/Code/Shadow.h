@@ -29,6 +29,7 @@ private:
 		float			rayLength = 10.0f;
 		Donya::Vector3	intersection;
 		Donya::Vector3	normal;
+		bool			exist = true;
 	};
 private:
 	std::vector<Instance> shadows;

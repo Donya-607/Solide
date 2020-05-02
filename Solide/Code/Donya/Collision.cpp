@@ -623,10 +623,15 @@ namespace Donya
 		}
 
 		RayIntersectResult result;
-		// result.isIntersect = ( greatestMin <= smallestMax ) ? true : false;
 		result.isIntersect = isIntersect;
-		// result.intersection = a + dir.Product( tMin );
 		result.intersection = a + dir * greatestMin;
+
+		result.normal = 0.0f;
+		const Donya::Vector3 diff = result.intersection - box.pos;
+		if ( diff.y < diff.x && diff.z < diff.x ) { result.normal.x = scast<float>( Donya::SignBit( diff.x ) ); }
+		if ( diff.x < diff.y && diff.z < diff.y ) { result.normal.y = scast<float>( Donya::SignBit( diff.y ) ); }
+		if ( diff.x < diff.z && diff.y < diff.z ) { result.normal.z = scast<float>( Donya::SignBit( diff.z ) ); }
+
 		return result;
 	}
 }
