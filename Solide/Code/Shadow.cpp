@@ -48,6 +48,7 @@ void Shadow::CalcIntersectionPoints( const std::vector<Donya::AABB> &solids, con
 	{
 		Donya::RayIntersectResult result;
 		result.isIntersect = false;
+		result.normal = Donya::Vector3::Up();
 
 		if ( solids.empty() ) { return result; }
 		// else

@@ -587,6 +587,12 @@ namespace Donya
 			1.0f / dir.y,
 			1.0f / dir.z,
 		};
+		const bool isInf[]
+		{
+			std::isinf( invDir.x ),
+			std::isinf( invDir.y ),
+			std::isinf( invDir.z )
+		};
 
 		const auto boxMin = box.pos - box.size;
 		const auto boxMax = box.pos + box.size;
@@ -610,6 +616,9 @@ namespace Donya
 		float smallestMax = +FLT_MAX;
 		for ( int i = 0; i < 3; ++i )
 		{
+			if ( isInf[i] ) { continue; }
+			// else
+
 			greatestMin = std::max( tMin[i], greatestMin );
 			smallestMax = std::min( tMax[i], smallestMax );
 		}
@@ -617,17 +626,26 @@ namespace Donya
 		bool isIntersect = true;
 		for ( int i = 0; i < 3; ++i )
 		{
-			if ( tMax[i] < tMin[i] ) { isIntersect = false; break; }
-			if ( tMax[i] < greatestMin ) { isIntersect = false; break; }
-			if ( smallestMax < tMin[i] ) { isIntersect = false; break; }
+			if ( tMax[i] < 0.0f			) { isIntersect = false; break; }
+			if ( tMax[i] < tMin[i]		) { isIntersect = false; break; }
+			if ( tMax[i] < greatestMin	) { isIntersect = false; break; }
+			if ( smallestMax < tMin[i]	) { isIntersect = false; break; }
 		}
 
-		RayIntersectResult result;
-		result.isIntersect = isIntersect;
+		RayIntersectResult  result;
+		result.isIntersect  = isIntersect;
 		result.intersection = a + dir * greatestMin;
+		if ( greatestMin < 0.0f )
+		{
+			// The ray start inside the box, so the first intersection is max.
+			result.intersection = a + dir * smallestMax;
+		}
 
 		result.normal = 0.0f;
-		const Donya::Vector3 diff = result.intersection - box.pos;
+		Donya::Vector3 diff = result.intersection - box.pos;
+		diff.x = fabsf( diff.x );
+		diff.y = fabsf( diff.y );
+		diff.z = fabsf( diff.z );
 		if ( diff.y < diff.x && diff.z < diff.x ) { result.normal.x = scast<float>( Donya::SignBit( diff.x ) ); }
 		if ( diff.x < diff.y && diff.z < diff.y ) { result.normal.y = scast<float>( Donya::SignBit( diff.y ) ); }
 		if ( diff.x < diff.z && diff.y < diff.z ) { result.normal.z = scast<float>( Donya::SignBit( diff.z ) ); }
