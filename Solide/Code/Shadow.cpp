@@ -7,6 +7,8 @@
 
 #include "FilePath.h"
 
+Shadow::~Shadow() = default;
+
 bool Shadow::LoadTexture()
 {
 	// Already loaded.
@@ -103,12 +105,23 @@ void Shadow::CalcIntersectionPoints( const std::vector<Donya::AABB> &solids, con
 		if ( !vsAABB.isIntersect && !vsTerrain.wasHit ) { return; }
 		// else
 
+		element.exist = true;
+
 		const auto &pointAABB		= vsAABB.intersection;
 		const auto &pointTerrain	= vsTerrain.intersection;
+		auto ApplyAABB		= [&]()
+		{
+			element.intersection	= pointAABB;
+			element.normal			= vsAABB.normal;
+		};
+		auto ApplyTerrain	= [&]()
+		{
+			element.intersection	= pointTerrain;
+			element.normal			= vsTerrain.nearestPolygon.normal;
+		};
 
-		element.exist = true;
-		if ( !vsAABB.isIntersect	) { return; }
-		if ( !vsTerrain.wasHit		) { return; }
+		if ( !vsAABB.isIntersect	) { ApplyTerrain();	return; }
+		if ( !vsTerrain.wasHit		) { ApplyAABB();	return; }
 		// else
 		
 		const float distAABB	= ( pointAABB - rayStart ).LengthSq();
@@ -116,13 +129,11 @@ void Shadow::CalcIntersectionPoints( const std::vector<Donya::AABB> &solids, con
 		
 		if ( distAABB < distTerrain )
 		{
-			element.intersection	= pointAABB;
-			element.normal			= vsAABB.normal;
+			ApplyAABB();
 		}
 		else
 		{
-			element.intersection	= pointTerrain;
-			element.normal			= vsTerrain.nearestPolygon.normal;
+			ApplyTerrain();
 		}
 	};
 
@@ -136,7 +147,7 @@ void Shadow::CalcIntersectionPoints( const std::vector<Donya::AABB> &solids, con
 		shadows.begin(), shadows.end(),
 		[]( Instance &element ) { return !element.exist; }
 	);
-	shadows.erase( itr, shadows.begin() );
+	shadows.erase( itr, shadows.end() );
 }
 
 void Shadow::Draw( const Donya::Vector4x4 &VP )

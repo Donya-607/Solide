@@ -20,6 +20,7 @@
 #include "Section.h"
 #include "Sentence.h"
 #include "Scene.h"
+#include "Shadow.h"
 #include "Terrain.h"
 #include "Warp.h"
 
@@ -39,6 +40,7 @@ private:
 	std::unique_ptr<ObstacleContainer>	pObstacles;
 	std::unique_ptr<Goal>				pGoal;
 	std::unique_ptr<WarpContainer>		pWarps;
+	std::unique_ptr<Shadow>				pShadow;
 	std::unique_ptr<TutorialSentence>	pTutorialSentence;
 	std::unique_ptr<ClearSentence>		pClearSentence;
 
@@ -91,6 +93,8 @@ private:
 	void	ProcessPlayerCollision();
 	void	ProcessEnemyCollision();
 	void	ProcessWarpCollision();
+
+	void	MakeShadows( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );
 
 	bool	NowGoalMoment() const;
 

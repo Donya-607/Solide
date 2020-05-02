@@ -850,9 +850,11 @@ namespace Donya
 			"}\n"
 			"float4 PSMain( VS_OUT pin ) : SV_TARGET\n"
 			"{\n"
-			"	if ( pin.color.a <= 0 ) { discard; }\n"
-			"	float4 sampleColor = diffuseMap.Sample( diffuseMapSampler, pin.texCoord );\n"
-			"	return sampleColor * pin.color * float4( lightColor.rgb * lightColor.w, 1.0f );\n"
+			"	float4 sampleColor	= diffuseMap.Sample( diffuseMapSampler, pin.texCoord );\n"
+			"	float4 blendedColor	= sampleColor * pin.color;\n"
+			"	clip ( blendedColor.a - 0.01f );\n"
+			"	float3 light		= lightColor.rgb * lightColor.a;\n"
+			"	return float4( blendedColor.rgb * light, blendedColor.a );\n"
 			"}\n"
 			;
 		}

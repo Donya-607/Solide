@@ -35,6 +35,8 @@ private:
 	std::vector<Instance> shadows;
 	std::unique_ptr<Donya::Geometric::TextureBoard> pTexture = nullptr;
 public:
+	~Shadow();
+public:
 	bool LoadTexture();
 	void ClearInstances();
 public:

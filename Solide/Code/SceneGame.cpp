@@ -6,6 +6,7 @@
 #undef min
 #include <cereal/types/vector.hpp>
 
+#include "Donya/Blend.h"
 #include "Donya/Camera.h"
 #include "Donya/Constant.h"
 #include "Donya/Donya.h"		// Use GetFPS().
@@ -224,12 +225,19 @@ void SceneGame::Init()
 	result = Player::LoadModels();
 	assert( result );
 
+	pShadow = std::make_unique<Shadow>();
+	pShadow->LoadTexture();
+	pShadow->ClearInstances();
+
 	stageNumber = FIRST_STAGE_NO;
 	InitStage( stageNumber );
 }
 void SceneGame::Uninit()
 {
 	UninitStage();
+
+	if ( pShadow ) { pShadow->ClearInstances(); }
+	pShadow.reset();
 
 	ObstacleBase::ParameterUninit();
 	ParamGame::Get().Uninit();
@@ -301,6 +309,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		PlayerPhysicUpdate( solids, terrain.get(), &terrainMatrix );
 		Bullet::BulletAdmin::Get().PhysicUpdate( solids, terrain.get(), &terrainMatrix );
 		EnemyPhysicUpdate( solids, terrain.get(), &terrainMatrix );
+
+		MakeShadows( solids, terrain.get(), &terrainMatrix );
 	}
 
 	CameraUpdate();
@@ -334,6 +344,11 @@ void SceneGame::Draw( float elapsedTime )
 
 	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
 	const auto data = FetchMember();
+
+	if ( pShadow )
+	{
+		pShadow->Draw( VP );
+	}
 	
 	// Update scene constant.
 	{
@@ -410,7 +425,7 @@ void SceneGame::Draw( float elapsedTime )
 		pWarps->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
 	}
 #endif // DEBUG_MODE
-	
+
 	// Drawing to far for avoiding to trans the BG's blue.
 	pBG->Draw( elapsedTime );
 
@@ -444,6 +459,7 @@ void SceneGame::Draw( float elapsedTime )
 		}
 
 		// Ray vs AABB test.
+		if ( 0 )
 		{
 			static Donya::AABB box{};
 			static Donya::AABB hitCube{};
@@ -543,6 +559,13 @@ void SceneGame::InitStage( int stageNo )
 
 	CameraInit();
 
+	if ( !pShadow )
+	{
+		pShadow = std::make_unique<Shadow>();
+		pShadow->LoadTexture();
+	}
+	pShadow->ClearInstances();
+
 	nowWaiting = false;
 }
 void SceneGame::UninitStage()
@@ -561,6 +584,8 @@ void SceneGame::UninitStage()
 	pWarps.reset();
 	pTutorialSentence.reset();
 	pClearSentence.reset();
+
+	pShadow->ClearInstances();
 
 	Bullet::BulletAdmin::Get().Uninit();
 }
@@ -1000,6 +1025,47 @@ void SceneGame::ProcessWarpCollision()
 			break;
 		}
 	}
+}
+
+void SceneGame::MakeShadows( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+{
+	if ( !pShadow ) { return; }
+	// else
+
+	pShadow->ClearInstances();
+
+	auto Add = [&]( const Donya::Vector3 &position )
+	{
+		pShadow->Register( position );
+	};
+
+	if ( pPlayer	) { Add( pPlayer->GetPosition() ); }
+	if ( pEnemies	)
+	{
+		const size_t count = pEnemies->GetEnemyCount();
+		for ( size_t i = 0; i < count; ++i )
+		{
+			const auto pEnemy = pEnemies->GetEnemyPtrOrNull( i );
+			if ( !pEnemy ) { continue; }
+			// else
+
+			Add( pEnemy->GetPosition() );
+		}
+	}
+	if ( pWarps		)
+	{
+		const size_t count = pWarps->GetWarpCount();
+		for ( size_t i = 0; i < count; ++i )
+		{
+			const auto pWarp = pWarps->GetWarpPtrOrNullptr( i );
+			if ( !pWarp ) { continue; }
+			// else
+
+			Add( pWarp->GetPosition() );
+		}
+	}
+
+	pShadow->CalcIntersectionPoints( solids, pTerrain, pTerrainMatrix );
 }
 
 bool SceneGame::NowGoalMoment() const
