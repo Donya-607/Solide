@@ -44,8 +44,7 @@ float3 CalcLightInfluence( float4 lightColor, float3 nwsPixelToLightVec, float3 
 	float3	diffuseColor	= cbDiffuse.rgb * diffuseFactor;
 	
 	float4	inputSpecular	= cbSpecular + cbAddSpecular;
-	// float	specularFactor	= Phong( nwsPixelNormal, nwsPixelToLightVec, nwsEyeVector, inputSpecular.w );
-	float	specularFactor	= BlinnPhong( nwsPixelNormal, nwsPixelToLightVec, nwsEyeVector, inputSpecular.w );
+	float	specularFactor	= max( 0.0f, Phong( nwsPixelNormal, nwsPixelToLightVec, nwsEyeVector, inputSpecular.w ) );
 	float3	specularColor	= inputSpecular.rgb * specularFactor;
 	
 	float3	Ka				= ambientColor;
