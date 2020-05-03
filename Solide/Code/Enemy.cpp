@@ -356,6 +356,12 @@ namespace
 	{
 		return ParamEnemy::Get().Data();
 	}
+
+	bool IsTargetClose( float searchRadius, const Donya::Vector3 &basePos, const Donya::Vector3 &targetPos )
+	{
+		const float distance = Donya::Vector3{ targetPos - basePos }.Length();
+		return ( distance < searchRadius ) ? true : false;
+	}
 }
 
 
@@ -435,6 +441,7 @@ namespace Enemy
 		ImGui::TreePop();
 	}
 #endif // USE_IMGUI
+
 
 	Base::~Base()
 	{
@@ -946,6 +953,10 @@ namespace Enemy
 	}
 	void Straight::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	{
+		captured = ( moveParam.alignToTarget )
+		? IsTargetClose( initializer.searchRadius, pos, targetPos )
+		: false;
+
 		AssignVelocity( targetPos );
 		AssignOrientation( targetPos );
 
@@ -1008,8 +1019,11 @@ namespace Enemy
 
 		if ( moveParam.alignToTarget )
 		{
-			const float distance = moveDirection.Length();
-			if ( distance <= moveParam.speed )
+			if ( !captured ) { velocity = 0.0f; return; }
+			// else
+
+			const float moveAmount = moveDirection.Length();
+			if ( moveAmount <= moveParam.speed )
 			{
 				velocity = moveDirection;
 			}
@@ -1040,6 +1054,9 @@ namespace Enemy
 			return;
 		case MoveParam::LookDirection::Target:
 			{
+				if ( !captured ) { return; }
+				// else
+
 				const Donya::Vector3 toTarget = targetPos - pos;
 				orientation = Donya::Quaternion::LookAt
 				(
@@ -1141,8 +1158,7 @@ namespace Enemy
 
 		if ( !wasSearched )
 		{
-			const float distance = Donya::Vector3{ targetPos - target.pos }.Length();
-			if ( distance < target.initializer.searchRadius )
+			if ( IsTargetClose( target.initializer.searchRadius, target.pos, targetPos ) )
 			{
 				wasSearched = true;
 			}

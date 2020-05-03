@@ -105,7 +105,6 @@ namespace Enemy
 		}
 	public:
 		Donya::Vector3 CalcMoveDirection( const Donya::Vector3 moverPos, const Donya::Vector3 &targetPos ) const;
-
 	#if USE_IMGUI
 		void ShowImGuiNode( const std::string &nodeCaption );
 	#endif // USE_IMGUI
@@ -221,6 +220,7 @@ namespace Enemy
 		Donya::Vector3 velocity;
 		float	moveDistanceSum		= 0.0f;
 		bool	nowMoveToPositive	= true;
+		bool	captured			= false;
 	public:
 		Straight() : Base() {}
 	private:
