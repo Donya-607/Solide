@@ -195,6 +195,8 @@ namespace
 	{
 		DrawingParam	drawer;
 		CollisionParam	collider;
+
+		int				removeOilFrame = 1;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -211,6 +213,10 @@ namespace
 			}
 			if ( 2 <= version )
 			{
+				archive( CEREAL_NVP( removeOilFrame ) );
+			}
+			if ( 3 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -219,7 +225,7 @@ namespace
 CEREAL_CLASS_VERSION( DrawingParam,				1 )
 CEREAL_CLASS_VERSION( CollisionParam,			0 )
 CEREAL_CLASS_VERSION( CollisionParam::PerKind,	0 )
-CEREAL_CLASS_VERSION( Member,					1 )
+CEREAL_CLASS_VERSION( Member,					2 )
 
 class ParamEnemy : public ParameterBase<ParamEnemy>
 {
@@ -330,6 +336,14 @@ public:
 					ParameterHelper::ShowAABBNode( caption + u8"当たり判定", &m.collider.collisions[i].hitBox  );
 					ParameterHelper::ShowAABBNode( caption + u8"喰らい判定", &m.collider.collisions[i].hurtBox );
 				}
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"その他" ) )
+			{
+				ImGui::DragInt( u8"付いた油がはがれる時間（フレーム）", &m.removeOilFrame );
+				m.removeOilFrame = std::max( 0, m.removeOilFrame );
 
 				ImGui::TreePop();
 			}
@@ -574,14 +588,26 @@ namespace Enemy
 
 		return wsHurtBox;
 	}
+	void Base::OiledUpdate()
+	{
+		if ( !element.Has( Element::Type::Oil ) ) { oiledTimer = 0; return; }
+		// else
+
+		oiledTimer++;
+		if ( FetchMember().removeOilFrame <= oiledTimer )
+		{
+			element.Subtract( Element::Type::Oil );
+			oiledTimer = 0;
+		}
+	}
 	void Base::BurningUpdate()
 	{
 		if ( !pEffect && element.Has( Element::Type::Flame ) )
 		{
 			pEffect = std::make_shared<EffectHandle>
-			(
-				EffectHandle::Generate( EffectAttribute::Flame, pos )
-			);
+				(
+					EffectHandle::Generate( EffectAttribute::Flame, pos )
+					);
 		}
 
 		if ( !pEffect ) { return; }
@@ -988,6 +1014,7 @@ namespace Enemy
 
 		constexpr int USE_MOTION_INDEX = 0;
 		UpdateMotion( elapsedTime, USE_MOTION_INDEX );
+		OiledUpdate();
 		BurningUpdate();
 	}
 	void Straight::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
@@ -1278,6 +1305,7 @@ namespace Enemy
 			ChangeMover();
 		}
 
+		OiledUpdate();
 		BurningUpdate();
 	}
 	void Archer::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
@@ -1472,6 +1500,7 @@ namespace Enemy
 			ChangeMover();
 		}
 
+		OiledUpdate();
 		BurningUpdate();
 	}
 	void GateKeeper::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
@@ -1674,6 +1703,7 @@ namespace Enemy
 			ChangeMover();
 		}
 
+		OiledUpdate();
 		BurningUpdate();
 	}
 	void Chaser::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )

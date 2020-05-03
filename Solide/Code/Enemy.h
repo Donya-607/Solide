@@ -136,6 +136,8 @@ namespace Enemy
 		// Will changes by const method.
 		mutable Element					element;
 		std::shared_ptr<EffectHandle>	pEffect; // Will used as burning effect.
+
+		int								oiledTimer = 0;
 	public:
 		Base() = default;
 		virtual ~Base();
@@ -176,6 +178,7 @@ namespace Enemy
 		virtual Donya::AABB AcquireHitBox( bool wantWorldSpace ) const;
 		virtual Donya::AABB AcquireHurtBox( bool wantWorldSpace ) const;
 	protected:
+		virtual void OiledUpdate();
 		virtual void BurningUpdate();
 		virtual void UpdateMotion( float elapsedTime, int useMotionIndex );
 		virtual Donya::Vector4		CalcDrawColor() const;
