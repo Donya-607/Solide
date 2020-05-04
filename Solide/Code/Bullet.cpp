@@ -25,6 +25,7 @@ namespace Bullet
 			"Oil",
 			"Flame",
 			"Ice",
+			"Arrow",
 		};
 
 		struct StorageBundle
@@ -153,6 +154,7 @@ namespace Bullet
 		case Kind::Oil:			return std::make_shared<Impl::OilBullet>();
 		case Kind::FlameSmoke:	return std::make_shared<Impl::FlameSmoke>();
 		case Kind::IceSmoke:	return std::make_shared<Impl::IceSmoke>();
+		case Kind::Arrow:		return std::make_shared<Impl::Arrow>();
 		default: _ASSERT_EXPR( 0, L"Error : Unexpected bullet kind!" );	break;
 		}
 		return nullptr;
@@ -356,10 +358,62 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 
+	struct ArrowMember
+	{
+		int				aliveFrame	= 1;
+		float			gravity		= 1.0f;	// Absolute value.
+		float			drawScale	= 1.0f;
+		Donya::AABB		hitBox;
+		Donya::Vector4	color{ 1.0f, 1.0f, 1.0f, 1.0f };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( aliveFrame	),
+				CEREAL_NVP( gravity		),
+				CEREAL_NVP( hitBox		),
+				CEREAL_NVP( drawScale	),
+				CEREAL_NVP( color		)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const std::string &nodeCaption )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ImGui::DragInt   ( u8"生存時間（フレーム）", &aliveFrame );
+			aliveFrame	= std::max( 0, aliveFrame );
+
+			ImGui::DragFloat ( u8"重力",			&gravity,	0.01f );
+			ImGui::DragFloat ( u8"描画スケール",	&drawScale,	0.01f );
+			gravity		= std::max( 0.0f, gravity );
+			drawScale	= std::max( 0.0f, drawScale );
+
+
+			ImGui::ColorEdit4( u8"色",			&color.x );
+
+			ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
+
+			ImGui::TreePop();
+		}
+	#endif // USE_IMGUI
+	};
+
 	struct Member
 	{
 		OilMember	oil;
 		SmokeMember	smoke;
+		ArrowMember	arrow;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -373,6 +427,10 @@ namespace Bullet
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( arrow ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -383,7 +441,8 @@ CEREAL_CLASS_VERSION( Bullet::SmokeMember,			0 )
 CEREAL_CLASS_VERSION( Bullet::SmokeMember::General,	0 )
 CEREAL_CLASS_VERSION( Bullet::SmokeMember::Flame,	0 )
 CEREAL_CLASS_VERSION( Bullet::SmokeMember::Ice,		0 )
-CEREAL_CLASS_VERSION( Bullet::Member,				0 )
+CEREAL_CLASS_VERSION( Bullet::ArrowMember,			0 )
+CEREAL_CLASS_VERSION( Bullet::Member,				1 )
 
 class ParamBullet : public ParameterBase<ParamBullet>
 {
@@ -418,6 +477,8 @@ public:
 			m.oil.ShowImGuiNode( u8"オイル弾" );
 
 			m.smoke.ShowImGuiNode( u8"ケムリ関係" );
+
+			m.arrow.ShowImGuiNode( u8"矢関係" );
 
 			ShowIONode( m );
 			ImGui::TreePop();
@@ -917,18 +978,6 @@ namespace Bullet
 				pEffect.reset();
 			}
 		}
-		void OilBullet::Init( const BulletAdmin::FireDesc &param )
-		{
-			BulletBase::Init( param );
-
-			if ( element.Has( Element::Type::Flame ) )
-			{
-				pEffect = std::make_shared<EffectHandle>
-				(
-					EffectHandle::Generate( EffectAttribute::Flame, pos )
-				);
-			}
-		}
 		void OilBullet::Uninit()
 		{
 			if ( pEffect )
@@ -947,6 +996,13 @@ namespace Bullet
 			velocity.y -= ParamBullet::Get().Data().oil.gravity;
 			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
 
+			if ( !pEffect && element.Has( Element::Type::Flame ) )
+			{
+				pEffect = std::make_shared<EffectHandle>
+				(
+					EffectHandle::Generate( EffectAttribute::Flame, pos )
+				);
+			}
 			if ( pEffect )
 			{
 				pEffect->SetPosition( pos );
@@ -1087,5 +1143,99 @@ namespace Bullet
 			world._43 = pos.z;
 			return world;
 		}
+
+
+		// HACK: The Arrow's behavior almost same as OilBullet.
+		Arrow::~Arrow()
+		{
+			if ( pEffect )
+			{
+				pEffect->Stop();
+				pEffect.reset();
+			}
+		}
+		void Arrow::Uninit()
+		{
+			if ( pEffect )
+			{
+				pEffect->Stop();
+				pEffect.reset();
+			}
+		}
+		void Arrow::Update( float elapsedTime )
+		{
+			aliveTime++;
+
+			if ( shouldStay ) { velocity = 0.0f; return; }
+			// else
+
+			velocity.y -= ParamBullet::Get().Data().arrow.gravity;
+			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
+
+			if ( !pEffect && element.Has( Element::Type::Flame ) )
+			{
+				pEffect = std::make_shared<EffectHandle>
+				(
+					EffectHandle::Generate( EffectAttribute::Flame, pos )
+				);
+			}
+			if ( pEffect )
+			{
+				pEffect->SetPosition( pos );
+			}
+		}
+		void Arrow::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+		{
+			if ( shouldStay ) { return; }
+			// else
+
+			const auto raycastResult	= CalcCorrectedVector( RECURSION_RAY_COUNT, velocity, pTerrain, pTerrainMatrix );
+			const auto aabbResult		= CalcCorrectedVector( raycastResult.correctedVector, solids );
+			if ( raycastResult.raycastResult.wasHit || aabbResult.wasHit )
+			{
+				shouldStay = true;
+			}
+
+			velocity = aabbResult.correctedVector;
+
+			pos += velocity;
+		}
+		void Arrow::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+		{
+			BulletBase::Draw( pRenderer, ParamBullet::Get().Data().arrow.color.Product( color ) );
+		}
+		void Arrow::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+		{
+			BulletBase::DrawHitBox( pRenderer, VP, ParamBullet::Get().Data().arrow.color.Product( color ) );
+		}
+		void Arrow::AttachSelfKind()
+		{
+			kind	= Kind::Arrow;
+			element	= Element::Type::Nil;
+		}
+		bool Arrow::ShouldRemove() const
+		{
+			return ( ParamBullet::Get().Data().arrow.aliveFrame <= aliveTime || wasHitToObject ) ? true : false;
+		}
+		Donya::AABB Arrow::GetHitBoxAABB() const
+		{
+			Donya::AABB tmp = ParamBullet::Get().Data().arrow.hitBox;
+			tmp.pos += GetPosition();
+			return tmp;
+		}
+		Donya::Vector4x4 Arrow::GetWorldMatrix() const
+		{
+			const auto data = ParamBullet::Get().Data().arrow;
+			Donya::Vector4x4 world{};
+			world._11 = data.drawScale;
+			world._22 = data.drawScale;
+			world._33 = data.drawScale;
+			world *= orientation.MakeRotationMatrix();
+			world._41 = pos.x;
+			world._42 = pos.y;
+			world._43 = pos.z;
+			return world;
+		}
+
 	}
 }

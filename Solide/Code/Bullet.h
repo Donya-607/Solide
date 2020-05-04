@@ -24,6 +24,7 @@ namespace Bullet
 		Oil,
 		FlameSmoke,
 		IceSmoke,
+		Arrow,
 
 		KindCount
 	};
@@ -171,7 +172,6 @@ namespace Bullet
 		public:
 			~OilBullet();
 		public:
-			void Init( const Bullet::BulletAdmin::FireDesc &initializeParameter ) override;
 			void Uninit() override;
 			void Update( float elapsedTime ) override;
 			void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
@@ -224,6 +224,29 @@ namespace Bullet
 		public:
 			bool				ShouldRemove()		const override;
 			Donya::Sphere		GetHitBoxSphere()	const override;
+			Donya::Vector4x4	GetWorldMatrix()	const override;
+		};
+
+
+		class Arrow : public BulletBase
+		{
+		private:
+			int		aliveTime = 0;
+			bool	shouldStay = false;
+			std::shared_ptr<EffectHandle> pEffect = nullptr; // Will used as burning effect.
+		public:
+			~Arrow();
+		public:
+			void Uninit() override;
+			void Update( float elapsedTime ) override;
+			void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
+			void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+			void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) override;
+		private:
+			void AttachSelfKind() override;
+		public:
+			bool				ShouldRemove()		const override;
+			Donya::AABB			GetHitBoxAABB()		const override;
 			Donya::Vector4x4	GetWorldMatrix()	const override;
 		};
 	}
