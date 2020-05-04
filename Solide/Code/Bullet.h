@@ -140,6 +140,7 @@ namespace Bullet
 	public:
 		virtual bool				ShouldRemove()		const = 0;
 		virtual Kind				GetKind()			const { return kind;	}
+		virtual void				GiveElement( Element::Type addType );
 		virtual Element				GetElement()		const { return element;	}
 		virtual Donya::Vector3		GetPosition()		const { return pos;		}
 		/// <summary>

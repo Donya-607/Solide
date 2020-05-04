@@ -671,6 +671,33 @@ namespace Bullet
 
 		pos += velocity;
 	}
+	void BulletBase::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+	{
+		Bullet::DrawModel( kind, pRenderer, *this, color );
+	}
+	void BulletBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+	{
+		if ( !pRenderer ) { return; }
+		// else
+
+		const auto &body = GetHitBoxAABB();
+		if ( body == Donya::AABB::Nil() ) { return; }
+		// else
+
+		Donya::Vector4x4 world{};
+		world._11 = body.size.x * 2.0f; // Half size -> Whole size
+		world._22 = body.size.y * 2.0f; // Half size -> Whole size
+		world._33 = body.size.z * 2.0f; // Half size -> Whole size
+		world._41 = body.pos.x;
+		world._42 = body.pos.y;
+		world._43 = body.pos.z;
+
+		Donya::Model::Cube::Constant constant{};
+		constant.matWorld		= world;
+		constant.matViewProj	= VP;
+		constant.drawColor		= color;
+		pRenderer->ProcessDrawingCube( constant );
+	}
 	BulletBase::AABBResult		BulletBase::CalcCorrectedVector( const Donya::Vector3 &vector, const std::vector<Donya::AABB> &solids ) const
 	{
 		AABBResult defaultResult{};
@@ -906,32 +933,9 @@ namespace Bullet
 		// This recursion will stop when the corrected velocity was not collided.
 		return CalcCorrectedVectorImpl( recursionLimit, recursionCount + 1, inheritedResult, terrain, terrainMatrix );
 	}
-	void BulletBase::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+	void BulletBase::GiveElement( Element::Type addType )
 	{
-		Bullet::DrawModel( kind, pRenderer, *this, color );
-	}
-	void BulletBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
-	{
-		if ( !pRenderer ) { return; }
-		// else
-
-		const auto &body = GetHitBoxAABB();
-		if ( body == Donya::AABB::Nil() ) { return; }
-		// else
-
-		Donya::Vector4x4 world{};
-		world._11 = body.size.x * 2.0f; // Half size -> Whole size
-		world._22 = body.size.y * 2.0f; // Half size -> Whole size
-		world._33 = body.size.z * 2.0f; // Half size -> Whole size
-		world._41 = body.pos.x;
-		world._42 = body.pos.y;
-		world._43 = body.pos.z;
-
-		Donya::Model::Cube::Constant constant{};
-		constant.matWorld		= world;
-		constant.matViewProj	= VP;
-		constant.drawColor		= color;
-		pRenderer->ProcessDrawingCube( constant );
+		element.Add( addType );
 	}
 	Donya::Vector4x4 BulletBase::GetWorldMatrix() const
 	{
