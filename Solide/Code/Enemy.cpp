@@ -1327,6 +1327,7 @@ namespace Enemy
 		desc.direction		=  orientation.RotateVector( desc.direction   );
 		desc.generatePos	=  orientation.RotateVector( desc.generatePos );
 		desc.generatePos	+= GetPosition();
+		desc.addElement		=  Element::Type::Flame;
 
 		Bullet::BulletAdmin::Get().Append( desc );
 	}
