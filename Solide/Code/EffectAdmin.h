@@ -47,6 +47,7 @@ public:
 	void UnloadEffect( EffectAttribute effectAttribute );
 	void UnloadEffectAll();
 public:
+	float GetEffectScale( EffectAttribute effectAttribute );
 	/// <summary>
 	/// Returns nullptr if specified effect was not loaded.
 	/// </summary>

@@ -2,13 +2,123 @@
 
 #include <d3d11.h>
 #include <unordered_map>
+#include <vector>
 
 #include "Effekseer.h"
 #include "EffekseerRendererDX11.h"
 
+#include "Donya/Constant.h"		// Use scast macro.
 #include "Donya/Useful.h"
+#include "Donya/UseImGui.h"
 
 #include "EffectUtil.h"
+#include "FilePath.h"
+#include "Parameter.h"
+
+
+namespace
+{
+	static constexpr size_t attrCount = scast<size_t>( EffectAttribute::AttributeCount );
+
+	std::string GetEffectName( EffectAttribute attr )
+	{
+		switch ( attr )
+		{
+		case EffectAttribute::Flame: return "Flame";
+		default: break;
+		}
+
+		_ASSERT_EXPR( 0, L"Error: Unexpected attribute!" );
+		return "ERROR_ATTR";
+	}
+
+	struct Member
+	{
+		std::vector<float> effectScales;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( effectScales )
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
+}
+CEREAL_CLASS_VERSION( Member, 0 )
+
+class ParamEffect : public ParameterBase<ParamEffect>
+{
+public:
+	static constexpr const char *ID = "Effect";
+private:
+	Member m;
+public:
+	void Init() override
+	{
+	#if DEBUG_MODE
+		constexpr bool fromBinary = false;
+	#else
+		constexpr bool fromBinary = true;
+	#endif // DEBUG_MODE
+
+		Load( m, fromBinary );
+
+		ResizeVectorIfNeeded();
+	}
+	Member Data() const { return m; }
+private:
+	void ResizeVectorIfNeeded()
+	{
+		if ( m.effectScales.size() != attrCount )
+		{
+			m.effectScales.resize( attrCount, 1.0f );
+		}
+	}
+private:
+	std::string GetSerializeIdentifier()			override { return ID; }
+	std::string GetSerializePath( bool isBinary )	override { return GenerateSerializePath( ID, isBinary ); }
+public:
+#if USE_IMGUI
+	void UseImGui() override
+	{
+		if ( !ImGui::BeginIfAllowed() ) { return; }
+		// else
+
+		if ( ImGui::TreeNode( u8"エフェクトのパラメータ調整" ) )
+		{
+			if ( ImGui::TreeNode( u8"スケール調整" ) )
+			{
+				ImGui::Text( u8"生成時に適用されます" );
+				ResizeVectorIfNeeded();
+
+				std::string caption{};
+				for ( size_t i = 0; i < attrCount; ++i )
+				{
+					caption = u8"[" + std::to_string( i ) + u8"]:";
+					caption += GetEffectName( scast<EffectAttribute>( i ) );
+					ImGui::DragFloat( caption.c_str(), &m.effectScales[i], 0.01f );
+				}
+
+				ImGui::TreePop();
+			}
+
+			ShowIONode( m );
+
+			ImGui::TreePop();
+		}
+
+		ImGui::End();
+	}
+#endif // USE_IMGUI
+};
 
 
 namespace Fx			= Effekseer;
@@ -129,6 +239,8 @@ public:
 
 		fxMap.clear();
 		wasInitialized = true;
+
+		ParamEffect::Get().Init();
 		return true;
 	}
 	void Uninit()
@@ -143,6 +255,10 @@ public:
 
 	void Update( float updateSpeedMagnification )
 	{
+	#if USE_IMGUI
+		ParamEffect::Get().UseImGui();
+	#endif // USE_IMGUI
+
 		assert( wasInitialized );
 		pManager->Update( updateSpeedMagnification );
 	}
@@ -197,6 +313,17 @@ public:
 		fxMap.clear();
 	}
 public:
+	bool IsOutOfRange( EffectAttribute attr )
+	{
+		return scast<size_t>( EffectAttribute::AttributeCount ) < scast<size_t>( attr );
+	}
+	float GetEffectScale( EffectAttribute attr )
+	{
+		if ( IsOutOfRange( attr ) ) { return 0.0f; }
+		// else
+		const auto scales = ParamEffect::Get().Data().effectScales;
+		return scales[scast<size_t>( attr )];
+	}
 	Effekseer::Effect *GetEffectOrNullptr( EffectAttribute attr )
 	{
 		assert( wasInitialized );
@@ -233,5 +360,7 @@ void EffectAdmin::UnloadEffect( EffectAttribute attr )
 							{ pImpl->UnloadEffect( attr );						}
 void EffectAdmin::UnloadEffectAll()
 							{ pImpl->UnloadEffectAll();							}
+float EffectAdmin:: GetEffectScale( EffectAttribute attr )
+							{ return pImpl->GetEffectScale( attr ); }
 Effekseer::Effect *EffectAdmin::GetEffectOrNullptr( EffectAttribute attr )
 							{ return pImpl->GetEffectOrNullptr( attr );			}

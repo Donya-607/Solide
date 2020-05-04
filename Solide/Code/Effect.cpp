@@ -22,7 +22,16 @@ EffectHandle EffectHandle::Generate( EffectAttribute attr, const Donya::Vector3 
 	}
 	// else
 
-	const Fx::Handle handle	= pManager->Play( pEffect, ToFxVector( pos ), startFrame );
+	const Fx::Handle handle = pManager->Play( pEffect, ToFxVector( pos ), startFrame );
+	if ( pManager->Exists( handle ) )
+	{
+		const float attrScale = Admin().GetEffectScale( attr );
+		// We should update this handle before SetScale().
+		// The SetScale() will throws an exception if we didn't call UpdateHandle() before that.
+		// Why??? :(
+		pManager->UpdateHandle( handle, 0.0f );
+		pManager->SetScale( handle, attrScale, attrScale, attrScale );
+	}
 	return EffectHandle{ handle };
 }
 
@@ -45,6 +54,17 @@ namespace
 
 		method( pManager );
 	}
+}
+void EffectHandle::SetScale( float scale )
+{
+	OperateIfManagerIsAvailable
+	(
+		[&]( Fx::Manager *pManager )
+		{
+			pManager->SetScale( handle, scale, scale, scale );
+
+		}
+	);
 }
 void EffectHandle::SetPosition( const Donya::Vector3 &pos )
 {

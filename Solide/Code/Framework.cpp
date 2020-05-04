@@ -204,6 +204,10 @@ void Framework::DebugShowInformation()
 		{
 			pHandle->SetPosition( setPos );
 		}
+		if ( ImGui::Button( u8"SetScale" ) && pHandle )
+		{
+			pHandle->SetScale( 0.1f );
+		}
 		if ( ImGui::Button( u8"ストップ" ) && pHandle )
 		{
 			pHandle->Stop();
