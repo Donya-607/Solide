@@ -16,7 +16,7 @@ class CheckPoint
 public:
 	struct Instance
 	{
-		Donya::AABB			hitBox;
+		Donya::AABB			hitBox;		// The "pos" is function as offset from the initializer's position.
 		PlayerInitializer	initializer;
 	private:
 		friend class cereal::access;
@@ -34,6 +34,11 @@ public:
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
+	public:
+
+	public:
+		Donya::AABB			GetHitBox() const;
+		PlayerInitializer	GetInitializer() const;
 	};
 private: // Serializer member.
 	int						stageNo = 1;
@@ -63,6 +68,7 @@ public:
 	size_t			GetPointCount() const;
 	bool			IsOutOfRange( size_t index ) const;
 	const Instance	*GetPointPtrOrNullptr( size_t index ) const;
+	void			RemovePoint( size_t removeIndex );
 private:
 	void LoadBin( int stageNo );
 	void LoadJson( int stageNo );

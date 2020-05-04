@@ -312,6 +312,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 
 	ProcessWarpCollision();
+	ProcessCheckPointCollision();
 	ProcessEnemyCollision();
 	ProcessPlayerCollision();
 
@@ -410,14 +411,18 @@ void SceneGame::Draw( float elapsedTime )
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
+		constexpr Donya::Vector4 blendColor{ 1.0f, 1.0f, 1.0f, 0.5f };
+
+		pCheckPoint->DrawHitBoxes( pRenderer.get(), VP, blendColor );
+
 		PlayerDrawHitBox( VP );
 
 		pEnemies->DrawHitBoxes( pRenderer.get(), VP );
 
-		pGoal->DrawHitBox( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
-		Bullet::BulletAdmin::Get().DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
-		pWarps->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
-		pObstacles->DrawHitBoxes( pRenderer.get(), VP, { 1.0f, 1.0f, 1.0f, 0.5f } );
+		pGoal->DrawHitBox( pRenderer.get(), VP, blendColor );
+		Bullet::BulletAdmin::Get().DrawHitBoxes( pRenderer.get(), VP, blendColor );
+		pWarps->DrawHitBoxes( pRenderer.get(), VP, blendColor );
+		pObstacles->DrawHitBoxes( pRenderer.get(), VP, blendColor );
 	}
 #endif // DEBUG_MODE
 
@@ -490,6 +495,9 @@ void SceneGame::InitStage( int stageNo )
 	assert( result );
 
 	pTerrain = std::make_unique<Terrain>( stageNo );
+
+	pCheckPoint = std::make_unique<CheckPoint>();
+	pCheckPoint->Init( stageNo );
 	
 	pEnemies = std::make_unique<Enemy::Container>();
 	pEnemies->Init( stageNo );
@@ -502,6 +510,8 @@ void SceneGame::InitStage( int stageNo )
 	pWarps = std::make_unique<WarpContainer>();
 	pWarps->Init( stageNo );
 
+	pPlayerIniter = std::make_unique<PlayerInitializer>();
+	pPlayerIniter->LoadParameter( stageNo );
 	PlayerInit( stageNo );
 
 	CameraInit();
@@ -517,13 +527,15 @@ void SceneGame::InitStage( int stageNo )
 }
 void SceneGame::UninitStage()
 {
-	if ( pEnemies	) { pEnemies->Uninit();		}
-	if ( pGoal		) { pGoal->Uninit();		}
-	if ( pObstacles	) { pObstacles->Uninit();	}
-	if ( pWarps		) { pWarps->Uninit();		}
+	if ( pCheckPoint	) { pCheckPoint->Uninit();	}
+	if ( pEnemies		) { pEnemies->Uninit();		}
+	if ( pGoal			) { pGoal->Uninit();		}
+	if ( pObstacles		) { pObstacles->Uninit();	}
+	if ( pWarps			) { pWarps->Uninit();		}
 
 	pBG.reset();
 	pTerrain.reset();
+	pCheckPoint.reset();
 	PlayerUninit();
 	pEnemies.reset();
 	pObstacles.reset();
@@ -646,10 +658,8 @@ void SceneGame::CameraUpdate()
 
 void SceneGame::PlayerInit( int stageNo )
 {
-	pPlayerIniter = std::make_unique<PlayerInitializer>();
-	pPlayerIniter->LoadParameter( stageNo );
-
 	if ( pPlayer ) { pPlayer->Uninit(); }
+
 	pPlayer = std::make_unique<Player>();
 	pPlayer->Init( *pPlayerIniter );
 }
@@ -974,6 +984,33 @@ void SceneGame::ProcessWarpCollision()
 		}
 	}
 }
+void SceneGame::ProcessCheckPointCollision()
+{
+	if ( nowWaiting			) { return; }	// Exempt if now is cleared.
+	if ( !pPlayer			) { return; }	// Do only player related collision.
+	if ( pPlayer->IsDead()	) { return; }	// Unnecessary if player already dead.
+	if ( !pCheckPoint		) { return; }
+	// else
+
+	const Donya::AABB playerBody = pPlayer->GetHitBox();
+	Donya::AABB pointBody{};
+
+	const size_t pointCount = pCheckPoint->GetPointCount();
+	for ( size_t i = 0; i < pointCount; ++i )
+	{
+		const auto *pPoint = pCheckPoint->GetPointPtrOrNullptr( i );
+		if ( !pCheckPoint ) { continue; }
+		// else
+
+		pointBody = pPoint->GetHitBox();
+		if ( Donya::AABB::IsHitAABB( playerBody, pointBody ) )
+		{
+			*pPlayerIniter = pPoint->GetInitializer();
+			pCheckPoint->RemovePoint( i );
+			break;
+		}
+	}
+}
 
 void SceneGame::MakeShadows( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
@@ -1166,42 +1203,35 @@ void SceneGame::UseImGui()
 			ImGui::TreePop();
 		}
 
-		if ( pBG				)
-		{
-			pBG->ShowImGuiNode( u8"ＢＧ" );
-		}
-		if ( pTerrain			)
-		{
-			pTerrain->ShowImGuiNode( u8"地形" );
-		}
-		if ( pPlayerIniter		)
-		{
-			pPlayerIniter->ShowImGuiNode( u8"自機の初期化情報", stageNumber );
-		}
-		if ( pGoal				)
-		{
-			pGoal->ShowImGuiNode( u8"ゴールオブジェクト", stageNumber );
-		}
-		if ( pObstacles			)
-		{
-			pObstacles->ShowImGuiNode( u8"障害物の生成・破棄" );
-		}
-		if ( pWarps				)
-		{
-			pWarps->ShowImGuiNode( u8"ワープオブジェクトの設置・破棄", stageNumber );
-		}
-		if ( pEnemies			)
-		{
-			pEnemies->ShowImGuiNode( u8"敵の設置・削除" );
-		}
-		if ( pTutorialSentence	)
-		{
-			pTutorialSentence->ShowImGuiNode( u8"チュートリアル画像" );
-		}
-		if ( pClearSentence		)
-		{
-			pClearSentence->ShowImGuiNode( u8"クリア画像" );
-		}
+		if ( pPlayerIniter )
+		{ pPlayerIniter->ShowImGuiNode( u8"自機の初期化情報", stageNumber ); }
+		ImGui::Text( "" );
+
+		if ( pObstacles )
+		{ pObstacles->ShowImGuiNode( u8"障害物の生成・破棄" ); }
+		if ( pEnemies )
+		{ pEnemies->ShowImGuiNode( u8"敵の設置・削除" ); }
+		ImGui::Text( "" );
+
+		if ( pCheckPoint )
+		{ pCheckPoint->ShowImGuiNode( u8"中間地点", stageNumber ); }
+		if ( pWarps )
+		{ pWarps->ShowImGuiNode( u8"ワープオブジェクト", stageNumber ); }
+		if ( pGoal )
+		{ pGoal->ShowImGuiNode( u8"ゴールオブジェクト", stageNumber ); }
+		ImGui::Text( "" );
+
+		if ( pBG )
+		{ pBG->ShowImGuiNode( u8"ＢＧ" ); }
+		if ( pTerrain )
+		{ pTerrain->ShowImGuiNode( u8"地形" ); }
+		ImGui::Text( "" );
+
+		if ( pTutorialSentence )
+		{ pTutorialSentence->ShowImGuiNode( u8"チュートリアル画像" ); }
+		if ( pClearSentence )
+		{ pClearSentence->ShowImGuiNode( u8"クリア画像" ); }
+		ImGui::Text( "" );
 
 		ImGui::TreePop();
 	}

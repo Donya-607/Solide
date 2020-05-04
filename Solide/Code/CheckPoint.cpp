@@ -4,6 +4,17 @@
 #include "FilePath.h"
 #include "Parameter.h"
 
+Donya::AABB			CheckPoint::Instance::GetHitBox() const
+{
+	Donya::AABB tmp = hitBox;
+	tmp.pos += initializer.GetInitialPos();
+	return tmp;
+}
+PlayerInitializer	CheckPoint::Instance::GetInitializer() const
+{
+	return initializer;
+}
+
 void CheckPoint::Init( int stageNumber )
 {
 	stageNo = stageNumber;
@@ -31,8 +42,8 @@ void CheckPoint::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x
 	{
 		Donya::Vector4x4 W{};
 		W._11 = box.size.x * 2.0f;
-		W._12 = box.size.y * 2.0f;
-		W._13 = box.size.z * 2.0f;
+		W._22 = box.size.y * 2.0f;
+		W._33 = box.size.z * 2.0f;
 		W._41 = box.pos.x;
 		W._42 = box.pos.y;
 		W._43 = box.pos.z;
@@ -47,7 +58,7 @@ void CheckPoint::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x
 
 	for ( auto &it : points )
 	{
-		DrawCube( it.hitBox );
+		DrawCube( it.GetHitBox() );
 	}
 }
 
@@ -61,6 +72,13 @@ const CheckPoint::Instance *CheckPoint::GetPointPtrOrNullptr( size_t index ) con
 	if ( IsOutOfRange( index ) ) { return nullptr; }
 	// else
 	return &points[index];
+}
+void  CheckPoint::RemovePoint( size_t index )
+{
+	if ( IsOutOfRange( index ) ) { return; }
+	// else
+
+	points.erase( points.begin() + index );
 }
 
 void CheckPoint::LoadBin ( int stageNo )
@@ -115,13 +133,18 @@ void CheckPoint::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 		for ( size_t i = 0; i < pointCount; ++i )
 		{
 			caption = u8"[" + std::to_string( i ) + u8"]”Ô";
-			if ( ImGui::Button( std::string{ caption + u8"‚ðíœ" }.c_str() ) )
+			if ( ImGui::TreeNode( caption.c_str() ) )
 			{
-				eraseIndex = i;
-			}
+				if ( ImGui::Button( std::string{ caption + u8"‚ðíœ" }.c_str() ) )
+				{
+					eraseIndex = i;
+				}
 
-			ParameterHelper::ShowAABBNode( u8"“–‚½‚è”»’è", &points[i].hitBox );
-			points[i].initializer.ShowImGuiNode( caption, stageNo );
+				ParameterHelper::ShowAABBNode( u8"“–‚½‚è”»’è", &points[i].hitBox );
+				points[i].initializer.ShowImGuiNode( u8"‰Šú‰»î•ñ", stageNo, /* allowShowIONode = */ false );
+
+				ImGui::TreePop();
+			}
 		}
 
 		if ( eraseIndex != pointCount )

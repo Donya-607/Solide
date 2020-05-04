@@ -12,6 +12,7 @@
 #include "Donya/Vector.h"
 
 #include "BG.h"
+#include "CheckPoint.h"
 #include "EnemyContainer.h"
 #include "Goal.h"
 #include "ObstacleContainer.h"
@@ -34,6 +35,7 @@ private:
 
 	std::unique_ptr<BG>					pBG;
 	std::unique_ptr<Terrain>			pTerrain;
+	std::unique_ptr<CheckPoint>			pCheckPoint;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 	std::unique_ptr<Enemy::Container>	pEnemies;
@@ -93,6 +95,7 @@ private:
 	void	ProcessPlayerCollision();
 	void	ProcessEnemyCollision();
 	void	ProcessWarpCollision();
+	void	ProcessCheckPointCollision();
 
 	void	MakeShadows( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );
 

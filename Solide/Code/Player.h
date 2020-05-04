@@ -52,7 +52,7 @@ private:
 	void SaveBin ( int stageNo );
 	void SaveJson( int stageNo );
 public:
-	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
+	void ShowImGuiNode( const std::string &nodeCaption, int stageNo, bool allowShowIONode = true );
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( PlayerInitializer, 0 )

@@ -537,12 +537,12 @@ void PlayerInitializer::SaveJson( int stageNo )
 
 	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
 }
-void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
+void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption, int stageNo, bool allowShowIONode )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::DragFloat3( u8"初期のワールド座標", &wsInitialPos.x );
+	ImGui::DragFloat3( u8"初期のワールド座標", &wsInitialPos.x, 0.01f );
 	
 	Donya::Vector3 lookDir = initialOrientation.LocalFront();
 	ImGui::SliderFloat3( u8"初期の前方向", &lookDir.x, -1.0f, 1.0f );
@@ -577,7 +577,10 @@ void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption, int stage
 
 		ImGui::TreePop();
 	};
-	ShowIONode();
+	if ( allowShowIONode )
+	{
+		ShowIONode();
+	}
 
 	ImGui::TreePop();
 }
