@@ -313,6 +313,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	ProcessWarpCollision();
 	ProcessCheckPointCollision();
+	ProcessBulletCollision();
 	ProcessEnemyCollision();
 	ProcessPlayerCollision();
 
@@ -865,8 +866,7 @@ std::shared_ptr<Bullet::BulletBase> SceneGame::FindCollidedBulletOrNullptr( cons
 			// else
 			continue;
 		}
-		// else
-
+		else
 		bulletAABB = pBullet->GetHitBoxAABB();
 		if ( bulletAABB != Donya::AABB::Nil() )
 		{
@@ -952,6 +952,118 @@ void SceneGame::ProcessEnemyCollision()
 				pCollidedBullet->HitToObject();
 				break;
 			}
+		}
+	}
+}
+void SceneGame::ProcessBulletCollision()
+{
+	// Give each element to each colliding bullets.
+
+	auto IsHitToBulletAABB		= []( const Donya::AABB		&hitBox, const std::shared_ptr<Bullet::BulletBase> &pOther )->bool
+	{
+		// The bullets hit-box is either an AABB or a Sphere.
+
+		Donya::Sphere otherSphere = pOther->GetHitBoxSphere();
+		if ( otherSphere != Donya::Sphere::Nil() )
+		{
+			if ( Donya::Sphere::IsHitAABB( otherSphere, hitBox ) )
+			{
+				return true;
+			}
+		}
+		// else
+
+		Donya::AABB otherAABB = pOther->GetHitBoxAABB();
+		if ( otherAABB != Donya::AABB::Nil() )
+		{
+			if ( Donya::AABB::IsHitAABB( otherAABB, hitBox ) )
+			{
+				return true;
+			}
+		}
+		// else
+
+		return false;
+	};
+	auto IsHitToBulletSphere	= []( const Donya::Sphere	&hitBox, const std::shared_ptr<Bullet::BulletBase> &pOther )->bool
+	{
+		// The bullets hit-box is either an AABB or a Sphere.
+
+		Donya::Sphere otherSphere = pOther->GetHitBoxSphere();
+		if ( otherSphere != Donya::Sphere::Nil() )
+		{
+			if ( Donya::Sphere::IsHitSphere( otherSphere, hitBox ) )
+			{
+				return true;
+			}
+		}
+		// else
+
+		Donya::AABB otherAABB = pOther->GetHitBoxAABB();
+		if ( otherAABB != Donya::AABB::Nil() )
+		{
+			if ( Donya::AABB::IsHitSphere( otherAABB, hitBox ) )
+			{
+				return true;
+			}
+		}
+		// else
+
+		return false;
+	};
+
+	const auto		&bullet		= Bullet::BulletAdmin::Get();
+	const size_t	bulletCount	= bullet.GetBulletCount();
+
+	Donya::AABB		hitBoxAABB{};
+	Donya::Sphere	hitBoxSphere{};
+
+	std::shared_ptr<Bullet::BulletBase> pLhs = nullptr;
+	std::shared_ptr<Bullet::BulletBase> pRhs = nullptr;
+
+	// Check a collision in all combination of bullets.
+	// e.g.
+	// 0vs1, 0vs2, 0vs3, ...
+	// 1vs2, 1vs3, ...
+	// 2vs3, ...
+	// ...
+
+	for ( size_t i = 0; i < bulletCount; ++i )
+	{
+		pLhs = bullet.GetBulletPtrOrNull( i );
+		if ( !pLhs ) { continue; }
+		// else
+
+		hitBoxAABB		= pLhs->GetHitBoxAABB();
+		hitBoxSphere	= pLhs->GetHitBoxSphere();
+
+		for ( size_t j = i + 1/* Except collide to myself */; j < bulletCount; ++j )
+		{
+			pRhs = bullet.GetBulletPtrOrNull( j );
+			if ( !pRhs ) { continue; }
+			// else
+
+			// This check is unnnecessary if each element is same.
+			if ( pLhs->GetElement().Get() == pRhs->GetElement().Get() ) { continue; }
+			// else
+		
+			// The bullets hit-box is either an AABB or a Sphere.
+
+			if ( hitBoxSphere != Donya::Sphere::Nil() )
+			{
+				if ( !IsHitToBulletSphere( hitBoxSphere, pRhs ) ) { continue; }
+			}
+			else
+			if ( hitBoxAABB != Donya::AABB::Nil() )
+			{
+				if ( !IsHitToBulletAABB( hitBoxAABB, pRhs ) ) { continue; }
+			}
+			// else
+
+			// The bullets are collided.
+			const Element sumElement = pLhs->GetElement().Add( pRhs->GetElement().Get() );
+			pLhs->GiveElement( sumElement.Get() );
+			pRhs->GiveElement( sumElement.Get() );
 		}
 	}
 }

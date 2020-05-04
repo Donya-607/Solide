@@ -994,11 +994,15 @@ namespace Bullet
 		{
 			aliveTime++;
 
-			if ( shouldStay ) { velocity = 0.0f; return; }
-			// else
-
-			velocity.y -= ParamBullet::Get().Data().oil.gravity;
-			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
+			if ( shouldStay )
+			{
+				velocity = 0.0f;
+			}
+			else
+			{
+				velocity.y -= ParamBullet::Get().Data().oil.gravity;
+				orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
+			}
 
 			if ( !pEffect && element.Has( Element::Type::Flame ) )
 			{
@@ -1170,11 +1174,15 @@ namespace Bullet
 		{
 			aliveTime++;
 
-			if ( shouldStay ) { velocity = 0.0f; return; }
-			// else
-
-			velocity.y -= ParamBullet::Get().Data().arrow.gravity;
-			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
+			if ( shouldStay )
+			{
+				velocity = 0.0f;
+			}
+			else
+			{
+				velocity.y -= ParamBullet::Get().Data().arrow.gravity;
+				orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), velocity.Unit() );
+			}
 
 			if ( !pEffect && element.Has( Element::Type::Flame ) )
 			{
