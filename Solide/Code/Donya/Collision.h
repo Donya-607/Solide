@@ -313,6 +313,15 @@ namespace Donya
 	static bool	operator != ( const OBB &L,		const OBB &R ) { return !( L == R ); }
 
 
+	struct Plane
+	{
+		float			distance;	// The shortest distance to the plane's any point from the origin.
+		Donya::Vector3	normal;		// The plane's normal.
+	public:
+		Plane() : distance( 0.0f ), normal( 0.0f, 1.0f, 0.0f ) {}
+		Plane( float distance, const Donya::Vector3 &normal ) : distance( distance ), normal( normal ) {}
+	};
+
 	struct RayIntersectResult
 	{
 		Donya::Vector3 intersection;
@@ -320,6 +329,11 @@ namespace Donya
 		bool isIntersect = false;
 	};
 	RayIntersectResult CalcIntersectionPoint( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd, const AABB &box );
+
+	/// <summary>
+	/// If the ray places onto the plane, we returns: intersection = rayStart, normal = Zero, isIntersect = true.
+	/// </summary>
+	RayIntersectResult CalcIntersectionPoint( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd, const Plane &plane );
 }
 
 CEREAL_CLASS_VERSION( Donya::Box,		1 );

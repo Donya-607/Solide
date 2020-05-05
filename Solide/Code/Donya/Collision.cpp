@@ -652,4 +652,54 @@ namespace Donya
 
 		return result;
 	}
+
+	RayIntersectResult CalcIntersectionPoint( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd, const Plane &plane )
+	{
+		// see http://www.sousakuba.com/Programming/gs_plane_line_intersect.html
+
+		const Donya::Vector3 planePoint = plane.distance * plane.normal;
+		const Donya::Vector3 vS = rayStart - planePoint;
+		const Donya::Vector3 vE = rayEnd   - planePoint;
+		const float	dotS  = Dot( vS, plane.normal );
+		const float	dotE  = Dot( vE, plane.normal );
+		const int	signS = Donya::SignBit( dotS );
+		const int	signE = Donya::SignBit( dotE );
+
+		if ( signS == signE )
+		{
+			if ( signS == 0 )
+			{
+				// The two edges place onto the plane, so I can't decide the intersection point.
+				// We returns start point temporary.
+				RayIntersectResult tmp;
+				tmp.intersection	= rayStart;
+				tmp.normal			= Donya::Vector3::Zero();
+				tmp.isIntersect		= true;
+				return tmp;
+			}
+			else
+			{
+				// The two edges place to the same side by the plane.
+				RayIntersectResult notHit{};
+				notHit.isIntersect = false;
+				return notHit;
+			}
+		}
+		// else
+
+		RayIntersectResult result{};
+		result.isIntersect = true;
+
+		const float absDotS = fabsf( dotS );
+		const float absDotE = fabsf( dotE );
+		const float distPercent = absDotS / ( absDotS + absDotE + EPSILON );
+		const Donya::Vector3 sourceRay = rayEnd - rayStart;
+		result.intersection = rayEnd + ( sourceRay * distPercent );
+		
+		const float dotRN = Dot( sourceRay.Unit(), plane.normal );
+		const float normalSign = ( dotRN < 0.0f ) ? -1.0f : 1.0f;
+		result.normal = plane.normal * normalSign;
+
+		return result;
+	}
 }
