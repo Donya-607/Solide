@@ -889,6 +889,29 @@ namespace Donya
 
 		static Vector4x4 MakeOrthographicLH( const Vector2 &viewSize, float zNear, float zFar );
 		static Vector4x4 MakePerspectiveFovLH( float FOVAngleRadianY, float aspectRatio, float zNear, float zFar );
+		
+		static constexpr Vector4x4 MakeViewport( const Vector2 &wholeScreenSize )
+		{
+			const  Vector2 &size = wholeScreenSize;
+			return Vector4x4
+			{
+				size.x * 0.5f,	0.0f,			0.0f,	0.0f,
+				0.0f,			-size.y * 0.5f,	0.0f,	0.0f,
+				0.0f,			0.0f,			1.0f,	0.0f,
+				size.x * 0.5f,	size.y * 0.5f,	0.0f,	1.0f
+			};
+		}
+		static constexpr Vector4x4 MakeInverseViewport( const Vector2 &wholeScreenSize )
+		{
+			const  Vector2 &size = wholeScreenSize;
+			return Vector4x4
+			{
+				2.0f / size.x,	0.0f,			0.0f,	0.0f,
+				0.0f,			2.0f / -size.y,	0.0f,	0.0f,
+				0.0f,			0.0f,			1.0f,	0.0f,
+				-1.0f,			1.0f,			0.0f,	1.0f
+			};
+		}
 	};
 
 	static Vector4x4			operator * ( const Vector4x4 &lhs, const Vector4x4 &rhs ) { return lhs.Mul( rhs ); }
