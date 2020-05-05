@@ -90,6 +90,8 @@ private:
 	void	EnemyUpdate( float elapsedTime );
 	void	EnemyPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );
 
+	void	GridControl();
+
 	void	TutorialUpdate( float elapsedTime );
 
 	void	ClearInit();

@@ -9,6 +9,7 @@ namespace
 	static constexpr int MAX_INSTANCE_COUNT = 4096;
 }
 
+GridLine::GridLine() : lineLength(), drawInterval(), drawOrigin(), pLine( nullptr ) {}
 GridLine::~GridLine() = default;
 
 bool GridLine::Init()
@@ -20,10 +21,6 @@ bool GridLine::Init()
 		return false;
 	}
 	// else
-
-	// Default settings.
-	lineLength		= 10.0f;
-	drawInterval	= 1.0f;
 
 	return true;
 }
@@ -38,11 +35,11 @@ void GridLine::Draw( const Donya::Vector4x4 &matVP ) const
 	if ( !pLine ) { return; }
 	// else
 
-	const Donya::Vector3 origin	{ -lineLength.x,		0.0f, -lineLength.y			};
-	const Donya::Vector3 endX	{ lineLength.x * 2.0f,	0.0f, 0.0f					};
-	const Donya::Vector3 endZ	{ 0.0f,					0.0f, lineLength.y * 2.0f	};
-	const Donya::Vector3 offsetX{ drawInterval.x,		0.0f, 0.0f					};
-	const Donya::Vector3 offsetZ{ 0.0f,					0.0f, drawInterval.y		};
+	const Donya::Vector3 origin	{ drawOrigin.x - lineLength.x,	drawOrigin.y,	drawOrigin.z - lineLength.y		};
+	const Donya::Vector3 endX	{ lineLength.x * 2.0f,			0.0f,			0.0f							};
+	const Donya::Vector3 endZ	{ 0.0f,							0.0f,			lineLength.y * 2.0f				};
+	const Donya::Vector3 offsetX{ drawInterval.x,				0.0f,			0.0f							};
+	const Donya::Vector3 offsetZ{ 0.0f,							0.0f,			drawInterval.y					};
 	
 	const Donya::Int2 loopCount = CalcDrawCount();
 
@@ -66,13 +63,13 @@ void GridLine::Draw( const Donya::Vector4x4 &matVP ) const
 	pLine->Flush( matVP );
 }
 
-void GridLine::SetDrawHeight( float Y )							{ height = Y; }
-void GridLine::SetDrawLength( const Donya::Vector2 halfLength )	{ lineLength = halfLength; }
-void GridLine::SetDrawInterval( const Donya::Vector2 interval )	{ drawInterval = interval; }
+void GridLine::SetDrawLength( const Donya::Vector2 &halfLength )	{ lineLength	= halfLength;	}
+void GridLine::SetDrawInterval( const Donya::Vector2 &interval )	{ drawInterval	= interval;		}
+void GridLine::SetDrawOrigin( const Donya::Vector3 &origin )		{ drawOrigin	= origin;		}
 
-float GridLine::GetDrawHeight() const				{ return height; }
-Donya::Vector2 GridLine::GetDrawLength() const		{ return lineLength; }
-Donya::Vector2 GridLine::GetDrawInterval() const	{ return drawInterval; }
+Donya::Vector2 GridLine::GetDrawLength() const						{ return lineLength;			}
+Donya::Vector2 GridLine::GetDrawInterval() const					{ return drawInterval;			}
+Donya::Vector3 GridLine::GetDrawOrigin() const						{ return drawOrigin;			}
 
 Donya::Int2 GridLine::CalcDrawCount() const
 {
@@ -91,9 +88,9 @@ void GridLine::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::DragFloat( u8"Y座標",		&height,			0.05f );
-	ImGui::DragFloat2( u8"半径",		&lineLength.x,		0.05f );
-	ImGui::DragFloat2( u8"間隔",		&drawInterval.x,	0.05f );
+	ImGui::DragFloat3( u8"中心位置",			&drawOrigin.x,		0.05f );
+	ImGui::DragFloat2( u8"線の長さ（半径）",	&lineLength.x,		0.05f );
+	ImGui::DragFloat2( u8"線の間隔（直径）",	&drawInterval.x,	0.05f );
 
 	const Donya::Int2 drawingCount = CalcDrawCount();
 	ImGui::Text( u8"本数：[Ｘ：%d][Ｚ：%d][計：%d]", drawingCount.x - 1, drawingCount.y - 1, drawingCount.x + drawingCount.y - 2 );

@@ -202,6 +202,10 @@ void SceneGame::Init()
 
 #if DEBUG_MODE
 	gridline.Init();
+	// My prefer initial settings.
+	gridline.SetDrawOrigin	( { 0.0f,	0.0f, -50.0f } );
+	gridline.SetDrawLength	( { 16.0f,	64.0f } );
+	gridline.SetDrawInterval( { 1.0f,	1.0f  } );
 #endif // DEBUG_MODE
 
 	bool result{};
@@ -273,6 +277,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 			iCamera.Init( Donya::ICamera::Mode::Look );
 		}
 	}
+
+	GridControl();
 #endif // DEBUG_MODE
 
 #if USE_IMGUI
@@ -351,7 +357,10 @@ void SceneGame::Draw( float elapsedTime )
 	const auto data = FetchMember();
 
 #if DEBUG_MODE
-	gridline.Draw( VP );
+	if ( nowDebugMode )
+	{
+		gridline.Draw( VP );
+	}
 #endif // DEBUG_MODE
 
 	if ( pShadow )
@@ -786,6 +795,29 @@ void SceneGame::EnemyPhysicUpdate( const std::vector<Donya::AABB> &solids, const
 	// else
 
 	pEnemies->PhysicUpdate( solids, pTerrain, pTerrainMatrix );
+}
+
+void SceneGame::GridControl()
+{
+#if DEBUG_MODE
+	
+	if ( !nowDebugMode ) { return; }
+	// else
+
+	if ( Donya::Keyboard::Press( VK_SHIFT ) )
+	{
+		const Donya::Vector3 current = gridline.GetDrawOrigin();
+
+		constexpr float speed = 0.2f;
+		const float addition  = speed * scast<float>( Donya::Mouse::WheelRot() );
+		if ( !ZeroEqual( addition ) )
+		{
+			const Donya::Vector3 addition3 = Donya::Vector3::Up() * addition;
+			gridline.SetDrawOrigin( current + addition3 );
+		}
+	}
+
+#endif // DEBUG_MODE
 }
 
 void SceneGame::TutorialUpdate( float elapsedTime )
@@ -1264,6 +1296,27 @@ void SceneGame::UseImGui()
 		ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
 		ImGui::Text( "" );
 
+		if ( ImGui::TreeNode( u8"【デバッグモード時の操作】" ) )
+		{
+			ImGui::Text( u8"「ＡＬＴキー」を押している間のみ，" );
+			ImGui::Text( u8"「左クリック」を押しながらマウス移動で，" );
+			ImGui::Text( u8"カメラの回転ができます。" );
+			ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
+			ImGui::Text( u8"カメラの並行移動ができます。" );
+			ImGui::Text( "" );
+
+			ImGui::Text( u8"「SHIFTキー」を押しながら" );
+			ImGui::Text( u8"マウスホイール上下で，" );
+			ImGui::Text( u8"グリッド線の高さの調整ができます。" );
+
+		#if DEBUG_MODE
+			gridline.ShowImGuiNode( u8"グリッド線の調整" );
+		#endif // DEBUG_MODE
+
+			ImGui::TreePop();
+		}
+		ImGui::Text( "" );
+
 		if ( ImGui::TreeNode( u8"ステージ番号の変更" ) )
 		{
 			static int transitionTarget = 1;
@@ -1316,20 +1369,8 @@ void SceneGame::UseImGui()
 			ShowVec3( u8"注視点位置・相対：", focusPoint - playerPos );
 			ImGui::Text( "" );
 
-			ImGui::Text( u8"【デバッグモード時のみ有効】" );
-			ImGui::Text( u8"「ＡＬＴキー」を押している間のみ，" );
-			ImGui::Text( u8"「左クリック」を押しながらマウス移動で，" );
-			ImGui::Text( u8"カメラの回転ができます。" );
-			ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
-			ImGui::Text( u8"カメラの並行移動ができます。" );
-			ImGui::Text( "" );
-
 			ImGui::TreePop();
 		}
-
-	#if DEBUG_MODE
-		gridline.ShowImGuiNode( u8"【デバッグ用】グリッド線の調整" );
-	#endif // DEBUG_MODE
 
 		if ( pPlayerIniter )
 		{ pPlayerIniter->ShowImGuiNode( u8"自機の初期化情報", stageNumber ); }

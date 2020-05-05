@@ -19,11 +19,12 @@ class GridLine
 private:
 	static constexpr unsigned int MAX_LINE_COUNT = 512U;
 private:
-	float					height = 0.0f;
 	Donya::Vector2			lineLength;		// Half length. 'Y' is used to 'Z'.
 	Donya::Vector2			drawInterval;	// 'Y' is used to 'Z'.
+	Donya::Vector3			drawOrigin;
 	std::unique_ptr<Donya::Geometric::Line>	pLine;
 public:
+	GridLine();
 	~GridLine();
 public:
 	bool Init();
@@ -31,13 +32,13 @@ public:
 
 	void Draw( const Donya::Vector4x4 &VP ) const;
 public:
-	void SetDrawHeight( float coordY );
-	void SetDrawLength( const Donya::Vector2 halfDrawLength );
-	void SetDrawInterval( const Donya::Vector2 drawInterval );
+	void SetDrawLength( const Donya::Vector2 &halfDrawLength );
+	void SetDrawInterval( const Donya::Vector2 &drawInterval );
+	void SetDrawOrigin( const Donya::Vector3 &wsDrawOrigin );
 
-	float GetDrawHeight() const;
 	Donya::Vector2 GetDrawLength() const;
 	Donya::Vector2 GetDrawInterval() const;
+	Donya::Vector3 GetDrawOrigin() const;
 private:
 	Donya::Int2 CalcDrawCount() const;
 #if USE_IMGUI
