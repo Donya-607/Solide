@@ -200,6 +200,10 @@ void SceneGame::Init()
 	Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
 #endif // DEBUG_MODE
 
+#if DEBUG_MODE
+	gridline.Init();
+#endif // DEBUG_MODE
+
 	bool result{};
 
 	pRenderer = std::make_unique<RenderingHelper>();
@@ -242,6 +246,10 @@ void SceneGame::Uninit()
 
 	ObstacleBase::ParameterUninit();
 	ParamGame::Get().Uninit();
+
+#if DEBUG_MODE
+	gridline.Uninit();
+#endif // DEBUG_MODE
 
 	Donya::Sound::Stop( Music::BGM_Game );
 }
@@ -341,6 +349,10 @@ void SceneGame::Draw( float elapsedTime )
 
 	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
 	const auto data = FetchMember();
+
+#if DEBUG_MODE
+	gridline.Draw( VP );
+#endif // DEBUG_MODE
 
 	if ( pShadow )
 	{
@@ -1314,6 +1326,10 @@ void SceneGame::UseImGui()
 
 			ImGui::TreePop();
 		}
+
+	#if DEBUG_MODE
+		gridline.ShowImGuiNode( u8"【デバッグ用】グリッド線の調整" );
+	#endif // DEBUG_MODE
 
 		if ( pPlayerIniter )
 		{ pPlayerIniter->ShowImGuiNode( u8"自機の初期化情報", stageNumber ); }

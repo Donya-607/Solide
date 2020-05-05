@@ -25,6 +25,10 @@
 #include "Terrain.h"
 #include "Warp.h"
 
+#if DEBUG_MODE
+#include "Grid.h"
+#endif // DEBUG_MODE
+
 class SceneGame : public Scene
 {
 private:
@@ -57,6 +61,7 @@ private:
 	bool isReverseCameraMoveY	= true;
 	bool isReverseCameraRotX	= false;
 	bool isReverseCameraRotY	= false;
+	GridLine gridline;
 #endif // DEBUG_MODE
 public:
 	SceneGame() : Scene() {}
