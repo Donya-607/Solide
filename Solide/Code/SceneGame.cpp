@@ -278,8 +278,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		}
 	}
 
-	GridControl();
-
 	DebugUpdate( elapsedTime );
 
 #endif // DEBUG_MODE
@@ -288,6 +286,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	ParamGame::Get().UseImGui();
 	UseImGui();
 	UseDebugImGui();
+	UseChosenImGui();
 
 	Enemy::UseImGui();
 	ObstacleBase::UseImGui();
@@ -594,23 +593,27 @@ void SceneGame::UninitStage()
 }
 
 #if DEBUG_MODE
+Donya::Vector4x4 SceneGame::MakeScreenTransformMatrix() const
+{
+	const Donya::Vector4x4 V  = iCamera.CalcViewMatrix();
+	const Donya::Vector4x4 P  = iCamera.GetProjectionMatrix();
+	const Donya::Vector4x4 VP = Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
+	return V * P * VP;
+}
+
 #include <cmath>	// Use round().
-#endif // DEBUG_MODE
 void SceneGame::DebugUpdate( float elapsedTime )
 {
-#if DEBUG_MODE
-
 	if ( !nowDebugMode ) { return; }
 	// else
+
+	GridControl();
 
 	const Donya::Int2		mouse		{ Donya::Mouse::Coordinate().x, Donya::Mouse::Coordinate().y };
 	const Donya::Vector3	ssRayStart	{ mouse.Float(), 0.0f };
 	const Donya::Vector3	ssRayEnd	{ mouse.Float(), 1.0f };
 
-	const Donya::Vector4x4	V	= iCamera.CalcViewMatrix();
-	const Donya::Vector4x4	P	= iCamera.GetProjectionMatrix();
-	const Donya::Vector4x4	VP	= Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
-	const Donya::Vector4x4	toWorld = ( V * P * VP ).Inverse();
+	const Donya::Vector4x4	toWorld = MakeScreenTransformMatrix().Inverse();
 
 	auto Transform = [&]( const Donya::Vector3 &v, float fourthParam, const Donya::Vector4x4 &m )
 	{
@@ -681,14 +684,154 @@ void SceneGame::DebugUpdate( float elapsedTime )
 		*pWsIntersection = aligned;
 	}
 
-	if ( Donya::Keyboard::Press( VK_SHIFT ) && Donya::Keyboard::Trigger( VK_LBUTTON ) )
+	if ( Donya::Keyboard::Press( VK_SHIFT ) )
 	{
-		if ( !pWsClickedPos ) { pWsClickedPos = std::make_unique<Donya::Vector3>(); }
-		*pWsClickedPos = *pWsIntersection;
+		if ( Donya::Keyboard::Trigger( VK_LBUTTON ) )
+		{
+			ChoiceObject( wsRayStart, wsRayEnd );
+		}
+		if ( Donya::Keyboard::Trigger( VK_RBUTTON ) )
+		{
+			if ( !pWsClickedPos ) { pWsClickedPos = std::make_unique<Donya::Vector3>(); }
+			*pWsClickedPos = *pWsIntersection;
+		}
 	}
 
-#endif // DEBUG_MODE
 }
+
+void SceneGame::ChoiceObject( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd )
+{
+	switch ( choiceType )
+	{
+	case ChoiceType::Enemy:		ChoiceEnemy( rayStart, rayEnd );	return;
+	case ChoiceType::Obstacle:	ChoiceObstacle( rayStart, rayEnd );	return;
+	default: return;
+	}
+}
+void SceneGame::ChoiceEnemy( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd )
+{
+	pChosenEnemy.reset();
+	if ( !pEnemies ) { return; }
+	// else
+
+	struct Bundle
+	{
+		Donya::Vector3 intersection;
+		std::shared_ptr<Enemy::Base> ptr;
+	public:
+		Bundle() : intersection(), ptr( nullptr ) {}
+	};
+	std::vector<Bundle> candidates;
+
+	std::vector<Donya::AABB> enemyBodies{};
+	std::shared_ptr<Enemy::Base> pEnemy = nullptr;
+
+	auto CalcNearestResult = [&]( const std::vector<Donya::AABB> &boxes )
+	{
+		Donya::RayIntersectResult tmp;
+		std::vector<Donya::RayIntersectResult> results;
+		for ( const auto &it : boxes )
+		{
+			tmp = Donya::CalcIntersectionPoint( rayStart, rayEnd, it );
+			if ( !tmp.isIntersect ) { continue; }
+			// else
+			results.emplace_back( tmp );
+		}
+
+		Donya::RayIntersectResult nearestResult;
+		float nearestDist = FLT_MAX;
+		for ( const auto &it : results )
+		{
+			const float dist	= ( it.intersection - rayStart ).LengthSq();
+			if ( dist < nearestDist )
+			{
+				nearestDist		= dist;
+				nearestResult	= it;
+			}
+		}
+
+		return nearestResult;
+	};
+
+	const size_t enemyCount = pEnemies->GetEnemyCount();
+	for ( size_t i = 0; i < enemyCount; ++i )
+	{
+		pEnemy = pEnemies->GetEnemyPtrOrNull( i );
+		if ( !pEnemy ) { continue; }
+		// else
+
+		enemyBodies.clear();
+		pEnemy->AcquireHurtBoxes( &enemyBodies );
+
+		const auto result = CalcNearestResult( enemyBodies );
+		if ( result.isIntersect )
+		{
+			Bundle tmp;
+			tmp.intersection = result.intersection;
+			tmp.ptr = pEnemy;
+			candidates.emplace_back( std::move( tmp ) );
+		}
+	}
+
+	float nearestDist = FLT_MAX;
+	for ( const auto &it : candidates )
+	{
+		const float dist = ( it.intersection - rayStart ).LengthSq();
+		if ( dist < nearestDist )
+		{
+			nearestDist  = dist;
+			pChosenEnemy = it.ptr;
+		}
+	}
+}
+void SceneGame::ChoiceObstacle( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd )
+{
+	pChosenObstacle.reset();
+
+	if ( !pObstacles ) { return; }
+	// else
+
+	struct Bundle
+	{
+		Donya::Vector3 intersection;
+		std::shared_ptr<ObstacleBase> ptr;
+	public:
+		Bundle() : intersection(), ptr( nullptr ) {}
+	};
+	std::vector<Bundle> candidates;
+
+	Donya::AABB obstacleBody{};
+	std::shared_ptr<ObstacleBase> pObstacle{};
+	
+	const size_t obstacleCount = pObstacles->GetObstacleCount();
+	for ( size_t i = 0; i < obstacleCount; ++i )
+	{
+		pObstacle = pObstacles->GetObstaclePtrOrNullptr( i );
+		if ( !pObstacle ) { return; }
+		// else
+
+		const auto result = Donya::CalcIntersectionPoint( rayStart, rayEnd, pObstacle->GetHitBox() );
+		if ( result.isIntersect )
+		{
+			Bundle tmp;
+			tmp.intersection = result.intersection;
+			tmp.ptr = pObstacle;
+			candidates.emplace_back( std::move( tmp ) );
+		}
+	}
+
+	float nearestDist = FLT_MAX;
+	for ( const auto &it : candidates )
+	{
+		const float dist = ( it.intersection - rayStart ).LengthSq();
+		if ( dist < nearestDist )
+		{
+			nearestDist = dist;
+			pChosenObstacle = it.ptr;
+		}
+	}
+}
+#endif // DEBUG_MODE
 
 void SceneGame::CameraInit()
 {
@@ -1546,6 +1689,8 @@ void SceneGame::UseDebugImGui()
 		TextDisabledIfNeeded( u8"グリッド線の高さの調整ができます。" );
 		TextDisabledIfNeeded( u8"（調整間隔は「グリッド線の間隔」と同一）" );
 		TextDisabledIfNeeded( u8"「左クリック」で，" );
+		TextDisabledIfNeeded( u8"オブジェクトを選択することができます。" );
+		TextDisabledIfNeeded( u8"「右クリック」で，" );
 		TextDisabledIfNeeded( u8"マウス位置（紫）を保存することができます。" );
 		ImGui::Text( "" );
 	}
@@ -1572,12 +1717,75 @@ void SceneGame::UseDebugImGui()
 		ImGui::TextDisabled( u8"マウス位置の計算に地形を含めるか" );
 		ImGui::TextDisabled( u8"※地形を含める場合，グリッド平面との交点と比べ近いほうが採用されます" );
 	}
-			
-#if DEBUG_MODE
+
 	gridline.ShowImGuiNode( u8"グリッド線の調整" );
-#endif // DEBUG_MODE
+
+	if ( ImGui::TreeNode( u8"選択オプション" ) )
+	{
+		auto GetName = []( ChoiceType type )
+		{
+			switch ( type )
+			{
+			case ChoiceType::Enemy:		return u8"敵";
+			case ChoiceType::Obstacle:	return u8"障害物";
+			default: break;
+			}
+			_ASSERT_EXPR( 0, L"Error: Unexpected type!" );
+			return u8"ERROR_TYPE";
+		};
+
+		int intType = scast<int>( choiceType );
+		ImGui::SliderInt( u8"選択タイプ", &intType, 0, scast<int>( ChoiceType::TypeCount ) - 1 );
+		choiceType  = scast<ChoiceType>( intType );
+		ImGui::Text( u8"現在：%s", GetName( choiceType ) );
+
+		ImGui::TreePop();
+	}
 
 	ImGui::End();
+}
+void SceneGame::UseChosenImGui()
+{
+	if ( !pChosenEnemy && !pChosenObstacle ) { return; }
+	// else
+
+	const Donya::Vector4x4 toScreen = MakeScreenTransformMatrix();
+	auto WorldToScreen = [&toScreen]( const Donya::Vector3 &world, float fourthParam )
+	{
+		Donya::Vector4 tmp = toScreen.Mul( world, fourthParam );
+		tmp /= tmp.w;
+		return tmp.XYZ();
+	};
+
+	constexpr Donya::Vector2 chosenWindowSize{ 256.0f, 128.0f };
+
+	if ( pChosenEnemy )
+	{
+		const Donya::Vector3 ssPos = WorldToScreen( pChosenEnemy->GetPosition(), 1.0f );
+		ImGui::SetNextWindowPos ( Donya::ToImVec( ssPos.XY() ), ImGuiCond_Once );
+		ImGui::SetNextWindowSize( Donya::ToImVec( chosenWindowSize ), ImGuiCond_Once );
+
+		const std::string caption = u8"選択した敵：" + Enemy::GetKindName( pChosenEnemy->GetKind() );
+		if ( ImGui::BeginIfAllowed( caption.c_str() ) )
+		{
+			pChosenEnemy->ShowImGuiNode( u8"調整" );
+			ImGui::End();
+		}
+	}
+	
+	if ( pChosenObstacle )
+	{
+		const Donya::Vector3 ssPos = WorldToScreen( pChosenObstacle->GetPosition(), 1.0f );
+		ImGui::SetNextWindowPos ( Donya::ToImVec( ssPos.XY() ), ImGuiCond_Once );
+		ImGui::SetNextWindowSize( Donya::ToImVec( chosenWindowSize ), ImGuiCond_Once );
+
+		const std::string caption = u8"選択した敵：" + ObstacleBase::GetModelName( pChosenObstacle->GetKind() );
+		if ( ImGui::BeginIfAllowed( caption.c_str() ) )
+		{
+			pChosenObstacle->ShowImGuiNode( u8"調整" );
+			ImGui::End();
+		}
+	}
 }
 #endif // DEBUG_MODE
 

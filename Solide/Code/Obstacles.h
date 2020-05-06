@@ -17,6 +17,10 @@ class RenderingHelper;
 
 class ObstacleBase : protected Solid
 {
+#if USE_IMGUI
+protected:
+	bool wantRemoveByGui = false;
+#endif // USE_IMGUI
 public:
 	static bool LoadModels();
 	static void ParameterInit();
@@ -58,7 +62,8 @@ public:
 	virtual void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) = 0;
 	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
 public:
-	virtual int GetKind() const = 0;
+	virtual bool ShouldRemove() const;
+	virtual int  GetKind() const = 0;
 	virtual Donya::Vector3 GetPosition() const { return pos; }
 	virtual Donya::AABB GetHitBox() const
 	{
@@ -68,10 +73,7 @@ public:
 	}
 public:
 #if USE_IMGUI
-	/// <summary>
-	/// Returns true if I wanna be removed me.
-	/// </summary>
-	virtual bool ShowImGuiNode( const std::string &nodeCaption );
+	virtual void ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( ObstacleBase, 0 )
@@ -235,10 +237,7 @@ private:
 	bool ShouldChangeMode() const;
 public:
 #if USE_IMGUI
-	/// <summary>
-	/// Returns true if I wanna be removed me.
-	/// </summary>
-	bool ShowImGuiNode( const std::string &nodeCaption ) override;
+	void ShowImGuiNode( const std::string &nodeCaption ) override;
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( Spray, 0 )

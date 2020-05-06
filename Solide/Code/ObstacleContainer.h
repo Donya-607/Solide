@@ -48,7 +48,10 @@ public:
 public:
 	void SortByDepth();
 public:
-	std::vector<Donya::AABB> GetHitBoxes() const;
+	size_t	GetObstacleCount() const;
+	bool	IsOutOfRange( size_t index ) const;
+	std::shared_ptr<ObstacleBase>	GetObstaclePtrOrNullptr( size_t index ) const;
+	std::vector<Donya::AABB>		GetHitBoxes() const;
 private:
 	void LoadBin ( int stageNo );
 	void LoadJson( int stageNo );

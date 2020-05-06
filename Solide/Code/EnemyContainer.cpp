@@ -53,11 +53,7 @@ namespace Enemy
 
 		for ( auto &pIt : enemyPtrs )
 		{
-			if ( !pIt )
-			{
-				bool breakpoint = 0;
-				continue;
-			}
+			if ( !pIt ) { continue; }
 			// else
 			pIt->Update( elapsedTime, targetPos );
 		}
@@ -214,7 +210,6 @@ namespace Enemy
 		// ShowImGuiNode() loop.
 		{
 			const size_t enemyCount = enemyPtrs.size();
-			size_t removeIndex = enemyCount;
 			std::string caption{};
 			for ( size_t i = 0; i < enemyCount; ++i )
 			{
@@ -223,17 +218,7 @@ namespace Enemy
 
 				caption = u8"[" + std::to_string( i ) + u8"F" + Enemy::GetKindName( enemyPtrs[i]->GetKind() ) + u8"]";
 
-				bool wantRemove = false;
-				enemyPtrs[i]->ShowImGuiNode( caption, &wantRemove );
-				if ( wantRemove )
-				{
-					removeIndex = i;
-				}
-			}
-
-			if ( removeIndex != enemyCount )
-			{
-				enemyPtrs.erase( enemyPtrs.begin() + removeIndex );
+				enemyPtrs[i]->ShowImGuiNode( caption );
 			}
 		}
 

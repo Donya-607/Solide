@@ -43,6 +43,20 @@ void ObstacleContainer::Update( float elapsedTime )
 		// else
 		pIt->Update( elapsedTime );
 	}
+
+	auto result = std::remove_if
+	(
+		pObstacles.begin(), pObstacles.end(),
+		[]( std::shared_ptr<ObstacleBase> &pElement )
+		{
+			return ( !pElement ) ? true : pElement->ShouldRemove();
+		}
+	);
+	for ( auto it = result; it != pObstacles.end(); ++it )
+	{
+		if ( *it ) { ( *it )->Uninit(); }
+	}
+	pObstacles.erase( result, pObstacles.end() );
 }
 
 void ObstacleContainer::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
@@ -75,6 +89,21 @@ void ObstacleContainer::SortByDepth()
 	};
 
 	std::sort( pObstacles.begin(), pObstacles.end(), IsGreaterDepth );
+}
+
+size_t	ObstacleContainer::GetObstacleCount() const
+{
+	return pObstacles.size();
+}
+bool	ObstacleContainer::IsOutOfRange( size_t index ) const
+{
+	return ( GetObstacleCount() <= index ) ? true : false;
+}
+std::shared_ptr<ObstacleBase> ObstacleContainer::GetObstaclePtrOrNullptr( size_t index ) const
+{
+	if ( IsOutOfRange( index ) ) { return nullptr; }
+	// else
+	return pObstacles[index];
 }
 
 std::vector<Donya::AABB> ObstacleContainer::GetHitBoxes() const
@@ -156,7 +185,6 @@ void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 	if ( ImGui::TreeNode( u8"ŽÀ‘Ì‚½‚¿" ) )
 	{
 		const size_t count = data.size();
-		size_t removeIndex = count;
 		std::string caption{};
 		for ( size_t i = 0; i < count; ++i )
 		{
@@ -165,15 +193,7 @@ void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 
 			caption = u8"[" + std::to_string( i ) + u8"F" + ObstacleBase::GetModelName( data[i]->GetKind() ) + u8"]";
 
-			if ( data[i]->ShowImGuiNode( caption ) )
-			{
-				removeIndex = i;
-			}
-		}
-
-		if ( removeIndex != count )
-		{
-			data.erase( data.begin() + removeIndex );
+			data[i]->ShowImGuiNode( caption ) ;
 		}
 
 		ImGui::TreePop();

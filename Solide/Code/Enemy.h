@@ -138,6 +138,10 @@ namespace Enemy
 		std::shared_ptr<EffectHandle>	pEffect; // Will used as burning effect.
 
 		int								oiledTimer = 0;
+
+	#if USE_IMGUI
+		bool wantRemoveByGui = false;
+	#endif // USE_IMGUI
 	public:
 		Base() = default;
 		virtual ~Base();
@@ -201,10 +205,7 @@ namespace Enemy
 		RecursionResult	CalcCorrectedVectorImpl( int recursionLimit, int recursionCount, RecursionResult prevResult, const Donya::Model::PolygonGroup &terrain, const Donya::Vector4x4 &terrainWorldMatrix ) const;
 	public:
 	#if USE_IMGUI
-		/// <summary>
-		/// You can set nullptr to "outputWantRemove".
-		/// </summary>
-		virtual void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) = 0;
+		virtual void ShowImGuiNode( const std::string &nodeCaption ) = 0;
 	#endif // USE_IMGUI
 	};
 #if USE_IMGUI
@@ -258,10 +259,7 @@ namespace Enemy
 		void AssignOrientation( const Donya::Vector3 &targetPosition );
 	public:
 	#if USE_IMGUI
-		/// <summary>
-		/// You can set nullptr to "outputWantRemove".
-		/// </summary>
-		void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) override;
+		void ShowImGuiNode( const std::string &nodeCaption ) override;
 	#endif // USE_IMGUI
 	};
 
@@ -376,10 +374,7 @@ namespace Enemy
 		void GenerateShot();
 	public:
 	#if USE_IMGUI
-		/// <summary>
-		/// You can set nullptr to "outputWantRemove".
-		/// </summary>
-		void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) override;
+		void ShowImGuiNode( const std::string &nodeCaption ) override;
 	#endif // USE_IMGUI
 	};
 
@@ -489,10 +484,7 @@ namespace Enemy
 		}
 	public:
 	#if USE_IMGUI
-		/// <summary>
-		/// You can set nullptr to "outputWantRemove".
-		/// </summary>
-		void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) override;
+		void ShowImGuiNode( const std::string &nodeCaption ) override;
 	#endif // USE_IMGUI
 	};
 
@@ -585,10 +577,7 @@ namespace Enemy
 		}
 	public:
 	#if USE_IMGUI
-		/// <summary>
-		/// You can set nullptr to "outputWantRemove".
-		/// </summary>
-		void ShowImGuiNode( const std::string &nodeCaption, bool *outputWantRemove ) override;
+		void ShowImGuiNode( const std::string &nodeCaption ) override;
 	#endif // USE_IMGUI
 	};
 

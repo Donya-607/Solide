@@ -1028,6 +1028,9 @@ namespace Enemy
 	}
 	bool Straight::ShouldRemove() const
 	{
+	#if USE_IMGUI
+		if ( wantRemoveByGui ) { return true; }
+	#endif // USE_IMGUI
 		return WillSlip( element, velocity ) || WillBurn( element );
 	}
 	Kind Straight::GetKind() const
@@ -1097,22 +1100,15 @@ namespace Enemy
 		}
 	}
 #if USE_IMGUI
-	void Straight::ShowImGuiNode( const std::string &nodeCaption, bool *pWantRemove )
+	void Straight::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		if ( pWantRemove )
+		const  std::string  buttonCaption = nodeCaption + u8"を削除";
+		if ( ImGui::Button( buttonCaption.c_str() ) )
 		{
-			const  std::string  buttonCaption = nodeCaption + u8"を削除";
-			if ( ImGui::Button( buttonCaption.c_str() ) )
-			{
-				*pWantRemove = true;
-			}
-			else
-			{
-				*pWantRemove = false;
-			}
+			wantRemoveByGui = true;
 		}
 
 		if ( ImGui::TreeNode( u8"調整パラメータ" ) )
@@ -1314,6 +1310,9 @@ namespace Enemy
 	}
 	bool Archer::ShouldRemove() const
 	{
+	#if USE_IMGUI
+		if ( wantRemoveByGui ) { return true; }
+	#endif // USE_IMGUI
 		return WillBurn( element );
 	}
 	Kind Archer::GetKind() const
@@ -1332,22 +1331,15 @@ namespace Enemy
 		Bullet::BulletAdmin::Get().Append( desc );
 	}
 #if USE_IMGUI
-	void Archer::ShowImGuiNode( const std::string &nodeCaption, bool *pWantRemove )
+	void Archer::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		if ( pWantRemove )
+		const  std::string  buttonCaption = nodeCaption + u8"を削除";
+		if ( ImGui::Button( buttonCaption.c_str() ) )
 		{
-			const  std::string  buttonCaption = nodeCaption + u8"を削除";
-			if ( ImGui::Button( buttonCaption.c_str() ) )
-			{
-				*pWantRemove = true;
-			}
-			else
-			{
-				*pWantRemove = false;
-			}
+			wantRemoveByGui = true;
 		}
 
 		if ( ImGui::TreeNode( u8"調整パラメータ" ) )
@@ -1519,6 +1511,9 @@ namespace Enemy
 	}
 	bool GateKeeper::ShouldRemove() const
 	{
+	#if USE_IMGUI
+		if ( wantRemoveByGui ) { return true; }
+	#endif // USE_IMGUI
 		return WillBurn( element );
 	}
 	Kind GateKeeper::GetKind() const
@@ -1526,22 +1521,15 @@ namespace Enemy
 		return Kind::GateKeeper;
 	}
 #if USE_IMGUI
-	void GateKeeper::ShowImGuiNode( const std::string &nodeCaption, bool *pWantRemove )
+	void GateKeeper::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		if ( pWantRemove )
+		const  std::string  buttonCaption = nodeCaption + u8"を削除";
+		if ( ImGui::Button( buttonCaption.c_str() ) )
 		{
-			const  std::string  buttonCaption = nodeCaption + u8"を削除";
-			if ( ImGui::Button( buttonCaption.c_str() ) )
-			{
-				*pWantRemove = true;
-			}
-			else
-			{
-				*pWantRemove = false;
-			}
+			wantRemoveByGui = true;
 		}
 
 		if ( ImGui::TreeNode( u8"調整パラメータ" ) )
@@ -1718,6 +1706,9 @@ namespace Enemy
 	}
 	bool Chaser::ShouldRemove() const
 	{
+	#if USE_IMGUI
+		if ( wantRemoveByGui ) { return true; }
+	#endif // USE_IMGUI
 		return false; // Chaser can't defeat.
 	}
 	Kind Chaser::GetKind() const
@@ -1725,22 +1716,15 @@ namespace Enemy
 		return Kind::Chaser;
 	}
 #if USE_IMGUI
-	void Chaser::ShowImGuiNode( const std::string &nodeCaption, bool *pWantRemove )
+	void Chaser::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		if ( pWantRemove )
+		const  std::string  buttonCaption = nodeCaption + u8"を削除";
+		if ( ImGui::Button( buttonCaption.c_str() ) )
 		{
-			const  std::string  buttonCaption = nodeCaption + u8"を削除";
-			if ( ImGui::Button( buttonCaption.c_str() ) )
-			{
-				*pWantRemove = true;
-			}
-			else
-			{
-				*pWantRemove = false;
-			}
+			wantRemoveByGui = true;
 		}
 
 		if ( ImGui::TreeNode( u8"調整パラメータ" ) )

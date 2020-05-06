@@ -67,6 +67,16 @@ private:
 	std::unique_ptr<Donya::Vector3> pWsClickedPos	= nullptr; // When did not intersected, this will be nullptr.
 	bool alsoIntersectToTerrain	= true;
 	bool alignToGrid			= true;
+	enum class ChoiceType
+	{
+		Enemy,
+		Obstacle,
+
+		TypeCount
+	};
+	ChoiceType choiceType = ChoiceType::Enemy;
+	std::shared_ptr<Enemy::Base>	pChosenEnemy	= nullptr;
+	std::shared_ptr<ObstacleBase>	pChosenObstacle	= nullptr;
 #endif // DEBUG_MODE
 public:
 	SceneGame() : Scene() {}
@@ -81,7 +91,13 @@ private:
 	void	InitStage( int stageNo );
 	void	UninitStage();
 
+#if DEBUG_MODE
+	Donya::Vector4x4 MakeScreenTransformMatrix() const;
 	void	DebugUpdate( float elapsedTime );
+	void	ChoiceObject( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd);
+	void	ChoiceEnemy( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd );
+	void	ChoiceObstacle( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd );
+#endif // DEBUG_MODE
 
 	void	CameraInit();
 	void	AssignCameraPos();
@@ -125,6 +141,7 @@ private:
 	void	UseImGui();
 #if DEBUG_MODE
 	void	UseDebugImGui();
+	void	UseChosenImGui();
 #endif // DEBUG_MODE
 #endif // USE_IMGUI
 };
