@@ -287,6 +287,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 #if USE_IMGUI
 	ParamGame::Get().UseImGui();
 	UseImGui();
+	UseDebugImGui();
 
 	Enemy::UseImGui();
 	ObstacleBase::UseImGui();
@@ -1401,6 +1402,7 @@ Scene::Result SceneGame::ReturnResult()
 }
 
 #if USE_IMGUI
+
 void SceneGame::UseImGui()
 {
 	if ( !ImGui::BeginIfAllowed() ) { return; }
@@ -1410,57 +1412,6 @@ void SceneGame::UseImGui()
 
 	if ( ImGui::TreeNode( u8"ゲーム・メンバーの調整" ) )
 	{
-		ImGui::Text( u8"「Ｆ５キー」を押すと，" );
-		ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
-		ImGui::Text( "" );
-
-		if ( ImGui::TreeNode( u8"【デバッグモード時】" ) )
-		{
-			ImGui::Text( u8"「ＡＬＴキー」を押している間，" );
-			ImGui::Text( u8"「左クリック」を押しながらマウス移動で，" );
-			ImGui::Text( u8"カメラの回転ができます。" );
-			ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
-			ImGui::Text( u8"カメラの並行移動ができます。" );
-			ImGui::Text( "" );
-
-			ImGui::Text( u8"「SHIFTキー」を押している間，" );
-			ImGui::Text( u8"「マウスホイール上下」で，" );
-			ImGui::Text( u8"グリッド線の高さの調整ができます。" );
-			ImGui::Text( u8"（調整間隔は「グリッド線の間隔」と同一）" );
-			ImGui::Text( u8"「左クリック」で，" );
-			ImGui::Text( u8"マウス位置（紫）を保存することができます。" );
-			ImGui::Text( "" );
-
-			if ( pWsIntersection )
-			{
-				ImGui::DragFloat3( u8"現在の交点位置", &pWsIntersection->x, 0.01f );
-			}
-			else
-			{
-				ImGui::TextDisabled( u8"現在の交点位置" );
-			}
-			if ( pWsClickedPos )
-			{
-				ImGui::DragFloat3( u8"現在のマウス位置",	&pWsClickedPos->x, 0.01f );
-			}
-			else
-			{
-				ImGui::TextDisabled( u8"現在のマウス位置" );
-			}
-
-			ImGui::Checkbox( u8"マウス位置をグリッドに沿わせるか", &alignToGrid );
-			ImGui::Checkbox( u8"マウス位置の計算に地形を含めるか", &alsoIntersectToTerrain );
-			ImGui::Text( u8"※地形を含める場合，グリッド平面との交点と比べ近いほうが採用されます" );
-			ImGui::Text( "" );
-			
-		#if DEBUG_MODE
-			gridline.ShowImGuiNode( u8"グリッド線の調整" );
-		#endif // DEBUG_MODE
-
-			ImGui::TreePop();
-		}
-		ImGui::Text( "" );
-
 		if ( ImGui::TreeNode( u8"ステージ番号の変更" ) )
 		{
 			static int transitionTarget = 1;
@@ -1551,4 +1502,83 @@ void SceneGame::UseImGui()
 	
 	ImGui::End();
 }
+
+#if DEBUG_MODE
+void SceneGame::UseDebugImGui()
+{
+	constexpr Donya::Vector2 windowSize{ 720.0f, 540.0f };
+	const     Donya::Vector2 windowPosLT
+	{
+		0.0f,
+		Common::ScreenHeightF() - windowSize.y
+	};
+	ImGui::SetNextWindowPos ( Donya::ToImVec( windowPosLT ), ImGuiCond_Once );
+	ImGui::SetNextWindowSize( Donya::ToImVec( windowSize  ), ImGuiCond_Once );
+
+	if ( !ImGui::BeginIfAllowed( u8"【デバッグモード】" ) ) { return; }
+	// else
+	
+	const auto data = FetchMember();
+
+	ImGui::Text( u8"「Ｆ５キー」を押すと，" );
+	ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
+	ImGui::Text( "" );
+	ImGui::Checkbox( u8"今，デバッグモードか", &nowDebugMode );
+
+	auto TextDisabledIfNeeded = [&]( const char *str )
+	{
+		( nowDebugMode )
+		? ImGui::Text( str )
+		: ImGui::TextDisabled( str );
+	};
+
+	// Usage texts.
+	{
+		TextDisabledIfNeeded( u8"「ＡＬＴキー」を押している間，" );
+		TextDisabledIfNeeded( u8"「左クリック」を押しながらマウス移動で，" );
+		TextDisabledIfNeeded( u8"カメラの回転ができます。" );
+		TextDisabledIfNeeded( u8"「マウスホイール」を押しながらマウス移動で，" );
+		TextDisabledIfNeeded( u8"カメラの並行移動ができます。" );
+		ImGui::Text( "" );
+
+		TextDisabledIfNeeded( u8"「SHIFTキー」を押している間，" );
+		TextDisabledIfNeeded( u8"「マウスホイール上下」で，" );
+		TextDisabledIfNeeded( u8"グリッド線の高さの調整ができます。" );
+		TextDisabledIfNeeded( u8"（調整間隔は「グリッド線の間隔」と同一）" );
+		TextDisabledIfNeeded( u8"「左クリック」で，" );
+		TextDisabledIfNeeded( u8"マウス位置（紫）を保存することができます。" );
+		ImGui::Text( "" );
+	}
+
+	if ( nowDebugMode && pWsIntersection )
+	{ ImGui::DragFloat3( u8"現在の交点位置", &pWsIntersection->x, 0.01f ); }
+	else
+	{ ImGui::TextDisabled( u8"現在の交点位置" ); }
+
+	if ( nowDebugMode && pWsClickedPos )
+	{ ImGui::DragFloat3( u8"現在のマウス位置",	&pWsClickedPos->x, 0.01f ); }
+	else
+	{ ImGui::TextDisabled( u8"現在のマウス位置" ); }
+
+	if ( nowDebugMode )
+	{
+		ImGui::Checkbox( u8"マウス位置をグリッドに沿わせるか", &alignToGrid );
+		ImGui::Checkbox( u8"マウス位置の計算に地形を含めるか", &alsoIntersectToTerrain );
+		ImGui::Text( u8"※地形を含める場合，グリッド平面との交点と比べ近いほうが採用されます" );
+	}
+	else
+	{
+		ImGui::TextDisabled( u8"マウス位置をグリッドに沿わせるか" );
+		ImGui::TextDisabled( u8"マウス位置の計算に地形を含めるか" );
+		ImGui::TextDisabled( u8"※地形を含める場合，グリッド平面との交点と比べ近いほうが採用されます" );
+	}
+			
+#if DEBUG_MODE
+	gridline.ShowImGuiNode( u8"グリッド線の調整" );
+#endif // DEBUG_MODE
+
+	ImGui::End();
+}
+#endif // DEBUG_MODE
+
 #endif // USE_IMGUI

@@ -123,5 +123,8 @@ private:
 private:
 #if USE_IMGUI
 	void	UseImGui();
+#if DEBUG_MODE
+	void	UseDebugImGui();
+#endif // DEBUG_MODE
 #endif // USE_IMGUI
 };
