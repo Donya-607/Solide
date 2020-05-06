@@ -203,9 +203,9 @@ void SceneGame::Init()
 #if DEBUG_MODE
 	gridline.Init();
 	// My prefer initial settings.
-	gridline.SetDrawOrigin	( { 0.0f,	0.0f, -50.0f } );
+	gridline.SetDrawOrigin	( { 0.0f,	0.0f,	-50.0f } );
 	gridline.SetDrawLength	( { 16.0f,	64.0f } );
-	gridline.SetDrawInterval( { 1.0f,	1.0f  } );
+	gridline.SetDrawInterval( { 1.0f,	1.0f,	1.0f   } );
 #endif // DEBUG_MODE
 
 	bool result{};
@@ -665,20 +665,19 @@ void SceneGame::DebugUpdate( float elapsedTime )
 
 	if ( alignToGrid && pWsIntersection )
 	{
-		// Y is used as Z.
-		const Donya::Vector2 grid = gridline.GetDrawInterval();
-		Donya::Vector2 alignedXZ{ pWsIntersection->x, pWsIntersection->z };
+		const Donya::Vector3 interval = gridline.GetDrawInterval();
+		Donya::Vector3 aligned = *pWsIntersection;
 
-		float div{};
+		Donya::Vector3 div{};
+		div.x = aligned.x / interval.x;
+		div.y = aligned.y / interval.y;
+		div.z = aligned.z / interval.z;
 
-		div = alignedXZ.x / grid.x;
-		alignedXZ.x = std::round( div ) * grid.x;
-		
-		div = alignedXZ.y / grid.y;
-		alignedXZ.y = std::round( div ) * grid.y;
+		aligned.x = std::round( div.x ) * interval.x;
+		aligned.y = std::round( div.y ) * interval.y;
+		aligned.z = std::round( div.z ) * interval.z;
 
-		pWsIntersection->x = alignedXZ.x;
-		pWsIntersection->z = alignedXZ.y;
+		*pWsIntersection = aligned;
 	}
 
 	if ( Donya::Keyboard::Press( VK_SHIFT ) && Donya::Keyboard::Trigger( VK_LBUTTON ) )
@@ -926,8 +925,8 @@ void SceneGame::GridControl()
 	if ( Donya::Keyboard::Press( VK_SHIFT ) )
 	{
 		const Donya::Vector3 current = gridline.GetDrawOrigin();
+		const float speed = gridline.GetDrawInterval().y;
 
-		constexpr float speed = 0.2f;
 		const float addition  = speed * scast<float>( Donya::Mouse::WheelRot() );
 		if ( !ZeroEqual( addition ) )
 		{
@@ -1427,24 +1426,30 @@ void SceneGame::UseImGui()
 			ImGui::Text( u8"「SHIFTキー」を押している間，" );
 			ImGui::Text( u8"「マウスホイール上下」で，" );
 			ImGui::Text( u8"グリッド線の高さの調整ができます。" );
+			ImGui::Text( u8"（調整間隔は「グリッド線の間隔」と同一）" );
 			ImGui::Text( u8"「左クリック」で，" );
 			ImGui::Text( u8"マウス位置（紫）を保存することができます。" );
 			ImGui::Text( "" );
 
-			// We can not pass the address of unique_ptr to ImGui.
-			Donya::Vector3 tmp{};
-
-			tmp = *pWsIntersection;
-			ImGui::DragFloat3( u8"現在の交点位置", &tmp.x, 0.01f );
-			*pWsIntersection = tmp;
-
-			tmp = *pWsClickedPos;
-			ImGui::DragFloat3( u8"現在のマウス位置",	&tmp.x, 0.01f );
-			*pWsClickedPos = tmp;
+			if ( pWsIntersection )
+			{
+				ImGui::DragFloat3( u8"現在の交点位置", &pWsIntersection->x, 0.01f );
+			}
+			else
+			{
+				ImGui::TextDisabled( u8"現在の交点位置" );
+			}
+			if ( pWsClickedPos )
+			{
+				ImGui::DragFloat3( u8"現在のマウス位置",	&pWsClickedPos->x, 0.01f );
+			}
+			else
+			{
+				ImGui::TextDisabled( u8"現在のマウス位置" );
+			}
 
 			ImGui::Checkbox( u8"マウス位置をグリッドに沿わせるか", &alignToGrid );
 			ImGui::Checkbox( u8"マウス位置の計算に地形を含めるか", &alsoIntersectToTerrain );
-			ImGui::Text( u8"※グリッドに沿うのはXZ座標だけになります" );
 			ImGui::Text( u8"※地形を含める場合，グリッド平面との交点と比べ近いほうが採用されます" );
 			ImGui::Text( "" );
 			

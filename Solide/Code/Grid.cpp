@@ -63,12 +63,12 @@ void GridLine::Draw( const Donya::Vector4x4 &matVP ) const
 	pLine->Flush( matVP );
 }
 
-void GridLine::SetDrawLength( const Donya::Vector2 &halfLength )	{ lineLength	= halfLength;	}
-void GridLine::SetDrawInterval( const Donya::Vector2 &interval )	{ drawInterval	= interval;		}
-void GridLine::SetDrawOrigin( const Donya::Vector3 &origin )		{ drawOrigin	= origin;		}
+void GridLine::SetDrawLength	( const Donya::Vector2 &halfLength	)	{ lineLength	= halfLength;	}
+void GridLine::SetDrawInterval	( const Donya::Vector3 &interval	)	{ drawInterval	= interval;		}
+void GridLine::SetDrawOrigin	( const Donya::Vector3 &origin		)	{ drawOrigin	= origin;		}
 
 Donya::Vector2 GridLine::GetDrawLength() const						{ return lineLength;			}
-Donya::Vector2 GridLine::GetDrawInterval() const					{ return drawInterval;			}
+Donya::Vector3 GridLine::GetDrawInterval() const					{ return drawInterval;			}
 Donya::Vector3 GridLine::GetDrawOrigin() const						{ return drawOrigin;			}
 
 Donya::Int2 GridLine::CalcDrawCount() const
@@ -90,7 +90,7 @@ void GridLine::ShowImGuiNode( const std::string &nodeCaption )
 
 	ImGui::DragFloat3( u8"中心位置",			&drawOrigin.x,		0.05f );
 	ImGui::DragFloat2( u8"線の長さ（半径）",	&lineLength.x,		0.05f );
-	ImGui::DragFloat2( u8"線の間隔（直径）",	&drawInterval.x,	0.05f );
+	ImGui::DragFloat3( u8"線の間隔（直径）",	&drawInterval.x,	0.05f );
 
 	const Donya::Int2 drawingCount = CalcDrawCount();
 	ImGui::Text( u8"本数：[Ｘ：%d][Ｚ：%d][計：%d]", drawingCount.x - 1, drawingCount.y - 1, drawingCount.x + drawingCount.y - 2 );
