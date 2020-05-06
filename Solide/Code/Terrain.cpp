@@ -44,6 +44,13 @@ Terrain::Terrain( int stageNo ) :
 	pPose->AssignSkeletal( loader.GetModelSource().skeletal );
 	pPose->UpdateTransformMatrices();
 
+#if DEBUG_MODE
+	pDrawingPolygons = std::make_shared<Donya::Model::PolygonGroup>
+	(
+		loader.GetPolygonGroup()
+	);
+#endif // DEBUG_MODE
+
 	Load( &loader, collisionModelPath );
 
 #if DEBUG_MODE

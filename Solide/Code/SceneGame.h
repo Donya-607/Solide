@@ -57,11 +57,16 @@ private:
 
 #if DEBUG_MODE
 	bool nowDebugMode			= false;
-	bool isReverseCameraMoveX	= false;
-	bool isReverseCameraMoveY	= true;
+	bool isReverseCameraMoveX	= true;
+	bool isReverseCameraMoveY	= false;
 	bool isReverseCameraRotX	= false;
 	bool isReverseCameraRotY	= false;
+
 	GridLine gridline;
+	std::unique_ptr<Donya::Vector3> pWsIntersection	= nullptr; // When did not intersected, this will be nullptr.
+	std::unique_ptr<Donya::Vector3> pWsClickedPos	= nullptr; // When did not intersected, this will be nullptr.
+	bool alsoIntersectToTerrain	= true;
+	bool alignToGrid			= true;
 #endif // DEBUG_MODE
 public:
 	SceneGame() : Scene() {}
@@ -75,6 +80,8 @@ public:
 private:
 	void	InitStage( int stageNo );
 	void	UninitStage();
+
+	void	DebugUpdate( float elapsedTime );
 
 	void	CameraInit();
 	void	AssignCameraPos();

@@ -22,6 +22,7 @@ private:
 	std::shared_ptr<Donya::Model::Pose>			pPose;
 	std::shared_ptr<Donya::Model::PolygonGroup>	pPolygons;
 #if DEBUG_MODE
+	std::shared_ptr<Donya::Model::PolygonGroup>	pDrawingPolygons;
 	std::shared_ptr<Donya::Model::StaticModel>	pCollisionModel;
 	std::shared_ptr<Donya::Model::Pose>			pCollisionPose;
 #endif // DEBUG_MODE
@@ -33,6 +34,9 @@ public:
 public:
 	const Donya::Vector4x4 &GetWorldMatrix() const { return matWorld; }
 	std::shared_ptr<Donya::Model::PolygonGroup> GetCollisionModel() const { return pPolygons; }
+#if DEBUG_MODE
+	std::shared_ptr<Donya::Model::PolygonGroup> GetDrawModel() const { return pDrawingPolygons; }
+#endif // DEBUG_MODE
 public:
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
 public:

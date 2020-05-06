@@ -279,6 +279,9 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 
 	GridControl();
+
+	DebugUpdate( elapsedTime );
+
 #endif // DEBUG_MODE
 
 #if USE_IMGUI
@@ -460,9 +463,12 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		Donya::Model::Cube::Constant constant;
 		constant.matViewProj	= VP;
-		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 0.5f };
 		constant.lightDirection	= data.directionalLight.direction.XYZ();
-		
+
+		auto SetColor = [&]( const Donya::Vector4 &color )
+		{
+			constant.drawColor = color;
+		};
 		auto DrawCube = [&]( const Donya::Vector3 &pos, const Donya::Vector3 &scale = { 1.0f, 1.0f, 1.0f } )
 		{
 			constant.matWorld._11 = scale.x * 2.0f;
@@ -476,8 +482,23 @@ void SceneGame::Draw( float elapsedTime )
 
 		if ( pPlayerIniter )
 		{
-			constant.drawColor = { 0.5f, 1.0f, 0.8f, 0.5f };
+			SetColor( { 0.5f, 1.0f, 0.8f, 0.5f } );
 			DrawCube( pPlayerIniter->GetInitialPos() );
+		}
+
+		if ( nowDebugMode )
+		{
+			if ( pWsIntersection )
+			{
+				SetColor( { 1.0f, 0.5f, 0.0f, 0.5f } );
+				DrawCube( *pWsIntersection );
+			}
+			
+			if ( pWsClickedPos )
+			{
+				SetColor( { 1.0f, 0.2f, 1.0f, 0.5f } );
+				DrawCube( *pWsClickedPos );
+			}
 		}
 	}
 #endif // DEBUG_MODE
@@ -569,6 +590,104 @@ void SceneGame::UninitStage()
 	pShadow->ClearInstances();
 
 	Bullet::BulletAdmin::Get().Uninit();
+}
+
+#if DEBUG_MODE
+#include <cmath>	// Use round().
+#endif // DEBUG_MODE
+void SceneGame::DebugUpdate( float elapsedTime )
+{
+#if DEBUG_MODE
+
+	if ( !nowDebugMode ) { return; }
+	// else
+
+	const Donya::Int2		mouse		{ Donya::Mouse::Coordinate().x, Donya::Mouse::Coordinate().y };
+	const Donya::Vector3	ssRayStart	{ mouse.Float(), 0.0f };
+	const Donya::Vector3	ssRayEnd	{ mouse.Float(), 1.0f };
+
+	const Donya::Vector4x4	V	= iCamera.CalcViewMatrix();
+	const Donya::Vector4x4	P	= iCamera.GetProjectionMatrix();
+	const Donya::Vector4x4	VP	= Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
+	const Donya::Vector4x4	toWorld = ( V * P * VP ).Inverse();
+
+	auto Transform = [&]( const Donya::Vector3 &v, float fourthParam, const Donya::Vector4x4 &m )
+	{
+		Donya::Vector4 tmp = m.Mul( v, fourthParam );
+		tmp /= tmp.w;
+		return tmp.XYZ();
+	};
+	const Donya::Vector3	wsRayStart	= Transform( ssRayStart,	1.0f, toWorld );
+	const Donya::Vector3	wsRayEnd	= Transform( ssRayEnd,		1.0f, toWorld );
+
+	Donya::Plane xzPlane;
+	xzPlane.distance	= gridline.GetDrawOrigin().y;
+	xzPlane.normal		= Donya::Vector3::Up();
+
+	const auto planeResult = Donya::CalcIntersectionPoint( wsRayStart, wsRayEnd, xzPlane );
+	if ( planeResult.isIntersect )
+	{
+		if ( !pWsIntersection ) { pWsIntersection = std::make_unique<Donya::Vector3>(); }
+		*pWsIntersection = planeResult.intersection;
+	}
+	else
+	{
+		pWsIntersection.reset();
+	}
+
+	if ( alsoIntersectToTerrain )
+	{
+		const auto terrainPtr = pTerrain->GetDrawModel();
+		const Donya::Vector4x4 &terrainMatrix = pTerrain->GetWorldMatrix();
+		if ( terrainPtr )
+		{
+			const auto terrainResult = terrainPtr->RaycastWorldSpace( terrainMatrix, wsRayStart, wsRayEnd );
+			if ( terrainResult.wasHit )
+			{
+				if ( pWsIntersection )
+				{
+					const float mouseDist   = ( *pWsIntersection - wsRayStart ).LengthSq();
+					const float terrainDist = ( terrainResult.intersection - wsRayStart ).LengthSq();
+
+					if ( terrainDist < mouseDist )
+					{
+						*pWsIntersection = terrainResult.intersection;
+					}
+				}
+				else
+				{
+					pWsIntersection  = std::make_unique<Donya::Vector3>();
+					*pWsIntersection = terrainResult.intersection;
+				}
+			}
+		}
+	}
+
+	if ( alignToGrid && pWsIntersection )
+	{
+		// Y is used as Z.
+		const Donya::Vector2 grid = gridline.GetDrawInterval();
+		Donya::Vector2 alignedXZ{ pWsIntersection->x, pWsIntersection->z };
+
+		float div{};
+
+		div = alignedXZ.x / grid.x;
+		alignedXZ.x = std::round( div ) * grid.x;
+		
+		div = alignedXZ.y / grid.y;
+		alignedXZ.y = std::round( div ) * grid.y;
+
+		pWsIntersection->x = alignedXZ.x;
+		pWsIntersection->z = alignedXZ.y;
+	}
+
+	if ( Donya::Keyboard::Press( VK_SHIFT ) && Donya::Keyboard::Trigger( VK_LBUTTON ) )
+	{
+		if ( !pWsClickedPos ) { pWsClickedPos = std::make_unique<Donya::Vector3>(); }
+		*pWsClickedPos = *pWsIntersection;
+	}
+
+#endif // DEBUG_MODE
 }
 
 void SceneGame::CameraInit()
@@ -1296,19 +1415,39 @@ void SceneGame::UseImGui()
 		ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
 		ImGui::Text( "" );
 
-		if ( ImGui::TreeNode( u8"【デバッグモード時の操作】" ) )
+		if ( ImGui::TreeNode( u8"【デバッグモード時】" ) )
 		{
-			ImGui::Text( u8"「ＡＬＴキー」を押している間のみ，" );
+			ImGui::Text( u8"「ＡＬＴキー」を押している間，" );
 			ImGui::Text( u8"「左クリック」を押しながらマウス移動で，" );
 			ImGui::Text( u8"カメラの回転ができます。" );
 			ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
 			ImGui::Text( u8"カメラの並行移動ができます。" );
 			ImGui::Text( "" );
 
-			ImGui::Text( u8"「SHIFTキー」を押しながら" );
-			ImGui::Text( u8"マウスホイール上下で，" );
+			ImGui::Text( u8"「SHIFTキー」を押している間，" );
+			ImGui::Text( u8"「マウスホイール上下」で，" );
 			ImGui::Text( u8"グリッド線の高さの調整ができます。" );
+			ImGui::Text( u8"「左クリック」で，" );
+			ImGui::Text( u8"マウス位置（紫）を保存することができます。" );
+			ImGui::Text( "" );
 
+			// We can not pass the address of unique_ptr to ImGui.
+			Donya::Vector3 tmp{};
+
+			tmp = *pWsIntersection;
+			ImGui::DragFloat3( u8"現在の交点位置", &tmp.x, 0.01f );
+			*pWsIntersection = tmp;
+
+			tmp = *pWsClickedPos;
+			ImGui::DragFloat3( u8"現在のマウス位置",	&tmp.x, 0.01f );
+			*pWsClickedPos = tmp;
+
+			ImGui::Checkbox( u8"マウス位置をグリッドに沿わせるか", &alignToGrid );
+			ImGui::Checkbox( u8"マウス位置の計算に地形を含めるか", &alsoIntersectToTerrain );
+			ImGui::Text( u8"※グリッドに沿うのはXZ座標だけになります" );
+			ImGui::Text( u8"※地形を含める場合，グリッド平面との交点と比べ近いほうが採用されます" );
+			ImGui::Text( "" );
+			
 		#if DEBUG_MODE
 			gridline.ShowImGuiNode( u8"グリッド線の調整" );
 		#endif // DEBUG_MODE
