@@ -73,7 +73,7 @@ public:
 	}
 public:
 #if USE_IMGUI
-	virtual void ShowImGuiNode( const std::string &nodeCaption );
+	virtual void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true );
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( ObstacleBase, 0 )
@@ -237,7 +237,7 @@ private:
 	bool ShouldChangeMode() const;
 public:
 #if USE_IMGUI
-	void ShowImGuiNode( const std::string &nodeCaption ) override;
+	void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( Spray, 0 )

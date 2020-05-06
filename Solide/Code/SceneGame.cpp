@@ -1548,6 +1548,11 @@ Scene::Result SceneGame::ReturnResult()
 
 void SceneGame::UseImGui()
 {
+	constexpr Donya::Vector2 windowSize{ 720.0f, 540.0f };
+	constexpr Donya::Vector2 windowPosLT{ 32.0f, 32.0f  };
+	ImGui::SetNextWindowPos ( Donya::ToImVec( windowPosLT ), ImGuiCond_Once );
+	ImGui::SetNextWindowSize( Donya::ToImVec( windowSize  ), ImGuiCond_Once );
+
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 	
@@ -1649,12 +1654,8 @@ void SceneGame::UseImGui()
 #if DEBUG_MODE
 void SceneGame::UseDebugImGui()
 {
-	constexpr Donya::Vector2 windowSize{ 720.0f, 540.0f };
-	const     Donya::Vector2 windowPosLT
-	{
-		0.0f,
-		Common::ScreenHeightF() - windowSize.y
-	};
+	constexpr Donya::Vector2 windowSize{ 720.0f, 320.0f };
+	constexpr Donya::Vector2 windowPosLT{ 32.0f, 604.0f };
 	ImGui::SetNextWindowPos ( Donya::ToImVec( windowPosLT ), ImGuiCond_Once );
 	ImGui::SetNextWindowSize( Donya::ToImVec( windowSize  ), ImGuiCond_Once );
 
@@ -1757,33 +1758,43 @@ void SceneGame::UseChosenImGui()
 		return tmp.XYZ();
 	};
 
-	constexpr Donya::Vector2 chosenWindowSize{ 256.0f, 128.0f };
+	constexpr Donya::Vector2 chosenWindowSize{ 320.0f, 180.0f };
 
 	if ( pChosenEnemy )
 	{
 		const Donya::Vector3 ssPos = WorldToScreen( pChosenEnemy->GetPosition(), 1.0f );
-		ImGui::SetNextWindowPos ( Donya::ToImVec( ssPos.XY() ), ImGuiCond_Once );
-		ImGui::SetNextWindowSize( Donya::ToImVec( chosenWindowSize ), ImGuiCond_Once );
+		ImGui::SetNextWindowPos ( Donya::ToImVec( ssPos.XY() ), ImGuiCond_Always );
+		ImGui::SetNextWindowSize( Donya::ToImVec( chosenWindowSize ), ImGuiCond_Always );
 
 		const std::string caption = u8"‘I‘ð‚µ‚½“GF" + Enemy::GetKindName( pChosenEnemy->GetKind() );
 		if ( ImGui::BeginIfAllowed( caption.c_str() ) )
 		{
-			pChosenEnemy->ShowImGuiNode( u8"’²®" );
+			pChosenEnemy->ShowImGuiNode( "", /* useTreeNode = */ false );
 			ImGui::End();
+		}
+
+		if ( pChosenEnemy->ShouldRemove() )
+		{
+			pChosenEnemy.reset();
 		}
 	}
 	
 	if ( pChosenObstacle )
 	{
 		const Donya::Vector3 ssPos = WorldToScreen( pChosenObstacle->GetPosition(), 1.0f );
-		ImGui::SetNextWindowPos ( Donya::ToImVec( ssPos.XY() ), ImGuiCond_Once );
-		ImGui::SetNextWindowSize( Donya::ToImVec( chosenWindowSize ), ImGuiCond_Once );
+		ImGui::SetNextWindowPos ( Donya::ToImVec( ssPos.XY() ), ImGuiCond_Always );
+		ImGui::SetNextWindowSize( Donya::ToImVec( chosenWindowSize ), ImGuiCond_Always );
 
 		const std::string caption = u8"‘I‘ð‚µ‚½“GF" + ObstacleBase::GetModelName( pChosenObstacle->GetKind() );
 		if ( ImGui::BeginIfAllowed( caption.c_str() ) )
 		{
-			pChosenObstacle->ShowImGuiNode( u8"’²®" );
+			pChosenObstacle->ShowImGuiNode( "", /* useTreeNode = */ false );
 			ImGui::End();
+		}
+
+		if ( pChosenObstacle->ShouldRemove() )
+		{
+			pChosenObstacle.reset();
 		}
 	}
 }

@@ -205,7 +205,7 @@ namespace Enemy
 		RecursionResult	CalcCorrectedVectorImpl( int recursionLimit, int recursionCount, RecursionResult prevResult, const Donya::Model::PolygonGroup &terrain, const Donya::Vector4x4 &terrainWorldMatrix ) const;
 	public:
 	#if USE_IMGUI
-		virtual void ShowImGuiNode( const std::string &nodeCaption ) = 0;
+		virtual void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) = 0;
 	#endif // USE_IMGUI
 	};
 #if USE_IMGUI
@@ -259,7 +259,7 @@ namespace Enemy
 		void AssignOrientation( const Donya::Vector3 &targetPosition );
 	public:
 	#if USE_IMGUI
-		void ShowImGuiNode( const std::string &nodeCaption ) override;
+		void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
 	#endif // USE_IMGUI
 	};
 
@@ -374,7 +374,7 @@ namespace Enemy
 		void GenerateShot();
 	public:
 	#if USE_IMGUI
-		void ShowImGuiNode( const std::string &nodeCaption ) override;
+		void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
 	#endif // USE_IMGUI
 	};
 
@@ -484,7 +484,7 @@ namespace Enemy
 		}
 	public:
 	#if USE_IMGUI
-		void ShowImGuiNode( const std::string &nodeCaption ) override;
+		void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
 	#endif // USE_IMGUI
 	};
 
@@ -577,7 +577,7 @@ namespace Enemy
 		}
 	public:
 	#if USE_IMGUI
-		void ShowImGuiNode( const std::string &nodeCaption ) override;
+		void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
 	#endif // USE_IMGUI
 	};
 

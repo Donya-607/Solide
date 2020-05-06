@@ -307,12 +307,15 @@ bool ObstacleBase::ShouldRemove() const
 	return false;
 }
 #if USE_IMGUI
-void ObstacleBase::ShowImGuiNode( const std::string &nodeCaption )
+void ObstacleBase::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 {
-	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	if ( ImGui::Button( ( nodeCaption + u8"を削除" ).c_str() ) )
+	const std::string buttonCaption = ( useTreeNode )
+					? nodeCaption + u8"を削除"
+					: u8"削除";
+	if ( ImGui::Button( buttonCaption.c_str() ) )
 	{
 		wantRemoveByGui = true;
 	}
@@ -320,7 +323,7 @@ void ObstacleBase::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::DragFloat3( u8"ワールド座標", &pos.x, 0.1f );
 	ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
 
-	ImGui::TreePop();
+	if ( useTreeNode ) { ImGui::TreePop(); }
 }
 #endif // USE_IMGUI
 
@@ -474,12 +477,12 @@ bool Spray::ShouldChangeMode() const
 			: ( cooldownFrame < shotTimer );
 }
 #if USE_IMGUI
-void Spray::ShowImGuiNode( const std::string &nodeCaption )
+void Spray::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 {
-	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ObstacleBase::ShowImGuiNode( nodeCaption + u8"・基底部分" );
+	ObstacleBase::ShowImGuiNode( nodeCaption + u8"・基底部分", useTreeNode );
 
 	if ( ImGui::TreeNode( std::string{ nodeCaption + u8"・拡張部分" }.c_str() ) )
 	{
@@ -542,6 +545,6 @@ void Spray::ShowImGuiNode( const std::string &nodeCaption )
 		ImGui::TreePop();
 	}
 
-	ImGui::TreePop();
+	if ( useTreeNode ) { ImGui::TreePop(); }
 }
 #endif // USE_IMGUI

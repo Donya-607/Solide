@@ -1100,12 +1100,14 @@ namespace Enemy
 		}
 	}
 #if USE_IMGUI
-	void Straight::ShowImGuiNode( const std::string &nodeCaption )
+	void Straight::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 	{
-		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		const  std::string  buttonCaption = nodeCaption + u8"‚ğíœ";
+		const std::string buttonCaption = ( useTreeNode )
+						? nodeCaption + u8"‚ğíœ"
+						: u8"íœ";
 		if ( ImGui::Button( buttonCaption.c_str() ) )
 		{
 			wantRemoveByGui = true;
@@ -1131,7 +1133,7 @@ namespace Enemy
 			ImGui::TreePop();
 		}
 
-		ImGui::TreePop();
+		if ( useTreeNode ) { ImGui::TreePop(); }
 	}
 #endif // USE_IMGUI
 
@@ -1331,12 +1333,14 @@ namespace Enemy
 		Bullet::BulletAdmin::Get().Append( desc );
 	}
 #if USE_IMGUI
-	void Archer::ShowImGuiNode( const std::string &nodeCaption )
+	void Archer::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 	{
-		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		const  std::string  buttonCaption = nodeCaption + u8"‚ğíœ";
+		const std::string buttonCaption = ( useTreeNode )
+						? nodeCaption + u8"‚ğíœ"
+						: u8"íœ";
 		if ( ImGui::Button( buttonCaption.c_str() ) )
 		{
 			wantRemoveByGui = true;
@@ -1372,7 +1376,7 @@ namespace Enemy
 			AssignMover<Fire>();
 		}
 
-		ImGui::TreePop();
+		if ( useTreeNode ) { ImGui::TreePop(); }
 	}
 #endif // USE_IMGUI
 
@@ -1521,12 +1525,14 @@ namespace Enemy
 		return Kind::GateKeeper;
 	}
 #if USE_IMGUI
-	void GateKeeper::ShowImGuiNode( const std::string &nodeCaption )
+	void GateKeeper::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 	{
-		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		const  std::string  buttonCaption = nodeCaption + u8"‚ğíœ";
+		const std::string buttonCaption = ( useTreeNode )
+						? nodeCaption + u8"‚ğíœ"
+						: u8"íœ";
 		if ( ImGui::Button( buttonCaption.c_str() ) )
 		{
 			wantRemoveByGui = true;
@@ -1554,7 +1560,7 @@ namespace Enemy
 			ImGui::TreePop();
 		}
 
-		ImGui::TreePop();
+		if ( useTreeNode ) { ImGui::TreePop(); }
 	}
 #endif // USE_IMGUI
 
@@ -1716,12 +1722,14 @@ namespace Enemy
 		return Kind::Chaser;
 	}
 #if USE_IMGUI
-	void Chaser::ShowImGuiNode( const std::string &nodeCaption )
+	void Chaser::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 	{
-		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		const  std::string  buttonCaption = nodeCaption + u8"‚ğíœ";
+		const std::string buttonCaption = ( useTreeNode )
+						? nodeCaption + u8"‚ğíœ"
+						: u8"íœ";
 		if ( ImGui::Button( buttonCaption.c_str() ) )
 		{
 			wantRemoveByGui = true;
@@ -1748,7 +1756,7 @@ namespace Enemy
 			ImGui::TreePop();
 		}
 
-		ImGui::TreePop();
+		if ( useTreeNode ) { ImGui::TreePop(); }
 	}
 #endif // USE_IMGUI
 
