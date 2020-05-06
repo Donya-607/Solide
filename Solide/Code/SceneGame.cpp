@@ -609,11 +609,11 @@ void SceneGame::DebugUpdate( float elapsedTime )
 
 	GridControl();
 
+	const Donya::Vector4x4	toWorld = MakeScreenTransformMatrix().Inverse();
+
 	const Donya::Int2		mouse		{ Donya::Mouse::Coordinate().x, Donya::Mouse::Coordinate().y };
 	const Donya::Vector3	ssRayStart	{ mouse.Float(), 0.0f };
 	const Donya::Vector3	ssRayEnd	{ mouse.Float(), 1.0f };
-
-	const Donya::Vector4x4	toWorld = MakeScreenTransformMatrix().Inverse();
 
 	auto Transform = [&]( const Donya::Vector3 &v, float fourthParam, const Donya::Vector4x4 &m )
 	{
@@ -695,8 +695,24 @@ void SceneGame::DebugUpdate( float elapsedTime )
 			if ( !pWsClickedPos ) { pWsClickedPos = std::make_unique<Donya::Vector3>(); }
 			*pWsClickedPos = *pWsIntersection;
 		}
-	}
 
+		if ( Donya::Keyboard::Trigger( VK_SPACE ) )
+		{
+			int intType = scast<int>( choiceType );
+			intType++;
+			if ( scast<int>( ChoiceType::TypeCount ) <= intType )
+			{
+				intType = 0;
+			}
+
+			choiceType = scast<ChoiceType>( intType );
+		}
+
+		if ( Donya::Keyboard::Trigger( 'A' ) )
+		{
+			alignToGrid = !alignToGrid;
+		}
+	}
 }
 
 void SceneGame::ChoiceObject( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd )
@@ -1548,7 +1564,7 @@ Scene::Result SceneGame::ReturnResult()
 
 void SceneGame::UseImGui()
 {
-	constexpr Donya::Vector2 windowSize{ 720.0f, 540.0f };
+	constexpr Donya::Vector2 windowSize{ 720.0f, 508.0f };
 	constexpr Donya::Vector2 windowPosLT{ 32.0f, 32.0f  };
 	ImGui::SetNextWindowPos ( Donya::ToImVec( windowPosLT ), ImGuiCond_Once );
 	ImGui::SetNextWindowSize( Donya::ToImVec( windowSize  ), ImGuiCond_Once );
@@ -1654,8 +1670,8 @@ void SceneGame::UseImGui()
 #if DEBUG_MODE
 void SceneGame::UseDebugImGui()
 {
-	constexpr Donya::Vector2 windowSize{ 720.0f, 320.0f };
-	constexpr Donya::Vector2 windowPosLT{ 32.0f, 604.0f };
+	constexpr Donya::Vector2 windowSize{ 720.0f, 400.0f };
+	constexpr Donya::Vector2 windowPosLT{ 32.0f, 572.0f };
 	ImGui::SetNextWindowPos ( Donya::ToImVec( windowPosLT ), ImGuiCond_Once );
 	ImGui::SetNextWindowSize( Donya::ToImVec( windowSize  ), ImGuiCond_Once );
 
@@ -1666,82 +1682,79 @@ void SceneGame::UseDebugImGui()
 
 	ImGui::Text( u8"「Ｆ５キー」を押すと，" );
 	ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
-	ImGui::Text( "" );
 	ImGui::Checkbox( u8"今，デバッグモードか", &nowDebugMode );
 
-	auto TextDisabledIfNeeded = [&]( const char *str )
-	{
-		( nowDebugMode )
-		? ImGui::Text( str )
-		: ImGui::TextDisabled( str );
-	};
-
 	// Usage texts.
+	if ( ImGui::TreeNode( u8"操作方法" ) )
 	{
-		TextDisabledIfNeeded( u8"「ＡＬＴキー」を押している間，" );
-		TextDisabledIfNeeded( u8"「左クリック」を押しながらマウス移動で，" );
-		TextDisabledIfNeeded( u8"カメラの回転ができます。" );
-		TextDisabledIfNeeded( u8"「マウスホイール」を押しながらマウス移動で，" );
-		TextDisabledIfNeeded( u8"カメラの並行移動ができます。" );
+		ImGui::Text( u8"「ＡＬＴキー」を押している間，" );
+		ImGui::Text( u8"「左クリック」を押しながらマウス移動で，" );
+		ImGui::Text( u8"カメラの回転ができます。" );
+		ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
+		ImGui::Text( u8"カメラの並行移動ができます。" );
 		ImGui::Text( "" );
 
-		TextDisabledIfNeeded( u8"「SHIFTキー」を押している間，" );
-		TextDisabledIfNeeded( u8"「マウスホイール上下」で，" );
-		TextDisabledIfNeeded( u8"グリッド線の高さの調整ができます。" );
-		TextDisabledIfNeeded( u8"（調整間隔は「グリッド線の間隔」と同一）" );
-		TextDisabledIfNeeded( u8"「左クリック」で，" );
-		TextDisabledIfNeeded( u8"オブジェクトを選択することができます。" );
-		TextDisabledIfNeeded( u8"「右クリック」で，" );
-		TextDisabledIfNeeded( u8"マウス位置（紫）を保存することができます。" );
+		ImGui::Text( u8"「SHIFTキー」を押している間，" );
+		ImGui::Text( u8"「マウスホイール上下」で，" );
+		ImGui::Text( u8"グリッド線の高さの調整ができます。" );
+		ImGui::Text( u8"（調整間隔は「グリッド線の間隔」と同一）" );
+		ImGui::Text( u8"「左クリック」で，" );
+		ImGui::Text( u8"オブジェクトを選択することができます。" );
+		ImGui::Text( u8"「右クリック」で，" );
+		ImGui::Text( u8"マウス位置（紫）を保存することができます。" );
 		ImGui::Text( "" );
-	}
-
-	if ( nowDebugMode && pWsIntersection )
-	{ ImGui::DragFloat3( u8"現在の交点位置", &pWsIntersection->x, 0.01f ); }
-	else
-	{ ImGui::TextDisabled( u8"現在の交点位置" ); }
-
-	if ( nowDebugMode && pWsClickedPos )
-	{ ImGui::DragFloat3( u8"現在のマウス位置",	&pWsClickedPos->x, 0.01f ); }
-	else
-	{ ImGui::TextDisabled( u8"現在のマウス位置" ); }
-
-	if ( nowDebugMode )
-	{
-		ImGui::Checkbox( u8"マウス位置をグリッドに沿わせるか", &alignToGrid );
-		ImGui::Checkbox( u8"マウス位置の計算に地形を含めるか", &alsoIntersectToTerrain );
-		ImGui::Text( u8"※地形を含める場合，グリッド平面との交点と比べ近いほうが採用されます" );
-	}
-	else
-	{
-		ImGui::TextDisabled( u8"マウス位置をグリッドに沿わせるか" );
-		ImGui::TextDisabled( u8"マウス位置の計算に地形を含めるか" );
-		ImGui::TextDisabled( u8"※地形を含める場合，グリッド平面との交点と比べ近いほうが採用されます" );
-	}
-
-	gridline.ShowImGuiNode( u8"グリッド線の調整" );
-
-	if ( ImGui::TreeNode( u8"選択オプション" ) )
-	{
-		auto GetName = []( ChoiceType type )
-		{
-			switch ( type )
-			{
-			case ChoiceType::Enemy:		return u8"敵";
-			case ChoiceType::Obstacle:	return u8"障害物";
-			default: break;
-			}
-			_ASSERT_EXPR( 0, L"Error: Unexpected type!" );
-			return u8"ERROR_TYPE";
-		};
-
-		int intType = scast<int>( choiceType );
-		ImGui::SliderInt( u8"選択タイプ", &intType, 0, scast<int>( ChoiceType::TypeCount ) - 1 );
-		choiceType  = scast<ChoiceType>( intType );
-		ImGui::Text( u8"現在：%s", GetName( choiceType ) );
 
 		ImGui::TreePop();
 	}
+	if ( ImGui::TreeNode( u8"ショートカット" ) )
+	{
+		ImGui::Text( u8"SHIFT + A : グリッドに沿わせるかどうかの切り替え" );
+		ImGui::Text( u8"SHIFT + SPACE : 選択タイプの変更" );
+		ImGui::Text( "" );
+
+		ImGui::TreePop();
+	}
+
+	ImGui::Text( "" );
+	auto GetChoiceTypeName = []( ChoiceType type )
+	{
+		switch ( type )
+		{
+		case ChoiceType::Enemy:		return u8"敵";
+		case ChoiceType::Obstacle:	return u8"障害物";
+		default: break;
+		}
+		_ASSERT_EXPR( 0, L"Error: Unexpected type!" );
+		return u8"ERROR_TYPE";
+	};
+	ImGui::Text( u8"選択タイプ：%s", GetChoiceTypeName( choiceType ) );
+	{
+		int intType = scast<int>( choiceType );
+		ImGui::SliderInt( u8"選択物の変更", &intType, 0, scast<int>( ChoiceType::TypeCount ) - 1 );
+		choiceType  = scast<ChoiceType>( intType );
+	}
+	ImGui::Text( "" );
+
+	if ( ImGui::TreeNode( u8"マウス位置関連" ) )
+	{
+		if ( pWsIntersection )
+		{ ImGui::DragFloat3( u8"現在の交点位置", &pWsIntersection->x, 0.01f ); }
+		else
+		{ ImGui::TextDisabled( u8"現在の交点位置" ); }
+
+		if ( pWsClickedPos )
+		{ ImGui::DragFloat3( u8"現在のマウス位置",	&pWsClickedPos->x, 0.01f ); }
+		else
+		{ ImGui::TextDisabled( u8"現在のマウス位置" ); }
+
+		ImGui::Checkbox( u8"マウス位置をグリッドに沿わせるか", &alignToGrid );
+		ImGui::Checkbox( u8"マウス位置の計算に地形を含めるか", &alsoIntersectToTerrain );
+		ImGui::Text( u8"※地形を含める場合，グリッド平面との交点と比べ近いほうが採用されます" );
+
+		ImGui::TreePop();
+	}
+
+	gridline.ShowImGuiNode( u8"グリッド線の調整" );
 
 	ImGui::End();
 }
