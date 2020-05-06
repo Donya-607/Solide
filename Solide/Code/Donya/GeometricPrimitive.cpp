@@ -1539,9 +1539,16 @@ namespace Donya
 						Vertex{ Donya::Vector3::Zero().XMFloat(),  matVP.XMFloat() },
 						Vertex{ Donya::Vector3::Front().XMFloat(), matVP.XMFloat() }
 					};
-					memcpy_s( msrVertex.pData, sizeof( Line::Vertex ) * currentVertices.size(), currentVertices.data(), msrVertex.RowPitch );
-
+					// const auto err = memcpy_s( msrVertex.pData, sizeof( Line::Vertex ) * currentVertices.size(), currentVertices.data(), msrVertex.RowPitch );
+					const auto err = memcpy_s( msrVertex.pData, msrVertex.RowPitch, currentVertices.data(), msrVertex.RowPitch );
+					// memcpy( msrVertex.pData, currentVertices.data(), sizeof( Vertex ) * currentVertices.size() );
 					pImmediateContext->Unmap( pVertexBuffer.Get(), 0 );
+					if ( err )
+					{
+						MessageBox( NULL, TEXT( "memcpy_s error at vertex" ), TEXT( "Test" ), MB_OK );
+						_ASSERT_EXPR( 0, L"Failed : Unexpected error occurred at memcpy_s()." );
+						return;
+					}
 				}
 
 				// Instances. Apply the reserved data.
@@ -1557,7 +1564,14 @@ namespace Donya
 					// else
 
 					// Should change to this -> memcpy_s( msrInstance.pData, sizeof( Line::Instance ) * reserveCount, instances.data(), msrInstance.RowPitch );
-					memcpy( msrInstance.pData, instances.data(), msrInstance.RowPitch );
+					// memcpy( msrInstance.pData, instances.data(), msrInstance.RowPitch );
+					const auto err = memcpy_s( msrInstance.pData, msrInstance.RowPitch, instances.data(), msrInstance.RowPitch );
+					pImmediateContext->Unmap( pInstanceBuffer.Get(), 0 );
+					if ( err )
+					{
+						_ASSERT_EXPR( 0, L"Failed : Unexpected error occurred at memcpy_s()." );
+						return;
+					}
 
 					pImmediateContext->Unmap( pInstanceBuffer.Get(), 0 );
 				}

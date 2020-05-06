@@ -601,7 +601,7 @@ Donya::Vector4x4 SceneGame::MakeScreenTransformMatrix() const
 	return V * P * VP;
 }
 
-#include <cmath>	// Use round().
+#include <cmath> // Use round().
 void SceneGame::DebugUpdate( float elapsedTime )
 {
 	if ( !nowDebugMode ) { return; }
