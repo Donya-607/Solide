@@ -6,7 +6,8 @@
 
 void CameraOption::Init( int stageNumber )
 {
-	stageNo = stageNumber;
+	targetIndex	= 0;
+	stageNo		= stageNumber;
 #if DEBUG_MODE
 	LoadJson( stageNumber );
 #else
@@ -41,16 +42,78 @@ void CameraOption::Visualize( RenderingHelper *pRenderer, const Donya::Vector4x4
 	}
 }
 
-size_t CameraOption::GetOptionCount() const { return options.size(); }
-bool  CameraOption::IsOutOfRange( size_t index ) const
+CameraOption::Instance CameraOption::CalcCurrentOption( const Donya::Vector3 &targetPos )
 {
-	return ( GetOptionCount() <= index ) ? true : false;
-}
-const CameraOption::Instance *CameraOption::GetOptionPtrOrNullptr( size_t index ) const
-{
-	if ( IsOutOfRange( index ) ) { return nullptr; }
+	if ( options.empty() ) { return Instance{}; } // Fail safe.
+	if ( options.size() == 1 ) { return options.front(); }
 	// else
-	return &options[index];
+
+	auto IsOutOfRange = [&]( int index )
+	{
+		return ( index < 0 || scast<int>( options.size() ) <= index ) ? true : false;
+	};
+	if ( IsOutOfRange( targetIndex ) )
+	{
+		return ( targetIndex < 0 ) ? options.front() : options.back();
+	}
+	// else
+	
+	auto CalcOptionRatio = [&]( const Instance &a, const Instance &b )
+	{
+		const Donya::Vector3 vTarget	= targetPos	- a.wsPos;
+		const Donya::Vector3 vNext		= b.wsPos	- a.wsPos;
+		if ( vNext.IsZero() || vTarget == vNext ) { return 0.0f; }
+		// else
+
+		const Donya::Vector3 projection = Donya::Vector3::Projection( vTarget, vNext.Unit() );
+		const float  ratio = projection.Length() / vNext.Length();
+		return ratio;
+	};
+	auto Lerp = []( const Instance &a, const Instance &b, float time )
+	{
+		Instance tmp;
+		tmp.offsetPos	= Donya::Lerp( a.offsetPos,		b.offsetPos,	time );
+		tmp.offsetFocus	= Donya::Lerp( a.offsetFocus,	b.offsetFocus,	time );
+		tmp.wsPos		= Donya::Lerp( a.wsPos,			b.wsPos,		time );
+		return tmp;
+	};
+
+	const auto &current = options[targetIndex];
+	
+	if ( IsOutOfRange( targetIndex + 1 ) ) { return options.back(); }
+	// else
+
+	const auto &next = options[targetIndex + 1];
+
+	float rate = CalcOptionRatio( current, next );
+
+	if ( 1.0f <= rate )
+	{
+		targetIndex++;
+		return CalcCurrentOption( targetPos );
+	}
+	// else
+
+	if ( 0.0f <= rate )
+	{
+		return Lerp( current, next, rate );
+	}
+	// else
+
+	if ( IsOutOfRange( targetIndex - 1 ) ) { return options.front(); }
+	// else
+
+	const auto &previous = options[targetIndex + 1];
+	rate = CalcOptionRatio( current, previous );
+
+	if ( 1.0f <= rate )
+	{
+		targetIndex--;
+		return CalcCurrentOption( targetPos );
+	}
+	// else
+
+	return Lerp( current, previous, rate );
 }
 
 void CameraOption::LoadBin ( int stageNo )
@@ -87,6 +150,11 @@ void CameraOption::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
+	ImGui::DragInt( u8"今対象が属しているインデックス", &targetIndex );
+	targetIndex = std::max( 0, std::min( scast<int>( options.size() - 1 ), targetIndex ) );
+
+	ImGui::Text( "" );
+
 	if ( ImGui::Button( u8"オプション地点を追加" ) )
 	{
 		options.emplace_back( Instance{} );
@@ -98,7 +166,7 @@ void CameraOption::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 
 	if ( ImGui::TreeNode( u8"各々の設定" ) )
 	{
-		const size_t optionCount = GetOptionCount();
+		const size_t optionCount = options.size();
 		size_t eraseIndex = optionCount;
 
 		std::string caption{};

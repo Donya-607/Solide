@@ -37,7 +37,8 @@ public:
 		}
 	};
 private: // Serializer member.
-	int						stageNo = 1;
+	int						stageNo		= 1;
+	int						targetIndex	= 0; // The index of last specified target belongs.
 	std::vector<Instance>	options;
 private:
 	friend class cereal::access;
@@ -57,10 +58,6 @@ public:
 	void Uninit();
 
 	void Visualize( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
-public:
-	size_t			GetOptionCount() const;
-	bool			IsOutOfRange( size_t index ) const;
-	const Instance	*GetOptionPtrOrNullptr( size_t index ) const;
 public:
 	Instance CalcCurrentOption( const Donya::Vector3 &targetPos );
 private:
