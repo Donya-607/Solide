@@ -1,5 +1,7 @@
 #include "CameraOption.h"
 
+#include "Donya/Useful.h"	// Use SignBit().
+
 #include "Common.h"
 #include "FilePath.h"
 #include "Parameter.h"
@@ -67,7 +69,8 @@ CameraOption::Instance CameraOption::CalcCurrentOption( const Donya::Vector3 &ta
 
 		const Donya::Vector3 projection = Donya::Vector3::Projection( vTarget, vNext.Unit() );
 		const float  ratio = projection.Length() / vNext.Length();
-		return ratio;
+		const float  sign  = scast<float>( Donya::SignBit( Donya::Dot( projection, vNext ) ) );
+		return ratio * sign;
 	};
 	auto Lerp = []( const Instance &a, const Instance &b, float time )
 	{
@@ -80,40 +83,46 @@ CameraOption::Instance CameraOption::CalcCurrentOption( const Donya::Vector3 &ta
 
 	const auto &current = options[targetIndex];
 	
-	if ( IsOutOfRange( targetIndex + 1 ) ) { return options.back(); }
-	// else
-
-	const auto &next = options[targetIndex + 1];
-
-	float rate = CalcOptionRatio( current, next );
-
-	if ( 1.0f <= rate )
+	if ( !IsOutOfRange( targetIndex + 1 ) )
 	{
-		targetIndex++;
-		return CalcCurrentOption( targetPos );
-	}
-	// else
+		const auto &next = options[targetIndex + 1];
 
-	if ( 0.0f <= rate )
+		const float rate = CalcOptionRatio( current, next );
+
+		if ( 1.0f <= rate )
+		{
+			targetIndex++;
+			return CalcCurrentOption( targetPos );
+		}
+		// else
+
+		if ( 0.0f <= rate )
+		{
+			return Lerp( current, next, rate );
+		}
+		// else
+	}
+
+	if ( !IsOutOfRange( targetIndex - 1 ) )
 	{
-		return Lerp( current, next, rate );
+		const auto &previous = options[targetIndex - 1];
+		const float rate = CalcOptionRatio( current, previous );
+
+		if ( 1.0f <= rate )
+		{
+			targetIndex--;
+			return CalcCurrentOption( targetPos );
+		}
+		// else
+
+		if ( 0.0f <= rate )
+		{
+			return Lerp( current, previous, rate );
+		}
+		// else
 	}
-	// else
 
-	if ( IsOutOfRange( targetIndex - 1 ) ) { return options.front(); }
-	// else
-
-	const auto &previous = options[targetIndex + 1];
-	rate = CalcOptionRatio( current, previous );
-
-	if ( 1.0f <= rate )
-	{
-		targetIndex--;
-		return CalcCurrentOption( targetPos );
-	}
-	// else
-
-	return Lerp( current, previous, rate );
+	return current;
 }
 
 void CameraOption::LoadBin ( int stageNo )
