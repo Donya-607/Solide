@@ -1025,29 +1025,25 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 
 	if ( nowWaiting )
 	{
-
 		moveVector	= Donya::Vector2::Zero();
 		useJump		= false;
 		useOil		= ( pPlayer->IsOiled() && pPlayer->OnGround() ) ? true : false;
 	}
-
-#if DEBUG_MODE
+	
 	// Rotate input vector by camera.
-	if ( nowDebugMode )
 	{
 		auto cameraRotation = iCamera.GetOrientation();
 
-		// Disable the rotation of X-axis and Z-axis.
+		// I wants rotation is Y-axis only, so disable the rotation of X-axis and Z-axis.
 		cameraRotation.x = 0.0f;
 		cameraRotation.z = 0.0f;
 		cameraRotation.Normalize();
 
 		Donya::Vector3 moveVector3{ moveVector.x, 0.0f, moveVector.y };
-		moveVector3 = cameraRotation.RotateVector( moveVector3 );
+		moveVector3  = cameraRotation.RotateVector( moveVector3 );
 		moveVector.x = moveVector3.x;
 		moveVector.y = moveVector3.z;
 	}
-#endif // DEBUG_MODE
 
 	Player::Input input{};
 	input.moveVectorXZ	= moveVector;
