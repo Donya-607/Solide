@@ -448,6 +448,8 @@ void SceneGame::Draw( float elapsedTime )
 		Bullet::BulletAdmin::Get().DrawHitBoxes( pRenderer.get(), VP, blendColor );
 		pWarps->DrawHitBoxes( pRenderer.get(), VP, blendColor );
 		pObstacles->DrawHitBoxes( pRenderer.get(), VP, blendColor );
+
+		pCameraOption->Visualize( pRenderer.get(), VP, blendColor );
 	}
 #endif // DEBUG_MODE
 
@@ -539,6 +541,9 @@ void SceneGame::InitStage( int stageNo )
 
 	pTerrain = std::make_unique<Terrain>( stageNo );
 
+	pCameraOption = std::make_unique<CameraOption>();
+	pCameraOption->Init( stageNo );
+
 	pCheckPoint = std::make_unique<CheckPoint>();
 	pCheckPoint->Init( stageNo );
 	
@@ -570,6 +575,7 @@ void SceneGame::InitStage( int stageNo )
 }
 void SceneGame::UninitStage()
 {
+	if ( pCameraOption	) { pCameraOption->Uninit();}
 	if ( pCheckPoint	) { pCheckPoint->Uninit();	}
 	if ( pEnemies		) { pEnemies->Uninit();		}
 	if ( pGoal			) { pGoal->Uninit();		}
@@ -578,6 +584,7 @@ void SceneGame::UninitStage()
 
 	pBG.reset();
 	pTerrain.reset();
+	pCameraOption.reset();
 	pCheckPoint.reset();
 	PlayerUninit();
 	pEnemies.reset();
@@ -855,7 +862,9 @@ void SceneGame::CameraInit()
 	iCamera.SetZRange( 1.0f, 1000.0f );
 	iCamera.SetFOV( ToRadian( 30.0f ) );
 	iCamera.SetScreenSize( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
-	AssignCameraPos();
+
+	const auto data = FetchMember();
+	AssignCameraPos( data.camera.offsetPos, data.camera.offsetFocus );
 	iCamera.SetProjectionPerspective();
 
 	// I can setting a configuration,
@@ -866,22 +875,23 @@ void SceneGame::CameraInit()
 	moveInitPoint.slerpPercent = 1.0f;
 	iCamera.Update( moveInitPoint );
 }
-void SceneGame::AssignCameraPos()
+void SceneGame::AssignCameraPos( const Donya::Vector3 &offsetPos, const Donya::Vector3 &offsetFocus )
 {
 	if ( !pPlayer ) { return; }
 	// else
 
-	const auto data = FetchMember();
 	const Donya::Vector3   playerPos = pPlayer->GetPosition();
 
-	iCamera.SetPosition  ( playerPos + data.camera.offsetPos   );
-	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
+	iCamera.SetPosition  ( playerPos + offsetPos   );
+	iCamera.SetFocusPoint( playerPos + offsetFocus );
 }
 void SceneGame::CameraUpdate()
 {
+	const auto data = FetchMember();
+
 	Donya::ICamera::Controller input{};
 	input.SetNoOperation();
-	input.slerpPercent = FetchMember().camera.slerpFactor;
+	input.slerpPercent = data.camera.slerpFactor;
 
 #if !DEBUG_MODE
 	AssignCameraPos();
@@ -889,7 +899,20 @@ void SceneGame::CameraUpdate()
 #else
 	if ( !nowDebugMode )
 	{
-		AssignCameraPos();
+		Donya::Vector3 ofsPos, ofsFocus;
+		if ( pCameraOption && pPlayer )
+		{
+			const auto option = pCameraOption->CalcCurrentOption( pPlayer->GetPosition() );
+			ofsPos		= option.offsetPos;
+			ofsFocus	= option.offsetFocus;
+		}
+		else
+		{
+			ofsPos		= data.camera.offsetPos;
+			ofsFocus	= data.camera.offsetFocus;
+		}
+
+		AssignCameraPos( ofsPos, ofsFocus );
 		iCamera.Update( input );
 		return;
 	}
@@ -1641,6 +1664,8 @@ void SceneGame::UseImGui()
 		{ pEnemies->ShowImGuiNode( u8"敵の設置・削除" ); }
 		ImGui::Text( "" );
 
+		if ( pCameraOption )
+		{ pCameraOption->ShowImGuiNode( u8"カメラオプション", stageNumber ); }
 		if ( pCheckPoint )
 		{ pCheckPoint->ShowImGuiNode( u8"中間地点", stageNumber ); }
 		if ( pWarps )

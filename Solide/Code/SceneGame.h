@@ -12,6 +12,7 @@
 #include "Donya/Vector.h"
 
 #include "BG.h"
+#include "CameraOption.h"
 #include "CheckPoint.h"
 #include "EnemyContainer.h"
 #include "Goal.h"
@@ -39,6 +40,7 @@ private:
 
 	std::unique_ptr<BG>					pBG;
 	std::unique_ptr<Terrain>			pTerrain;
+	std::unique_ptr<CameraOption>		pCameraOption;
 	std::unique_ptr<CheckPoint>			pCheckPoint;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
@@ -100,7 +102,7 @@ private:
 #endif // DEBUG_MODE
 
 	void	CameraInit();
-	void	AssignCameraPos();
+	void	AssignCameraPos( const Donya::Vector3 &offsetPos, const Donya::Vector3 &offsetFocus );
 	void	CameraUpdate();
 
 	void	PlayerInit( int stageNo );

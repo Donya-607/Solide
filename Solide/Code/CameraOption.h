@@ -61,6 +61,8 @@ public:
 	size_t			GetOptionCount() const;
 	bool			IsOutOfRange( size_t index ) const;
 	const Instance	*GetOptionPtrOrNullptr( size_t index ) const;
+public:
+	Instance CalcCurrentOption( const Donya::Vector3 &targetPos );
 private:
 	void LoadBin( int stageNo );
 	void LoadJson( int stageNo );
