@@ -59,6 +59,7 @@ public:
 
 	void Visualize( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
 public:
+	size_t GetOptionCount() const { return options.size(); }
 	Instance CalcCurrentOption( const Donya::Vector3 &targetPos );
 private:
 	void LoadBin( int stageNo );

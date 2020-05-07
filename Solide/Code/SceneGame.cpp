@@ -900,7 +900,7 @@ void SceneGame::CameraUpdate()
 	if ( !nowDebugMode )
 	{
 		Donya::Vector3 ofsPos, ofsFocus;
-		if ( pCameraOption && pPlayer )
+		if ( pCameraOption && pCameraOption->GetOptionCount() && pPlayer )
 		{
 			const auto option = pCameraOption->CalcCurrentOption( pPlayer->GetPosition() );
 			ofsPos		= option.offsetPos;
