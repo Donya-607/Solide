@@ -8,16 +8,16 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
-#include "Player.h"
 #include "Renderer.h"
 
-class CheckPoint
+class CameraOption
 {
 public:
 	struct Instance
 	{
-		Donya::AABB			hitBox;		// The "pos" is function as offset from the initializer's position.
-		PlayerInitializer	initializer;
+		Donya::Vector3 offsetPos;	// The offset of position from the player position.
+		Donya::Vector3 offsetFocus;	// The offset of focus from the player position.
+		Donya::Vector3 wsPos;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -25,8 +25,9 @@ public:
 		{
 			archive
 			(
-				CEREAL_NVP( hitBox		),
-				CEREAL_NVP( initializer	) 
+				CEREAL_NVP( offsetPos	),
+				CEREAL_NVP( offsetFocus	),
+				CEREAL_NVP( wsPos		)
 			);
 
 			if ( 1 <= version )
@@ -34,39 +35,32 @@ public:
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
-	public:
-		Donya::AABB			GetHitBox() const;
-		PlayerInitializer	GetInitializer() const;
 	};
 private: // Serializer member.
 	int						stageNo = 1;
-	std::vector<Instance>	points;
+	std::vector<Instance>	options;
 private:
 	friend class cereal::access;
 	template<class Archive>
 	void serialize( Archive &archive, std::uint32_t version )
 	{
-		archive( CEREAL_NVP( points ) );
+		archive( CEREAL_NVP( options ) );
 
 		if ( 1 <= version )
 		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
-	static constexpr const char *ID = "CheckPoint";
+	static constexpr const char *ID = "CameraOption";
 public:
 	void Init( int stageNo );
 	void Uninit();
 
-	void Update( float elapsedTime );
-
-	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
-	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
+	void Visualize( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
 public:
-	size_t			GetPointCount() const;
+	size_t			GetOptionCount() const;
 	bool			IsOutOfRange( size_t index ) const;
-	const Instance	*GetPointPtrOrNullptr( size_t index ) const;
-	void			RemovePoint( size_t removeIndex );
+	const Instance	*GetOptionPtrOrNullptr( size_t index ) const;
 private:
 	void LoadBin( int stageNo );
 	void LoadJson( int stageNo );
@@ -77,4 +71,4 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( CheckPoint, 0 )
+CEREAL_CLASS_VERSION( CameraOption, 0 )

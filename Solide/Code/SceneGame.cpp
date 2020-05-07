@@ -180,7 +180,7 @@ public:
 namespace
 {
 	static constexpr int SELECT_STAGE_NO	= 0;
-	static constexpr int FIRST_STAGE_NO		= 1;
+	static constexpr int FIRST_STAGE_NO		= 11;
 
 	constexpr bool ShouldGotoTitleScene( int nextStageNo )
 	{
@@ -852,7 +852,7 @@ void SceneGame::ChoiceObstacle( const Donya::Vector3 &rayStart, const Donya::Vec
 void SceneGame::CameraInit()
 {
 	iCamera.Init( Donya::ICamera::Mode::Look );
-	iCamera.SetZRange( 0.1f, 1000.0f );
+	iCamera.SetZRange( 1.0f, 1000.0f );
 	iCamera.SetFOV( ToRadian( 30.0f ) );
 	iCamera.SetScreenSize( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
 	AssignCameraPos();
@@ -1586,9 +1586,9 @@ void SceneGame::UseImGui()
 			{
 				constexpr const char *prompt = u8"に移動する";
 				std::string stageName = u8"ステージ[" + std::to_string( stageNo ) + u8"]";
-				if ( stageNo < FIRST_STAGE_NO )
+				if ( stageNo < SELECT_STAGE_NO )
 				{
-					stageName += u8"（タイトルステージ）";
+					stageName += u8"（セレクト画面）";
 				}
 
 				return stageName + prompt;
