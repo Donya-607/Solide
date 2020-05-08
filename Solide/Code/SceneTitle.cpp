@@ -14,6 +14,7 @@
 #include "FilePath.h"
 #include "Music.h"
 #include "Parameter.h"
+#include "StageNumberDefine.h"
 
 #undef max
 #undef min
@@ -146,8 +147,6 @@ public:
 
 namespace
 {
-	static constexpr int TITLE_STAGE_NO = -1;
-
 	Member FetchMember()
 	{
 		return ParamTitle::Get().Data();

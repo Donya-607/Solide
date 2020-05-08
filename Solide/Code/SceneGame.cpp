@@ -30,6 +30,7 @@
 #include "Music.h"
 #include "Obstacles.h"
 #include "Parameter.h"
+#include "StageNumberDefine.h"
 
 namespace
 {
@@ -179,9 +180,6 @@ public:
 
 namespace
 {
-	static constexpr int SELECT_STAGE_NO	= 0;
-	static constexpr int FIRST_STAGE_NO		= 11;
-
 	constexpr bool ShouldGotoTitleScene( int nextStageNo )
 	{
 		return ( nextStageNo < 0 ) ? true : false;

@@ -13,6 +13,7 @@ std::string GenerateSerializePath( std::string identifier, bool useBinaryExtensi
 /// </summary>
 std::string MakeStageParamPath( std::string objectName, int stageNumber, bool useBinaryExtension );
 std::string MakeTerrainModelPath( std::string objectName, int stageNumber );
+std::string MakeSaveDataPath( std::string fileName, bool useBinaryExtension );
 
 /// <summary>
 /// Returns true if the directory was created.

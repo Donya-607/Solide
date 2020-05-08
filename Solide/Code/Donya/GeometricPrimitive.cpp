@@ -1572,8 +1572,6 @@ namespace Donya
 						_ASSERT_EXPR( 0, L"Failed : Unexpected error occurred at memcpy_s()." );
 						return;
 					}
-
-					pImmediateContext->Unmap( pInstanceBuffer.Get(), 0 );
 				}
 			}
 

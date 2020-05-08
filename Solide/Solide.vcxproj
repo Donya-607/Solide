@@ -197,6 +197,7 @@
     <ClCompile Include="Code\Parameter.cpp" />
     <ClCompile Include="Code\Player.cpp" />
     <ClCompile Include="Code\Renderer.cpp" />
+    <ClCompile Include="Code\SaveData.cpp" />
     <ClCompile Include="Code\SceneClear.cpp" />
     <ClCompile Include="Code\SceneGame.cpp" />
     <ClCompile Include="Code\SceneLogo.cpp" />
@@ -292,6 +293,7 @@
     <ClInclude Include="Code\Parameter.h" />
     <ClInclude Include="Code\Player.h" />
     <ClInclude Include="Code\Renderer.h" />
+    <ClInclude Include="Code\SaveData.h" />
     <ClInclude Include="Code\Scene.h" />
     <ClInclude Include="Code\SceneClear.h" />
     <ClInclude Include="Code\SceneGame.h" />
@@ -303,6 +305,7 @@
     <ClInclude Include="Code\Section.h" />
     <ClInclude Include="Code\Sentence.h" />
     <ClInclude Include="Code\Shadow.h" />
+    <ClInclude Include="Code\StageNumberDefine.h" />
     <ClInclude Include="Code\StorageForScene.h" />
     <ClInclude Include="Code\Terrain.h" />
     <ClInclude Include="Code\TexPart.h" />
