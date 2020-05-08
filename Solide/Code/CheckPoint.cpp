@@ -14,6 +14,18 @@ PlayerInitializer	CheckPoint::Instance::GetInitializer() const
 {
 	return initializer;
 }
+#if USE_IMGUI
+void CheckPoint::Instance::ShowImGuiNode( const std::string &nodeCaption, int stageNo, bool useTreeNode )
+{
+	if ( useTreeNode && ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	ParameterHelper::ShowAABBNode( u8"“–‚½‚è”»’è", &hitBox );
+	initializer.ShowImGuiNode( u8"‰Šú‰»î•ñ", stageNo, /* allowShowIONode = */ false );
+
+	if ( useTreeNode ) { ImGui::TreePop(); }
+}
+#endif // USE_IMGUI
 
 void CheckPoint::Init( int stageNumber )
 {
@@ -140,9 +152,8 @@ void CheckPoint::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 					eraseIndex = i;
 				}
 
-				ParameterHelper::ShowAABBNode( u8"“–‚½‚è”»’è", &points[i].hitBox );
-				points[i].initializer.ShowImGuiNode( u8"‰Šú‰»î•ñ", stageNo, /* allowShowIONode = */ false );
-
+				points[i].ShowImGuiNode( "", stageNo, /* useTreeNode = */ false );
+				
 				ImGui::TreePop();
 			}
 		}

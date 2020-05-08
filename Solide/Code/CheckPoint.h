@@ -37,6 +37,10 @@ public:
 	public:
 		Donya::AABB			GetHitBox() const;
 		PlayerInitializer	GetInitializer() const;
+	#if USE_IMGUI
+	public:
+		void ShowImGuiNode( const std::string &nodeCaption, int stageNo, bool useTreeNode );
+	#endif // USE_IMGUI
 	};
 private: // Serializer member.
 	int						stageNo = 1;

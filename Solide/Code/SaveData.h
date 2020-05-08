@@ -11,13 +11,13 @@
 #include "Donya/Template.h"
 #include "Donya/UseImGui.h"
 
-#include "Player.h"	// Use PlayerInitializer only.
+#include "CheckPoint.h"
 
 struct SaveData
 {
 	int									currentStageNumber = 0;
-	std::unique_ptr<PlayerInitializer>	pCurrentIntializer;
-	std::vector<PlayerInitializer>		remainingInitializers;
+	std::shared_ptr<PlayerInitializer>	pCurrentIntializer;
+	std::vector<CheckPoint::Instance>	remainingCheckPoints;
 	std::vector<int>					unlockedStageNumbers;
 private:
 	friend class cereal::access;
@@ -28,7 +28,7 @@ private:
 		(
 			CEREAL_NVP( currentStageNumber		),
 			CEREAL_NVP( pCurrentIntializer		),
-			CEREAL_NVP( remainingInitializers	),
+			CEREAL_NVP( remainingCheckPoints	),
 			CEREAL_NVP( unlockedStageNumbers	)
 		);
 
@@ -39,7 +39,7 @@ private:
 	}
 public:
 	bool IsEmpty() const;
-	void ClearData();
+	void Clear();
 };
 
 
@@ -52,8 +52,18 @@ private:
 private:
 	SaveDataAdmin();
 public:
-	void LoadData();
-	void SaveData();
+	void Load();
+	void Save();
+	void Clear();
+public:
+	bool IsEmptyCurrentData() const;
+	bool IsUnlockedStageNumber( int stageNo ) const;
+public:
+	void Write( const SaveData &overwriteData );
+	void Write( int currentStageNumber );
+	void Write( const PlayerInitializer &currentInitializer );
+	void Write( const CheckPoint &remainingCheckPoints );
+	void UnlockStage( int unlockStageNumber );
 private:
 	void InitializeIfDataIsEmpty();
 private:
