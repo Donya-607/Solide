@@ -1490,6 +1490,7 @@ void SceneGame::ProcessWarpCollision()
 	{
 		const auto *pWarp = pWarps->GetWarpPtrOrNullptr( i );
 		if ( !pWarp ) { continue; }
+		if ( !pWarp->IsUnlocked() ) { continue; }
 		// else
 
 		warpBody = pWarp->GetHitBox();

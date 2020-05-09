@@ -10,6 +10,7 @@
 #include "Common.h"
 #include "FilePath.h"
 #include "Parameter.h"
+#include "SaveData.h"
 
 
 namespace
@@ -103,7 +104,10 @@ Donya::Vector4x4	Warp::CalcWorldMatrix( bool useForHitBox ) const
 
 void Warp::Init() {}
 void Warp::Uninit() {}
-void Warp::Update( float elapsedTime ) {}
+void Warp::Update( float elapsedTime )
+{
+	unlocked = SaveDataAdmin::Get().IsUnlockedStageNumber( destStageNo );
+}
 void Warp::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
 	if ( !pRenderer ) { return; }
@@ -114,7 +118,7 @@ void Warp::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 	// else
 
 	Donya::Model::Constants::PerModel::Common constant{};
-	constant.drawColor		= drawColor.Product( color );
+	constant.drawColor		= MakeDrawColor( color );
 	constant.worldMatrix	= CalcWorldMatrix( /* useForHitBox = */ false );
 	pRenderer->UpdateConstant( constant );
 	pRenderer->ActivateConstantModel();
@@ -131,9 +135,21 @@ void Warp::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP
 	Donya::Model::Cube::Constant constant;
 	constant.matWorld		= CalcWorldMatrix( /* useForHitBox = */ true );
 	constant.matViewProj	= matVP;
-	constant.drawColor		= drawColor.Product( color );
+	constant.drawColor		= MakeDrawColor( color );
 	constant.lightDirection	= -Donya::Vector3::Up();
 	pRenderer->ProcessDrawingCube( constant );
+}
+
+bool Warp::IsUnlocked() const
+{
+	return unlocked;
+}
+Donya::Vector4 Warp::MakeDrawColor( const Donya::Vector4 &color ) const
+{
+	constexpr float darken = 0.5f;
+	return	( IsUnlocked() )
+			? drawColor.Product( color )
+			: drawColor.Product( color ) * darken;
 }
 
 #if USE_IMGUI
@@ -195,7 +211,7 @@ void WarpContainer::Update( float elapsedTime )
 {
 	for ( auto &it : warps )
 	{
-		it.Init();
+		it.Update( elapsedTime );
 	}
 }
 void WarpContainer::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )

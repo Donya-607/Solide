@@ -12,6 +12,8 @@
 
 class Warp
 {
+private:
+	bool unlocked = false;
 private: // Serializer member.
 	int					destStageNo	= 1;
 	float				drawScale	= 1.0f;
@@ -46,11 +48,13 @@ public:
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
 public:
+	bool				IsUnlocked() const;
 	int					GetDestinationStageNo()	const;
 	Donya::Vector3		GetPosition()			const;
 	Donya::AABB			GetHitBox()				const;
 	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox ) const;
 private:
+	Donya::Vector4		MakeDrawColor( const Donya::Vector4 &blendColor ) const;
 #if USE_IMGUI
 public:
 	void ShowImGuiNode( const std::string &nodeCaption, bool *wantRemoveMe );
