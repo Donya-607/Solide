@@ -146,10 +146,11 @@ bool Warp::IsUnlocked() const
 }
 Donya::Vector4 Warp::MakeDrawColor( const Donya::Vector4 &color ) const
 {
-	constexpr float darken = 0.5f;
+	constexpr float multiply = 0.4f;
+	constexpr Donya::Vector4 darken{ multiply, multiply, multiply, 1.0f };
 	return	( IsUnlocked() )
 			? drawColor.Product( color )
-			: drawColor.Product( color ) * darken;
+			: drawColor.Product( color ).Product( darken );
 }
 
 #if USE_IMGUI
