@@ -243,7 +243,8 @@ void SceneGame::Init()
 	pShadow->LoadTexture();
 	pShadow->ClearInstances();
 
-	stageNumber = SELECT_STAGE_NO;
+	const SaveData nowData = SaveDataAdmin::Get().GetNowData();
+	stageNumber = ( nowData.isEmpty ) ? SELECT_STAGE_NO : nowData.currentStageNumber;
 	InitStage( stageNumber, /* useSaveDataIfValid = */ true );
 	WriteSaveData( stageNumber );
 	SaveDataAdmin::Get().Save();
