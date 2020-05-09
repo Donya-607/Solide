@@ -138,9 +138,11 @@ void Shadow::CalcIntersectionPoints( const std::vector<Donya::AABB> &solids, con
 		}
 	};
 
+	constexpr Donya::Vector3 smallOffset{ 0.0f, 0.01f, 0.0f }; // Prevent a z-fighting on a terrain.
 	for ( auto &it : shadows )
 	{
 		CalcIntersectionPoint( it );
+		it.intersection += smallOffset;
 	}
 
 	auto itr = std::remove_if
