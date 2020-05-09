@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "FilePath.h"
 #include "Parameter.h"
+#include "SaveData.h"
 
 Donya::AABB			CheckPoint::Instance::GetHitBox() const
 {
@@ -35,6 +36,13 @@ void CheckPoint::Init( int stageNumber )
 #else
 	LoadBin( stageNumber );
 #endif // DEBUG_MODE
+}
+void CheckPoint::Init( const SaveData &loadedData, int stageNumber )
+{
+	stageNo = stageNumber;
+
+	points.clear();
+	points = loadedData.remainingCheckPoints;
 }
 void CheckPoint::Uninit() {}
 void CheckPoint::Update( float elapsedTime ) {}

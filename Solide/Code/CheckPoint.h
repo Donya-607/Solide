@@ -11,6 +11,8 @@
 #include "Player.h"
 #include "Renderer.h"
 
+struct SaveData;
+
 class CheckPoint
 {
 public:
@@ -60,6 +62,7 @@ private:
 	static constexpr const char *ID = "CheckPoint";
 public:
 	void Init( int stageNo );
+	void Init( const SaveData &loadedData, int stageNo );
 	void Uninit();
 
 	void Update( float elapsedTime );

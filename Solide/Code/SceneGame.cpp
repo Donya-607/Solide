@@ -30,6 +30,7 @@
 #include "Music.h"
 #include "Obstacles.h"
 #include "Parameter.h"
+#include "SaveData.h"
 #include "StageNumberDefine.h"
 
 namespace
@@ -193,6 +194,12 @@ namespace
 
 void SceneGame::Init()
 {
+	SaveDataAdmin::Get().Load();
+
+	// This save is making a save data file if that does not exist,
+	// also updates the file version if the admin loads old version.
+	SaveDataAdmin::Get().Save();
+
 	Donya::Sound::Play( Music::BGM_Game );
 #if DEBUG_MODE
 	Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
@@ -238,6 +245,8 @@ void SceneGame::Init()
 
 	stageNumber = FIRST_STAGE_NO;
 	InitStage( stageNumber );
+	WriteSaveData( stageNumber );
+	SaveDataAdmin::Get().Save();
 }
 void SceneGame::Uninit()
 {
@@ -291,10 +300,16 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Bullet::UseBulletsImGui();
 #endif // USE_IMGUI
 
-	if ( Fader::Get().IsClosed() && !ShouldGotoTitleScene( stageNumber ) )
+	if ( Fader::Get().IsClosed() )
 	{
-		UninitStage();
-		InitStage( stageNumber );
+		if ( !ShouldGotoTitleScene( stageNumber ) )
+		{
+			UninitStage();
+			InitStage( stageNumber );
+		}
+	
+		WriteSaveData( stageNumber );
+		SaveDataAdmin::Get().Save();
 	}
 
 	controller.Update();
@@ -334,6 +349,17 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	if ( NowGoalMoment() )
 	{
+		if ( pGoal )
+		{
+			const std::vector<int> unlockStageNumbers = pGoal->GetUnlockStageNumbers();
+			for ( const auto &it : unlockStageNumbers )
+			{
+				SaveDataAdmin::Get().UnlockStage( it );
+			}
+
+			SaveDataAdmin::Get().Save();
+		}
+
 		ClearInit();
 		Donya::Sound::Play( Music::UI_Goal );
 	}
@@ -514,6 +540,9 @@ void SceneGame::InitStage( int stageNo )
 	ObstacleBase::ParameterInit();
 #endif // DEBUG_MODE
 
+	const SaveData nowData = SaveDataAdmin::Get().GetNowData();
+	const bool nowDataIsEmpty = nowData.IsEmpty();
+
 	bool result{};
 
 	pBG = std::make_unique<BG>();
@@ -543,7 +572,14 @@ void SceneGame::InitStage( int stageNo )
 	pCameraOption->Init( stageNo );
 
 	pCheckPoint = std::make_unique<CheckPoint>();
-	pCheckPoint->Init( stageNo );
+	if ( nowDataIsEmpty )
+	{
+		pCheckPoint->Init( stageNo );
+	}
+	else
+	{
+		pCheckPoint->Init( nowData, stageNo );
+	}
 	
 	pEnemies = std::make_unique<Enemy::Container>();
 	pEnemies->Init( stageNo );
@@ -556,8 +592,18 @@ void SceneGame::InitStage( int stageNo )
 	pWarps = std::make_unique<WarpContainer>();
 	pWarps->Init( stageNo );
 
-	pPlayerIniter = std::make_unique<PlayerInitializer>();
-	pPlayerIniter->LoadParameter( stageNo );
+	if ( nowDataIsEmpty )
+	{
+		pPlayerIniter = std::make_unique<PlayerInitializer>();
+		pPlayerIniter->LoadParameter( stageNo );
+	}
+	else
+	{
+		pPlayerIniter = std::make_unique<PlayerInitializer>
+		(
+			*nowData.pCurrentIntializer
+		);
+	}
 	PlayerInit( stageNo );
 
 	CameraInit();
@@ -595,6 +641,13 @@ void SceneGame::UninitStage()
 	pShadow->ClearInstances();
 
 	Bullet::BulletAdmin::Get().Uninit();
+}
+
+void SceneGame::WriteSaveData( int stageNo ) const
+{
+	SaveDataAdmin::Get().Write( stageNo );
+	if ( pCheckPoint	) { SaveDataAdmin::Get().Write( *pCheckPoint	); }
+	if ( pPlayerIniter	) { SaveDataAdmin::Get().Write( *pPlayerIniter	); }
 }
 
 #if DEBUG_MODE
@@ -1506,14 +1559,15 @@ void SceneGame::MakeShadows( const std::vector<Donya::AABB> &solids, const Donya
 
 bool SceneGame::NowGoalMoment() const
 {
-	if ( !pPlayer	) { return false; }
-	if ( !pGoal		) { return false; }
-	if ( Fader::Get().IsExist() ) { return false; }
-	if ( nowWaiting	) { return false; }
+	if ( nowWaiting				) { return false; }	// Unnecessary if now is cleared.
+	if ( !pPlayer				) { return false; }
+	if ( pPlayer->IsDead()		) { return false; }	// Unnecessary if player already dead.
+	if ( !pGoal					) { return false; }
+	if ( Fader::Get().IsExist()	) { return false; }
 	// else
 
-	const Donya::AABB goalArea   = pGoal->GetHitBox();
-	const Donya::AABB playerBody = pPlayer->GetHitBox();
+	const Donya::AABB goalArea		= pGoal->GetHitBox();
+	const Donya::AABB playerBody	= pPlayer->GetHitBox();
 
 	return Donya::AABB::IsHitAABB( playerBody, goalArea );
 }
@@ -1593,6 +1647,27 @@ void SceneGame::UseImGui()
 
 	if ( ImGui::TreeNode( u8"ゲーム・メンバーの調整" ) )
 	{
+		if ( ImGui::TreeNode( u8"セーブデータ" ) )
+		{
+			if ( ImGui::Button( u8"書き込み" ) )
+			{
+				WriteSaveData( stageNumber );
+			}
+			if ( ImGui::Button( u8"保存" ) )
+			{
+				SaveDataAdmin::Get().Save();
+			}
+			if ( ImGui::Button( u8"読み込み" ) )
+			{
+				SaveDataAdmin::Get().Load();
+			}
+			
+			SaveDataAdmin::Get().ShowImGuiNode( u8"中身" );
+
+			ImGui::TreeAdvanceToLabelPos();
+			ImGui::TreePop();
+		}
+
 		if ( ImGui::TreeNode( u8"ステージ番号の変更" ) )
 		{
 			static int transitionTarget = 1;

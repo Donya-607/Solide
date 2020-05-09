@@ -1,5 +1,9 @@
 #pragma once
 
+#include <vector>
+
+#include <cereal/types/vector.hpp>
+
 #include "Donya/Collision.h"
 #include "Donya/Quaternion.h"
 #include "Donya/Serializer.h"
@@ -20,6 +24,7 @@ private: // Serializer member.
 	Donya::Vector3		wsPos;
 	Donya::Vector4		drawColor;
 	Donya::AABB			hitBox;
+	std::vector<int>	unlockStageNumbers;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -35,6 +40,10 @@ private:
 		);
 
 		if ( 1 <= version )
+		{
+			archive( CEREAL_NVP( unlockStageNumbers ) );
+		}
+		if ( 2 <= version )
 		{
 			// archive( CEREAL_NVP( x ) );
 		}
@@ -52,6 +61,7 @@ public:
 	Donya::Vector3		GetPosition()	const;
 	Donya::AABB			GetHitBox()		const;
 	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox ) const;
+	std::vector<int>	GetUnlockStageNumbers() const;
 private:
 	void LoadBin ( int stageNo );
 	void LoadJson( int stageNo );

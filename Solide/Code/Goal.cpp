@@ -155,6 +155,11 @@ void Goal::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP
 	pRenderer->ProcessDrawingCube( constant );
 }
 
+std::vector<int> Goal::GetUnlockStageNumbers() const
+{
+	return unlockStageNumbers;
+}
+
 void Goal::LoadBin ( int stageNo )
 {
 	constexpr bool fromBinary = true;
@@ -190,11 +195,63 @@ void Goal::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	// else
 
 	ImGui::DragFloat( u8"回転角（Degree，フレーム辺り）", &rotateAngle );
-	ImGui::DragFloat3( u8"ワールド座標", &wsPos.x, 0.01f );
-	ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
-	ImGui::DragFloat( u8"描画スケール",	&drawScale, 0.01f );
+	ImGui::DragFloat3( u8"ワールド座標", &wsPos.x,	0.01f );
+	ImGui::DragFloat( u8"描画スケール",	&drawScale,	0.01f );
 	ImGui::ColorEdit4( u8"描画色",		&drawColor.x );
 	drawScale = std::max( 0.0f, drawScale );
+
+	ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
+	if ( ImGui::TreeNode( u8"解放するステージ番号" ) )
+	{
+		auto &data = unlockStageNumbers;
+
+		if ( ImGui::TreeNode( u8"対象の追加" ) )
+		{
+			static int additionNo = 0;
+			ImGui::InputInt( u8"加えるステージ番号", &additionNo );
+			if ( ImGui::Button( u8"追加" ) )
+			{
+				data.emplace_back( additionNo );
+			}
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"中身" ) )
+		{
+			if ( ImGui::Button( u8"昇順にソート" ) )
+			{
+				std::sort( data.begin(), data.end(), std::less<int>() );
+			}
+			if ( ImGui::Button( u8"降順にソート" ) )
+			{
+				std::sort( data.begin(), data.end(), std::greater<int>() );
+			}
+
+			const size_t numberCount = data.size();
+			size_t eraseIndex = numberCount;
+
+			std::string caption{};
+			for ( size_t i = 0; i < numberCount; ++i )
+			{
+				ImGui::DragInt( "", &data[i], 1.0f, -1 );
+
+				ImGui::SameLine();
+				if ( ImGui::Button( u8"これを削除" ) )
+				{
+					eraseIndex = i;
+				}
+			}
+
+			if ( eraseIndex != numberCount )
+			{
+				data.erase( data.begin() + eraseIndex );
+			}
+
+			ImGui::TreePop();
+		}
+
+		ImGui::TreePop();
+	}
 	
 	auto ShowIONode = [&]()
 	{

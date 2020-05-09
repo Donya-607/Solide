@@ -93,6 +93,8 @@ private:
 	void	InitStage( int stageNo );
 	void	UninitStage();
 
+	void	WriteSaveData( int stageNo ) const;
+
 #if DEBUG_MODE
 	Donya::Vector4x4 MakeScreenTransformMatrix() const;
 	void	DebugUpdate( float elapsedTime );

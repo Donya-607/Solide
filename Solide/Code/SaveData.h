@@ -55,23 +55,24 @@ public:
 	void Load();
 	void Save();
 	void Clear();
+	void InitializeIfDataIsEmpty();
 public:
 	bool IsEmptyCurrentData() const;
 	bool IsUnlockedStageNumber( int stageNo ) const;
 public:
+	SaveData GetNowData() const;
 	void Write( const SaveData &overwriteData );
 	void Write( int currentStageNumber );
 	void Write( const PlayerInitializer &currentInitializer );
 	void Write( const CheckPoint &remainingCheckPoints );
 	void UnlockStage( int unlockStageNumber );
 private:
-	void InitializeIfDataIsEmpty();
-private:
 	void LoadBin();
 	void LoadJson();
 	void SaveBin();
 	void SaveJson();
 #if USE_IMGUI
+public:
 	void ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI
 };

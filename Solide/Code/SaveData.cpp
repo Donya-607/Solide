@@ -47,6 +47,17 @@ void SaveDataAdmin::Clear()
 	savedata.Clear();
 }
 
+void SaveDataAdmin::InitializeIfDataIsEmpty()
+{
+	if ( !savedata.IsEmpty() ) { return; }
+	// else
+
+	savedata.currentStageNumber = 0;
+	savedata.unlockedStageNumbers.emplace_back( TITLE_STAGE_NO	);
+	savedata.unlockedStageNumbers.emplace_back( SELECT_STAGE_NO	);
+	savedata.unlockedStageNumbers.emplace_back( FIRST_STAGE_NO	);
+}
+
 bool SaveDataAdmin::IsEmptyCurrentData() const
 {
 	return savedata.IsEmpty();
@@ -58,6 +69,10 @@ bool SaveDataAdmin::IsUnlockedStageNumber( int stageNo ) const
 	return ( itr == data.end() ) ? false : true;
 }
 
+SaveData SaveDataAdmin::GetNowData() const
+{
+	return savedata;
+}
 void SaveDataAdmin::Write( const SaveData &updatedData )
 {
 	savedata = updatedData;
@@ -91,17 +106,6 @@ void SaveDataAdmin::UnlockStage( int unlockStageNo )
 	if ( IsUnlockedStageNumber( unlockStageNo ) ) { return; }
 	// else
 	savedata.unlockedStageNumbers.emplace_back( unlockStageNo );
-}
-
-void SaveDataAdmin::InitializeIfDataIsEmpty()
-{
-	if ( !savedata.IsEmpty() ) { return; }
-	// else
-
-	savedata.currentStageNumber = 0;
-	savedata.unlockedStageNumbers.emplace_back( TITLE_STAGE_NO	);
-	savedata.unlockedStageNumbers.emplace_back( SELECT_STAGE_NO	);
-	savedata.unlockedStageNumbers.emplace_back( FIRST_STAGE_NO	);
 }
 
 void SaveDataAdmin::LoadBin()
