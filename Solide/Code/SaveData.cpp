@@ -270,7 +270,7 @@ void SaveDataAdmin::ShowImGuiNode( const std::string &nodeCaption )
 				caption = "##" + std::to_string( i );
 				ImGui::DragInt( caption.c_str(), &data[i], 1.0f, -1 );
 
-				caption += u8"‚±‚ê‚ğíœ";
+				caption = u8"‚±‚ê‚ğíœ" + caption;
 				ImGui::SameLine();
 				if ( ImGui::Button( caption.c_str() ) )
 				{
