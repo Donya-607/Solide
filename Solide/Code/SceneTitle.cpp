@@ -160,6 +160,8 @@ void SceneTitle::Init()
 	Donya::Sound::AppendFadePoint( Music::BGM_Title, 2.0f, 0.0f, true ); // Too noisy.
 #endif // DEBUG_MODE
 
+	using Spr = SpriteAttribute;
+
 	timer = 0;
 	nowWaiting = false;
 
@@ -173,12 +175,12 @@ void SceneTitle::Init()
 	const auto data = FetchMember();
 
 	pBG = std::make_unique<BG>();
-	result = pBG->LoadSprites( L"./Data/Images/BG/Back.png", L"./Data/Images/BG/Cloud.png" );
+	result = pBG->LoadSprites( GetSpritePath( Spr::BackGround ), GetSpritePath( Spr::Cloud ) );
 	assert( result );
 
 	pSentence = std::make_unique<TitleSentence>();
 	pSentence->Init();
-	result = pSentence->LoadSprites( L"./Data/Images/Title/Logo.png", L"./Data/Images/Title/Prompt.png" );
+	result = pSentence->LoadSprites( GetSpritePath( Spr::TitleLogo ), GetSpritePath( Spr::TitlePrompt ) );
 	assert( result );
 
 	pTerrain = std::make_unique<Terrain>( TITLE_STAGE_NO );

@@ -11,8 +11,8 @@
 #include "Scene.h"
 #include "SceneClear.h"
 #include "SceneGame.h"
+#include "SceneLoad.h"
 #include "SceneLogo.h"
-#include "SceneOver.h"
 #include "SceneTitle.h"
 #include "ScenePause.h"
 
@@ -190,6 +190,11 @@ void SceneMng::PushScene( Scene::Type type, bool isFront )
 		? pScenes.push_front( std::make_unique<SceneLogo>() )
 		: pScenes.push_back ( std::make_unique<SceneLogo>() );
 		break;
+	case Scene::Type::Load:
+		( isFront )
+		? pScenes.push_front( std::make_unique<SceneLoad>() )
+		: pScenes.push_back ( std::make_unique<SceneLoad>() );
+		break;
 	case Scene::Type::Title:
 		( isFront )
 		? pScenes.push_front( std::make_unique<SceneTitle>() )
@@ -204,11 +209,6 @@ void SceneMng::PushScene( Scene::Type type, bool isFront )
 		( isFront )
 		? pScenes.push_front( std::make_unique<SceneClear>() )
 		: pScenes.push_back ( std::make_unique<SceneClear>() );
-		break;
-	case Scene::Type::Over:
-		( isFront )
-		? pScenes.push_front( std::make_unique<SceneOver>() )
-		: pScenes.push_back ( std::make_unique<SceneOver>() );
 		break;
 	case Scene::Type::Pause:
 		( isFront )

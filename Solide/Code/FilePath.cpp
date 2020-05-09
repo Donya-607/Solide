@@ -72,15 +72,31 @@ std::wstring GetSpritePath( SpriteAttribute attr )
 	{
 		return SPRITE_DIRECTORY + fileName;
 	};
-
+	
 	switch ( attr )
 	{
 	case SpriteAttribute::FMODLogoBlack:
 		return ToRelPath( L"Rights/FMOD Logo Black - White Background.png" );
 	case SpriteAttribute::FMODLogoWhite:
 		return ToRelPath( L"Rights/FMOD Logo White - Black Background.png" );
+	case SpriteAttribute::BackGround:
+		return ToRelPath( L"BG/Back.png" );
 	case SpriteAttribute::CircleShadow:
 		return ToRelPath( L"Shadow/Circle.png" );
+	case SpriteAttribute::ClearSentence:
+		return ToRelPath( L"Game/Clear.png" );
+	case SpriteAttribute::Cloud:
+		return ToRelPath( L"BG/Cloud.png" );
+	case SpriteAttribute::LoadingIcon:
+		return ToRelPath( L"Loading/Icon.png" );
+	case SpriteAttribute::LoadingSentence:
+		return ToRelPath( L"Loading/NowLoading.png" );
+	case SpriteAttribute::TutorialSentence:
+		return ToRelPath( L"Game/Tutorial.png" );
+	case SpriteAttribute::TitleLogo:
+		return ToRelPath( L"Title/Logo.png" );
+	case SpriteAttribute::TitlePrompt:
+		return ToRelPath( L"Title/Prompt.png" );
 	default: break;
 	}
 

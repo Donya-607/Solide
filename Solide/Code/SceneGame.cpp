@@ -546,19 +546,21 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	ObstacleBase::ParameterInit();
 #endif // DEBUG_MODE
 
+	using Spr = SpriteAttribute;
+
 	const SaveData nowData = SaveDataAdmin::Get().GetNowData();
 
 	bool result{};
 
 	pBG = std::make_unique<BG>();
-	result = pBG->LoadSprites( L"./Data/Images/BG/Back.png", L"./Data/Images/BG/Cloud.png" );
+	result = pBG->LoadSprites( GetSpritePath( Spr::BackGround ), GetSpritePath( Spr::Cloud ) );
 	assert( result );
-
+	
 	if ( stageNo == FIRST_STAGE_NO )
 	{
 		pTutorialSentence = std::make_unique<TutorialSentence>();
 		pTutorialSentence->Init();
-		result = pTutorialSentence->LoadSprite( L"./Data/Images/Game/Tutorial.png" );
+		result = pTutorialSentence->LoadSprite( GetSpritePath( Spr::TutorialSentence ) );
 		assert( result );
 	}
 	else
@@ -568,7 +570,7 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 
 	pClearSentence = std::make_unique<ClearSentence>();
 	pClearSentence->Init();
-	result = pClearSentence->LoadSprite( L"./Data/Images/Game/Clear.png" );
+	result = pClearSentence->LoadSprite( GetSpritePath( Spr::ClearSentence ) );
 	assert( result );
 
 	pTerrain = std::make_unique<Terrain>( stageNo );

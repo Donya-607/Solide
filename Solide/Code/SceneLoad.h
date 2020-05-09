@@ -1,17 +1,22 @@
 #pragma once
 
-#include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"
 
 #include "Scene.h"
+#include "UI.h"
 
-class SceneOver : public Scene
+class SceneLoad : public Scene
 {
 private:
-	Donya::XInput	controller;
+	bool finishResources	= false;
+	bool finishSounds		= false;
+	bool succeeded			= true;
+
+	UIObject	sprIcon;
+	UIObject	sprNowLoading;
+	float		flushingTimer = 0.0f;
 public:
-	SceneOver();
-	~SceneOver();
+	SceneLoad() : Scene() {}
 public:
 	void	Init() override;
 	void	Uninit() override;
@@ -20,13 +25,14 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
+	void	SpritesUpdate( float elapsedTime );
+private:
+	void	ClearBackGround() const;
 	void	StartFade() const;
 private:
 	Result	ReturnResult();
 private:
 #if USE_IMGUI
-
 	void	UseImGui();
-
 #endif // USE_IMGUI
 };

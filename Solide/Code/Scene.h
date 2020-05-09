@@ -17,10 +17,10 @@ public:
 	{
 		Null = 0,
 		Logo,
+		Load,
 		Title,
 		Game,
 		Clear,
-		Over,
 		Pause,
 	};
 	struct Result
