@@ -72,4 +72,4 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( Goal, 0 )
+CEREAL_CLASS_VERSION( Goal, 1 )
