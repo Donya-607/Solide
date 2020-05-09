@@ -233,10 +233,12 @@ void Goal::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 			std::string caption{};
 			for ( size_t i = 0; i < numberCount; ++i )
 			{
-				ImGui::DragInt( "", &data[i], 1.0f, -1 );
+				caption = "##" + std::to_string( i );
+				ImGui::DragInt( caption.c_str(), &data[i], 1.0f, -1 );
 
+				caption += u8"‚±‚ê‚ðíœ";
 				ImGui::SameLine();
-				if ( ImGui::Button( u8"‚±‚ê‚ðíœ" ) )
+				if ( ImGui::Button( caption.c_str() ) )
 				{
 					eraseIndex = i;
 				}

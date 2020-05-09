@@ -90,7 +90,7 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
-	void	InitStage( int stageNo );
+	void	InitStage( int stageNo, bool useSaveDataIfValid );
 	void	UninitStage();
 
 	void	WriteSaveData( int stageNo ) const;

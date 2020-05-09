@@ -243,8 +243,8 @@ void SceneGame::Init()
 	pShadow->LoadTexture();
 	pShadow->ClearInstances();
 
-	stageNumber = FIRST_STAGE_NO;
-	InitStage( stageNumber );
+	stageNumber = SELECT_STAGE_NO;
+	InitStage( stageNumber, /* useSaveDataIfValid = */ true );
 	WriteSaveData( stageNumber );
 	SaveDataAdmin::Get().Save();
 }
@@ -302,14 +302,19 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	if ( Fader::Get().IsClosed() )
 	{
-		if ( !ShouldGotoTitleScene( stageNumber ) )
+		if ( ShouldGotoTitleScene( stageNumber ) )
+		{
+			WriteSaveData( SELECT_STAGE_NO );
+			SaveDataAdmin::Get().Save();
+		}
+		else
 		{
 			UninitStage();
-			InitStage( stageNumber );
-		}
+			InitStage( stageNumber, /* useSaveDataIfValid = */ false );
 	
-		WriteSaveData( stageNumber );
-		SaveDataAdmin::Get().Save();
+			WriteSaveData( stageNumber );
+			SaveDataAdmin::Get().Save();
+		}
 	}
 
 	controller.Update();
@@ -530,7 +535,7 @@ void SceneGame::Draw( float elapsedTime )
 #endif // DEBUG_MODE
 }
 
-void SceneGame::InitStage( int stageNo )
+void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 {
 #if DEBUG_MODE
 	// The parameters re-loading are unnecessary, but if when debugging, that is convenience.
@@ -541,7 +546,6 @@ void SceneGame::InitStage( int stageNo )
 #endif // DEBUG_MODE
 
 	const SaveData nowData = SaveDataAdmin::Get().GetNowData();
-	const bool nowDataIsEmpty = nowData.IsEmpty();
 
 	bool result{};
 
@@ -572,13 +576,13 @@ void SceneGame::InitStage( int stageNo )
 	pCameraOption->Init( stageNo );
 
 	pCheckPoint = std::make_unique<CheckPoint>();
-	if ( nowDataIsEmpty )
+	if ( useSaveDataIfValid && !nowData.isEmpty )
 	{
-		pCheckPoint->Init( stageNo );
+		pCheckPoint->Init( nowData, stageNo );
 	}
 	else
 	{
-		pCheckPoint->Init( nowData, stageNo );
+		pCheckPoint->Init( stageNo );
 	}
 	
 	pEnemies = std::make_unique<Enemy::Container>();
@@ -592,17 +596,14 @@ void SceneGame::InitStage( int stageNo )
 	pWarps = std::make_unique<WarpContainer>();
 	pWarps->Init( stageNo );
 
-	if ( nowDataIsEmpty )
+	pPlayerIniter = std::make_unique<PlayerInitializer>();
+	if ( useSaveDataIfValid && !nowData.isEmpty && nowData.pCurrentIntializer )
 	{
-		pPlayerIniter = std::make_unique<PlayerInitializer>();
-		pPlayerIniter->LoadParameter( stageNo );
+		*pPlayerIniter = *nowData.pCurrentIntializer;
 	}
 	else
 	{
-		pPlayerIniter = std::make_unique<PlayerInitializer>
-		(
-			*nowData.pCurrentIntializer
-		);
+		pPlayerIniter->LoadParameter( stageNo );
 	}
 	PlayerInit( stageNo );
 
@@ -646,8 +647,21 @@ void SceneGame::UninitStage()
 void SceneGame::WriteSaveData( int stageNo ) const
 {
 	SaveDataAdmin::Get().Write( stageNo );
-	if ( pCheckPoint	) { SaveDataAdmin::Get().Write( *pCheckPoint	); }
-	if ( pPlayerIniter	) { SaveDataAdmin::Get().Write( *pPlayerIniter	); }
+	if ( stageNo != stageNumber )
+	{
+		auto pTmpCheckPoint = std::make_unique<CheckPoint>();
+		pTmpCheckPoint->Init( stageNo );
+		SaveDataAdmin::Get().Write( *pTmpCheckPoint );
+
+		auto pTmpIniter = std::make_unique<PlayerInitializer>();
+		pTmpIniter->LoadParameter( stageNo );
+		SaveDataAdmin::Get().Write( *pTmpIniter );
+	}
+	else
+	{
+		if ( pCheckPoint	) { SaveDataAdmin::Get().Write( *pCheckPoint	); }
+		if ( pPlayerIniter	) { SaveDataAdmin::Get().Write( *pPlayerIniter	); }
+	}
 }
 
 #if DEBUG_MODE
@@ -1649,22 +1663,28 @@ void SceneGame::UseImGui()
 	{
 		if ( ImGui::TreeNode( u8"セーブデータ" ) )
 		{
-			if ( ImGui::Button( u8"書き込み" ) )
-			{
-				WriteSaveData( stageNumber );
-			}
-			if ( ImGui::Button( u8"保存" ) )
+			if ( ImGui::Button( u8"データをファイルに保存" ) )
 			{
 				SaveDataAdmin::Get().Save();
 			}
-			if ( ImGui::Button( u8"読み込み" ) )
+			if ( ImGui::Button( u8"データをファイルから読み込み" ) )
 			{
 				SaveDataAdmin::Get().Load();
 			}
-			
-			SaveDataAdmin::Get().ShowImGuiNode( u8"中身" );
 
-			ImGui::TreeAdvanceToLabelPos();
+			if ( ImGui::Button( u8"今のステージ情報をデータに反映" ) )
+			{
+				WriteSaveData( stageNumber );
+			}
+
+			SaveDataAdmin::Get().ShowImGuiNode( u8"データを直接変更する" );
+
+			if ( ImGui::Button( u8"今のデータを適用してステージを初期化" ) )
+			{
+				UninitStage();
+				InitStage( stageNumber, /* useSaveDataIfValid = */ true );
+			}
+			
 			ImGui::TreePop();
 		}
 
@@ -1691,7 +1711,7 @@ void SceneGame::UseImGui()
 
 				stageNumber = transitionTarget;
 
-				InitStage( stageNumber );
+				InitStage( stageNumber, /* useSaveDataIfValid = */ false );
 			}
 			// else
 			ImGui::TreePop();

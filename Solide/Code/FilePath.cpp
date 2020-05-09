@@ -38,7 +38,7 @@ std::string MakeTerrainModelPath( std::string objName, int stageNo )
 std::string MakeSaveDataPath( std::string fileName, bool useBinary )
 {
 	const std::string EXT = ( useBinary ) ? ".bin" : ".json";
-	return MODELS_DIRECTORY + fileName + EXT;
+	return SAVE_DATA_DIRECTORY + fileName + EXT;
 }
 
 bool MakeDirectoryIfNotExists( const std::string &filePath )

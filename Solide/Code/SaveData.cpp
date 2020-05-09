@@ -5,17 +5,10 @@
 #include "FilePath.h"
 #include "StageNumberDefine.h"
 
-bool SaveData::IsEmpty() const
-{
-	if ( pCurrentIntializer				) { return false; }
-	if ( remainingCheckPoints.size()	) { return false; }
-	if ( unlockedStageNumbers.size()	) { return false; }
-	// else
-	return true;
-}
 void SaveData::Clear()
 {
-	currentStageNumber = 0;
+	isEmpty				= true;
+	currentStageNumber	= 0;
 	pCurrentIntializer.reset();
 	remainingCheckPoints.clear();
 	unlockedStageNumbers.clear();
@@ -49,10 +42,14 @@ void SaveDataAdmin::Clear()
 
 void SaveDataAdmin::InitializeIfDataIsEmpty()
 {
-	if ( !savedata.IsEmpty() ) { return; }
+	if ( !savedata.isEmpty ) { return; }
 	// else
 
-	savedata.currentStageNumber = 0;
+	Clear();
+
+	// We should enable this for a user be able to consider the initialization needs.
+	savedata.isEmpty			= true;
+	savedata.currentStageNumber	= 0;
 	savedata.unlockedStageNumbers.emplace_back( TITLE_STAGE_NO	);
 	savedata.unlockedStageNumbers.emplace_back( SELECT_STAGE_NO	);
 	savedata.unlockedStageNumbers.emplace_back( FIRST_STAGE_NO	);
@@ -60,7 +57,7 @@ void SaveDataAdmin::InitializeIfDataIsEmpty()
 
 bool SaveDataAdmin::IsEmptyCurrentData() const
 {
-	return savedata.IsEmpty();
+	return savedata.isEmpty;
 }
 bool SaveDataAdmin::IsUnlockedStageNumber( int stageNo ) const
 {
@@ -79,14 +76,26 @@ void SaveDataAdmin::Write( const SaveData &updatedData )
 }
 void SaveDataAdmin::Write( int nowStageNo )
 {
+	savedata.isEmpty = false;
 	savedata.currentStageNumber = nowStageNo;
 }
 void SaveDataAdmin::Write( const PlayerInitializer &nowInitializer )
 {
-	*savedata.pCurrentIntializer = nowInitializer;
+	savedata.isEmpty = false;
+
+	if ( !savedata.pCurrentIntializer )
+	{
+		savedata.pCurrentIntializer = std::make_shared<PlayerInitializer>( nowInitializer );
+	}
+	else
+	{
+		*savedata.pCurrentIntializer = nowInitializer;
+	}
 }
 void SaveDataAdmin::Write( const CheckPoint &nowRemCheckPoints )
 {
+	savedata.isEmpty = false;
+
 	auto &dest = savedata.remainingCheckPoints;
 	dest.clear();
 
@@ -103,6 +112,8 @@ void SaveDataAdmin::Write( const CheckPoint &nowRemCheckPoints )
 }
 void SaveDataAdmin::UnlockStage( int unlockStageNo )
 {
+	savedata.isEmpty = false;
+
 	if ( IsUnlockedStageNumber( unlockStageNo ) ) { return; }
 	// else
 	savedata.unlockedStageNumbers.emplace_back( unlockStageNo );
@@ -142,6 +153,8 @@ void SaveDataAdmin::ShowImGuiNode( const std::string &nodeCaption )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
+
+	ImGui::Checkbox( u8"空ファイルか", &savedata.isEmpty );
 
 	ImGui::DragInt( u8"保存されたステージ番号", &savedata.currentStageNumber, 1.0f, -1 );
 	const int stageNo = savedata.currentStageNumber;
@@ -210,7 +223,6 @@ void SaveDataAdmin::ShowImGuiNode( const std::string &nodeCaption )
 			ImGui::TreePop();
 		}
 
-
 		ImGui::TreePop();
 	}
 
@@ -255,10 +267,12 @@ void SaveDataAdmin::ShowImGuiNode( const std::string &nodeCaption )
 			std::string caption{};
 			for ( size_t i = 0; i < numberCount; ++i )
 			{
-				ImGui::DragInt( "", &data[i], 1.0f, -1 );
+				caption = "##" + std::to_string( i );
+				ImGui::DragInt( caption.c_str(), &data[i], 1.0f, -1 );
 
+				caption += u8"これを削除";
 				ImGui::SameLine();
-				if ( ImGui::Button( u8"これを削除" ) )
+				if ( ImGui::Button( caption.c_str() ) )
 				{
 					eraseIndex = i;
 				}

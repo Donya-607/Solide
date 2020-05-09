@@ -15,7 +15,8 @@
 
 struct SaveData
 {
-	int									currentStageNumber = 0;
+	bool								isEmpty				= true;	// True is indicates a value of this save data is not changes yet.
+	int									currentStageNumber	= 0;
 	std::shared_ptr<PlayerInitializer>	pCurrentIntializer;
 	std::vector<CheckPoint::Instance>	remainingCheckPoints;
 	std::vector<int>					unlockedStageNumbers;
@@ -26,6 +27,7 @@ private:
 	{
 		archive
 		(
+			CEREAL_NVP( isEmpty					),
 			CEREAL_NVP( currentStageNumber		),
 			CEREAL_NVP( pCurrentIntializer		),
 			CEREAL_NVP( remainingCheckPoints	),
@@ -38,7 +40,6 @@ private:
 		}
 	}
 public:
-	bool IsEmpty() const;
 	void Clear();
 };
 
