@@ -9,8 +9,10 @@
 #include "Donya/Blend.h"
 #include "Donya/Color.h"
 #include "Donya/Constant.h"
+#include "Donya/Donya.h"
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
+#include "Donya/Sprite.h"
 #include "Donya/Useful.h"
 #include "Donya/Vector.h"
 #if DEBUG_MODE
@@ -22,13 +24,15 @@
 #include "Bullet.h"
 #include "Common.h"
 #include "EffectAdmin.h"
+#include "Enemy.h"
 #include "Fader.h"
 #include "FilePath.h"
+#include "Goal.h"
 #include "Music.h"
 #include "Obstacles.h"
 #include "Parameter.h"
-#include "SaveData.h"
-#include "StageNumberDefine.h"
+#include "Player.h"
+#include "Warp.h"
 
 
 #undef max
@@ -158,7 +162,289 @@ void SceneLoad::Init()
 {
 	ParamLoad::Get().Init();
 
+	constexpr auto CoInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
+	auto LoadingEffects	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	{
+		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
+		// else
+
+		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		if ( FAILED( hr ) )
+		{
+			std::lock_guard<std::mutex> lock( *pSucceedMutex );
+
+			*pFinishFlag  = true;
+			*pSucceedFlag = false;
+			return;
+		}
+		// else
+
+		constexpr size_t attrCount = scast<size_t>( EffectAttribute::AttributeCount );
+		constexpr std::array<EffectAttribute, attrCount> attributes
+		{
+			EffectAttribute::Flame
+		};
+
+		bool succeeded = true;
+		for ( const auto &it : attributes )
+		{
+			if ( !EffectAdmin::Get().LoadEffect( it ) )
+			{
+				succeeded = false;
+			}
+		}
+		
+		_ASSERT_EXPR( succeeded, L"Failed: Effects load is failed." );
+
+		std::lock_guard<std::mutex> lock( *pSucceedMutex );
+		*pFinishFlag  = true;
+		*pSucceedFlag = succeeded;
+
+		CoUninitialize();
+	};
+	auto LoadingModels	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	{
+		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
+		// else
+
+		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		if ( FAILED( hr ) )
+		{
+			std::lock_guard<std::mutex> lock( *pSucceedMutex );
+
+			*pFinishFlag  = true;
+			*pSucceedFlag = false;
+			return;
+		}
+		// else
+
+		bool succeeded = true;
+
+		if ( !Bullet::LoadBulletsResource()	) { succeeded = false; }
+		if ( !Enemy::LoadResources()		) { succeeded = false; }
+		if ( !Goal::LoadResource()			) { succeeded = false; }
+		if ( !ObstacleBase::LoadModels()	) { succeeded = false; }
+		if ( !Player::LoadModels()			) { succeeded = false; }
+		if ( !WarpContainer::LoadResource()	) { succeeded = false; }
+
+		_ASSERT_EXPR( succeeded, L"Failed: Models load is failed." );
+
+		std::lock_guard<std::mutex> lock( *pSucceedMutex );
+		*pFinishFlag  = true;
+		*pSucceedFlag = succeeded;
+
+		CoUninitialize();
+	};
+	auto LoadingSprites	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	{
+		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
+		// else
+
+		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		if ( FAILED( hr ) )
+		{
+			std::lock_guard<std::mutex> lock( *pSucceedMutex );
+
+			*pFinishFlag  = true;
+			*pSucceedFlag = false;
+			return;
+		}
+		// else
+
+		using Attr = SpriteAttribute;
+
+		auto MakeTextureCache = []( Attr attr, size_t maxInstanceCount )->bool
+		{
+			const auto handle = Donya::Sprite::Load( GetSpritePath( attr ), maxInstanceCount );
+			return  (  handle == NULL ) ? false : true;
+		};
+
+		bool succeeded = true;
+		if ( !MakeTextureCache( Attr::BackGround,		2U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::CircleShadow,		1U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::ClearSentence,	4U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::Cloud,			2U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::TutorialSentence,	4U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::TitleLogo,		2U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::TitlePrompt,		2U ) ) { succeeded = false; }
+
+		_ASSERT_EXPR( succeeded, L"Failed: Sprites load is failed." );
+
+		std::lock_guard<std::mutex> lock( *pSucceedMutex );
+		*pFinishFlag  = true;
+		*pSucceedFlag = succeeded;
+
+		CoUninitialize();
+	};
+	auto LoadingSounds	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	{
+		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
+		// else
+
+		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		if ( FAILED( hr ) )
+		{
+			std::lock_guard<std::mutex> lock( *pSucceedMutex );
+
+			*pFinishFlag  = true;
+			*pSucceedFlag = false;
+			return;
+		}
+		// else
+
+		using Music::ID;
+
+		struct Bundle
+		{
+			ID			id;
+			std::string	filePath;
+			bool		isEnableLoop;
+		public:
+			Bundle( ID id, const char *filePath, bool isEnableLoop )
+				: id( id ), filePath( filePath ), isEnableLoop( isEnableLoop ) {}
+		};
+
+		const std::array<Bundle, ID::MUSIC_COUNT> bundles
+		{
+			// ID, FilePath, isEnableLoop
+			Bundle{ ID::BGM_Title,			u8"./Data/Sounds/BGM/アニマル・スマイル.mp3",		true	},
+			Bundle{ ID::BGM_Game,			"./Data/Sounds/BGM/Bouncy.mp3",					true	},
+			Bundle{ ID::BGM_Clear,			u8"./Data/Sounds/BGM/うきうき.mp3",				true	},
+
+			Bundle{ ID::UI_StartGame,		"./Data/Sounds/SE/Title/Start.wav",				false	},
+			Bundle{ ID::UI_Goal,			"./Data/Sounds/SE/Game/Goal.wav",				false	},
+
+			Bundle{ ID::PlayerJump,			"./Data/Sounds/SE/Player/Jump.wav",				false	},
+			Bundle{ ID::PlayerLanding,		"./Data/Sounds/SE/Player/Landing.wav",			false	},
+			Bundle{ ID::PlayerTrans,		"./Data/Sounds/SE/Player/Trans.wav",			false	},
+
+			Bundle{ ID::ItemChoose,			"./Data/Sounds/SE/DEBUG/ChooseItem.wav",		false	},
+			Bundle{ ID::ItemDecision,		"./Data/Sounds/SE/DEBUG/DecisionItem.wav",		false	},
+		};
+
+		bool succeeded = true;
+		for ( size_t i = 0; i < ID::MUSIC_COUNT; ++i )
+		{
+			bool result = Donya::Sound::Load
+			(
+				bundles[i].id,
+				bundles[i].filePath,
+				bundles[i].isEnableLoop
+			);
+			if ( !result ) { succeeded = false; }
+		}
+
+		_ASSERT_EXPR( succeeded, L"Failed: Sounds load is failed." );
+
+		std::lock_guard<std::mutex> lock( *pSucceedMutex );
+		*pFinishFlag  = true;
+		*pSucceedFlag = succeeded;
+
+		CoUninitialize();
+	};
+
+	finishEffects	= false;
+	finishModels	= false;
+	finishSprites	= false;
+	finishSounds	= false;
+	allSucceeded	= true;
+
+	pThreadModels	= std::make_unique<std::thread>( LoadingModels,		&finishModels,	&allSucceeded, &succeedMutex );
+	pThreadSounds	= std::make_unique<std::thread>( LoadingSounds,		&finishSounds,	&allSucceeded, &succeedMutex );
+	pThreadEffects	= std::make_unique<std::thread>( LoadingEffects,	&finishEffects,	&allSucceeded, &succeedMutex );
+	pThreadSprites	= std::make_unique<std::thread>( LoadingSprites,	&finishSprites,	&allSucceeded, &succeedMutex );
+	
+	if ( !SpritesInit() )
+	{
+		_ASSERT_EXPR( 0, L"Error: Loading sprites does not works!" );
+	}
+}
+void SceneLoad::Uninit()
+{
+	ReleaseAllThread();
+
+	ParamLoad::Get().Uninit();
+}
+
+Scene::Result SceneLoad::Update( float elapsedTime )
+{
+#if USE_IMGUI
+	ParamLoad::Get().UseImGui();
+	UseImGui();
+#endif // USE_IMGUI
+
+#if DEBUG_MODE
+	elapsedTimer += elapsedTime;
+#endif // DEBUG_MODE
+
+	SpritesUpdate( elapsedTime );
+
+	if ( !Fader::Get().IsExist() && IsFinished() )
+	{
+		if ( allSucceeded )
+		{
+			StartFade();
+		}
+		else
+		{
+			const HWND hWnd = Donya::GetHWnd();
+			MessageBox
+			(
+				hWnd,
+				TEXT( "リソースの読み込みが失敗しました。アプリを終了します。" ),
+				TEXT( "リソース読み込みエラー" ),
+				MB_ICONERROR | MB_OK
+			);
+
+			PostMessage( hWnd, WM_CLOSE, 0, 0 );
+
+			ReleaseAllThread();
+
+			// Prevent a true being returned by IsFinished().
+			finishEffects	= false;
+			finishModels	= false;
+			finishSprites	= false;
+			finishSounds	= false;
+		}
+	}
+
+	return ReturnResult();
+}
+
+void SceneLoad::Draw( float elapsedTime )
+{
+	ClearBackGround();
+
+	sprIcon.Draw();
+	sprNowLoading.Draw();
+}
+
+void SceneLoad::ReleaseAllThread()
+{
+	auto JoinThenRelease = []( std::unique_ptr<std::thread> &p )
+	{
+		if ( p )
+		{ 
+			if ( p->joinable() )
+			{
+				p->join();
+			}
+
+			p.reset();
+		}
+	};
+
+	JoinThenRelease( pThreadEffects	);
+	JoinThenRelease( pThreadModels	);
+	JoinThenRelease( pThreadSprites	);
+	JoinThenRelease( pThreadSounds	);
+}
+
+bool SceneLoad::SpritesInit()
+{
 	const auto data = FetchMember();
+
+	bool succeeded = true;
 
 	constexpr size_t MAX_INSTANCE_COUNT = 1U;
 	if ( !sprIcon.LoadSprite( GetSpritePath( SpriteAttribute::LoadingIcon ), MAX_INSTANCE_COUNT ) )
@@ -173,33 +459,10 @@ void SceneLoad::Init()
 	sprNowLoading.drawScale	= data.sprLoadScale;
 	sprNowLoading.alpha		= 1.0f;
 
-	assert( succeeded );
+	flushingTimer			= 0.0f;
+
+	return succeeded;
 }
-void SceneLoad::Uninit()
-{
-	ParamLoad::Get().Uninit();
-}
-
-Scene::Result SceneLoad::Update( float elapsedTime )
-{
-#if USE_IMGUI
-	ParamLoad::Get().UseImGui();
-	UseImGui();
-#endif // USE_IMGUI
-
-	SpritesUpdate( elapsedTime );
-
-	return ReturnResult();
-}
-
-void SceneLoad::Draw( float elapsedTime )
-{
-	ClearBackGround();
-
-	sprIcon.Draw();
-	sprNowLoading.Draw();
-}
-
 void SceneLoad::SpritesUpdate( float elapsedTime )
 {
 	const auto data = FetchMember();
@@ -211,12 +474,17 @@ void SceneLoad::SpritesUpdate( float elapsedTime )
 	{
 		const float sinIncrement = 360.0f / ( 60.0f * cycle );
 		flushingTimer += sinIncrement;
+
+		const float sin_01 = ( sinf( ToRadian( flushingTimer ) ) + 1.0f ) * 0.5f;
+		const float shake  = sin_01 * data.sprLoadFlushingRange;
+
+		sprNowLoading.alpha = std::max( data.sprLoadMinAlpha, std::min( 1.0f, shake ) );
 	}
+}
 
-	const float sin_01 = ( sinf( ToRadian( flushingTimer ) ) + 1.0f ) * 0.5f;
-	const float shake  = sin_01 * data.sprLoadFlushingRange;
-
-	sprNowLoading.alpha = std::max( data.sprLoadMinAlpha, std::min( 1.0f, shake ) );
+bool SceneLoad::IsFinished() const
+{
+	return ( finishEffects && finishModels && finishSprites && finishSounds );
 }
 
 void SceneLoad::ClearBackGround() const
@@ -257,6 +525,18 @@ void SceneLoad::UseImGui()
 	{
 		if ( ImGui::TreeNode( u8"ロード画面のメンバ" ) )
 		{
+			auto GetBoolStr = []( bool v )->std::string
+			{
+				return ( v ) ? "True" : "False";
+			};
+
+			ImGui::Text( u8"終了フラグ・エフェクト[%s]",	GetBoolStr( finishEffects	).c_str() );
+			ImGui::Text( u8"終了フラグ・モデル[%s]",		GetBoolStr( finishModels	).c_str() );
+			ImGui::Text( u8"終了フラグ・スプライト[%s]",	GetBoolStr( finishSprites	).c_str() );
+			ImGui::Text( u8"終了フラグ・サウンド[%s]",	GetBoolStr( finishSounds	).c_str() );
+			
+			ImGui::Text( u8"経過時間：[%6.3f]", elapsedTimer );
+
 			sprIcon.ShowImGuiNode		( u8"画像調整・アイコン" );
 			sprNowLoading.ShowImGuiNode	( u8"画像調整・ロード中" );
 

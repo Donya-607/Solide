@@ -7,7 +7,6 @@ namespace Music
 		BGM_Title = 0,
 		BGM_Game,
 		BGM_Clear,
-		BGM_Over,
 
 		UI_StartGame,
 		UI_Goal,

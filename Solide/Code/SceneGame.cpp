@@ -221,7 +221,6 @@ void SceneGame::Init()
 
 	ParamGame::Get().Init();
 
-	Bullet::BulletAdmin::Get().Init();
 	Bullet::LoadBulletsResource();
 
 	result = Enemy::LoadResources();
@@ -231,7 +230,6 @@ void SceneGame::Init()
 	assert( result );
 	result = ObstacleBase::LoadModels();
 	assert( result );
-	ObstacleBase::ParameterInit();
 	
 	result = WarpContainer::LoadResource();
 	assert( result );
@@ -618,6 +616,8 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 		pShadow->LoadTexture();
 	}
 	pShadow->ClearInstances();
+
+	Bullet::BulletAdmin::Get().Init();
 
 	nowWaiting = false;
 }
