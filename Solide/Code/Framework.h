@@ -25,9 +25,6 @@ public:
 
 	void Draw( float elapsed_time /* Elapsed seconds from last frame */ );
 private:
-	bool LoadSounds();
-	bool LoadEffects();
-	
 #if USE_IMGUI
 	void DebugShowInformation();
 #endif // USE_IMGUI

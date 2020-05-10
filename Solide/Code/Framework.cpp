@@ -27,12 +27,6 @@ Framework::~Framework() = default;
 
 bool Framework::Init()
 {
-	// LoadSounds();
-	// if ( !LoadEffects() )
-	// {
-	// 	char breakpoint = 0;
-	// }
-
 	pSceneMng = std::make_unique<SceneMng>();
 
 #if DEBUG_MODE
@@ -91,71 +85,6 @@ void Framework::Draw( float elapsedTime/*Elapsed seconds from last frame*/ )
 #if DEBUG_MODE
 	EffectAdmin::Get().Draw();
 #endif // DEBUG_MODE
-}
-
-bool Framework::LoadSounds()
-{
-	using Donya::Sound::Load;
-	using Music::ID;
-
-	struct Bundle
-	{
-		ID id;
-		std::string filePath;
-		bool isEnableLoop;
-	public:
-		Bundle() : id(), filePath(), isEnableLoop( false ) {}
-		Bundle( ID id, const char *filePath, bool isEnableLoop ) : id( id ), filePath( filePath ), isEnableLoop( isEnableLoop ) {}
-		Bundle( ID id, const std::string &filePath, bool isEnableLoop ) : id( id ), filePath( filePath ), isEnableLoop( isEnableLoop ) {}
-	};
-
-	const std::array<Bundle, ID::MUSIC_COUNT> bundles =
-	{
-		{	// ID, FilePath, isEnableLoop
-			{ ID::BGM_Title,			u8"./Data/Sounds/BGM/アニマル・スマイル.mp3",		true  },
-			{ ID::BGM_Game,				"./Data/Sounds/BGM/Bouncy.mp3",					true  },
-			{ ID::BGM_Clear,			u8"./Data/Sounds/BGM/うきうき.mp3",				true  },
-			//{ ID::BGM_Over,				"./Data/Sounds/BGM/Over.wav",					true  },
-			
-			{ ID::UI_StartGame,			"./Data/Sounds/SE/Title/Start.wav",				false  },
-			{ ID::UI_Goal,				"./Data/Sounds/SE/Game/Goal.wav",				false  },
-
-			{ ID::PlayerJump,			"./Data/Sounds/SE/Player/Jump.wav",				false  },
-			{ ID::PlayerLanding,		"./Data/Sounds/SE/Player/Landing.wav",			false  },
-			{ ID::PlayerTrans,			"./Data/Sounds/SE/Player/Trans.wav",			false  },
-
-			{ ID::ItemChoose,			"./Data/Sounds/SE/DEBUG/ChooseItem.wav",		false },
-			{ ID::ItemDecision,			"./Data/Sounds/SE/DEBUG/DecisionItem.wav",		false },
-		},
-	};
-
-	bool result = true, successed = true;
-
-	for ( size_t i = 0; i < ID::MUSIC_COUNT; ++i )
-	{
-		result = Load( bundles[i].id, bundles[i].filePath.c_str(), bundles[i].isEnableLoop );
-		if ( !result ) { successed = false; }
-	}
-
-	return successed;
-}
-bool Framework::LoadEffects()
-{
-	constexpr size_t attrCount = scast<size_t>( EffectAttribute::AttributeCount );
-	constexpr std::array<EffectAttribute, attrCount> attributes
-	{
-		EffectAttribute::Flame
-	};
-
-	bool succeeded = true;
-	for ( const auto &it : attributes )
-	{
-		if ( !EffectAdmin::Get().LoadEffect( it ) )
-		{
-			succeeded = false;
-		}
-	}
-	return succeeded;
 }
 
 #if USE_IMGUI
