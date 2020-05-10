@@ -131,7 +131,7 @@ Scene::Result SceneLogo::ReturnResult()
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
-		change.sceneType = Scene::Type::Title;
+		change.sceneType = Scene::Type::Load;
 		return change;
 	}
 	// else

@@ -961,25 +961,25 @@ void SceneGame::CameraUpdate()
 	input.SetNoOperation();
 	input.slerpPercent = data.camera.slerpFactor;
 
+	Donya::Vector3 ofsPos, ofsFocus;
+	if ( pCameraOption && pCameraOption->GetOptionCount() && pPlayer )
+	{
+		const auto option = pCameraOption->CalcCurrentOption( pPlayer->GetPosition() );
+		ofsPos		= option.offsetPos;
+		ofsFocus	= option.offsetFocus;
+	}
+	else
+	{
+		ofsPos		= data.camera.offsetPos;
+		ofsFocus	= data.camera.offsetFocus;
+	}
+
 #if !DEBUG_MODE
-	AssignCameraPos();
+	AssignCameraPos( ofsPos, ofsFocus );
 	iCamera.Update( input );
 #else
 	if ( !nowDebugMode )
 	{
-		Donya::Vector3 ofsPos, ofsFocus;
-		if ( pCameraOption && pCameraOption->GetOptionCount() && pPlayer )
-		{
-			const auto option = pCameraOption->CalcCurrentOption( pPlayer->GetPosition() );
-			ofsPos		= option.offsetPos;
-			ofsFocus	= option.offsetFocus;
-		}
-		else
-		{
-			ofsPos		= data.camera.offsetPos;
-			ofsFocus	= data.camera.offsetFocus;
-		}
-
 		AssignCameraPos( ofsPos, ofsFocus );
 		iCamera.Update( input );
 		return;

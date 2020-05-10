@@ -7,6 +7,7 @@
 
 #include "FilePath.h"
 
+Shadow::Shadow()  = default;
 Shadow::~Shadow() = default;
 
 bool Shadow::LoadTexture()

@@ -35,6 +35,11 @@ private:
 	std::vector<Instance> shadows;
 	std::unique_ptr<Donya::Geometric::TextureBoard> pTexture = nullptr;
 public:
+	Shadow();
+	Shadow( const Shadow &copy ) = default;
+	Shadow(	      Shadow &&ref ) = default;
+	Shadow &operator = ( const Shadow &copy ) = default;
+	Shadow &operator = (       Shadow &&ref ) = default;
 	~Shadow();
 public:
 	bool LoadTexture();

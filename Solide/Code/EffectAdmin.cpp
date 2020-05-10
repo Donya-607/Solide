@@ -4,10 +4,13 @@
 #include <unordered_map>
 #include <vector>
 
+#include <cereal/types/vector.hpp>
+
 #include "Effekseer.h"
 #include "EffekseerRendererDX11.h"
 
 #include "Donya/Constant.h"		// Use scast macro.
+#include "Donya/Serializer.h"
 #include "Donya/Useful.h"
 #include "Donya/UseImGui.h"
 
