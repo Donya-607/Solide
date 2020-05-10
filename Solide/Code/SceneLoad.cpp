@@ -351,9 +351,12 @@ void SceneLoad::Init()
 
 	pThreadModels	= std::make_unique<std::thread>( LoadingModels,		&finishModels,	&allSucceeded, &succeedMutex );
 	pThreadSounds	= std::make_unique<std::thread>( LoadingSounds,		&finishSounds,	&allSucceeded, &succeedMutex );
-	pThreadEffects	= std::make_unique<std::thread>( LoadingEffects,	&finishEffects,	&allSucceeded, &succeedMutex );
 	pThreadSprites	= std::make_unique<std::thread>( LoadingSprites,	&finishSprites,	&allSucceeded, &succeedMutex );
-	
+
+	// Note: Maybe Effekseer is not supported to async load? I can not found this way.
+	// pThreadEffects = std::make_unique<std::thread>( LoadingEffects,	&finishEffects,	&allSucceeded, &succeedMutex );
+	LoadingEffects( &finishEffects,	&allSucceeded, &succeedMutex );
+
 	if ( !SpritesInit() )
 	{
 		_ASSERT_EXPR( 0, L"Error: Loading sprites does not works!" );

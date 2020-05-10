@@ -27,11 +27,11 @@ Framework::~Framework() = default;
 
 bool Framework::Init()
 {
-	LoadSounds();
-	if ( !LoadEffects() )
-	{
-		char breakpoint = 0;
-	}
+	// LoadSounds();
+	// if ( !LoadEffects() )
+	// {
+	// 	char breakpoint = 0;
+	// }
 
 	pSceneMng = std::make_unique<SceneMng>();
 

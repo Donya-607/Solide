@@ -15,7 +15,7 @@
 #include "Element.h"
 #include "Renderer.h"
 
-class EffectHandle;
+class  EffectHandle;
 
 namespace Bullet
 {

@@ -33,11 +33,12 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 	srand( scast<unsigned int>( time( NULL ) ) );
 
 	Donya::LibraryInitializer desc{};
-	desc.screenWidth		= Common::ScreenWidth();
-	desc.screenHeight		= Common::ScreenHeight();
-	desc.windowCaption		= "オイリー！";
-	desc.enableCaptionBar	= true;
-	desc.fullScreenMode		= false;
+	desc.screenWidth			= Common::ScreenWidth();
+	desc.screenHeight			= Common::ScreenHeight();
+	desc.windowCaption			= "オイリー！";
+	desc.enableCaptionBar		= true;
+	desc.enableMultiThreaded	= true;
+	desc.fullScreenMode			= false;
 	Donya::Init( cmdShow, desc );
 
 	Donya::SetWindowIcon( instance, IDI_ICON );
