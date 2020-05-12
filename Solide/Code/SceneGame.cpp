@@ -1633,7 +1633,7 @@ Scene::Result SceneGame::ReturnResult()
 	}
 
 	const bool requestPause	= Donya::Keyboard::Trigger( 'P' ) || controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT );
-	const bool allowPause	= 0 && !Fader::Get().IsExist();
+	const bool allowPause	= !Fader::Get().IsExist() && !nowWaiting;
 	if ( requestPause && allowPause )
 	{
 		Donya::Sound::Play( Music::ItemDecision );

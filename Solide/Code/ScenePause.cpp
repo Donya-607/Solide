@@ -15,6 +15,7 @@
 #include "Donya/Vector.h"
 
 #include "Common.h"
+#include "Fader.h"
 #include "FilePath.h"
 #include "Music.h"
 #include "Parameter.h"
@@ -39,6 +40,7 @@ namespace
 		}
 
 		_ASSERT_EXPR( 0, L"Error: Unexpected Kind!" );
+		return u8"ERROR";
 	}
 
 	struct Member
@@ -293,7 +295,9 @@ void ScenePause::DrawBackGround() const
 
 Scene::Result ScenePause::ReturnResult()
 {
-	if ( Donya::Keyboard::Trigger( 'P' ) || controller.Trigger( Donya::Gamepad::Button::START ) )
+	const bool requestPause	= Donya::Keyboard::Trigger( 'P' ) || controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT );
+	const bool allowPause	= !Fader::Get().IsExist();
+	if ( requestPause && allowPause )
 	{
 		Donya::Sound::Play( Music::ItemDecision );
 
