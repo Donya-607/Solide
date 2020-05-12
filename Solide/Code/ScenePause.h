@@ -8,16 +8,19 @@
 
 class ScenePause : public Scene
 {
-private:
+public:
 	enum Choice
 	{
 		Resume = 0,
 		Retry,
 		ExitStage,
 		BackToTitle,
+
+		ItemCount
 	};
 private:
 	Choice			choice = Choice::Resume;
+	int				currentStageNo = 0;
 	UIObject		sprite{};
 	Donya::XInput	controller{ Donya::Gamepad::PadNumber::PAD_1 };
 public:
@@ -31,6 +34,8 @@ public:
 	void	Draw( float elapsedTime );
 private:
 	void	UpdateChooseItem();
+	void	DrawBackGround() const;
+private:
 	void	StartFade() const;
 private:
 	Result	ReturnResult();
