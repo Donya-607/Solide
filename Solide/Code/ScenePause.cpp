@@ -15,16 +15,10 @@
 #undef max
 #undef min
 
-ScenePause::ScenePause() :
-	choice( Choice::Resume ),
-	sprUI(),
-	controller( Donya::XInput::PadNumber::PAD_1 )
-{}
-ScenePause::~ScenePause() = default;
-
 void ScenePause::Init()
 {
-	//sprUI.LoadSheet( GetSpritePath( SpriteAttribute::UI ), 256U );
+	constexpr size_t maxInstanceCount = 8U;
+	sprite.LoadSprite( GetSpritePath( SpriteAttribute::Pause ), maxInstanceCount );
 }
 
 void ScenePause::Uninit()

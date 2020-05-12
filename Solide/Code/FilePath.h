@@ -36,7 +36,10 @@ enum class SpriteAttribute
 	Cloud,
 	LoadingIcon,
 	LoadingSentence,
+	Number,
+	Pause,
 	TutorialSentence,
+	TitleItems,
 	TitleLogo,
 	TitlePrompt,
 };

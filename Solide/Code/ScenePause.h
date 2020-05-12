@@ -1,27 +1,27 @@
 #pragma once
 
 #include "Donya/GamepadXInput.h"
+#include "Donya/UseImGui.h"
 
-#include "Animation.h"
 #include "Scene.h"
+#include "UI.h"
 
 class ScenePause : public Scene
 {
 private:
 	enum Choice
 	{
-		Nil = -1,
-		BackToTitle = 0,
-		Resume,
-		ReTry,
+		Resume = 0,
+		Retry,
+		ExitStage,
+		BackToTitle,
 	};
 private:
-	Choice			choice;
-	SpriteSheet		sprUI;
-	Donya::XInput	controller;
+	Choice			choice = Choice::Resume;
+	UIObject		sprite{};
+	Donya::XInput	controller{ Donya::Gamepad::PadNumber::PAD_1 };
 public:
-	ScenePause();
-	~ScenePause();
+	ScenePause() : Scene() {}
 public:
 	void	Init();
 	void	Uninit();
@@ -31,6 +31,11 @@ public:
 	void	Draw( float elapsedTime );
 private:
 	void	UpdateChooseItem();
-
+	void	StartFade() const;
+private:
 	Result	ReturnResult();
+private:
+#if USE_IMGUI
+	void	UseImGui();
+#endif // USE_IMGUI
 };
