@@ -300,19 +300,20 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Bullet::UseBulletsImGui();
 #endif // USE_IMGUI
 
+	if ( SaveDataAdmin::Get().HasRequiredChangeStage() )
+	{
+		const auto pDestStageNo = SaveDataAdmin::Get().GetRequiredDestinationOrNullptr();
+		if ( pDestStageNo )
+		{
+			stageNumber = *pDestStageNo;
+			nowWaiting  = true; // Prevent some unexpected behavior.
+			StartFade();
+		}
+		SaveDataAdmin::Get().RemoveChangeStageRequest();
+	}
+
 	if ( Fader::Get().IsClosed() || SaveDataAdmin::Get().HasRequiredChangeStage() )
 	{
-		if ( SaveDataAdmin::Get().HasRequiredChangeStage() )
-		{
-			const auto pDestStageNo = SaveDataAdmin::Get().GetRequiredDestinationOrNullptr();
-			if ( pDestStageNo )
-			{
-				stageNumber = *pDestStageNo;
-			}
-
-			SaveDataAdmin::Get().RemoveChangeStageRequest();
-		}
-
 		if ( ShouldGotoTitleScene( stageNumber ) )
 		{
 			WriteSaveData( SELECT_STAGE_NO );
