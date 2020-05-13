@@ -21,6 +21,7 @@
 #include "Music.h"
 #include "Parameter.h"
 #include "SaveData.h"
+#include "StageNumberDefine.h"
 
 #undef max
 #undef min
@@ -294,6 +295,16 @@ void ScenePause::UpdateChooseItem()
 	choice = scast<Choice>( index );
 }
 
+bool ScenePause::WasTriggeredDecision() const
+{
+	if ( Fader::Get().IsExist() ) { return false; }
+	// else
+
+	const bool required = Donya::Keyboard::Trigger( 'Z' ) || controller.Trigger( Donya::Gamepad::Button::A );
+	// const bool required = Donya::Keyboard::Trigger( 'Z' ) || controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT );
+	return required;
+}
+
 void ScenePause::DrawBackGround() const
 {
 	// Darken.
@@ -318,18 +329,47 @@ void ScenePause::StartFade() const
 	Fader::Get().StartFadeOut( config );
 }
 
+Scene::Result ScenePause::MakeRequest( Choice choice ) const
+{
+	Scene::Result result{};
+	result.AddRequest( Scene::Request::REMOVE_ME );
+
+	switch ( choice )
+	{
+	case ScenePause::Resume:
+		return result;
+	case ScenePause::Retry:
+		SaveDataAdmin::Get().RequireGotoOtherStage( currentStageNo );
+		return result;
+	case ScenePause::ExitStage:
+		SaveDataAdmin::Get().RequireGotoOtherStage( SELECT_STAGE_NO );
+		return result;
+	case ScenePause::BackToTitle:
+		SaveDataAdmin::Get().RequireGotoOtherStage( TITLE_STAGE_NO );
+		return result;
+	default: break;
+	}
+
+	_ASSERT_EXPR( 0, L"Error: Unexpected choice type!" );
+	Scene::Result noop{ Scene::Request::NONE, Scene::Type::Null };
+	return noop;
+}
 Scene::Result ScenePause::ReturnResult()
 {
-	const bool requestPause	= Donya::Keyboard::Trigger( 'P' ) || controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT );
-	const bool allowPause	= !Fader::Get().IsExist();
-	if ( requestPause && allowPause )
+	if ( WasTriggeredDecision() )
 	{
 		Donya::Sound::Play( Music::ItemDecision );
-
-		Scene::Result change{};
-		change.AddRequest( Scene::Request::REMOVE_ME );
-		return change;
+		return MakeRequest( choice );
 	}
+	// else
+
+	const bool wantResume = Donya::Keyboard::Trigger( 'P' ) || controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT );
+	if ( wantResume )
+	{
+		Donya::Sound::Play( Music::ItemDecision );
+		return MakeRequest( Choice::Resume );
+	}
+	// else
 
 	Scene::Result noop{ Scene::Request::NONE, Scene::Type::Null };
 	return noop;

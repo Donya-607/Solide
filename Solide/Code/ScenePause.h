@@ -34,10 +34,12 @@ public:
 	void	Draw( float elapsedTime );
 private:
 	void	UpdateChooseItem();
+	bool	WasTriggeredDecision() const;
 	void	DrawBackGround() const;
 private:
 	void	StartFade() const;
 private:
+	Result	MakeRequest( Choice choice ) const;
 	Result	ReturnResult();
 private:
 #if USE_IMGUI

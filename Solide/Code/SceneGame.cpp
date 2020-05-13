@@ -194,6 +194,7 @@ namespace
 
 void SceneGame::Init()
 {
+	SaveDataAdmin::Get().RemoveChangeStageRequest();
 	SaveDataAdmin::Get().Load();
 
 	// This save is making a save data file if that does not exist,
@@ -299,8 +300,19 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Bullet::UseBulletsImGui();
 #endif // USE_IMGUI
 
-	if ( Fader::Get().IsClosed() )
+	if ( Fader::Get().IsClosed() || SaveDataAdmin::Get().HasRequiredChangeStage() )
 	{
+		if ( SaveDataAdmin::Get().HasRequiredChangeStage() )
+		{
+			const auto pDestStageNo = SaveDataAdmin::Get().GetRequiredDestinationOrNullptr();
+			if ( pDestStageNo )
+			{
+				stageNumber = *pDestStageNo;
+			}
+
+			SaveDataAdmin::Get().RemoveChangeStageRequest();
+		}
+
 		if ( ShouldGotoTitleScene( stageNumber ) )
 		{
 			WriteSaveData( SELECT_STAGE_NO );
