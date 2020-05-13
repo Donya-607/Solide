@@ -118,6 +118,25 @@ void SaveDataAdmin::UnlockStage( int unlockStageNo )
 	// else
 	savedata.unlockedStageNumbers.emplace_back( unlockStageNo );
 }
+void SaveDataAdmin::RequireGotoOtherStage( int destNo )
+{
+	if ( !pRequiredNextStageNo )
+	{  pRequiredNextStageNo = std::make_shared<int>( destNo ); }
+	else
+	{ *pRequiredNextStageNo = destNo; }
+}
+void SaveDataAdmin::RemoveChangeStageRequest()
+{
+	pRequiredNextStageNo.reset();
+}
+bool SaveDataAdmin::HasRequiredChangeStage() const
+{
+	return ( pRequiredNextStageNo ) ? true : false;
+}
+std::shared_ptr<int> SaveDataAdmin::GetRequiredDestinationOrNullptr() const
+{
+	return pRequiredNextStageNo;
+}
 
 void SaveDataAdmin::LoadBin()
 {

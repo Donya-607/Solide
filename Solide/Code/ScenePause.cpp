@@ -6,6 +6,7 @@
 
 #include <cereal/types/vector.hpp>
 
+#include "Donya/Blend.h"
 #include "Donya/Constant.h"
 #include "Donya/Keyboard.h"
 #include "Donya/Serializer.h"
@@ -193,6 +194,8 @@ namespace
 
 void ScenePause::Init()
 {
+	ParamPause::Get().Init();
+
 	constexpr size_t maxInstanceCount = 8U;
 	sprite.LoadSprite( GetSpritePath( SpriteAttribute::Pause ), maxInstanceCount );
 	sprite.alpha	= 1.0f;
@@ -203,10 +206,18 @@ void ScenePause::Init()
 	controller.Update();
 }
 
-void ScenePause::Uninit() {}
+void ScenePause::Uninit()
+{
+	ParamPause::Get().Uninit();
+}
 
 Scene::Result ScenePause::Update( float elapsedTime )
 {
+#if USE_IMGUI
+	ParamPause::Get().UseImGui();
+	UseImGui();
+#endif // USE_IMGUI
+
 	controller.Update();
 
 	UpdateChooseItem();
@@ -216,6 +227,8 @@ Scene::Result ScenePause::Update( float elapsedTime )
 
 void ScenePause::Draw( float elapsedTime )
 {
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+
 	DrawBackGround();
 
 	auto DrawItem = [&]( const Member::Item &source, float scaleMagni, float drawDepth )
@@ -247,6 +260,9 @@ void ScenePause::Draw( float elapsedTime )
 
 void ScenePause::UpdateChooseItem()
 {
+	if ( Fader::Get().IsExist() ) { return; }
+	// else
+
 	bool up{}, down{};
 	if ( controller.IsConnected() )
 	{
@@ -293,6 +309,15 @@ void ScenePause::DrawBackGround() const
 	);
 }
 
+void ScenePause::StartFade() const
+{
+	Fader::Configuration config{};
+	config.type			= Fader::Type::Gradually;
+	config.closeFrame	= Fader::GetDefaultCloseFrame();;
+	config.SetColor( Donya::Color::Code::BLACK );
+	Fader::Get().StartFadeOut( config );
+}
+
 Scene::Result ScenePause::ReturnResult()
 {
 	const bool requestPause	= Donya::Keyboard::Trigger( 'P' ) || controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT );
@@ -309,3 +334,10 @@ Scene::Result ScenePause::ReturnResult()
 	Scene::Result noop{ Scene::Request::NONE, Scene::Type::Null };
 	return noop;
 }
+
+#if USE_IMGUI
+void ScenePause::UseImGui()
+{
+
+}
+#endif // USE_IMGUI

@@ -15,7 +15,7 @@
 
 struct SaveData
 {
-	bool								isEmpty				= true;	// True is indicates a value of this save data is not changes yet.
+	bool								isEmpty				= true;		// True is indicates a value of this save data is not changes yet.
 	int									currentStageNumber	= 0;
 	std::shared_ptr<PlayerInitializer>	pCurrentIntializer;
 	std::vector<CheckPoint::Instance>	remainingCheckPoints;
@@ -51,6 +51,10 @@ private:
 	static constexpr const char *ID = "SaveData";
 	SaveData savedata;
 private:
+	// This member is used for access from each scenes.
+	// The need to place in here is not necessary. I had lazy :(
+	std::shared_ptr<int> pRequiredNextStageNo = nullptr; // This will be valid when a stage change is required.
+private:
 	SaveDataAdmin();
 public:
 	void Load();
@@ -67,6 +71,11 @@ public:
 	void Write( const PlayerInitializer &currentInitializer );
 	void Write( const CheckPoint &remainingCheckPoints );
 	void UnlockStage( int unlockStageNumber );
+public:
+	void RequireGotoOtherStage( int destinationStageNo );
+	void RemoveChangeStageRequest();
+	bool HasRequiredChangeStage() const;
+	std::shared_ptr<int> GetRequiredDestinationOrNullptr() const;
 private:
 	void LoadBin();
 	void LoadJson();
