@@ -312,7 +312,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		SaveDataAdmin::Get().RemoveChangeStageRequest();
 	}
 
-	if ( Fader::Get().IsClosed() || SaveDataAdmin::Get().HasRequiredChangeStage() )
+	if ( Fader::Get().IsClosed() )
 	{
 		if ( ShouldGotoTitleScene( stageNumber ) )
 		{
