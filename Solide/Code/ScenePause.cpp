@@ -161,7 +161,7 @@ public:
 					ImGui::TreePop();
 				};
 
-				ImGui::Text( u8"セレクト画面では，「再開」が「タイトルへ戻る」になります" );
+				ImGui::Text( u8"セレクト画面だと，「タイトルへ戻る」の位置には，２つめの項目の位置が使われます" );
 
 				ShowItem( u8"[ポーズ]", &m.pause );
 
@@ -251,11 +251,40 @@ void ScenePause::Draw( float elapsedTime )
 	DrawItem( data.pause, 1.0f, defaultDepth );
 
 	const size_t chosenIndex = scast<size_t>( choice );
-	for ( size_t i = 0; i < choiceItemCount; ++i )
+
+	if ( currentStageNo == SELECT_STAGE_NO )
 	{
-		const float magni = ( i == chosenIndex ) ? data.choiceMagni	: 1.0f;
-		const float depth = ( i == chosenIndex ) ? chosenDepth		: defaultDepth;
-		DrawItem( data.items[i], magni, depth );
+		// Restrict a user choosable item.
+		// Resume or BackToTitle only.
+
+		auto DrawItemByIndex = [&]( size_t texIndex, size_t posIndex )
+		{
+			const float magni	= ( texIndex == chosenIndex ) ? data.choiceMagni : 1.0f;
+			const float depth	= ( texIndex == chosenIndex ) ? chosenDepth : defaultDepth;
+
+			sprite.drawScale	= data.items[texIndex].drawScale * magni;
+			sprite.pos			= data.items[posIndex].ssDrawPos;
+			sprite.texPos		= data.items[texIndex].texPartPos;
+			sprite.texSize		= data.items[texIndex].texPartSize;
+		
+			sprite.DrawPart( depth );
+		};
+		auto ToIndex = []( Choice v )
+		{
+			return scast<size_t>( v );
+		};
+
+		DrawItemByIndex( ToIndex( Choice::Resume		),	ToIndex( Choice::Resume ) );
+		DrawItemByIndex( ToIndex( Choice::BackToTitle	),	1U );
+	}
+	else
+	{
+		for ( size_t i = 0; i < choiceItemCount; ++i )
+		{
+			const float magni = ( i == chosenIndex ) ? data.choiceMagni	: 1.0f;
+			const float depth = ( i == chosenIndex ) ? chosenDepth		: defaultDepth;
+			DrawItem( data.items[i], magni, depth );
+		}
 	}
 }
 
@@ -282,10 +311,21 @@ void ScenePause::UpdateChooseItem()
 	int index = scast<int>( choice );
 	const int oldIndex = index;
 
-	if ( up		) { index--; }
-	if ( down	) { index++; }
+	if ( currentStageNo == SELECT_STAGE_NO )
+	{
+		// Restrict a user choosable item.
+		// Resume or BackToTitle only.
 
-	index = std::max( 0, std::min( scast<int>( Choice::ItemCount ) - 1, index ) );
+		if ( up		) { index = scast<int>( Choice::Resume		); }
+		if ( down	) { index = scast<int>( Choice::BackToTitle	); }
+	}
+	else
+	{
+		if ( up		) { index--; }
+		if ( down	) { index++; }
+
+		index = std::max( 0, std::min( scast<int>( Choice::ItemCount ) - 1, index ) );
+	}
 
 	if ( index != oldIndex )
 	{
@@ -301,7 +341,6 @@ bool ScenePause::WasTriggeredDecision() const
 	// else
 
 	const bool required = Donya::Keyboard::Trigger( 'Z' ) || controller.Trigger( Donya::Gamepad::Button::A );
-	// const bool required = Donya::Keyboard::Trigger( 'Z' ) || controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT );
 	return required;
 }
 
