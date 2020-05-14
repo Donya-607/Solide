@@ -248,13 +248,16 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Spray )
 class Water : public ObstacleBase
 {
 private:
+	Donya::AABB hurtBox;
+private:
 	friend class cereal::access;
 	template<class Archive>
 	void serialize( Archive &archive, std::uint32_t version )
 	{
 		archive
 		(
-			cereal::base_class<ObstacleBase>( this )
+			cereal::base_class<ObstacleBase>( this ),
+			hurtBox
 		);
 		if ( 1 <= version )
 		{
@@ -268,6 +271,10 @@ public:
 public:
 	Donya::Vector4x4 GetWorldMatrix() const;
 	int GetKind() const override;
+public:
+#if USE_IMGUI
+	void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
+#endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( Water, 0 )
 CEREAL_REGISTER_TYPE( Water )

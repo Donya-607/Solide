@@ -162,6 +162,7 @@ namespace
 		case Tree:	*pOutput = std::make_shared<::Tree>();				return;
 		case Table:	*pOutput = std::make_shared<::Table>();				return;
 		case Spray:	*pOutput = std::make_shared<::Spray>();				return;
+		case Water:	*pOutput = std::make_shared<::Water>();				return;
 		default: _ASSERT_EXPR( 0, L"Error : Unexpected model kind!" );	return;
 		}
 	}
@@ -242,8 +243,16 @@ public:
 				const size_t count = data.size();
 				for ( size_t i = 0; i < count; ++i )
 				{
-					caption = GetModelName( scast<Kind>( i ) );
-					ParameterHelper::ShowAABBNode( caption, &data[i] );
+					Kind kind = scast<Kind>( i );
+					caption = GetModelName( kind );
+					if ( kind == Kind::Water )
+					{
+						ImGui::TextDisabled( caption.c_str() );
+					}
+					else
+					{
+						ParameterHelper::ShowAABBNode( caption, &data[i] );
+					}
 				}
 
 				ImGui::TreePop();
@@ -557,7 +566,7 @@ void Spray::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 
 void Water::Update( float elapsedTime )
 {
-	hitBox = GetModelHitBox( Kind::Water, ParamObstacle::Get().Data() );
+	hitBox = hurtBox;
 }
 void Water::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
@@ -570,16 +579,28 @@ void Water::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matV
 Donya::Vector4x4 Water::GetWorldMatrix() const
 {
 	Donya::Vector4x4 W{};
-	W._11 = hitBox.size.x;
-	W._22 = hitBox.size.y;
-	W._33 = hitBox.size.z;
+	W._11 = hurtBox.size.x;
+	W._22 = hurtBox.size.y;
+	W._33 = hurtBox.size.z;
 	const auto pos = GetPosition();
-	W._41 = pos.x + hitBox.pos.x;
-	W._42 = pos.y + hitBox.pos.y;
-	W._43 = pos.z + hitBox.pos.z;
+	W._41 = pos.x + hurtBox.pos.x;
+	W._42 = pos.y + hurtBox.pos.y;
+	W._43 = pos.z + hurtBox.pos.z;
 	return W;
 }
 int Water::GetKind() const
 {
 	return scast<int>( Kind::Water );
 }
+#if USE_IMGUI
+void Water::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
+{
+	if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	ImGui::DragFloat3( u8"ÉèÅ[ÉãÉhç¿ïW", &pos.x, 0.1f );
+	ParameterHelper::ShowAABBNode( u8"ìñÇΩÇËîªíË", &hurtBox );
+	
+	if ( useTreeNode ) { ImGui::TreePop(); }
+}
+#endif // USE_IMGUI
