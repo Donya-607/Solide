@@ -176,8 +176,9 @@ namespace
 
 		struct
 		{
-			float submergeAmount	= 0.0f;
-			float floatAmount		= 0.0f;
+			float	submergeAmount	= 0.0f;
+			float	floatAmount		= 0.0f;
+			int		aliveFrame		= 1;
 		} hardened;
 	private:
 		friend class cereal::access;
@@ -199,6 +200,10 @@ namespace
 			}
 			if ( 2 <= version )
 			{
+				archive( CEREAL_NVP( hardened.aliveFrame ) );
+			}
+			if ( 3 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -215,7 +220,7 @@ namespace
 		return data.collisions[kind];
 	}
 }
-CEREAL_CLASS_VERSION( Member, 1 )
+CEREAL_CLASS_VERSION( Member, 2 )
 
 class ParamObstacle : public ParameterBase<ParamObstacle>
 {
@@ -277,10 +282,12 @@ public:
 
 			if ( ImGui::TreeNode( u8"固まった足場のパラメータ" ) )
 			{
-				ImGui::DragFloat( u8"初めに沈む量",		&m.hardened.submergeAmount,	0.01f );
-				ImGui::DragFloat( u8"１フレームに浮く量",	&m.hardened.floatAmount,	0.01f );
-				m.hardened.submergeAmount	= std::max( 0.0f, m.hardened.submergeAmount	);
-				m.hardened.floatAmount		= std::max( 0.0f, m.hardened.floatAmount	);
+				ImGui::DragInt  ( u8"生存時間（フレーム）",	&m.hardened.aliveFrame );
+				ImGui::DragFloat( u8"初めに沈む量",			&m.hardened.submergeAmount,	0.01f );
+				ImGui::DragFloat( u8"１フレームに浮く量",		&m.hardened.floatAmount,	0.01f );
+				m.hardened.aliveFrame		= std::max( 1,		m.hardened.aliveFrame		);
+				m.hardened.submergeAmount	= std::max( 0.0f,	m.hardened.submergeAmount	);
+				m.hardened.floatAmount		= std::max( 0.0f,	m.hardened.floatAmount		);
 
 				ImGui::TreePop();
 			}
@@ -641,8 +648,9 @@ void Hardened::Init( const Donya::Vector3 &wsInitialPos )
 {
 	ObstacleBase::Init( wsInitialPos );
 
-	initialPos		= wsInitialPos;
+	aliveTimer		= 0;
 	submergeAmount	= ParamObstacle::Get().Data().hardened.submergeAmount;
+	initialPos		= wsInitialPos;
 }
 void Hardened::Update( float elapsedTime )
 {
@@ -654,6 +662,8 @@ void Hardened::Update( float elapsedTime )
 	submergeAmount =  std::max( 0.0f, submergeAmount );
 	pos = initialPos;
 	pos.y -= submergeAmount;
+
+	aliveTimer++;
 }
 void Hardened::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
@@ -662,6 +672,10 @@ void Hardened::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 void Hardened::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
 	ObstacleBase::DrawHitBox( pRenderer, matVP, color.Product( { 0.8f, 0.8f, 0.8f, 1.0f } ) );
+}
+bool Hardened::ShouldRemove() const
+{
+	return ( ParamObstacle::Get().Data().hardened.aliveFrame <= aliveTimer ) ? true : false;
 }
 int  Hardened::GetKind() const
 {

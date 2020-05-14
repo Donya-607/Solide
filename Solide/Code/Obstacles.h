@@ -285,8 +285,9 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Water )
 class Hardened : public ObstacleBase
 {
 private:
+	int				aliveTimer		= 0;
+	float			submergeAmount	= 0.0f;
 	Donya::Vector3	initialPos;
-	float			submergeAmount = 0.0f;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -307,6 +308,7 @@ public:
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
+	bool ShouldRemove() const override;
 	int  GetKind() const override;
 public:
 #if USE_IMGUI
