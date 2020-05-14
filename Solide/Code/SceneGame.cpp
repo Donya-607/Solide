@@ -1466,6 +1466,30 @@ void SceneGame::ProcessBulletCollision()
 	std::shared_ptr<Bullet::BulletBase> pLhs = nullptr;
 	std::shared_ptr<Bullet::BulletBase> pRhs = nullptr;
 
+	const std::vector<Donya::AABB> waters = ( pObstacles ) ? pObstacles->GetWaterHitBoxes() : std::vector<Donya::AABB>{};
+	auto IsHitToWater = [&]( const Donya::AABB &hitBoxA, const Donya::Sphere &hitBoxB )
+	{
+		for ( const auto &it : waters )
+		{
+			if ( hitBoxB != Donya::Sphere::Nil() )
+			{
+				if ( Donya::AABB::IsHitSphere( it, hitBoxB ) )
+				{
+					return true;
+				}
+			}
+			else
+			if ( hitBoxA != Donya::AABB::Nil() )
+			{
+				if ( Donya::AABB::IsHitAABB( it, hitBoxA ) )
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+
 	// Check a collision in all combination of bullets.
 	// e.g.
 	// 0vs1, 0vs2, 0vs3, ...
@@ -1481,6 +1505,14 @@ void SceneGame::ProcessBulletCollision()
 
 		hitBoxAABB		= pLhs->GetHitBoxAABB();
 		hitBoxSphere	= pLhs->GetHitBoxSphere();
+
+		if ( pLhs->GetElement().Get() == Element::Type::Oil && IsHitToWater( hitBoxAABB, hitBoxSphere ) )
+		{
+			pObstacles->GenerateHardenedBlock( pLhs->GetPosition() );
+			pLhs->HitToObject();
+			break;
+		}
+		// else
 
 		for ( size_t j = i + 1/* Except collide to myself */; j < bulletCount; ++j )
 		{

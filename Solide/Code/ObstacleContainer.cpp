@@ -91,9 +91,25 @@ void ObstacleContainer::SortByDepth()
 	std::sort( pObstacles.begin(), pObstacles.end(), IsGreaterDepth );
 }
 
-void ObstacleContainer::GenerateHardenedBlock()
+void ObstacleContainer::GenerateHardenedBlock( const Donya::Vector3 &wsGenPos )
 {
+	const int kindCount = ObstacleBase::GetModelKindCount();
+	for ( int i = 0; i < kindCount; ++i )
+	{
+		if ( !ObstacleBase::IsHardenedKind( i ) ) { continue; }
+		// else
 
+		std::shared_ptr<ObstacleBase> tmp{};
+		ObstacleBase::AssignDerivedModel( i, &tmp );
+
+		if ( tmp )
+		{
+			pObstacles.push_back( std::move( tmp ) );
+			pObstacles.back()->Init( wsGenPos );
+		}
+
+		break;
+	}
 }
 
 size_t	ObstacleContainer::GetObstacleCount() const

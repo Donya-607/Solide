@@ -320,6 +320,10 @@ bool ObstacleBase::IsWaterKind( int obstacleKind )
 {
 	return ( scast<Kind>( obstacleKind ) == Kind::Water );
 }
+bool ObstacleBase::IsHardenedKind( int obstacleKind )
+{
+	return ( scast<Kind>( obstacleKind ) == Kind::Hardened );
+}
 void ObstacleBase::AssignDerivedModel( int modelKind, std::shared_ptr<ObstacleBase> *pOutput )
 {
 	AssignModel( scast<Kind>( modelKind ), pOutput );
