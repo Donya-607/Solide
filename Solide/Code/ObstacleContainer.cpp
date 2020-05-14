@@ -114,6 +114,25 @@ std::vector<Donya::AABB> ObstacleContainer::GetHitBoxes() const
 		if ( !pIt ) { continue; }
 		// else
 
+		if ( ObstacleBase::IsWaterKind( pIt->GetKind() ) ) { return; }
+		// else
+
+		hitBoxes.emplace_back( pIt->GetHitBox() );
+	}
+
+	return hitBoxes;
+}
+std::vector<Donya::AABB> ObstacleContainer::GetWaterHitBoxes() const
+{
+	std::vector<Donya::AABB> hitBoxes{};
+	for ( const auto &pIt : pObstacles )
+	{
+		if ( !pIt ) { continue; }
+		// else
+
+		if ( !ObstacleBase::IsWaterKind( pIt->GetKind() ) ) { return; }
+		// else
+
 		hitBoxes.emplace_back( pIt->GetHitBox() );
 	}
 

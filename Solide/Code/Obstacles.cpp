@@ -24,6 +24,7 @@ namespace
 		Tree,
 		Table,
 		Spray,
+		Water,
 
 		KindCount
 	};
@@ -37,6 +38,7 @@ namespace
 		"Tree",
 		"Table",
 		"Spray",
+		"Water",
 	};
 
 	struct ModelData
@@ -278,6 +280,10 @@ std::string ObstacleBase::GetModelName( int modelKind )
 {
 	return ::GetModelName( scast<Kind>( modelKind ) );
 }
+bool ObstacleBase::IsWaterKind( int obstacleKind )
+{
+	return ( scast<Kind>( obstacleKind ) == Kind::Water );
+}
 void ObstacleBase::AssignDerivedModel( int modelKind, std::shared_ptr<ObstacleBase> *pOutput )
 {
 	AssignModel( scast<Kind>( modelKind ), pOutput );
@@ -394,7 +400,6 @@ int Table::GetKind() const
 {
 	return scast<int>( Kind::Table );
 }
-
 
 
 void Spray::Update( float elapsedTime )
@@ -548,3 +553,33 @@ void Spray::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 	if ( useTreeNode ) { ImGui::TreePop(); }
 }
 #endif // USE_IMGUI
+
+
+void Water::Update( float elapsedTime )
+{
+	hitBox = GetModelHitBox( Kind::Water, ParamObstacle::Get().Data() );
+}
+void Water::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+{
+	DrawModel( Kind::Water, pRenderer, GetWorldMatrix(), color );
+}
+void Water::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	ObstacleBase::DrawHitBox( pRenderer, matVP, color.Product( { 0.0f, 0.0f, 1.0f, 1.0f } ) );
+}
+Donya::Vector4x4 Water::GetWorldMatrix() const
+{
+	Donya::Vector4x4 W{};
+	W._11 = hitBox.size.x;
+	W._22 = hitBox.size.y;
+	W._33 = hitBox.size.z;
+	const auto pos = GetPosition();
+	W._41 = pos.x + hitBox.pos.x;
+	W._42 = pos.y + hitBox.pos.y;
+	W._43 = pos.z + hitBox.pos.z;
+	return W;
+}
+int Water::GetKind() const
+{
+	return scast<int>( Kind::Water );
+}

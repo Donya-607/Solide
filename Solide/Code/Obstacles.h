@@ -28,6 +28,7 @@ public:
 public:
 	static int  GetModelKindCount();
 	static std::string GetModelName( int modelKind );
+	static bool IsWaterKind( int obstacleKind );
 	/// <summary>
 	/// If set nullptr by this to "pOutputPtr", that means the "modelKind" is invalid.
 	/// </summary>
@@ -187,7 +188,6 @@ CEREAL_REGISTER_TYPE( Table )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Table )
 
 
-
 class Spray : public ObstacleBase
 {
 private:
@@ -244,3 +244,31 @@ CEREAL_CLASS_VERSION( Spray, 0 )
 CEREAL_REGISTER_TYPE( Spray )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Spray )
 
+
+class Water : public ObstacleBase
+{
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			cereal::base_class<ObstacleBase>( this )
+		);
+		if ( 1 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
+public:
+	void Update( float elapsedTime ) override;
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
+public:
+	Donya::Vector4x4 GetWorldMatrix() const;
+	int GetKind() const override;
+};
+CEREAL_CLASS_VERSION( Water, 0 )
+CEREAL_REGISTER_TYPE( Water )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Water )

@@ -52,6 +52,7 @@ public:
 	bool	IsOutOfRange( size_t index ) const;
 	std::shared_ptr<ObstacleBase>	GetObstaclePtrOrNullptr( size_t index ) const;
 	std::vector<Donya::AABB>		GetHitBoxes() const;
+	std::vector<Donya::AABB>		GetWaterHitBoxes() const;
 private:
 	void LoadBin ( int stageNo );
 	void LoadJson( int stageNo );
