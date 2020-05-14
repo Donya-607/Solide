@@ -91,6 +91,11 @@ void ObstacleContainer::SortByDepth()
 	std::sort( pObstacles.begin(), pObstacles.end(), IsGreaterDepth );
 }
 
+void ObstacleContainer::GenerateHardenedBlock()
+{
+
+}
+
 size_t	ObstacleContainer::GetObstacleCount() const
 {
 	return pObstacles.size();

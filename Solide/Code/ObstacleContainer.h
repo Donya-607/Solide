@@ -47,6 +47,7 @@ public:
 	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );
 public:
 	void SortByDepth();
+	void GenerateHardenedBlock();
 public:
 	size_t	GetObstacleCount() const;
 	bool	IsOutOfRange( size_t index ) const;

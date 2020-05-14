@@ -25,6 +25,7 @@ namespace
 		Table,
 		Spray,
 		Water,
+		Hardened,
 
 		KindCount
 	};
@@ -39,6 +40,7 @@ namespace
 		"Table",
 		"Spray",
 		"Water",
+		"Hardened",
 	};
 
 	struct ModelData
@@ -157,12 +159,13 @@ namespace
 
 		switch ( kind )
 		{
-		case Stone:	*pOutput = std::make_shared<::Stone>();				return;
-		case Log:	*pOutput = std::make_shared<::Log>();				return;
-		case Tree:	*pOutput = std::make_shared<::Tree>();				return;
-		case Table:	*pOutput = std::make_shared<::Table>();				return;
-		case Spray:	*pOutput = std::make_shared<::Spray>();				return;
-		case Water:	*pOutput = std::make_shared<::Water>();				return;
+		case Stone:		*pOutput = std::make_shared<::Stone>();			return;
+		case Log:		*pOutput = std::make_shared<::Log>();			return;
+		case Tree:		*pOutput = std::make_shared<::Tree>();			return;
+		case Table:		*pOutput = std::make_shared<::Table>();			return;
+		case Spray:		*pOutput = std::make_shared<::Spray>();			return;
+		case Water:		*pOutput = std::make_shared<::Water>();			return;
+		case Hardened:	*pOutput = std::make_shared<::Hardened>();		return;
 		default: _ASSERT_EXPR( 0, L"Error : Unexpected model kind!" );	return;
 		}
 	}
@@ -170,6 +173,12 @@ namespace
 	struct Member
 	{
 		std::vector<Donya::AABB> collisions;
+
+		struct
+		{
+			float submergeAmount	= 0.0f;
+			float floatAmount		= 0.0f;
+		} hardened;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -181,6 +190,14 @@ namespace
 			);
 
 			if ( 1 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( hardened.submergeAmount	),
+					CEREAL_NVP( hardened.floatAmount	)
+				);
+			}
+			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -198,7 +215,7 @@ namespace
 		return data.collisions[kind];
 	}
 }
-CEREAL_CLASS_VERSION( Member, 0 )
+CEREAL_CLASS_VERSION( Member, 1 )
 
 class ParamObstacle : public ParameterBase<ParamObstacle>
 {
@@ -254,6 +271,16 @@ public:
 						ParameterHelper::ShowAABBNode( caption, &data[i] );
 					}
 				}
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"固まった足場のパラメータ" ) )
+			{
+				ImGui::DragFloat( u8"初めに沈む量",		&m.hardened.submergeAmount,	0.01f );
+				ImGui::DragFloat( u8"１フレームに浮く量",	&m.hardened.floatAmount,	0.01f );
+				m.hardened.submergeAmount	= std::max( 0.0f, m.hardened.submergeAmount	);
+				m.hardened.floatAmount		= std::max( 0.0f, m.hardened.floatAmount	);
 
 				ImGui::TreePop();
 			}
@@ -601,6 +628,61 @@ void Water::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 	ImGui::DragFloat3( u8"ワールド座標", &pos.x, 0.1f );
 	ParameterHelper::ShowAABBNode( u8"当たり判定", &hurtBox );
 	
+	if ( useTreeNode ) { ImGui::TreePop(); }
+}
+#endif // USE_IMGUI
+
+
+void Hardened::Init( const Donya::Vector3 &wsInitialPos )
+{
+	ObstacleBase::Init( wsInitialPos );
+
+	initialPos		= wsInitialPos;
+	submergeAmount	= ParamObstacle::Get().Data().hardened.submergeAmount;
+}
+void Hardened::Update( float elapsedTime )
+{
+	const auto data = ParamObstacle::Get().Data();
+
+	hitBox = GetModelHitBox( Kind::Hardened, data );
+
+	submergeAmount -= data.hardened.floatAmount;
+	submergeAmount =  std::max( 0.0f, submergeAmount );
+	pos = initialPos;
+	pos.y -= submergeAmount;
+}
+void Hardened::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+{
+	DrawModel( Kind::Hardened, pRenderer, GetWorldMatrix(), color );
+}
+void Hardened::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	ObstacleBase::DrawHitBox( pRenderer, matVP, color.Product( { 0.8f, 0.8f, 0.8f, 1.0f } ) );
+}
+int  Hardened::GetKind() const
+{
+	return scast<int>( Kind::Hardened );
+}
+#if USE_IMGUI
+void Hardened::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
+{
+	if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	if ( ImGui::TreeNode( u8"調整部分" ) )
+	{
+		ObstacleBase::ShowImGuiNode( "", /* useTreeNode = */ false );
+		ImGui::TreePop();
+	}
+	if ( ImGui::TreeNode( u8"現在の状態" ) )
+	{
+		ImGui::DragFloat3( u8"初期位置",		&initialPos.x,		0.01f );
+		ImGui::DragFloat ( u8"沈んでいる量",	&submergeAmount,	0.01f );
+		submergeAmount = std::max( 0.0f, submergeAmount );
+
+		ImGui::TreePop();
+	}
+
 	if ( useTreeNode ) { ImGui::TreePop(); }
 }
 #endif // USE_IMGUI

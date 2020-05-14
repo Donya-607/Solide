@@ -29,6 +29,7 @@ public:
 	static int  GetModelKindCount();
 	static std::string GetModelName( int modelKind );
 	static bool IsWaterKind( int obstacleKind );
+	static bool IsHardenedKind( int obstacleKind );
 	/// <summary>
 	/// If set nullptr by this to "pOutputPtr", that means the "modelKind" is invalid.
 	/// </summary>
@@ -279,3 +280,39 @@ public:
 CEREAL_CLASS_VERSION( Water, 0 )
 CEREAL_REGISTER_TYPE( Water )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Water )
+
+
+class Hardened : public ObstacleBase
+{
+private:
+	Donya::Vector3	initialPos;
+	float			submergeAmount = 0.0f;
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			cereal::base_class<ObstacleBase>( this )
+		);
+		if ( 1 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
+public:
+	void Init( const Donya::Vector3 &wsInitialPos ) override;
+	void Update( float elapsedTime ) override;
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
+public:
+	int  GetKind() const override;
+public:
+#if USE_IMGUI
+	void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
+#endif // USE_IMGUI
+};
+CEREAL_CLASS_VERSION( Hardened, 0 )
+CEREAL_REGISTER_TYPE( Hardened )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Hardened )
