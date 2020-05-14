@@ -1577,9 +1577,9 @@ namespace Enemy
 
 		if ( target.pModelParam )
 		{
-			//const auto &initialMotion = target.pModelParam->motionHolder.GetMotion( AcquireMotionIndex() );
-			//target.animator.SetRepeatRange( initialMotion );
-			//target.pose.AssignSkeletal( target.animator.CalcCurrentPose( initialMotion ) );
+			const auto &initialMotion = target.pModelParam->motionHolder.GetMotion( AcquireMotionIndex( target ) );
+			target.animator.SetRepeatRange( initialMotion );
+			target.pose.AssignSkeletal( target.animator.CalcCurrentPose( initialMotion ) );
 		}
 	}
 	bool Chaser::MoverBase::IsTargetClose( Chaser &target, const Donya::Vector3 &targetPos ) const
@@ -1605,6 +1605,7 @@ namespace Enemy
 		{
 			target.velocity		= 0.0f;
 			target.orientation	= target.initializer.orientation;
+			target.UpdateMotion( elapsedTime, AcquireMotionIndex( target ) );
 			return;
 		}
 		// else
@@ -1619,10 +1620,11 @@ namespace Enemy
 		}
 
 		LookToVelocity( target );
+		target.UpdateMotion( elapsedTime, AcquireMotionIndex( target ) );
 	}
-	int  Chaser::Return::AcquireMotionIndex() const
+	int  Chaser::Return::AcquireMotionIndex( const Chaser &target ) const
 	{
-		return MOTION_INDEX_BEGIN;
+		return ( target.velocity.IsZero() ) ? MOTION_INDEX_BEGIN : MOTION_INDEX_PROCESS;
 	}
 	bool Chaser::Return::ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const
 	{
@@ -1663,10 +1665,11 @@ namespace Enemy
 		}
 
 		LookToVelocity( target );
+		target.UpdateMotion( elapsedTime, AcquireMotionIndex( target ) );
 	}
-	int  Chaser::Chase::AcquireMotionIndex() const
+	int  Chaser::Chase::AcquireMotionIndex( const Chaser &target ) const
 	{
-		return MOTION_INDEX_BEGIN;
+		return MOTION_INDEX_PROCESS;
 	}
 	bool Chaser::Chase::ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const
 	{

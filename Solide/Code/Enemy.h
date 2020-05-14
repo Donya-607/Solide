@@ -500,7 +500,7 @@ namespace Enemy
 		public:
 			virtual void Init( Chaser &target );
 			virtual void Update( Chaser &target, float elapsedTime, const Donya::Vector3 &targetPos ) = 0;
-			virtual int  AcquireMotionIndex() const = 0;
+			virtual int  AcquireMotionIndex( const Chaser &target ) const = 0;
 			virtual bool ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const = 0;
 			virtual std::function<void()> GetChangeStateMethod( Chaser &target ) const = 0;
 		protected:
@@ -515,7 +515,7 @@ namespace Enemy
 		{
 		public:
 			void Update( Chaser &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
-			int  AcquireMotionIndex() const override;
+			int  AcquireMotionIndex( const Chaser &target ) const override;
 			bool ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const override;
 			std::function<void()> GetChangeStateMethod( Chaser &target ) const override;
 		public:
@@ -527,7 +527,7 @@ namespace Enemy
 		{
 		public:
 			void Update( Chaser &target, float elapsedTime, const Donya::Vector3 &targetPos ) override;
-			int  AcquireMotionIndex() const override;
+			int  AcquireMotionIndex( const Chaser &target ) const override;
 			bool ShouldChangeState( Chaser &target, const Donya::Vector3 &targetPos ) const override;
 			std::function<void()> GetChangeStateMethod( Chaser &target ) const override;
 		public:
