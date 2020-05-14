@@ -1351,6 +1351,23 @@ void SceneGame::ProcessPlayerCollision()
 
 	if ( pPlayer->IsDead() ) { return; }
 	// else
+
+	// VS. Waters of obstacle.
+	if ( pObstacles )
+	{
+		const auto waters = pObstacles->GetWaterHitBoxes();
+		for ( const auto &it : waters )
+		{
+			if ( Donya::AABB::IsHitAABB( playerBody, it ) )
+			{
+				pPlayer->KillMe();
+				break;
+			}
+		}
+	}
+
+	if ( pPlayer->IsDead() ) { return; }
+	// else
 }
 void SceneGame::ProcessEnemyCollision()
 {
