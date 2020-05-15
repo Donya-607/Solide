@@ -318,3 +318,33 @@ public:
 CEREAL_CLASS_VERSION( Hardened, 0 )
 CEREAL_REGISTER_TYPE( Hardened )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Hardened )
+
+
+class JumpStand : public ObstacleBase
+{
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			cereal::base_class<ObstacleBase>( this )
+		);
+		if ( 1 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
+public:
+	void Update( float elapsedTime ) override;
+	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
+public:
+	int  GetKind() const override;
+public:
+};
+CEREAL_CLASS_VERSION( JumpStand, 0 )
+CEREAL_REGISTER_TYPE( JumpStand )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, JumpStand )
+

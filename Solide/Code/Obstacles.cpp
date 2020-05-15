@@ -26,6 +26,7 @@ namespace
 		Spray,
 		Water,
 		Hardened,
+		JumpStand,
 
 		KindCount
 	};
@@ -41,6 +42,7 @@ namespace
 		"Spray",
 		"Water",
 		"Hardened",
+		"JumpStand",
 	};
 
 	struct ModelData
@@ -166,6 +168,7 @@ namespace
 		case Spray:		*pOutput = std::make_shared<::Spray>();			return;
 		case Water:		*pOutput = std::make_shared<::Water>();			return;
 		case Hardened:	*pOutput = std::make_shared<::Hardened>();		return;
+		case JumpStand:	*pOutput = std::make_shared<::JumpStand>();		return;
 		default: _ASSERT_EXPR( 0, L"Error : Unexpected model kind!" );	return;
 		}
 	}
@@ -704,3 +707,22 @@ void Hardened::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 	if ( useTreeNode ) { ImGui::TreePop(); }
 }
 #endif // USE_IMGUI
+
+
+void JumpStand::Update( float elapsedTime )
+{
+	const auto data = ParamObstacle::Get().Data();
+	hitBox = GetModelHitBox( Kind::JumpStand, data );
+}
+void JumpStand::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+{
+	DrawModel( Kind::JumpStand, pRenderer, GetWorldMatrix(), color );
+}
+void JumpStand::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
+{
+	ObstacleBase::DrawHitBox( pRenderer, matVP, color.Product( { 1.0f, 1.0f, 0.0f, 1.0f } ) );
+}
+int  JumpStand::GetKind() const
+{
+	return scast<int>( Kind::JumpStand );
+}
