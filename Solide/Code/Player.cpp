@@ -839,17 +839,21 @@ void Player::NormalMover::Move( Player &player, float elapsedTime, Input input )
 			Donya::SignBit( velocityXZ.y )
 		};
 
-		velocityXZ.x -= data.normal.decel * scast<float>( oldSign.x ) * elapsedTime;
-		velocityXZ.y -= data.normal.decel * scast<float>( oldSign.y ) * elapsedTime;
+		const float decel = ( player.onIce ) ? data.normal.icedDecel : data.normal.decel;
+		velocityXZ.x -= decel * scast<float>( oldSign.x ) * elapsedTime;
+		velocityXZ.y -= decel * scast<float>( oldSign.y ) * elapsedTime;
 		if ( Donya::SignBit( velocityXZ.x ) != oldSign.x ) { velocityXZ.x = 0.0f; }
 		if ( Donya::SignBit( velocityXZ.y ) != oldSign.y ) { velocityXZ.y = 0.0f; }
 	}
 	else
 	{
-		velocityXZ += input.moveVectorXZ * data.normal.accel * elapsedTime;
-		if ( data.normal.maxSpeed <= velocityXZ.Length() )
+		const float accel		= ( player.onIce ) ? data.normal.icedAccel		: data.normal.accel;
+		const float maxSpeed	= ( player.onIce ) ? data.normal.icedMaxSpeed	: data.normal.maxSpeed;
+
+		velocityXZ += input.moveVectorXZ * accel * elapsedTime;
+		if ( maxSpeed <= velocityXZ.Length() )
 		{
-			velocityXZ = velocityXZ.Unit() * data.normal.maxSpeed;
+			velocityXZ = velocityXZ.Unit() * maxSpeed;
 		}
 
 		player.LookToInput( elapsedTime, input );
@@ -933,11 +937,42 @@ void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 		const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), rotRadian );
 		player.orientation.RotateBy( rotation );
 		player.orientation.Normalize();
+	}
 
-		// Speed that the Y component is excepted.
+	// Update the speed.
+	{
+		const float currentHSpeed	= ToXZVector( player.velocity ).Length();
+		float updatedSpeed{};
+		{
+			float aimingSpeed{};
+			float accel{};
+			float decel{};
+			if ( player.onIce )
+			{
+				aimingSpeed	= data.oiled.basic.icedMaxSpeed;
+				accel		= data.oiled.basic.icedAccel;
+				decel		= data.oiled.basic.icedDecel;
+			}
+			else
+			{
+				aimingSpeed	= data.oiled.basic.maxSpeed;
+				accel		= data.oiled.basic.accel;
+				decel		= data.oiled.basic.decel;
+			}
 
-		const float slideSpeed = data.oiled.basic.maxSpeed;
-		Donya::Vector3 rotatedVelocity = player.orientation.LocalFront() * slideSpeed;
+			if ( currentHSpeed < aimingSpeed )
+			{
+				updatedSpeed = currentHSpeed + accel;
+				updatedSpeed = std::min( aimingSpeed, updatedSpeed );
+			}
+			else
+			{
+				updatedSpeed = currentHSpeed - decel;
+				updatedSpeed = std::max( aimingSpeed, updatedSpeed );
+			}
+		}
+		
+		const Donya::Vector3 rotatedVelocity = player.orientation.LocalFront() * updatedSpeed;
 		AssignToXZ( &player.velocity, rotatedVelocity );
 	}
 
