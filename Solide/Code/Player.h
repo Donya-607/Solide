@@ -206,6 +206,10 @@ public:
 	{
 		return onGround;
 	}
+	bool OnIce() const
+	{
+		return onIce && onGround;
+	}
 	Donya::Quaternion GetOrientation() const
 	{
 		return orientation;

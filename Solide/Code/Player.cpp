@@ -839,7 +839,7 @@ void Player::NormalMover::Move( Player &player, float elapsedTime, Input input )
 			Donya::SignBit( velocityXZ.y )
 		};
 
-		const float decel = ( player.onIce ) ? data.normal.icedDecel : data.normal.decel;
+		const float decel = ( player.OnIce() ) ? data.normal.icedDecel : data.normal.decel;
 		velocityXZ.x -= decel * scast<float>( oldSign.x ) * elapsedTime;
 		velocityXZ.y -= decel * scast<float>( oldSign.y ) * elapsedTime;
 		if ( Donya::SignBit( velocityXZ.x ) != oldSign.x ) { velocityXZ.x = 0.0f; }
@@ -847,8 +847,8 @@ void Player::NormalMover::Move( Player &player, float elapsedTime, Input input )
 	}
 	else
 	{
-		const float accel		= ( player.onIce ) ? data.normal.icedAccel		: data.normal.accel;
-		const float maxSpeed	= ( player.onIce ) ? data.normal.icedMaxSpeed	: data.normal.maxSpeed;
+		const float accel		= ( player.OnIce() ) ? data.normal.icedAccel	: data.normal.accel;
+		const float maxSpeed	= ( player.OnIce() ) ? data.normal.icedMaxSpeed	: data.normal.maxSpeed;
 
 		velocityXZ += input.moveVectorXZ * accel * elapsedTime;
 		if ( maxSpeed <= velocityXZ.Length() )
@@ -881,7 +881,7 @@ void Player::OilMover::Init( Player &player )
 	const auto data = FetchMember();
 	player.hitBox = data.oiled.basic.hitBoxStage;
 
-	Donya::Vector3 initVelocity = player.orientation.LocalFront() * data.oiled.basic.maxSpeed;
+	const Donya::Vector3 initVelocity = player.orientation.LocalFront() * data.oiled.basic.maxSpeed;
 	AssignToXZ( &player.velocity, initVelocity );
 }
 void Player::OilMover::Uninit( Player &player )
@@ -908,46 +908,15 @@ void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 		betweenRadian = acosf( betweenRadian );
 	}
 
-	// Doing untilt only.
-	if ( input.moveVectorXZ.IsZero() || fabsf( betweenRadian ) < ToRadian( data.oiled.turnThreshold ) )
+	auto UpdateVelocity = [&]()
 	{
-		int  sign =  Donya::SignBit( tilt );
-		if ( sign == 0 ) { return; }
-		// else
-
-		float subtract = data.oiled.untiltDegree * sign;
-		if ( fabsf( tilt ) <= fabsf( subtract ) )
-		{
-			tilt = 0.0f;
-		}
-		else
-		{
-			tilt -= subtract;
-		}
-
-		return;
-	}
-	// else
-
-	const int sideSign = ( betweenCross < 0.0f ) ? 1 : -1;
-
-	// Rotation of move-vector.
-	{
-		const float rotRadian = ToRadian( data.oiled.turnDegree ) * sideSign;
-		const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), rotRadian );
-		player.orientation.RotateBy( rotation );
-		player.orientation.Normalize();
-	}
-
-	// Update the speed.
-	{
-		const float currentHSpeed	= ToXZVector( player.velocity ).Length();
+		const float currentHSpeed = ToXZVector( player.velocity ).Length();
 		float updatedSpeed{};
 		{
 			float aimingSpeed{};
 			float accel{};
 			float decel{};
-			if ( player.onIce )
+			if ( player.OnIce() )
 			{
 				aimingSpeed	= data.oiled.basic.icedMaxSpeed;
 				accel		= data.oiled.basic.icedAccel;
@@ -972,8 +941,41 @@ void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 			}
 		}
 		
-		const Donya::Vector3 rotatedVelocity = player.orientation.LocalFront() * updatedSpeed;
-		AssignToXZ( &player.velocity, rotatedVelocity );
+		const Donya::Vector3 updatedVelocity = player.orientation.LocalFront() * updatedSpeed;
+		AssignToXZ( &player.velocity, updatedVelocity );
+	};
+
+	// Untilt only.
+	if ( input.moveVectorXZ.IsZero() || fabsf( betweenRadian ) < ToRadian( data.oiled.turnThreshold ) )
+	{
+		UpdateVelocity();
+
+		const int sign = Donya::SignBit( tilt );
+		if ( sign == 0 ) { return; }
+		// else
+
+		const float subtract = data.oiled.untiltDegree * sign;
+		if ( fabsf( tilt ) <= fabsf( subtract ) )
+		{
+			tilt = 0.0f;
+		}
+		else
+		{
+			tilt -= subtract;
+		}
+
+		return;
+	}
+	// else
+
+	const int sideSign = ( betweenCross < 0.0f ) ? 1 : -1;
+
+	// Rotation of move-vector.
+	{
+		const float rotRadian = ToRadian( data.oiled.turnDegree ) * sideSign;
+		const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), rotRadian );
+		player.orientation.RotateBy( rotation );
+		player.orientation.Normalize();
 	}
 
 	// Tilt the orientation.
@@ -991,6 +993,8 @@ void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 			tilt = data.oiled.maxTiltDegree * sideSign;
 		}
 	}
+
+	UpdateVelocity();
 }
 void Player::OilMover::Jump( Player &player, float elapsedTime )
 {
