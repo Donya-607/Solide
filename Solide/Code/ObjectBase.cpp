@@ -97,12 +97,15 @@ void Solid::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, 
 
 
 
-Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+Actor::MoveResult Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
+	Actor::MoveResult result;
+	result.lastResult.wasHit = false;
+
 	if ( !pTerrain || !pTerrainMatrix )
 	{
 		pos += movement;
-		return Donya::Vector3::Zero();
+		return result;
 	}
 	// else
 
@@ -112,9 +115,8 @@ Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Do
 	const Donya::Vector3 xzMovement{ movement.x,	0.0f,		movement.z	};
 	const Donya::Vector3 yMovement { 0.0f,			movement.y,	0.0f		};
 
-	Donya::Vector3 lastNormal{};
 	if ( !xzMovement.IsZero() ) { MoveXZImpl( xzMovement, wsRayOffsets, 0, solids, pTerrain, pTerrainMatrix ); }
-	if ( !yMovement.IsZero()  ) { lastNormal = MoveYImpl( yMovement, solids, pTerrain, pTerrainMatrix ); }
+	if ( !yMovement.IsZero()  ) { result = MoveYImpl( yMovement, solids, pTerrain, pTerrainMatrix ); }
 
 	// If a face is there under from my foot, I correct onto the face for considering a slope.
 	// But this correction is not necessary if the vertical movement is up.
@@ -131,11 +133,11 @@ Donya::Vector3 Actor::Move( const Donya::Vector3 &movement, const std::vector<Do
 			const Donya::Vector3 footPos = pos - verticalSize;
 			const Donya::Vector3 diff = resultV.raycastResult.intersection - footPos;
 			pos.y += diff.y;
-			lastNormal = resultV.raycastResult.nearestPolygon.normal;
+			result.lastNormal = resultV.raycastResult.nearestPolygon.normal;
 		}
 	}
 
-	return lastNormal;
+	return result;
 }
 
 Actor::AABBResult		Actor::CalcCorrectedVector( const Donya::Vector3 &vector, const std::vector<Donya::AABB> &solids ) const
@@ -526,38 +528,40 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 
 	pos += applyVelocity;
 }
-Donya::Vector3 Actor::MoveYImpl( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+Actor::MoveResult Actor::MoveYImpl( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	// The hit-box size of projected to movement component.
 	const Donya::Vector3 extendSize = MakeSizeOffset( hitBox.size, yMovement );
 
 	// Y moving does not need the correction recursively.
 	constexpr int RECURSIVE_LIMIT = 1;
-	auto result = CalcCorrectedVector( RECURSIVE_LIMIT, yMovement + extendSize, pTerrain, pTerrainMatrix );
-	result.correctedVector -= extendSize;
+	auto rayResult = CalcCorrectedVector( RECURSIVE_LIMIT, yMovement + extendSize, pTerrain, pTerrainMatrix );
+	rayResult.correctedVector -= extendSize;
 	
 	const Donya::Vector3 sizeOffset	= Donya::Vector3::Up() * hitBox.size.y * scast<float>( Donya::SignBit( yMovement.y ) );
-	const Donya::Vector3 destPos	= ( result.raycastResult.wasHit )
-									? result.raycastResult.intersection - sizeOffset
-									: pos + result.correctedVector;
+	const Donya::Vector3 destPos	= ( rayResult.raycastResult.wasHit )
+									? rayResult.raycastResult.intersection - sizeOffset
+									: pos + rayResult.correctedVector;
 	const Donya::Vector3 actualMovement = destPos - pos;
 	
 	const auto aabbResult = CalcCorrectedVector( actualMovement, solids );
 	pos += aabbResult.correctedVector;
 
-	Donya::Vector3 faceNormal = result.raycastResult.nearestPolygon.normal;
+	MoveResult result;
+	result.lastNormal = rayResult.raycastResult.nearestPolygon.normal;
+	result.lastResult = rayResult.raycastResult;
 
 	// If the position corrected by AABB, We should return the AABB's normal.
 	if ( aabbResult.wasHit )
 	{
 		const Donya::Vector3 directlyMovedPos = pos + actualMovement;
 		const Donya::Vector3 diff = pos - directlyMovedPos;
-		faceNormal.x = 0.0f;
-		faceNormal.y = scast<float>( Donya::SignBit( diff.y ) );
-		faceNormal.z = 0.0f;
+		result.lastNormal.x = 0.0f;
+		result.lastNormal.y = scast<float>( Donya::SignBit( diff.y ) );
+		result.lastNormal.z = 0.0f;
 	}
 
-	return faceNormal;
+	return result;
 }
 
 Donya::Vector3 Actor::CalcCorrectedVectorByMyHitBox( const Donya::Vector3 &velocity, const std::vector<Donya::Vector3> &wsRayOffsets, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )

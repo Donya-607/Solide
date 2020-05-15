@@ -246,6 +246,8 @@ namespace
 
 		Donya::Vector4 burningColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 		Donya::Vector4 drawDeadColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+		int iceMaterialIndex = 0;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -302,12 +304,16 @@ namespace
 			}
 			if ( 11 <= version )
 			{
+				archive( CEREAL_NVP( iceMaterialIndex ) );
+			}
+			if ( 12 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				10 )
+CEREAL_CLASS_VERSION( Member,				11 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	4 )
 CEREAL_CLASS_VERSION( Member::OilMember,	2 )
 
@@ -420,6 +426,7 @@ public:
 				ImGui::DragInt( u8"オイル長押しの発動フレーム", &m.transTriggerFrame );
 				m.transTriggerFrame = std::max( 1, m.transTriggerFrame );
 
+				ImGui::DragInt( u8"氷床とみなすマテリアル番号", &m.iceMaterialIndex );
 
 				if ( ImGui::TreeNode( u8"レイピック時のレイのオフセット" ) )
 				{
@@ -1113,8 +1120,9 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	{
 		it = orientation.RotateVector( it );
 	}
-	const Donya::Vector3 standingNormal = Actor::Move( velocity, rotatedOffsets, solids, pTerrain, pTerrainMat );
 
+	const auto result = Actor::Move( velocity, rotatedOffsets, solids, pTerrain, pTerrainMat );
+	const Donya::Vector3 standingNormal = result.lastNormal;
 	// bool wasCorrectedV = WasCorrectedVertically( oldPos, pTerrain );
 
 	// If now standing on some plane, that means corrected to vertically.
@@ -1147,7 +1155,14 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 		KillMe();
 	}
 
-	// TODO: Change the "onIce" state by moving result.
+	if ( onGround && result.lastResult.nearestPolygon.materialIndex == data.iceMaterialIndex )
+	{
+		onIce = true;
+	}
+	else
+	{
+		onIce = false;
+	}
 }
 
 void Player::Draw( RenderingHelper *pRenderer )
