@@ -132,6 +132,10 @@ namespace
 
 			Donya::Vector4 drawColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 			RenderingHelper::AdjustColorConstant drawColorAdjustment;
+
+			float icedAccel		= 0.01f;
+			float icedDecel		= 0.01f;
+			float icedMaxSpeed	= 0.1f;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -160,6 +164,15 @@ namespace
 					archive( CEREAL_NVP( drawColorAdjustment ) );
 				}
 				if ( 4 <= version )
+				{
+					archive
+					(
+						CEREAL_NVP( icedAccel		),
+						CEREAL_NVP( icedDecel		),
+						CEREAL_NVP( icedMaxSpeed	)
+					);
+				}
+				if ( 5 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -295,7 +308,7 @@ namespace
 	};
 }
 CEREAL_CLASS_VERSION( Member,				10 )
-CEREAL_CLASS_VERSION( Member::BasicMember,	3 )
+CEREAL_CLASS_VERSION( Member::BasicMember,	4 )
 CEREAL_CLASS_VERSION( Member::OilMember,	2 )
 
 class ParamPlayer : public ParameterBase<ParamPlayer>
@@ -356,11 +369,14 @@ public:
 				if ( !ImGui::TreeNode( prefix.c_str() ) ) { return; }
 				// else
 				
-				ImGui::DragFloat( ( prefix + u8"：加速量"	).c_str(),		&p->accel,			0.01f, 0.0f );
-				ImGui::DragFloat( ( prefix + u8"：減速量"	).c_str(),		&p->decel,			0.01f, 0.0f );
-				ImGui::DragFloat( ( prefix + u8"：最高速度"	).c_str(),		&p->maxSpeed,		0.01f, 0.0f );
-				ImGui::DragFloat( ( prefix + u8"：跳躍力"	).c_str(),		&p->jumpStrength,	0.01f, 0.0f );
-				ImGui::DragFloat( ( prefix + u8"：重力"		).c_str(),		&p->gravity,		0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：加速量"		).c_str(),		&p->accel,			0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：減速量"		).c_str(),		&p->decel,			0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：最高速度"		).c_str(),		&p->maxSpeed,		0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：氷床・加速量"	).c_str(),		&p->icedAccel,		0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：氷床・減速量"	).c_str(),		&p->icedDecel,		0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：氷床・最高速度"	).c_str(),		&p->icedMaxSpeed,	0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：跳躍力"		).c_str(),		&p->jumpStrength,	0.01f, 0.0f );
+				ImGui::DragFloat( ( prefix + u8"：重力"			).c_str(),		&p->gravity,		0.01f, 0.0f );
 				ParameterHelper::ShowAABBNode( prefix + u8"：当たり判定・ＶＳ地形", &p->hitBoxStage );
 				p->shotDesc.ShowImGuiNode( { prefix + u8"：ショット詳細" } );
 				ImGui::ColorEdit4( u8"描画色", &p->drawColor.x );
@@ -1091,6 +1107,8 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 	{
 		KillMe();
 	}
+
+	// TODO: Change the "onIce" state by moving result.
 }
 
 void Player::Draw( RenderingHelper *pRenderer )
@@ -1339,6 +1357,7 @@ void Player::UseImGui()
 
 		bool nowOiled = IsOiled(); // Immutable.
 		ImGui::Checkbox( u8"地上にいる？",		&onGround	);
+		ImGui::Checkbox( u8"氷床にいる？",		&onIce		);
 		ImGui::Checkbox( u8"あぶらを使えるか？",	&canUseOil	);
 		ImGui::Checkbox( u8"あぶら状態か？",		&nowOiled	);
 

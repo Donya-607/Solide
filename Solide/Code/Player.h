@@ -178,6 +178,7 @@ private:
 	InputManager					inputManager;
 	std::shared_ptr<EffectHandle>	pEffect		= nullptr;	// Will used as burning effect.
 	bool							onGround	= false;
+	bool							onIce		= false;
 	bool							canUseOil	= true;		// Will recovery when landing.
 public:
 	void Init( const PlayerInitializer &parameter );
