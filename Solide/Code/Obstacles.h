@@ -322,6 +322,8 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Hardened )
 
 class JumpStand : public ObstacleBase
 {
+public:
+	static float GetJumpPower();
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -342,7 +344,6 @@ public:
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
 	int  GetKind() const override;
-public:
 };
 CEREAL_CLASS_VERSION( JumpStand, 0 )
 CEREAL_REGISTER_TYPE( JumpStand )

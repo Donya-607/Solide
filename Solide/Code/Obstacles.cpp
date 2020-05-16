@@ -183,6 +183,8 @@ namespace
 			float	floatAmount		= 0.0f;
 			int		aliveFrame		= 1;
 		} hardened;
+
+		float jumpStandStrength		= 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -207,6 +209,10 @@ namespace
 			}
 			if ( 3 <= version )
 			{
+				archive( CEREAL_NVP( jumpStandStrength ) );
+			}
+			if ( 4 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -223,7 +229,7 @@ namespace
 		return data.collisions[kind];
 	}
 }
-CEREAL_CLASS_VERSION( Member, 2 )
+CEREAL_CLASS_VERSION( Member, 3 )
 
 class ParamObstacle : public ParameterBase<ParamObstacle>
 {
@@ -291,6 +297,13 @@ public:
 				m.hardened.aliveFrame		= std::max( 1,		m.hardened.aliveFrame		);
 				m.hardened.submergeAmount	= std::max( 0.0f,	m.hardened.submergeAmount	);
 				m.hardened.floatAmount		= std::max( 0.0f,	m.hardened.floatAmount		);
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"ジャンプ台" ) )
+			{
+				ImGui::DragFloat( u8"加えるジャンプ力", &m.jumpStandStrength, 0.01f );
 
 				ImGui::TreePop();
 			}
@@ -709,6 +722,10 @@ void Hardened::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 #endif // USE_IMGUI
 
 
+float JumpStand::GetJumpPower()
+{
+	return ParamObstacle::Get().Data().jumpStandStrength;
+}
 void JumpStand::Update( float elapsedTime )
 {
 	const auto data = ParamObstacle::Get().Data();
