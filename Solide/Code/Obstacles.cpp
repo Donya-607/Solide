@@ -347,6 +347,10 @@ bool ObstacleBase::IsHardenedKind( int obstacleKind )
 {
 	return ( scast<Kind>( obstacleKind ) == Kind::Hardened );
 }
+bool ObstacleBase::IsJumpStandKind( int obstacleKind )
+{
+	return ( scast<Kind>( obstacleKind ) == Kind::JumpStand );
+}
 void ObstacleBase::AssignDerivedModel( int modelKind, std::shared_ptr<ObstacleBase> *pOutput )
 {
 	AssignModel( scast<Kind>( modelKind ), pOutput );

@@ -191,6 +191,7 @@ public:
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
 public:
 	void MakeDamage( const Element &effect ) const;
+	void JumpByStand();
 	void KillMe();
 public:
 	std::vector<Element::Type> GetUncollidableTypes() const;
@@ -210,7 +211,11 @@ public:
 	{
 		return onIce && onGround;
 	}
-	Donya::Quaternion GetOrientation() const
+	Donya::Vector3		GetVelocity() const
+	{
+		return velocity;
+	}
+	Donya::Quaternion	GetOrientation() const
 	{
 		return orientation;
 	}

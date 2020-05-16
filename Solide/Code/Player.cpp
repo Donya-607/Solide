@@ -25,6 +25,7 @@
 #include "FilePath.h"
 #include "Music.h"
 #include "Parameter.h"
+#include "Obstacles.h"			// Use JumpStand::GetJumpPower().
 
 #undef max
 #undef min
@@ -1228,6 +1229,11 @@ void Player::MakeDamage( const Element &effect ) const
 
 	element.Add( notOilyEffect.Get() );
 }
+void Player::JumpByStand()
+{
+	const float  strength = JumpStand::GetJumpPower();
+	velocity.y = strength;
+}
 void Player::KillMe()
 {
 	ResetMover<DeadMover>();
@@ -1407,6 +1413,10 @@ void Player::UseImGui()
 		{
 			pos.y		= 1.0f;
 			velocity.y	= 0.0f;
+		}
+		if ( ImGui::Button( u8"ÉWÉÉÉìÉvë‰Ç…ÇÊÇÈíµñÙÇé¿çs" ) )
+		{
+			JumpByStand();
 		}
 
 		bool nowOiled = IsOiled(); // Immutable.

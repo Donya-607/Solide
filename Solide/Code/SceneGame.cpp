@@ -351,6 +351,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	Bullet::BulletAdmin::Get().Update( elapsedTime );
 
+	PlayerVSJumpStand();
+
 	// Physic updates.
 	{
 		const auto solids  = pObstacles->GetHitBoxes();
@@ -1251,6 +1253,41 @@ void SceneGame::ClearUpdate( float elapsedTime )
 bool SceneGame::NowWaiting() const
 {
 	return nowWaiting;
+}
+
+void SceneGame::PlayerVSJumpStand()
+{
+	if ( !pPlayer			) { return; }
+	if ( pPlayer->IsDead()	) { return; }
+	if ( !pObstacles		) { return; }
+	// else
+
+	const auto  jumpStandBodies = pObstacles->GetJumpStandHitBoxes();
+	Donya::AABB jumpStandBody{};
+
+	const Donya::Vector3 prevPlayerPos = pPlayer->GetPosition();
+	Donya::AABB playerMovedBody = pPlayer->GetHitBox();
+	playerMovedBody.pos += pPlayer->GetVelocity();
+
+	auto IsRidingOn = [&]( const Donya::AABB &other )
+	{
+		// If we wanna consider to riding, The previous player position must over the other's ceil.
+		const float otherCeil = other.pos.y + other.size.y;
+		const float playerTop = prevPlayerPos.y; // The center position is not as suitable as a top of dedicated hitBox, still so-so good.
+		if ( playerTop < otherCeil ) { return false; }
+		// else
+
+		return Donya::AABB::IsHitAABB( playerMovedBody, other );
+	};
+
+	for ( const auto &it : jumpStandBodies )
+	{
+		if ( IsRidingOn( it ) )
+		{
+			pPlayer->JumpByStand();
+			break;
+		}
+	}
 }
 
 std::shared_ptr<Bullet::BulletBase> SceneGame::FindCollidedBulletOrNullptr( const Donya::AABB &other, const std::vector<Element::Type> &exceptTypes ) const

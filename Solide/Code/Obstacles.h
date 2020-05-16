@@ -30,6 +30,7 @@ public:
 	static std::string GetModelName( int modelKind );
 	static bool IsWaterKind( int obstacleKind );
 	static bool IsHardenedKind( int obstacleKind );
+	static bool IsJumpStandKind( int obstacleKind );
 	/// <summary>
 	/// If set nullptr by this to "pOutputPtr", that means the "modelKind" is invalid.
 	/// </summary>

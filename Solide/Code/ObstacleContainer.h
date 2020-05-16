@@ -54,6 +54,7 @@ public:
 	std::shared_ptr<ObstacleBase>	GetObstaclePtrOrNullptr( size_t index ) const;
 	std::vector<Donya::AABB>		GetHitBoxes() const;
 	std::vector<Donya::AABB>		GetWaterHitBoxes() const;
+	std::vector<Donya::AABB>		GetJumpStandHitBoxes() const;
 private:
 	void LoadBin ( int stageNo );
 	void LoadJson( int stageNo );

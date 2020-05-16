@@ -159,6 +159,22 @@ std::vector<Donya::AABB> ObstacleContainer::GetWaterHitBoxes() const
 
 	return hitBoxes;
 }
+std::vector<Donya::AABB> ObstacleContainer::GetJumpStandHitBoxes() const
+{
+	std::vector<Donya::AABB> hitBoxes{};
+	for ( const auto &pIt : pObstacles )
+	{
+		if ( !pIt ) { continue; }
+		// else
+
+		if ( !ObstacleBase::IsJumpStandKind( pIt->GetKind() ) ) { continue; }
+		// else
+
+		hitBoxes.emplace_back( pIt->GetHitBox() );
+	}
+
+	return hitBoxes;
+}
 
 void ObstacleContainer::LoadBin ( int stageNumber )
 {

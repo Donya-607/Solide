@@ -125,6 +125,8 @@ private:
 	void	ClearUpdate( float elapsedTime );
 	bool	NowWaiting() const;
 
+	void	PlayerVSJumpStand();
+
 	std::shared_ptr<Bullet::BulletBase> FindCollidedBulletOrNullptr( const Donya::AABB &other, const std::vector<Element::Type> &exceptTypes = {} ) const;
 	void	ProcessPlayerCollision();
 	void	ProcessEnemyCollision();
