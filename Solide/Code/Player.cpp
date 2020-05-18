@@ -249,7 +249,7 @@ namespace
 		Donya::Vector4 burningColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 		Donya::Vector4 drawDeadColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
-		std::string iceMaterialName = 0;
+		std::string iceMaterialName;
 	private:
 		friend class cereal::access;
 		template<class Archive>
