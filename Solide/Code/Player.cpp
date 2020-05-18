@@ -3,6 +3,7 @@
 #include <algorithm>			// For std::max(), min()
 #include <array>
 
+#include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 
 #include "Donya/CBuffer.h"
@@ -248,7 +249,7 @@ namespace
 		Donya::Vector4 burningColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 		Donya::Vector4 drawDeadColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
-		int iceMaterialIndex = 0;
+		std::string iceMaterialName = 0;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -305,7 +306,7 @@ namespace
 			}
 			if ( 11 <= version )
 			{
-				archive( CEREAL_NVP( iceMaterialIndex ) );
+				archive( CEREAL_NVP( iceMaterialName ) );
 			}
 			if ( 12 <= version )
 			{
@@ -427,7 +428,13 @@ public:
 				ImGui::DragInt( u8"オイル長押しの発動フレーム", &m.transTriggerFrame );
 				m.transTriggerFrame = std::max( 1, m.transTriggerFrame );
 
-				ImGui::DragInt( u8"氷床とみなすマテリアル番号", &m.iceMaterialIndex );
+				constexpr size_t bufferSize = 512U;
+				static std::array<char, bufferSize + 1/* Null termination */> inputBuffer{};
+				ImGui::InputText( u8"氷床とみなすマテリアル名", inputBuffer.data(), bufferSize );
+				if ( ImGui::Button( u8"マテリアル名を反映" ) )
+				{
+					m.iceMaterialName = inputBuffer.data();
+				}
 
 				if ( ImGui::TreeNode( u8"レイピック時のレイのオフセット" ) )
 				{
@@ -1156,7 +1163,7 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 		KillMe();
 	}
 
-	if ( onGround && result.lastResult.nearestPolygon.materialIndex == data.iceMaterialIndex )
+	if ( onGround && result.lastResult.nearestPolygon.materialName == data.iceMaterialName )
 	{
 		onIce = true;
 	}
