@@ -55,6 +55,7 @@ namespace
 
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
 
+		int maxPlayerRemains = 1;
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -101,12 +102,16 @@ namespace
 			}
 			if ( 5 <= version )
 			{
+				archive( CEREAL_NVP( maxPlayerRemains ) );
+			}
+			if ( 6 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 4 )
+CEREAL_CLASS_VERSION( Member, 5 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -168,6 +173,14 @@ public:
 			}
 
 			ParameterHelper::ShowConstantNode( u8"近くのオブジェクトに適用する透明度", &m.transparency );
+
+			if ( ImGui::TreeNode( u8"その他" ) )
+			{
+				ImGui::DragInt( u8"自機の最大残機数", &m.maxPlayerRemains );
+				m.maxPlayerRemains = std::max( 0, m.maxPlayerRemains );
+
+				ImGui::TreePop();
+			}
 
 			ShowIONode( m );
 
@@ -318,6 +331,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		SaveDataAdmin::Get().RemoveChangeStageRequest();
 	}
 
+	// Stage transition process.
 	if ( Fader::Get().IsClosed() )
 	{
 		if ( ShouldGotoTitleScene( stageNumber ) )
@@ -628,6 +642,11 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 		pPlayerIniter->LoadParameter( stageNo );
 	}
 	PlayerInit( stageNo );
+
+	if ( stageNo == SELECT_STAGE_NO )
+	{
+		RevivePlayerRemains();
+	}
 
 	CameraInit();
 
@@ -1080,10 +1099,37 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	if ( !pPlayer ) { return; }
 	// else
 
+	// Use for be able to identify to "Should I revive the remains?".
+	constexpr int wantReviveRemainsSign = -2;
+
 	if ( pPlayer->IsDead() && !nowWaiting )
 	{
+		if ( playerRemains <= 0 )
+		{
+			playerRemains = wantReviveRemainsSign;
+
+			if ( !Fader::Get().IsExist() )
+			{
+				StartFade();
+			}
+
+			Player::Input empty{};
+			empty.moveVectorXZ = 0.0f;
+			empty.useJump = empty.useOil = false;
+			pPlayer->Update( elapsedTime, empty );
+			return;
+		}
+		// else
+
+		playerRemains--;
+
 		// Re-generate.
 		PlayerInit( stageNumber );
+	}
+
+	if ( playerRemains == wantReviveRemainsSign )
+	{
+		RevivePlayerRemains();
 	}
 
 	Donya::Vector2		moveVector{};
@@ -1112,6 +1158,7 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 		// useOil			=  Donya::Keyboard::Trigger( 'X' );
 	}
 
+	// Restrict the operation.
 	if ( nowWaiting )
 	{
 		moveVector	= Donya::Vector2::Zero();
@@ -1165,6 +1212,10 @@ void SceneGame::PlayerUninit()
 	
 	pPlayer.reset();
 	pPlayerIniter.reset();
+}
+void SceneGame::RevivePlayerRemains()
+{
+	playerRemains = FetchMember().maxPlayerRemains;
 }
 
 void SceneGame::EnemyUpdate( float elapsedTime )
@@ -1854,6 +1905,13 @@ void SceneGame::UseImGui()
 
 		if ( pPlayerIniter )
 		{ pPlayerIniter->ShowImGuiNode( u8"自機の初期化情報", stageNumber ); }
+		if ( ImGui::TreeNode( u8"自機の残機数" ) )
+		{
+			ImGui::DragInt( u8"１以上で有効です", &playerRemains );
+			playerRemains = std::max( 0, playerRemains );
+
+			ImGui::TreePop();
+		}
 		ImGui::Text( "" );
 
 		if ( pObstacles )

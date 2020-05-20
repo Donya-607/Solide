@@ -168,7 +168,6 @@ private:
 		bool IsDead() const override { return true; }
 	};
 private:
-	int								remains		= 1;
 	int								burnTimer	= 0;
 	float							hopPitching	= 0.0f;		// Radian. Use when hopping that will happen when used an oil.
 	mutable Element					element;				// Will change in const method.
@@ -193,24 +192,22 @@ public:
 public:
 	void MakeDamage( const Element &effect ) const;
 	void JumpByStand();
-	void ReduceRemains();
-	void ReviveRemains();
 	void KillMe();
 public:
 	std::vector<Element::Type> GetUncollidableTypes() const;
-	bool IsDead() const
+	bool IsDead()		const
 	{
 		return pMover->IsDead();
 	}
-	bool IsOiled() const
+	bool IsOiled()		const
 	{
 		return element.Has( Element::Type::Oil );
 	}
-	bool OnGround() const
+	bool OnGround()		const
 	{
 		return onGround;
 	}
-	bool OnIce() const
+	bool OnIce()		const
 	{
 		return onIce && onGround;
 	}

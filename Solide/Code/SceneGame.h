@@ -53,6 +53,7 @@ private:
 	std::unique_ptr<ClearSentence>		pClearSentence;
 
 	int  stageNumber	= 1;
+	int  playerRemains	= 1;
 	int  gameTimer		= 0;
 	int  clearTimer		= 0;
 	bool nowWaiting		= false;
@@ -113,6 +114,7 @@ private:
 	void	PlayerDraw();
 	void	PlayerDrawHitBox( const Donya::Vector4x4 &matVP );
 	void	PlayerUninit();
+	void	RevivePlayerRemains();
 
 	void	EnemyUpdate( float elapsedTime );
 	void	EnemyPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );

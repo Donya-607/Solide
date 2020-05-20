@@ -250,8 +250,6 @@ namespace
 		Donya::Vector4 drawDeadColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 		std::string iceMaterialName;
-
-		int maxRemainsCount = 1;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -312,16 +310,12 @@ namespace
 			}
 			if ( 12 <= version )
 			{
-				archive( CEREAL_NVP( maxRemainsCount ) );
-			}
-			if ( 13 <= version )
-			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				12 )
+CEREAL_CLASS_VERSION( Member,				11 )
 CEREAL_CLASS_VERSION( Member::BasicMember,	4 )
 CEREAL_CLASS_VERSION( Member::OilMember,	2 )
 
@@ -432,9 +426,7 @@ public:
 				ImGui::SliderFloat( u8"乗ることができる坂のしきい値", &m.canRideSlopeBorder, 0.0f, 1.0f );
 				ImGui::Text( "" );
 				ImGui::DragInt( u8"オイル長押しの発動フレーム", &m.transTriggerFrame );
-				ImGui::DragInt( u8"最大残機数",			&m.maxRemainsCount );
 				m.transTriggerFrame	= std::max( 1, m.transTriggerFrame );
-				m.maxRemainsCount	= std::max( 1, m.maxRemainsCount );
 
 				constexpr size_t bufferSize = 512U;
 				static std::array<char, bufferSize + 1/* Null termination */> inputBuffer{};
@@ -1248,15 +1240,6 @@ void Player::JumpByStand()
 {
 	const float  strength = JumpStand::GetJumpPower();
 	velocity.y = strength;
-}
-void Player::ReduceRemains()
-{
-	remains--;
-	remains = std::max( 0, remains );
-}
-void Player::ReviveRemains()
-{
-	remains = FetchMember().maxRemainsCount;
 }
 void Player::KillMe()
 {
