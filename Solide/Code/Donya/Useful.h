@@ -83,6 +83,9 @@ namespace Donya
 	bool IsExistFile( const std::string &wholePath );
 	bool IsExistFile( const std::wstring &wholePath );
 
+	std::string MakeArraySuffix( int index );
+	std::string MakeArraySuffix( size_t index );
+
 	/// <summary>
 	/// Store specify numbers per digits.<para></para>
 	/// If the number does not have enough digit, filled by zero.<para></para>

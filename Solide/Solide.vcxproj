@@ -140,6 +140,7 @@
   <ItemGroup>
     <ClCompile Include="Code\Animation.cpp" />
     <ClCompile Include="Code\BG.cpp" />
+    <ClCompile Include="Code\Boss.cpp" />
     <ClCompile Include="Code\Bullet.cpp" />
     <ClCompile Include="Code\CameraOption.cpp" />
     <ClCompile Include="Code\CheckPoint.cpp" />
@@ -222,6 +223,7 @@
   <ItemGroup>
     <ClInclude Include="Code\Animation.h" />
     <ClInclude Include="Code\BG.h" />
+    <ClInclude Include="Code\Boss.h" />
     <ClInclude Include="Code\Bullet.h" />
     <ClInclude Include="Code\CameraOption.h" />
     <ClInclude Include="Code\CheckPoint.h" />

@@ -13,11 +13,6 @@ namespace
 	static constexpr const char		*MODELS_DIRECTORY		= "./Data/Models/";		// Relative path.
 	static constexpr const char		*MODEL_EXTENSION		= ".bin";
 	static constexpr const char		*SAVE_DATA_DIRECTORY	= "./Data/Save/";		// Relative path.
-
-	std::string MakeArraySuffix( int index )
-	{
-		return std::string{ "[" + std::to_string( index ) + "]" };
-	}
 }
 
 std::string GenerateSerializePath( std::string identifier, bool useBinary )
@@ -27,12 +22,12 @@ std::string GenerateSerializePath( std::string identifier, bool useBinary )
 }
 std::string MakeStageParamPath( std::string objName, int stageNo, bool useBinary )
 {
-	const std::string folder = "Stage" + MakeArraySuffix( stageNo ) + "/";
+	const std::string folder = "Stage" + Donya::MakeArraySuffix( stageNo ) + "/";
 	return GenerateSerializePath( folder + objName, useBinary );
 }
 std::string MakeTerrainModelPath( std::string objName, int stageNo )
 {
-	const std::string folder = "Terrain/Stage" + MakeArraySuffix( stageNo ) + "/";
+	const std::string folder = "Terrain/Stage" + Donya::MakeArraySuffix( stageNo ) + "/";
 	return MODELS_DIRECTORY + folder + objName + MODEL_EXTENSION;
 }
 std::string MakeSaveDataPath( std::string fileName, bool useBinary )
