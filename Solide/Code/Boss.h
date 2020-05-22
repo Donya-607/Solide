@@ -104,7 +104,6 @@ public:
 	virtual void Draw( RenderingHelper *pRenderer ) const;
 	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
-	virtual void AssignCurrentPose( int motionIndex );
 	virtual void MakeDamage( const Element &effect ) const;
 public:
 	virtual bool				IsDead() const;
@@ -114,6 +113,8 @@ public:
 		return orientation;
 	}
 protected:
+	virtual void AssignSpecifyPose( int motionIndex );
+	virtual void UpdateMotion( float elapsedTime, int motionIndex );
 	virtual Donya::Vector4		CalcDrawColor() const;
 	virtual	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
 protected:
@@ -126,8 +127,7 @@ protected:
 class BossFirst : public BossBase
 {
 private:
-	bool		IsDead() const override;
-	BossType	GetType() const override;
+	BossType GetType() const override;
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption ) override;
 #endif // USE_IMGUI

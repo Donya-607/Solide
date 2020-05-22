@@ -498,7 +498,7 @@ void BossInitializer::ShowImGuiNode( const std::string &nodeCaption, int stageNo
 	// else
 
 	int intType = scast<int>( type );
-	ImGui::DragInt( u8"ボスの種類", &intType, 0, TYPE_COUNT - 1 );
+	ImGui::SliderInt( u8"ボスの種類", &intType, -1, TYPE_COUNT - 1 );
 	type = scast<BossType>( intType );
 	ImGui::Text( u8"現在の種類：%s", GetBossName( type ).c_str() );
 	ImGui::Text( u8"%s だと出現しません", GetBossName( BossType::Null ).c_str() );
@@ -576,7 +576,7 @@ void BossBase::Init( const BossInitializer &param )
 	hp = ( intType < scast<int>( hpData.size() ) ) ? hpData[intType] : 1;
 
 	model.pResource	= BossModel::GetModelPtr( GetType() );
-	AssignCurrentPose( 0 );
+	AssignSpecifyPose( 0 );
 }
 void BossBase::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 {
@@ -586,6 +586,8 @@ void BossBase::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 
 	if ( IsDead() ) { return; }
 	// else
+
+	UpdateMotion( elapsedTime, 0 );
 }
 void BossBase::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMat )
 {
@@ -636,24 +638,6 @@ void BossBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &m
 	Actor::DrawHitBox( pRenderer, matVP, Donya::Quaternion::Identity(), color );
 #endif // DEBUG_MODE
 }
-void BossBase::AssignCurrentPose( int motionIndex )
-{
-	if ( !model.pResource ) { return; }
-	// else
-
-	const int motionCount = scast<int>( model.pResource->motionHolder.GetMotionCount() );
-	motionIndex = std::max( 0, std::min( motionCount - 1, motionIndex ) );
-
-	const auto &initialMotion = model.pResource->motionHolder.GetMotion( motionIndex );
-	model.animator.SetRepeatRange( initialMotion );
-	model.pose.AssignSkeletal
-	(
-		model.animator.CalcCurrentPose
-		(
-			initialMotion
-		)
-	);
-}
 void BossBase::MakeDamage( const Element &effect ) const
 {
 	element.Add( effect.Get() );
@@ -661,6 +645,41 @@ void BossBase::MakeDamage( const Element &effect ) const
 bool BossBase::IsDead() const
 {
 	return ( hp <= 0 );
+}
+void BossBase::AssignSpecifyPose( int motionIndex )
+{
+	if ( !model.pResource ) { return; }
+	// else
+
+	const int motionCount = scast<int>( model.pResource->motionHolder.GetMotionCount() );
+	motionIndex = std::max( 0, std::min( motionCount - 1, motionIndex ) );
+
+	const auto &applyMotion = model.pResource->motionHolder.GetMotion( motionIndex );
+	model.animator.SetRepeatRange( applyMotion );
+	model.pose.AssignSkeletal
+	(
+		model.animator.CalcCurrentPose
+		(
+			applyMotion
+		)
+	);
+}
+void BossBase::UpdateMotion( float elapsedTime, int motionIndex )
+{
+	if ( !model.pResource ) { return; }
+	// else
+
+	const auto data			= FetchMember();
+	const auto &speedSource = data.drawer.accelerations;
+
+	const size_t intType	= scast<size_t>( GetType() );
+	const float  playSpeed	= ( intType < speedSource.size() ) ? speedSource[intType] : 1.0f;
+	model.animator.Update( elapsedTime * playSpeed );
+
+	if ( model.pResource )
+	{
+		AssignSpecifyPose( motionIndex );
+	}
 }
 Donya::Vector4		BossBase::CalcDrawColor() const
 {

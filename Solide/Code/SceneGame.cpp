@@ -1955,7 +1955,13 @@ void SceneGame::UseImGui()
 		ImGui::Text( "" );
 
 		if ( pBossIniter )
-		{ pBossIniter->ShowImGuiNode( u8"ボスの初期化情報", stageNumber ); }
+		{
+			pBossIniter->ShowImGuiNode( u8"ボスの初期化情報", stageNumber );
+			if ( ImGui::Button( u8"ボスを生成しなおす" ) )
+			{
+				BossInit( stageNumber );
+			}
+		}
 		ImGui::Text( "" );
 
 		if ( pObstacles )
