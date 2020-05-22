@@ -266,7 +266,7 @@ private:
 	{
 		auto ResizeIfNeeded = []( auto *pVector, auto initialValue )
 		{
-			if ( pVector->size() != TYPE_COUNT ) { return; };
+			if ( pVector->size() == TYPE_COUNT ) { return; };
 			// else
 
 			pVector->resize( TYPE_COUNT, initialValue );
@@ -364,8 +364,6 @@ public:
 							}
 
 							ParameterHelper::ShowAABBNode( ( caption + u8"’²®" ).c_str(), &p->at( i ) );
-
-							ImGui::TreePop();
 						}
 
 						if ( eraseIndex != count )
@@ -766,7 +764,7 @@ void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::Text( u8"í—ŞF%s", GetBossName( GetType() ) );
+	ImGui::Text( u8"í—ŞF%s", GetBossName( GetType() ).c_str() );
 
 	ImGui::DragInt( u8"Œ»İ‚Ì‘Ì—Í", &hp ); hp = std::max( 0, hp );
 	ImGui::DragFloat3( u8"Œ»İ‚ÌÀ•W", &pos.x,		0.01f );

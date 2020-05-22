@@ -1962,6 +1962,8 @@ void SceneGame::UseImGui()
 				BossInit( stageNumber );
 			}
 		}
+		if ( pBoss )
+		{ pBoss->ShowImGuiNode( u8"ƒ{ƒX–{‘Ì" ); }
 		ImGui::Text( "" );
 
 		if ( pObstacles )

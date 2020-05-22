@@ -117,7 +117,7 @@ protected:
 	virtual void UpdateMotion( float elapsedTime, int motionIndex );
 	virtual Donya::Vector4		CalcDrawColor() const;
 	virtual	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
-protected:
+public:
 #if USE_IMGUI
 	virtual void ShowImGuiNode( const std::string &nodeCaption ) = 0;
 #endif // USE_IMGUI
@@ -128,6 +128,7 @@ class BossFirst : public BossBase
 {
 private:
 	BossType GetType() const override;
+public:
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption ) override;
 #endif // USE_IMGUI
