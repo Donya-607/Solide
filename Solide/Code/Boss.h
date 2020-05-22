@@ -20,9 +20,18 @@
 #include "Renderer.h"
 
 
+enum class BossType
+{
+	Null	= -1, // Not exist
+	First	= 0,
+
+	BossCount
+};
+
 class BossInitializer
 {
 private:
+	BossType			type = BossType::Null;
 	Donya::Vector3		wsInitialPos;
 	Donya::Quaternion	initialOrientation;
 private:
@@ -32,8 +41,9 @@ private:
 	{
 		archive
 		(
-			CEREAL_NVP( wsInitialPos ),
-			CEREAL_NVP( initialOrientation )
+			CEREAL_NVP( type				),
+			CEREAL_NVP( wsInitialPos		),
+			CEREAL_NVP( initialOrientation	)
 		);
 
 		if ( 1 <= version )

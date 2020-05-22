@@ -25,18 +25,29 @@
 #undef max
 #undef min
 
+
+namespace
+{
+	constexpr size_t TYPE_COUNT = scast<size_t>( BossType::BossCount );
+	std::string GetBossName( BossType type )
+	{
+		switch ( type )
+		{
+		case BossType::Null:	return "Empty";
+		case BossType::First:	return "First";
+		default: break;
+		}
+		_ASSERT_EXPR( 0, L"Error : Unexpected type!" );
+		return "ERROR";
+	}
+}
+
+
 namespace BossModel
 {
-	enum Kind
-	{
-		First,
-
-		KindCount
-	};
-	constexpr size_t KIND_COUNT = scast<size_t>( KindCount );
 	constexpr const char *MODEL_DIRECTORY = "./Data/Models/Boss/";
 	constexpr const char *MODEL_EXTENSION = ".bin";
-	constexpr const char *MODEL_NAMES[KIND_COUNT]
+	constexpr const char *MODEL_NAMES[TYPE_COUNT]
 	{
 		"First",
 	};
@@ -49,7 +60,7 @@ namespace BossModel
 		if ( !modelPtrs.empty() ) { return true; }
 		// else
 
-		modelPtrs.resize( KIND_COUNT );
+		modelPtrs.resize( TYPE_COUNT );
 
 		Donya::Loader loader{};
 		auto Load = [&loader]( const std::string &filePath, BossBase::ModelResource *pDest )->bool
@@ -72,7 +83,7 @@ namespace BossModel
 
 		std::string filePath{};
 		const std::string prefix = MODEL_DIRECTORY;
-		for ( size_t i = 0; i < KIND_COUNT; ++i )
+		for ( size_t i = 0; i < TYPE_COUNT; ++i )
 		{
 			filePath = prefix + MODEL_NAMES[i] + MODEL_EXTENSION;
 			if ( !Donya::IsExistFile( filePath ) )
@@ -105,11 +116,11 @@ namespace BossModel
 		return true;
 	}
 
-	bool IsOutOfRange( Kind kind )
+	bool IsOutOfRange( BossType kind )
 	{
-		return ( scast<int>( kind ) < 0 || Kind::KindCount <= kind ) ? true : false;
+		return ( scast<int>( kind ) < 0 || BossType::BossCount <= kind ) ? true : false;
 	}
-	const std::shared_ptr<BossBase::ModelResource> GetModelPtr( Kind kind )
+	const std::shared_ptr<BossBase::ModelResource> GetModelPtr( BossType kind )
 	{
 		if ( modelPtrs.empty() )
 		{
@@ -130,7 +141,7 @@ namespace BossModel
 namespace
 {
 	// The vector of parameters contain some value per kind of enemy.
-	// "[i]" of these vectors represents a value of static_cast<enumKind>( i ). This size was guaranteed to: size() == BossModel::KIND_COUNT
+	// "[i]" of these vectors represents a value of static_cast<enumKind>( i ). This size was guaranteed to: size() == BossModel::TYPE_COUNT
 
 	struct DrawingParam
 	{
@@ -253,10 +264,10 @@ private:
 	{
 		auto ResizeIfNeeded = []( auto *pVector, auto initialValue )
 		{
-			if ( pVector->size() != BossModel::KIND_COUNT ) { return; };
+			if ( pVector->size() != TYPE_COUNT ) { return; };
 			// else
 
-			pVector->resize( BossModel::KIND_COUNT, initialValue );
+			pVector->resize( TYPE_COUNT, initialValue );
 		};
 
 		ResizeIfNeeded( &m.drawer.accelerations, 1.0f );
@@ -293,7 +304,7 @@ public:
 				if ( ImGui::TreeNode( u8"再生速度の倍率" ) )
 				{
 					std::string caption{};
-					for ( size_t i = 0; i < BossModel::KIND_COUNT; ++i )
+					for ( size_t i = 0; i < TYPE_COUNT; ++i )
 					{
 						caption = "[" + std::to_string( i ) + ":" + BossModel::MODEL_NAMES[i] + "]";
 						ImGui::DragFloat( caption.c_str(), &m.drawer.accelerations[i], 0.001f );
@@ -370,7 +381,7 @@ public:
 				auto &vector = m.collider.collisions;
 
 				std::string caption{};
-				for ( size_t i = 0; i < BossModel::KIND_COUNT; ++i )
+				for ( size_t i = 0; i < TYPE_COUNT; ++i )
 				{
 					caption = "[" + std::to_string( i ) + ":" + BossModel::MODEL_NAMES[i] + "]";
 				
@@ -403,6 +414,16 @@ public:
 	}
 #endif // USE_IMGUI
 };
+
+
+// Internal utility.
+namespace
+{
+	Member FetchMember()
+	{
+		return ParamBoss::Get().Data();
+	}
+}
 
 
 Donya::Vector3		BossInitializer::GetInitialPos() const { return wsInitialPos; }
@@ -448,6 +469,12 @@ void BossInitializer::ShowImGuiNode( const std::string &nodeCaption, int stageNo
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
+
+	int intType = scast<int>( type );
+	ImGui::DragInt( u8"ボスの種類", &intType, 0, TYPE_COUNT - 1 );
+	type = scast<BossType>( intType );
+	ImGui::Text( u8"現在の種類：%s", GetBossName( type ).c_str() );
+	ImGui::Text( u8"%s だと出現しません", GetBossName( BossType::Null ).c_str() );
 
 	ImGui::DragFloat3( u8"初期のワールド座標", &wsInitialPos.x, 0.01f );
 	
@@ -498,18 +525,6 @@ bool BossBase::LoadModels()
 {
 	return BossModel::LoadModels();
 }
-
-
-// Internal utility.
-namespace
-{
-	Member FetchMember()
-	{
-		return ParamBoss::Get().Data();
-	}
-}
-
-
 void BossBase::Init( const BossInitializer &param )
 {
 	ParamBoss::Get().Init();
@@ -519,7 +534,6 @@ void BossBase::Init( const BossInitializer &param )
 	velocity	= 0.0f;
 	orientation	= param.GetInitialOrientation();
 }
-
 void BossBase::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 {
 #if USE_IMGUI
@@ -529,7 +543,6 @@ void BossBase::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	if ( IsDead() ) { return; }
 	// else
 }
-
 void BossBase::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMat )
 {
 	if ( IsDead() ) { return; }
@@ -547,7 +560,6 @@ void BossBase::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya
 		velocity.y = 0.0f;
 	}
 }
-
 void BossBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP )
 {
 	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
@@ -557,7 +569,6 @@ void BossBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &m
 	Actor::DrawHitBox( pRenderer, matVP, Donya::Quaternion::Identity(), color );
 #endif // DEBUG_MODE
 }
-
 void BossBase::MakeDamage( const Element &effect ) const
 {
 	element.Add( effect.Get() );
