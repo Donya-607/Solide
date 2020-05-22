@@ -58,6 +58,8 @@ void CheckPoint::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x
 	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 	// else
 
+	constexpr Donya::Vector4 blendColor{ 1.0f, 1.0f, 0.0f, 1.0f };
+
 	auto DrawCube = [&]( const Donya::AABB &box )
 	{
 		Donya::Vector4x4 W{};
@@ -71,7 +73,7 @@ void CheckPoint::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x
 		Donya::Model::Cube::Constant constant;
 		constant.matWorld		= W;
 		constant.matViewProj	= matVP;
-		constant.drawColor		= color;
+		constant.drawColor		= blendColor.Product( color );
 		constant.lightDirection	= -Donya::Vector3::Up();
 		pRenderer->ProcessDrawingCube( constant );
 	};

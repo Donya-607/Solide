@@ -60,6 +60,8 @@ namespace Enemy
 		bool   IsOutOfRange( size_t index ) const;
 		const  std::shared_ptr<Enemy::Base> GetEnemyPtrOrNull( size_t index ) const;
 	private:
+		void EraseEnemiesIfNeeded();
+	private:
 		void LoadBin ( int stageNo );
 		void LoadJson( int stageNo );
 	#if USE_IMGUI
