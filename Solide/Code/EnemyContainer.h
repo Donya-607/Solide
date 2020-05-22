@@ -61,6 +61,7 @@ namespace Enemy
 		const  std::shared_ptr<Enemy::Base> GetEnemyPtrOrNull( size_t index ) const;
 	private:
 		void EraseEnemiesIfNeeded();
+		void SortByDepth();
 	private:
 		void LoadBin ( int stageNo );
 		void LoadJson( int stageNo );

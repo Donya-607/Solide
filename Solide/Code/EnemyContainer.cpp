@@ -1,7 +1,9 @@
 #include "EnemyContainer.h"
 
+#include <algorithm>		// Use std::sort().
+
 #if USE_IMGUI
-#include "Donya/Useful.h" // Convert the character codes.
+#include "Donya/Useful.h"	// Convert the character codes.
 #endif // USE_IMGUI
 
 #include "FilePath.h"
@@ -152,6 +154,17 @@ namespace Enemy
 		enemyPtrs.erase( result, enemyPtrs.end() );
 	}
 
+	void Container::SortByDepth()
+	{
+		using ElementType = std::shared_ptr<Enemy::Base>;
+		auto IsGreaterDepth = []( const ElementType &lhs, const ElementType &rhs )
+		{
+			return ( rhs->GetPosition().z < lhs->GetPosition().z );
+		};
+
+		std::sort( enemyPtrs.begin(), enemyPtrs.end(), IsGreaterDepth );
+	}
+
 	void Container::LoadBin ( int stageNumber )
 	{
 		constexpr bool fromBinary = true;
@@ -211,6 +224,11 @@ namespace Enemy
 		}
 	
 		ImGui::Text( "" );
+		ImGui::Text( u8"ソートはセーブ時にも自動で行われます" );
+		if ( ImGui::Button( u8"ソート" ) )
+		{
+			SortByDepth();
+		}
 
 		// ShowImGuiNode() loop.
 		{
@@ -245,6 +263,8 @@ namespace Enemy
 
 			if ( ImGui::Button( ( u8"セーブ" + strIndex ).c_str() ) )
 			{
+				SortByDepth();
+
 				SaveBin ( stageNo );
 				SaveJson( stageNo );
 			}
