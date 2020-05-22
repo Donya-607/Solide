@@ -488,7 +488,6 @@ namespace Enemy
 				)
 			);
 		}
-
 	}
 	void Base::Uninit()
 	{

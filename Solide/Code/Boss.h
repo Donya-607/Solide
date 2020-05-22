@@ -28,6 +28,7 @@ enum class BossType
 	BossCount
 };
 
+
 class BossInitializer
 {
 private:
@@ -69,7 +70,6 @@ public:
 };
 CEREAL_CLASS_VERSION( BossInitializer, 0 )
 
-class EffectHandle;
 class BossBase : public Actor
 {
 public:
@@ -97,18 +97,29 @@ public:
 	virtual void Update( float elapsedTime, const Donya::Vector3 &targetPos );
 	virtual void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 
-	virtual void Draw( RenderingHelper *pRenderer ) = 0;
-	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
+	virtual void Draw( RenderingHelper *pRenderer ) const;
+	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
+	virtual void AssignCurrentPose( int motionIndex );
 	virtual void MakeDamage( const Element &effect ) const;
 public:
 	virtual bool				IsDead() const = 0;
+	virtual BossType			GetType() const = 0;
 	virtual Donya::Quaternion	GetOrientation() const
 	{
 		return orientation;
 	}
+protected:
+	virtual Donya::Vector4		CalcDrawColor() const;
+	virtual	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
 private:
 #if USE_IMGUI
 	virtual void ShowImGuiNode( const std::string &nodeCaption ) = 0;
 #endif // USE_IMGUI
+};
+
+
+class BossFirst : public BossBase
+{
+
 };

@@ -120,7 +120,7 @@ namespace BossModel
 	{
 		return ( scast<int>( kind ) < 0 || BossType::BossCount <= kind ) ? true : false;
 	}
-	const std::shared_ptr<BossBase::ModelResource> GetModelPtr( BossType kind )
+	std::shared_ptr<BossBase::ModelResource> GetModelPtr( BossType kind )
 	{
 		if ( modelPtrs.empty() )
 		{
@@ -529,10 +529,13 @@ void BossBase::Init( const BossInitializer &param )
 {
 	ParamBoss::Get().Init();
 
-	pos			= param.GetInitialPos();
-	element		= Element::Type::Nil;
-	velocity	= 0.0f;
-	orientation	= param.GetInitialOrientation();
+	pos				= param.GetInitialPos();
+	element			= Element::Type::Nil;
+	velocity		= 0.0f;
+	orientation		= param.GetInitialOrientation();
+
+	model.pResource	= BossModel::GetModelPtr( GetType() );
+	AssignCurrentPose( 0 );
 }
 void BossBase::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 {
@@ -560,7 +563,30 @@ void BossBase::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya
 		velocity.y = 0.0f;
 	}
 }
-void BossBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP )
+void BossBase::Draw( RenderingHelper *pRenderer ) const
+{
+	if ( !model.pResource ) { return; }
+	// else
+
+	const auto drawData = FetchMember().drawer;
+	Donya::Model::Constants::PerModel::Common modelConstant{};
+	modelConstant.drawColor		= CalcDrawColor();
+	modelConstant.worldMatrix	= CalcWorldMatrix( /* useForHitBox = */ false, /* useForHurtBox = */ false, /* useForDrawing = */ true );
+	RenderingHelper::AdjustColorConstant colorConstant =
+		( element.Has( Element::Type::Oil ) )
+		? drawData.oilAdjustment
+		: RenderingHelper::AdjustColorConstant::MakeDefault();
+	pRenderer->UpdateConstant( modelConstant );
+	pRenderer->UpdateConstant( colorConstant );
+	pRenderer->ActivateConstantModel();
+	pRenderer->ActivateConstantAdjustColor();
+
+	pRenderer->Render( model.pResource->model, model.pose );
+
+	pRenderer->DeactivateConstantAdjustColor();
+	pRenderer->DeactivateConstantModel();
+}
+void BossBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 {
 	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 	// else
@@ -569,7 +595,101 @@ void BossBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &m
 	Actor::DrawHitBox( pRenderer, matVP, Donya::Quaternion::Identity(), color );
 #endif // DEBUG_MODE
 }
+void BossBase::AssignCurrentPose( int motionIndex )
+{
+	if ( !model.pResource ) { return; }
+	// else
+
+	const int motionCount = scast<int>( model.pResource->motionHolder.GetMotionCount() );
+	motionIndex = std::max( 0, std::min( motionCount - 1, motionIndex ) );
+
+	const auto &initialMotion = model.pResource->motionHolder.GetMotion( motionIndex );
+	model.animator.SetRepeatRange( initialMotion );
+	model.pose.AssignSkeletal
+	(
+		model.animator.CalcCurrentPose
+		(
+			initialMotion
+		)
+	);
+}
 void BossBase::MakeDamage( const Element &effect ) const
 {
 	element.Add( effect.Get() );
+}
+Donya::Vector4		BossBase::CalcDrawColor() const
+{
+	const auto data = FetchMember();
+	Donya::Vector4 baseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+	if ( element.Has( Element::Type::Oil ) ) { baseColor.Product( data.drawer.oilColor ); }
+
+	return baseColor;
+}
+Donya::Vector4x4	BossBase::CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const
+{
+	const auto data = FetchMember();
+	Donya::Vector4x4 W{};
+		
+	if ( useForHitBox || useForHurtBox )
+	{
+		W._11 = 2.0f;
+		W._22 = 2.0f;
+		W._33 = 2.0f;
+		W._41 = pos.x;
+		W._42 = pos.y;
+		W._43 = pos.z;
+
+		const auto	&collisions	= data.collider.collisions;
+		const int	intType		= scast<int>( GetType() );
+
+		if ( intType < 0 || scast<int>( collisions.size() ) <= intType ) { return W; }
+		// else
+
+		const auto	&perType	= data.collider.collisions[intType];
+		const auto	&applyBoxes	= ( useForHitBox ) ? perType.hitBoxes : perType.hurtBoxes;
+		if ( applyBoxes.empty() ) { return W; }
+		// else
+		const auto &applyBox = applyBoxes.front();
+
+		W._11 *= applyBox.size.x;
+		W._22 *= applyBox.size.y;
+		W._33 *= applyBox.size.z;
+		W._41 += applyBox.pos.x;
+		W._42 += applyBox.pos.y;
+		W._43 += applyBox.pos.z;
+
+		return W;
+	}
+	// else
+
+	if ( useForDrawing )
+	{
+		W._11 = data.drawer.drawScale;
+		W._22 = data.drawer.drawScale;
+		W._33 = data.drawer.drawScale;
+	}
+	else
+	{
+		// Scales are 1.0f.
+	}
+
+	W *= orientation.MakeRotationMatrix();
+	if ( useForDrawing )
+	{
+		W *= data.drawer.drawRotation.MakeRotationMatrix();
+	}
+
+	W._41 = pos.x;
+	W._42 = pos.y;
+	W._43 = pos.z;
+
+	if ( useForDrawing )
+	{
+		W._41 += data.drawer.drawOffset.x;
+		W._42 += data.drawer.drawOffset.y;
+		W._43 += data.drawer.drawOffset.z;
+	}
+
+	return W;
 }
