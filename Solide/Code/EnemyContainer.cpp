@@ -48,7 +48,7 @@ namespace Enemy
 	void Container::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	{
 	#if USE_IMGUI
-		if ( wantPauseUpdates ) { return; }
+		if ( wantPauseUpdates ) { EraseEnemiesIfNeeded(); return; }
 	#endif // USE_IMGUI
 
 		for ( auto &pIt : enemyPtrs )
@@ -58,19 +58,7 @@ namespace Enemy
 			pIt->Update( elapsedTime, targetPos );
 		}
 
-		auto result = std::remove_if
-		(
-			enemyPtrs.begin(), enemyPtrs.end(),
-			[]( std::shared_ptr<Enemy::Base> &pElement )
-			{
-				return ( !pElement ) ? true : pElement->ShouldRemove();
-			}
-		);
-		for ( auto it = result; it != enemyPtrs.end(); ++it )
-		{
-			if ( *it ) { ( *it )->Uninit(); }
-		}
-		enemyPtrs.erase( result, enemyPtrs.end() );
+		EraseEnemiesIfNeeded();
 	}
 	void Container::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 	{
@@ -145,6 +133,23 @@ namespace Enemy
 		if ( IsOutOfRange( index ) ) { return nullptr; };
 		// else
 		return enemyPtrs[index];
+	}
+
+	void Container::EraseEnemiesIfNeeded()
+	{
+		auto result = std::remove_if
+		(
+			enemyPtrs.begin(), enemyPtrs.end(),
+			[]( std::shared_ptr<Enemy::Base> &pElement )
+			{
+				return ( !pElement ) ? true : pElement->ShouldRemove();
+			}
+		);
+		for ( auto it = result; it != enemyPtrs.end(); ++it )
+		{
+			if ( *it ) { ( *it )->Uninit(); }
+		}
+		enemyPtrs.erase( result, enemyPtrs.end() );
 	}
 
 	void Container::LoadBin ( int stageNumber )
