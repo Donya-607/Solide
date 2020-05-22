@@ -21,6 +21,7 @@
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
 
+#include "Boss.h"
 #include "Bullet.h"
 #include "Common.h"
 #include "EffectAdmin.h"
@@ -225,6 +226,7 @@ void SceneLoad::Init()
 		if ( !Goal::LoadResource()			) { succeeded = false; }
 		if ( !ObstacleBase::LoadModels()	) { succeeded = false; }
 		if ( !Player::LoadModels()			) { succeeded = false; }
+		if ( !BossBase::LoadModels()		) { succeeded = false; }
 		if ( !WarpContainer::LoadResource()	) { succeeded = false; }
 
 		_ASSERT_EXPR( succeeded, L"Failed: Models load is failed." );

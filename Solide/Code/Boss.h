@@ -81,6 +81,7 @@ public:
 		Donya::Model::MotionHolder	motionHolder;
 	};
 protected:
+	int					hp = 3;
 	Donya::Vector3		velocity;
 	Donya::Quaternion	orientation;
 	mutable Element		element;		// Will change in const method.
@@ -103,7 +104,7 @@ public:
 	virtual void AssignCurrentPose( int motionIndex );
 	virtual void MakeDamage( const Element &effect ) const;
 public:
-	virtual bool				IsDead() const = 0;
+	virtual bool				IsDead() const;
 	virtual BossType			GetType() const = 0;
 	virtual Donya::Quaternion	GetOrientation() const
 	{
@@ -112,7 +113,7 @@ public:
 protected:
 	virtual Donya::Vector4		CalcDrawColor() const;
 	virtual	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
-private:
+protected:
 #if USE_IMGUI
 	virtual void ShowImGuiNode( const std::string &nodeCaption ) = 0;
 #endif // USE_IMGUI
@@ -121,5 +122,10 @@ private:
 
 class BossFirst : public BossBase
 {
-
+private:
+	bool		IsDead() const override;
+	BossType	GetType() const override;
+#if USE_IMGUI
+	void ShowImGuiNode( const std::string &nodeCaption ) override;
+#endif // USE_IMGUI
 };

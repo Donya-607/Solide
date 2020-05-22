@@ -215,8 +215,9 @@ namespace
 	};
 	struct Member
 	{
-		DrawingParam	drawer;
-		CollisionParam	collider;
+		DrawingParam		drawer;
+		CollisionParam		collider;
+		std::vector<int>	initialHPs;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -225,7 +226,8 @@ namespace
 			archive
 			(
 				CEREAL_NVP( drawer		),
-				CEREAL_NVP( collider	)
+				CEREAL_NVP( collider	),
+				CEREAL_NVP( initialHPs	)
 			);
 
 			if ( 1 <= version )
@@ -278,6 +280,8 @@ private:
 		defaultHitBox.hitBoxes.back().size  = 1.0f;
 		defaultHitBox.hurtBoxes.back().size = 1.0f;
 		ResizeIfNeeded( &m.collider.collisions, defaultHitBox );
+		
+		ResizeIfNeeded( &m.initialHPs, 3 );
 	}
 private:
 	std::string GetSerializeIdentifier()			override { return ID; }
@@ -400,6 +404,24 @@ public:
 					}
 
 					ShowPerKind( u8"調整", &vector[i] );
+				}
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"その他" ) )
+			{
+				if ( ImGui::TreeNode( u8"最大体力" ) )
+				{
+					std::string caption{};
+					for ( size_t i = 0; i < TYPE_COUNT; ++i )
+					{
+						caption = "[" + std::to_string( i ) + ":" + BossModel::MODEL_NAMES[i] + "]";
+						ImGui::InputInt( caption.c_str(), &m.initialHPs[i] );
+						m.initialHPs[i] = std::max( 1, m.initialHPs[i] );
+					}
+
+					ImGui::TreePop();
 				}
 
 				ImGui::TreePop();
@@ -534,6 +556,10 @@ void BossBase::Init( const BossInitializer &param )
 	velocity		= 0.0f;
 	orientation		= param.GetInitialOrientation();
 
+	const int intType = scast<int>( GetType() );
+	const auto hpData = FetchMember().initialHPs;
+	hp = ( intType < scast<int>( hpData.size() ) ) ? hpData[intType] : 1;
+
 	model.pResource	= BossModel::GetModelPtr( GetType() );
 	AssignCurrentPose( 0 );
 }
@@ -617,6 +643,10 @@ void BossBase::MakeDamage( const Element &effect ) const
 {
 	element.Add( effect.Get() );
 }
+bool BossBase::IsDead() const
+{
+	return ( hp <= 0 );
+}
 Donya::Vector4		BossBase::CalcDrawColor() const
 {
 	const auto data = FetchMember();
@@ -693,3 +723,27 @@ Donya::Vector4x4	BossBase::CalcWorldMatrix( bool useForHitBox, bool useForHurtBo
 
 	return W;
 }
+
+
+BossType BossFirst::GetType() const { return BossType::First; }
+#if USE_IMGUI
+void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	ImGui::Text( u8"種類：%s", GetBossName( GetType() ) );
+
+	ImGui::DragInt( u8"現在の体力", &hp ); hp = std::max( 0, hp );
+	ImGui::DragFloat3( u8"現在の座標", &pos.x,		0.01f );
+	ImGui::DragFloat3( u8"現在の速度", &velocity.x,	0.01f );
+
+	Donya::Vector3 localFront = orientation.LocalFront();
+	ImGui::SliderFloat3( u8"現在の前方向", &localFront.x,	 -1.0f, 1.0f );
+	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), localFront, Donya::Quaternion::Freeze::Up );
+
+	element.ShowImGuiNode( /* useTreeNode = */ false, "" );
+
+	ImGui::TreePop();
+}
+#endif // USE_IMGUI

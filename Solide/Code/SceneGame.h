@@ -12,6 +12,7 @@
 #include "Donya/Vector.h"
 
 #include "BG.h"
+#include "Boss.h"
 #include "CameraOption.h"
 #include "CheckPoint.h"
 #include "EnemyContainer.h"
@@ -44,6 +45,8 @@ private:
 	std::unique_ptr<CheckPoint>			pCheckPoint;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
+	std::unique_ptr<BossBase>			pBoss;
+	std::unique_ptr<BossInitializer>	pBossIniter;
 	std::unique_ptr<Enemy::Container>	pEnemies;
 	std::unique_ptr<ObstacleContainer>	pObstacles;
 	std::unique_ptr<Goal>				pGoal;
@@ -115,6 +118,13 @@ private:
 	void	PlayerDrawHitBox( const Donya::Vector4x4 &matVP );
 	void	PlayerUninit();
 	void	RevivePlayerRemains();
+
+	void	BossInit( int stageNo );
+	void	BossUpdate( float elapsedTime );
+	void	BossPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );
+	void	BossDraw();
+	void	BossDrawHitBox( const Donya::Vector4x4 &matVP );
+	void	BossUninit();
 
 	void	EnemyUpdate( float elapsedTime );
 	void	EnemyPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );
