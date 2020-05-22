@@ -54,6 +54,8 @@ private:
 	}
 	static constexpr const char *ID = "BossInit";
 public:
+	bool				ShouldGenerateBoss() const;
+	BossType			GetType() const;
 	Donya::Vector3		GetInitialPos() const;
 	Donya::Quaternion	GetInitialOrientation() const;
 public:
@@ -74,6 +76,7 @@ class BossBase : public Actor
 {
 public:
 	static bool LoadModels();
+	static bool AssignDerivedClass( std::unique_ptr<BossBase> *pTarget, BossType assignType );
 public:
 	struct ModelResource
 	{

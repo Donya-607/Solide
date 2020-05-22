@@ -235,22 +235,6 @@ void SceneGame::Init()
 
 	ParamGame::Get().Init();
 
-	Bullet::LoadBulletsResource();
-
-	result = Enemy::LoadResources();
-	assert( result );
-
-	result = Goal::LoadResource();
-	assert( result );
-	result = ObstacleBase::LoadModels();
-	assert( result );
-	
-	result = WarpContainer::LoadResource();
-	assert( result );
-
-	result = Player::LoadModels();
-	assert( result );
-
 	pShadow = std::make_unique<Shadow>();
 	pShadow->LoadTexture();
 	pShadow->ClearInstances();
@@ -362,6 +346,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	pWarps->Update( elapsedTime );
 
 	PlayerUpdate( elapsedTime );
+	
+	BossUpdate( elapsedTime );
 
 	Bullet::BulletAdmin::Get().Update( elapsedTime );
 
@@ -376,6 +362,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		PlayerPhysicUpdate( solids, terrain.get(), &terrainMatrix );
 		Bullet::BulletAdmin::Get().PhysicUpdate( solids, terrain.get(), &terrainMatrix );
 		EnemyPhysicUpdate( solids, terrain.get(), &terrainMatrix );
+		BossPhysicUpdate( solids, terrain.get(), &terrainMatrix );
 
 		MakeShadows( solids, terrain.get(), &terrainMatrix );
 	}
@@ -475,6 +462,9 @@ void SceneGame::Draw( float elapsedTime )
 			EnableDefaultColorAdjustment();
 
 			pEnemies->Draw( pRenderer.get() );
+			EnableDefaultColorAdjustment();
+			
+			BossDraw();
 			EnableDefaultColorAdjustment();
 		}
 		pRenderer->DeactivateShaderNormalSkinning();
@@ -648,6 +638,10 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 		RevivePlayerRemains();
 	}
 
+	pBossIniter = std::make_unique<BossInitializer>();
+	pBossIniter->LoadParameter( stageNo );
+	BossInit( stageNo );
+
 	CameraInit();
 
 	if ( !pShadow )
@@ -675,6 +669,7 @@ void SceneGame::UninitStage()
 	pCameraOption.reset();
 	pCheckPoint.reset();
 	PlayerUninit();
+	BossUninit();
 	pEnemies.reset();
 	pObstacles.reset();
 	pGoal.reset();
@@ -1218,6 +1213,50 @@ void SceneGame::RevivePlayerRemains()
 	playerRemains = FetchMember().maxPlayerRemains;
 }
 
+void SceneGame::BossInit( int stageNo )
+{
+	if ( !pBossIniter || !pBossIniter->ShouldGenerateBoss() ) { return; }
+	// else
+
+	if ( pBoss ) { pBoss->Uninit(); }
+
+	BossBase::AssignDerivedClass( &pBoss, pBossIniter->GetType() );
+	pBoss->Init( *pBossIniter );
+}
+void SceneGame::BossUpdate( float elapsedTime )
+{
+	if ( !pBoss ) { return; }
+	// else
+
+	const Donya::Vector3 target = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero() /* Fail safe */;
+	pBoss->Update( elapsedTime, target );
+}
+void SceneGame::BossPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+{
+	if ( !pBoss ) { return; }
+	// else
+	pBoss->PhysicUpdate( solids, pTerrain, pTerrainMatrix );
+}
+void SceneGame::BossDraw()
+{
+	if ( !pBoss ) { return; }
+	// else
+	pBoss->Draw( pRenderer.get() );
+}
+void SceneGame::BossDrawHitBox( const Donya::Vector4x4 &matVP )
+{
+	if ( !pBoss ) { return; }
+	// else
+	pBoss->DrawHitBox( pRenderer.get(), matVP );
+}
+void SceneGame::BossUninit()
+{
+	if ( pBoss ) { pBoss->Uninit(); }
+
+	pBoss.reset();
+	pBossIniter.reset();
+}
+
 void SceneGame::EnemyUpdate( float elapsedTime )
 {
 	if ( !pEnemies ) { return; }
@@ -1703,6 +1742,7 @@ void SceneGame::MakeShadows( const std::vector<Donya::AABB> &solids, const Donya
 	};
 
 	if ( pPlayer	) { Add( pPlayer->GetPosition() ); }
+	if ( pBoss		) { Add( pBoss->GetPosition() ); }
 	if ( pEnemies	)
 	{
 		const size_t count = pEnemies->GetEnemyCount();
@@ -1912,6 +1952,10 @@ void SceneGame::UseImGui()
 
 			ImGui::TreePop();
 		}
+		ImGui::Text( "" );
+
+		if ( pBossIniter )
+		{ pBossIniter->ShowImGuiNode( u8"É{ÉXÇÃèâä˙âªèÓïÒ", stageNumber ); }
 		ImGui::Text( "" );
 
 		if ( pObstacles )

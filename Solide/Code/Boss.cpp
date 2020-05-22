@@ -448,6 +448,11 @@ namespace
 }
 
 
+bool				BossInitializer::ShouldGenerateBoss() const
+{
+	return ( type == BossType::Null || type == BossType::BossCount ) ? false : true;
+}
+BossType			BossInitializer::GetType() const { return type; }
 Donya::Vector3		BossInitializer::GetInitialPos() const { return wsInitialPos; }
 Donya::Quaternion	BossInitializer::GetInitialOrientation() const { return initialOrientation; }
 void BossInitializer::LoadParameter( int stageNo )
@@ -546,6 +551,16 @@ void BossInitializer::ShowImGuiNode( const std::string &nodeCaption, int stageNo
 bool BossBase::LoadModels()
 {
 	return BossModel::LoadModels();
+}
+bool BossBase::AssignDerivedClass( std::unique_ptr<BossBase> *pTarget, BossType assignType )
+{
+	switch ( assignType )
+	{
+	case BossType::First:	*pTarget = std::make_unique<BossFirst>(); return true;
+	default: break;
+	}
+	_ASSERT_EXPR( 0, L"Error: Unexpected type!" );
+	return false;
 }
 void BossBase::Init( const BossInitializer &param )
 {
