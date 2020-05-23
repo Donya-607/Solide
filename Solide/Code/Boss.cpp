@@ -444,19 +444,20 @@ namespace
 		return ParamBoss::Get().Data();
 	}
 
-	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &wsPos, const Donya::AABB &localHitBox, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
+	Donya::Vector4x4 MakeHitBoxWorldMatrix( const Donya::Vector3 &wsPos, const Donya::AABB &localHitBox, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
 	{
 		// The size is half.
 		// But that will using as scale, so we should multiply to double.
+
+		const Donya::Vector3 rotatedOffset = rotation.RotateVector( localHitBox.pos );
 		
 		Donya::Vector4x4 m{};
 		m._11 = localHitBox.size.x * 2.0f;
 		m._22 = localHitBox.size.y * 2.0f;
 		m._33 = localHitBox.size.z * 2.0f;
-		m    *= rotation.MakeRotationMatrix();
-		m._41 = localHitBox.pos.x + wsPos.x;
-		m._42 = localHitBox.pos.y + wsPos.y;
-		m._43 = localHitBox.pos.z + wsPos.z;
+		m._41 = rotatedOffset.x + wsPos.x;
+		m._42 = rotatedOffset.y + wsPos.y;
+		m._43 = rotatedOffset.z + wsPos.z;
 		return m;
 	}
 	void DrawCube( RenderingHelper *pRenderer, const Donya::Vector4x4 &W, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
@@ -669,18 +670,18 @@ void BossBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &m
 	const auto &hitBoxes	= perType.hitBoxes;
 	const auto &hurtBoxes	= perType.hurtBoxes;
 
-	constexpr Donya::Vector4	hitColor { 0.3f, 0.0f, 0.0f, 0.5f };
-	constexpr Donya::Vector4	hurtColor{ 0.0f, 0.3f, 0.0f, 0.5f };
+	constexpr Donya::Vector4	hitColor { 0.6f, 0.0f, 0.0f, 0.5f };
+	constexpr Donya::Vector4	hurtColor{ 0.0f, 0.6f, 0.0f, 0.5f };
 
 	Donya::Vector4x4 W;
 	for ( const auto &it : hitBoxes )
 	{
-		W = MakeWorldMatrix( pos, it, orientation );
+		W = MakeHitBoxWorldMatrix( pos, it, orientation );
 		DrawCube( pRenderer, W, matVP, hitColor );
 	}
 	for ( const auto &it : hurtBoxes )
 	{
-		W = MakeWorldMatrix( pos, it, orientation );
+		W = MakeHitBoxWorldMatrix( pos, it, orientation );
 		DrawCube( pRenderer, W, matVP, hurtColor );
 	}
 #endif // DEBUG_MODE
