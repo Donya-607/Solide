@@ -116,7 +116,7 @@ protected:
 	virtual void AssignSpecifyPose( int motionIndex );
 	virtual void UpdateMotion( float elapsedTime, int motionIndex );
 	virtual Donya::Vector4		CalcDrawColor() const;
-	virtual	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
+	virtual	Donya::Vector4x4	CalcWorldMatrix( bool useForDrawing ) const;
 public:
 #if USE_IMGUI
 	virtual void ShowImGuiNode( const std::string &nodeCaption ) = 0;

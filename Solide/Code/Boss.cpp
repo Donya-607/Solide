@@ -443,6 +443,31 @@ namespace
 	{
 		return ParamBoss::Get().Data();
 	}
+
+	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &wsPos, const Donya::AABB &localHitBox, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
+	{
+		// The size is half.
+		// But that will using as scale, so we should multiply to double.
+		
+		Donya::Vector4x4 m{};
+		m._11 = localHitBox.size.x * 2.0f;
+		m._22 = localHitBox.size.y * 2.0f;
+		m._33 = localHitBox.size.z * 2.0f;
+		m    *= rotation.MakeRotationMatrix();
+		m._41 = localHitBox.pos.x + wsPos.x;
+		m._42 = localHitBox.pos.y + wsPos.y;
+		m._43 = localHitBox.pos.z + wsPos.z;
+		return m;
+	}
+	void DrawCube( RenderingHelper *pRenderer, const Donya::Vector4x4 &W, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+	{
+		Donya::Model::Cube::Constant constant;
+		constant.matWorld		= W;
+		constant.matViewProj	= VP;
+		constant.drawColor		= color;
+		constant.lightDirection	= -Donya::Vector3::Up();
+		pRenderer->ProcessDrawingCube( constant );
+	}
 }
 
 
@@ -612,7 +637,7 @@ void BossBase::Draw( RenderingHelper *pRenderer ) const
 	const auto drawData = FetchMember().drawer;
 	Donya::Model::Constants::PerModel::Common modelConstant{};
 	modelConstant.drawColor		= CalcDrawColor();
-	modelConstant.worldMatrix	= CalcWorldMatrix( /* useForHitBox = */ false, /* useForHurtBox = */ false, /* useForDrawing = */ true );
+	modelConstant.worldMatrix	= CalcWorldMatrix( /* useForDrawing = */ true );
 	RenderingHelper::AdjustColorConstant colorConstant =
 		( element.Has( Element::Type::Oil ) )
 		? drawData.oilAdjustment
@@ -632,8 +657,32 @@ void BossBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &m
 	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 	// else
 #if DEBUG_MODE
-	constexpr Donya::Vector4 color{ 0.0f, 0.3f, 0.0f, 0.5f };
-	Actor::DrawHitBox( pRenderer, matVP, Donya::Quaternion::Identity(), color );
+
+	const auto data			= FetchMember();
+	const auto &collisions	= data.collider.collisions;
+	const int  intType		= scast<int>( GetType() );
+
+	if ( intType < 0 || scast<int>( collisions.size() ) <= intType ) { return; }
+	// else
+
+	const auto &perType		= data.collider.collisions[intType];
+	const auto &hitBoxes	= perType.hitBoxes;
+	const auto &hurtBoxes	= perType.hurtBoxes;
+
+	constexpr Donya::Vector4	hitColor { 0.3f, 0.0f, 0.0f, 0.5f };
+	constexpr Donya::Vector4	hurtColor{ 0.0f, 0.3f, 0.0f, 0.5f };
+
+	Donya::Vector4x4 W;
+	for ( const auto &it : hitBoxes )
+	{
+		W = MakeWorldMatrix( pos, it, orientation );
+		DrawCube( pRenderer, W, matVP, hitColor );
+	}
+	for ( const auto &it : hurtBoxes )
+	{
+		W = MakeWorldMatrix( pos, it, orientation );
+		DrawCube( pRenderer, W, matVP, hurtColor );
+	}
 #endif // DEBUG_MODE
 }
 void BossBase::MakeDamage( const Element &effect ) const
@@ -688,7 +737,7 @@ Donya::Vector4		BossBase::CalcDrawColor() const
 
 	return baseColor;
 }
-Donya::Vector4x4	BossBase::CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const
+Donya::Vector4x4	BossBase::CalcWorldMatrix( bool useForDrawing ) const
 {
 	const auto data = FetchMember();
 	Donya::Vector4x4 W{};
