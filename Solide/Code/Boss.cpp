@@ -741,38 +741,6 @@ Donya::Vector4x4	BossBase::CalcWorldMatrix( bool useForDrawing ) const
 {
 	const auto data = FetchMember();
 	Donya::Vector4x4 W{};
-		
-	if ( useForHitBox || useForHurtBox )
-	{
-		W._11 = 2.0f;
-		W._22 = 2.0f;
-		W._33 = 2.0f;
-		W._41 = pos.x;
-		W._42 = pos.y;
-		W._43 = pos.z;
-
-		const auto	&collisions	= data.collider.collisions;
-		const int	intType		= scast<int>( GetType() );
-
-		if ( intType < 0 || scast<int>( collisions.size() ) <= intType ) { return W; }
-		// else
-
-		const auto	&perType	= data.collider.collisions[intType];
-		const auto	&applyBoxes	= ( useForHitBox ) ? perType.hitBoxes : perType.hurtBoxes;
-		if ( applyBoxes.empty() ) { return W; }
-		// else
-		const auto &applyBox = applyBoxes.front();
-
-		W._11 *= applyBox.size.x;
-		W._22 *= applyBox.size.y;
-		W._33 *= applyBox.size.z;
-		W._41 += applyBox.pos.x;
-		W._42 += applyBox.pos.y;
-		W._43 += applyBox.pos.z;
-
-		return W;
-	}
-	// else
 
 	if ( useForDrawing )
 	{
