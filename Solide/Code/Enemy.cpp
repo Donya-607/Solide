@@ -1126,7 +1126,11 @@ namespace Enemy
 			ImGui::DragFloat3( u8"現在の速度",			&velocity.x,		0.01f	);
 			ImGui::DragFloat(  u8"現在の移動量合計",		&moveDistanceSum,	0.01f	);
 			ImGui::Checkbox(   u8"正の方向へ動いているか",&nowMoveToPositive			);
-			ImGui::SliderFloat4( u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
+
+			Donya::Vector3 localFront = orientation.LocalFront();
+			ImGui::SliderFloat3( u8"現在の姿勢", &localFront.x, -1.0f, 1.0f );
+			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), localFront, Donya::Quaternion::Freeze::Up );
+
 			element.ShowImGuiNode( /* useTreeNode = */ false, "" );
 
 			ImGui::TreePop();
@@ -1362,7 +1366,11 @@ namespace Enemy
 			std::string stateCaption = u8"現在のステート：" + pMover->GetStateName();
 			ImGui::Text( stateCaption.c_str() );
 			ImGui::DragFloat3(		u8"現在のワールド座標",	&pos.x, 0.01f );
-			ImGui::SliderFloat4(	u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
+
+			Donya::Vector3 localFront = orientation.LocalFront();
+			ImGui::SliderFloat3(	u8"現在の姿勢", &localFront.x, -1.0f, 1.0f );
+			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), localFront, Donya::Quaternion::Freeze::Up );
+
 			ImGui::DragInt(			u8"内部タイマ",			&timer );
 			element.ShowImGuiNode( /* useTreeNode = */ false, "" );
 
@@ -1552,7 +1560,11 @@ namespace Enemy
 			std::string stateCaption = u8"現在のステート：" + pMover->GetStateName();
 			ImGui::Text( stateCaption.c_str() );
 			ImGui::DragFloat3(		u8"現在のワールド座標",	&pos.x, 0.01f );
-			ImGui::SliderFloat4(	u8"現在の姿勢",			&orientation.x, -1.0f, 1.0f );
+
+			Donya::Vector3 localFront = orientation.LocalFront();
+			ImGui::SliderFloat3(	u8"現在の姿勢", &localFront.x, -1.0f, 1.0f );
+			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), localFront, Donya::Quaternion::Freeze::Up );
+
 			ImGui::DragInt(			u8"内部タイマ",			&timer );
 			element.ShowImGuiNode( /* useTreeNode = */ false, "" );
 
@@ -1752,7 +1764,11 @@ namespace Enemy
 			ImGui::Text( stateCaption.c_str() );
 			ImGui::DragFloat3(		u8"現在のワールド座標",	&pos.x,			0.01f );
 			ImGui::DragFloat3(		u8"現在の速度",			&velocity.x,	0.01f );
-			ImGui::SliderFloat4(	u8"現在の姿勢",			&orientation.x,	-1.0f, 1.0f );
+
+			Donya::Vector3 localFront = orientation.LocalFront();
+			ImGui::SliderFloat3(	u8"現在の姿勢", &localFront.x, -1.0f, 1.0f );
+			orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), localFront );
+
 			element.ShowImGuiNode( /* useTreeNode = */ false, "" );
 
 			ImGui::TreePop();

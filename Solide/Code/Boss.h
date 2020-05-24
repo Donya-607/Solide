@@ -146,6 +146,8 @@ private:
 	};
 	class Ready : public MoverBase
 	{
+	private:
+		bool gotoNext = false;
 	public:
 		void Init( BossFirst *p ) override;
 		void Uninit( BossFirst *p ) override;
@@ -156,6 +158,8 @@ private:
 	};
 	class Rush : public MoverBase
 	{
+	private:
+		bool shouldStop = false;
 	public:
 		void Init( BossFirst *p ) override;
 		void Uninit( BossFirst *p ) override;
@@ -166,6 +170,9 @@ private:
 	};
 	class Brake : public MoverBase
 	{
+	private:
+		bool isStopping	= false;
+		bool gotoNext	= false;
 	public:
 		void Init( BossFirst *p ) override;
 		void Uninit( BossFirst *p ) override;
@@ -197,8 +204,9 @@ private:
 // region Mover
 #pragma endregion
 private:
-	int timer = 0;
-	std::unique_ptr<MoverBase> pMover = nullptr;
+	int							timer = 0;
+	Donya::Vector3				aimingPos;
+	std::unique_ptr<MoverBase>	pMover = nullptr;
 public:
 	void Init( const BossInitializer &parameter ) override;
 	void Uninit() override;
@@ -214,6 +222,8 @@ private:
 	}
 
 	void UpdateByMover( float elapsedTime, const Donya::Vector3 &targetPos );
+
+	Donya::Vector3 CalcAimingVector( const Donya::Vector3 &targetPos, float maxRotatableDegree = 360.0f ) const;
 private:
 	BossType GetType() const override;
 public:

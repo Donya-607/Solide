@@ -1023,15 +1023,36 @@ void BossFirst::MoverBase::Init( BossFirst *p )
 void BossFirst::Ready::Init( BossFirst *p )
 {
 	MoverBase::Init( p );
+	p->velocity.x = 0.0f;
+	p->velocity.z = 0.0f;
+
+	gotoNext = false;
 }
 void BossFirst::Ready::Uninit( BossFirst *p ) {}
 void BossFirst::Ready::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
 {
+	const auto data = FetchMember().forFirst.ready;
+	const int preFrame	= data.preAimingFrame;
+	const int midFrame	= preFrame + data.aimingFrame;
+	const int postFrame	= midFrame + data.postAimingFrame;
 
+	p->timer++;
+
+	if ( preFrame <= p->timer && p->timer < postFrame )
+	{
+		const Donya::Vector3 aimingVector = p->CalcAimingVector( targetPos, data.maxAimDegree );
+		p->orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
+		p->aimingPos	= targetPos;
+	}
+	else
+	if ( postFrame < p->timer )
+	{
+		gotoNext = true;
+	}
 }
 bool BossFirst::Ready::ShouldChangeMover( BossFirst *p ) const
 {
-	return false;
+	return gotoNext;
 }
 std::function<void()> BossFirst::Ready::GetChangeStateMethod( BossFirst *p ) const
 {
@@ -1042,15 +1063,35 @@ std::string BossFirst::Ready::GetStateName() const { return "Ready"; }
 void BossFirst::Rush::Init( BossFirst *p )
 {
 	MoverBase::Init( p );
+	const Donya::Vector3 initialVelocity = p->orientation.LocalFront() * FetchMember().forFirst.rush.initialSpeed;
+	p->velocity.x = initialVelocity.x;
+	p->velocity.z = initialVelocity.z;
+
+	shouldStop = false;
 }
 void BossFirst::Rush::Uninit( BossFirst *p ) {}
 void BossFirst::Rush::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
 {
+	if ( shouldStop ) { return; }
+	// else
 
+	const auto data = FetchMember().forFirst.rush;
+
+	float currentSpeed = p->velocity.XZ().Length();
+	currentSpeed += data.accel;
+	currentSpeed = std::min( data.maxSpeed, currentSpeed );
+
+	const Donya::Vector3 updatedVelocity = p->orientation.LocalFront() * currentSpeed;
+	p->velocity.x = updatedVelocity.x;
+	p->velocity.z = updatedVelocity.z;
+
+	const Donya::Vector2 XZPos = p->GetPosition().XZ();
+	if ( data.movableRange < fabsf( XZPos.x ) ) { shouldStop = true; }
+	if ( data.movableRange < fabsf( XZPos.y ) ) { shouldStop = true; }
 }
 bool BossFirst::Rush::ShouldChangeMover( BossFirst *p ) const
 {
-	return false;
+	return shouldStop;
 }
 std::function<void()> BossFirst::Rush::GetChangeStateMethod( BossFirst *p ) const
 {
@@ -1061,15 +1102,43 @@ std::string BossFirst::Rush::GetStateName() const { return "Rush"; }
 void BossFirst::Brake::Init( BossFirst *p )
 {
 	MoverBase::Init( p );
+
+	isStopping	= false;
+	gotoNext	= false;
 }
 void BossFirst::Brake::Uninit( BossFirst *p ) {}
 void BossFirst::Brake::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
 {
+	const auto data = FetchMember().forFirst.brake;
 
+	if ( isStopping )
+	{
+		p->timer++;
+
+		if ( data.waitFrameAfterStop <= p->timer )
+		{
+			gotoNext = true;
+		}
+		return;
+	}
+	// else
+
+	float currentSpeed = p->velocity.XZ().Length();
+	currentSpeed -= ( p->element.Has( Element::Type::Oil ) ) ? data.oiledDecel : data.normalDecel;
+	currentSpeed = std::max( 0.0f, currentSpeed );
+
+	const Donya::Vector3 updatedVelocity = p->orientation.LocalFront() * currentSpeed;
+	p->velocity.x = updatedVelocity.x;
+	p->velocity.z = updatedVelocity.z;
+
+	if ( ZeroEqual( currentSpeed ) )
+	{
+		isStopping = true;
+	}
 }
 bool BossFirst::Brake::ShouldChangeMover( BossFirst *p ) const
 {
-	return false;
+	return gotoNext;
 }
 std::function<void()> BossFirst::Brake::GetChangeStateMethod( BossFirst *p ) const
 {
@@ -1150,6 +1219,19 @@ void BossFirst::UpdateByMover( float elapsedTime, const Donya::Vector3 &targetPo
 		ChangeState();
 	}
 }
+Donya::Vector3 BossFirst::CalcAimingVector( const Donya::Vector3 &targetPos, float maxRotDegree ) const
+{
+	const Donya::Vector3 front = orientation.LocalFront();
+	Donya::Vector3 targetVec = ( targetPos - GetPosition() ).Unit();
+	targetVec.y = 0.0f;
+
+	const float rotDeg = Donya::Dot( front, targetVec );
+	if ( fabsf( rotDeg ) <= maxRotDegree ) { return targetVec; }
+	// else
+
+	const auto rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( maxRotDegree ) );
+	return rotation.RotateVector( front );
+}
 BossType BossFirst::GetType() const { return BossType::First; }
 #if USE_IMGUI
 void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
@@ -1160,10 +1242,17 @@ void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text( u8"種類：%s", GetBossName( GetType() ).c_str() );
 
 	ImGui::DragInt( u8"現在の体力", &hp ); hp = std::max( 0, hp );
-	if ( pMover ) { ImGui::Text( u8"現在の状態：%s", pMover->GetStateName().c_str() ); }
+	if ( pMover )
+	{
+		ImGui::Text( u8"現在の状態：%s", pMover->GetStateName().c_str() );
+	}
 	ImGui::DragInt( u8"内部タイマ", &timer );
 	ImGui::DragFloat3( u8"現在の座標", &pos.x,		0.01f );
 	ImGui::DragFloat3( u8"現在の速度", &velocity.x,	0.01f );
+	if ( pMover )
+	{
+		ImGui::DragFloat3( u8"狙っている座標", &aimingPos.x,	0.01f );
+	}
 
 	Donya::Vector3 localFront = orientation.LocalFront();
 	ImGui::SliderFloat3( u8"現在の前方向", &localFront.x,	 -1.0f, 1.0f );
