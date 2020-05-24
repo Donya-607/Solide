@@ -371,6 +371,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	ProcessCheckPointCollision();
 	ProcessBulletCollision();
 	ProcessEnemyCollision();
+	ProcessBossCollision();
 	ProcessPlayerCollision();
 
 	if ( NowGoalMoment() )
@@ -1497,6 +1498,20 @@ void SceneGame::ProcessPlayerCollision()
 
 	if ( pPlayer->IsDead() ) { return; }
 	// else
+
+	// VS. boss body.
+	if ( pBoss )
+	{
+		const std::vector<Donya::AABB> bodies = pBoss->AcquireHitBoxes();
+		for ( const auto &it : bodies )
+		{
+			if ( Donya::AABB::IsHitAABB( playerBody, it ) )
+			{
+				pPlayer->KillMe();
+				return;
+			}
+		}
+	}
 }
 void SceneGame::ProcessEnemyCollision()
 {
@@ -1726,6 +1741,24 @@ void SceneGame::ProcessCheckPointCollision()
 		{
 			*pPlayerIniter = pPoint->GetInitializer();
 			pCheckPoint->RemovePoint( i );
+			break;
+		}
+	}
+}
+void SceneGame::ProcessBossCollision()
+{
+	if ( !pBoss ) { return; }
+	// else
+
+	std::vector<Donya::AABB> bodies = pBoss->AcquireHurtBoxes();
+
+	for ( const auto &it : bodies )
+	{
+		const auto pCollidedBullet = FindCollidedBulletOrNullptr( it );
+		if ( pCollidedBullet )
+		{
+			pBoss->MakeDamage( pCollidedBullet->GetElement() );
+			pCollidedBullet->HitToObject();
 			break;
 		}
 	}

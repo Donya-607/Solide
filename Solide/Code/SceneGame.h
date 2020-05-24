@@ -145,6 +145,7 @@ private:
 	void	ProcessBulletCollision();
 	void	ProcessWarpCollision();
 	void	ProcessCheckPointCollision();
+	void	ProcessBossCollision();
 
 	void	MakeShadows( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );
 

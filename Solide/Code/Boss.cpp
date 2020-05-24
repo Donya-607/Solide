@@ -213,11 +213,111 @@ namespace
 			}
 		}
 	};
+	struct FirstParam
+	{
+		struct Ready
+		{
+			int		preAimingFrame	= 1;
+			int		aimingFrame		= 1;
+			int		postAimingFrame	= 1;
+			float	maxAimDegree	= 180.0f;	// Per frame.
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( preAimingFrame	),
+					CEREAL_NVP( aimingFrame		),
+					CEREAL_NVP( postAimingFrame	),
+					CEREAL_NVP( maxAimDegree	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		struct Rush
+		{
+			float	initialSpeed	= 1.0f;
+			float	accel			= 1.0f;		// Per frame.
+			float	maxSpeed		= 1.0f;
+			float	movableRange	= 10.0f;
+			std::vector<int> feintCountPerHP;	// [0:MAX - 0][1:MAX - 1]..., If a remains(e.g. if MAX is 3, but this contains only two values) are exist, please used as back() value.
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( initialSpeed	),
+					CEREAL_NVP( accel			),
+					CEREAL_NVP( maxSpeed		),
+					CEREAL_NVP( movableRange	),
+					CEREAL_NVP( feintCountPerHP	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		struct Brake
+		{
+			float	normalDecel			= 1.0f;
+			float	oiledDecel			= 1.0f;
+			int		waitFrameAfterStop	= 1;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( normalDecel			),
+					CEREAL_NVP( oiledDecel			),
+					CEREAL_NVP( waitFrameAfterStop	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+
+		Ready	ready;
+		Rush	rush;
+		Brake	brake;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( ready	),
+				CEREAL_NVP( rush	),
+				CEREAL_NVP( brake	)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
 	struct Member
 	{
 		DrawingParam		drawer;
 		CollisionParam		collider;
 		std::vector<int>	initialHPs;
+		FirstParam			forFirst;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -232,14 +332,22 @@ namespace
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( forFirst ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,			0 )
-CEREAL_CLASS_VERSION( DrawingParam,		0 )
-CEREAL_CLASS_VERSION( CollisionParam,	0 )
+CEREAL_CLASS_VERSION( Member,				1 )
+CEREAL_CLASS_VERSION( DrawingParam,			0 )
+CEREAL_CLASS_VERSION( CollisionParam,		0 )
+CEREAL_CLASS_VERSION( FirstParam,			0 )
+CEREAL_CLASS_VERSION( FirstParam::Ready,	0 )
+CEREAL_CLASS_VERSION( FirstParam::Rush,		0 )
+CEREAL_CLASS_VERSION( FirstParam::Brake,	0 )
 
 class ParamBoss : public ParameterBase<ParamBoss>
 {
@@ -425,6 +533,39 @@ public:
 				ImGui::TreePop();
 			}
 
+			if ( ImGui::TreeNode( u8"１体目のパラメータ" ) )
+			{
+				auto &data = m.forFirst;
+				
+				auto ShowReady = [&]( const std::string &nodeCaption, FirstParam::Ready *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					ImGui::TreePop();
+				};
+				auto ShowRush = [&]( const std::string &nodeCaption, FirstParam::Rush *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					ImGui::TreePop();
+				};
+				auto ShowBrake = [&]( const std::string &nodeCaption, FirstParam::Brake *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					ImGui::TreePop();
+				};
+
+				ShowReady( u8"待機・軸あわせ",	&data.ready		);
+				ShowRush( u8"突進",				&data.rush		);
+				ShowBrake( u8"ブレーキ",			&data.brake		);
+
+				ImGui::TreePop();
+			}
+
 			ShowIONode( m );
 
 			ImGui::TreePop();
@@ -444,6 +585,13 @@ namespace
 		return ParamBoss::Get().Data();
 	}
 
+	void ToWorldSpace( std::vector<Donya::AABB> *pTarget, const Donya::Vector3 &worldOrigin )
+	{
+		for ( auto &it : *pTarget )
+		{
+			it.pos += worldOrigin;
+		}
+	}
 	Donya::Vector4x4 MakeHitBoxWorldMatrix( const Donya::Vector3 &wsPos, const Donya::AABB &localHitBox, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
 	{
 		// The size is half.
@@ -607,11 +755,6 @@ void BossBase::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 #if USE_IMGUI
 	ParamBoss::Get().UseImGui();
 #endif // USE_IMGUI
-
-	if ( IsDead() ) { return; }
-	// else
-
-	UpdateMotion( elapsedTime, 0 );
 }
 void BossBase::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMat )
 {
@@ -659,16 +802,8 @@ void BossBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &m
 	// else
 #if DEBUG_MODE
 
-	const auto data			= FetchMember();
-	const auto &collisions	= data.collider.collisions;
-	const int  intType		= scast<int>( GetType() );
-
-	if ( intType < 0 || scast<int>( collisions.size() ) <= intType ) { return; }
-	// else
-
-	const auto &perType		= data.collider.collisions[intType];
-	const auto &hitBoxes	= perType.hitBoxes;
-	const auto &hurtBoxes	= perType.hurtBoxes;
+	const auto hitBoxes		= FetchOwnHitBoxes( /* wantHurtBoxes = */ false );
+	const auto hurtBoxes	= FetchOwnHitBoxes( /* wantHurtBoxes = */ true  );
 
 	constexpr Donya::Vector4	hitColor { 0.6f, 0.0f, 0.0f, 0.5f };
 	constexpr Donya::Vector4	hurtColor{ 0.0f, 0.6f, 0.0f, 0.5f };
@@ -693,6 +828,18 @@ void BossBase::MakeDamage( const Element &effect ) const
 bool BossBase::IsDead() const
 {
 	return ( hp <= 0 );
+}
+std::vector<Donya::AABB>	BossBase::AcquireHitBoxes() const
+{
+	auto hitBoxes = FetchOwnHitBoxes( /* wantHurtBoxes = */ false );
+	ToWorldSpace( &hitBoxes, GetPosition() );
+	return hitBoxes;
+}
+std::vector<Donya::AABB>	BossBase::AcquireHurtBoxes() const
+{
+	auto hurtBoxes = FetchOwnHitBoxes( /* wantHurtBoxes = */ true );
+	ToWorldSpace( &hurtBoxes, GetPosition() );
+	return hurtBoxes;
 }
 void BossBase::AssignSpecifyPose( int motionIndex )
 {
@@ -729,7 +876,7 @@ void BossBase::UpdateMotion( float elapsedTime, int motionIndex )
 		AssignSpecifyPose( motionIndex );
 	}
 }
-Donya::Vector4		BossBase::CalcDrawColor() const
+Donya::Vector4				BossBase::CalcDrawColor() const
 {
 	const auto data = FetchMember();
 	Donya::Vector4 baseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -738,7 +885,7 @@ Donya::Vector4		BossBase::CalcDrawColor() const
 
 	return baseColor;
 }
-Donya::Vector4x4	BossBase::CalcWorldMatrix( bool useForDrawing ) const
+Donya::Vector4x4			BossBase::CalcWorldMatrix( bool useForDrawing ) const
 {
 	const auto data = FetchMember();
 	Donya::Vector4x4 W{};
@@ -773,8 +920,158 @@ Donya::Vector4x4	BossBase::CalcWorldMatrix( bool useForDrawing ) const
 
 	return W;
 }
+std::vector<Donya::AABB>	BossBase::FetchOwnHitBoxes( bool wantHurtBoxes ) const
+{
+	const auto data			= FetchMember();
+	const auto &collisions	= data.collider.collisions;
+	const int  intType		= scast<int>( GetType() );
+
+	if ( intType < 0 || scast<int>( collisions.size() ) <= intType ) { return {}; }
+	// else
+
+	const auto &perType		= data.collider.collisions[intType];
+	return	( wantHurtBoxes )
+			? perType.hurtBoxes
+			: perType.hitBoxes;
+}
 
 
+#pragma region First
+void BossFirst::MoverBase::Init( BossFirst *p )
+{
+	p->timer = 0;
+}
+
+void BossFirst::Ready::Init( BossFirst *p )
+{
+	MoverBase::Init( p );
+}
+void BossFirst::Ready::Uninit( BossFirst *p ) {}
+void BossFirst::Ready::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
+{
+
+}
+bool BossFirst::Ready::ShouldChangeMover( BossFirst *p ) const
+{
+	return false;
+}
+std::function<void()> BossFirst::Ready::GetChangeStateMethod( BossFirst *p ) const
+{
+	return [&]() { p->AssignMover<Rush>(); };
+}
+std::string BossFirst::Ready::GetStateName() const { return "Ready"; }
+
+void BossFirst::Rush::Init( BossFirst *p )
+{
+	MoverBase::Init( p );
+}
+void BossFirst::Rush::Uninit( BossFirst *p ) {}
+void BossFirst::Rush::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
+{
+
+}
+bool BossFirst::Rush::ShouldChangeMover( BossFirst *p ) const
+{
+	return false;
+}
+std::function<void()> BossFirst::Rush::GetChangeStateMethod( BossFirst *p ) const
+{
+	return [&]() { p->AssignMover<Brake>(); };
+}
+std::string BossFirst::Rush::GetStateName() const { return "Rush"; }
+
+void BossFirst::Brake::Init( BossFirst *p )
+{
+	MoverBase::Init( p );
+}
+void BossFirst::Brake::Uninit( BossFirst *p ) {}
+void BossFirst::Brake::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
+{
+
+}
+bool BossFirst::Brake::ShouldChangeMover( BossFirst *p ) const
+{
+	return false;
+}
+std::function<void()> BossFirst::Brake::GetChangeStateMethod( BossFirst *p ) const
+{
+	return [&]() { p->AssignMover<Ready>(); };
+}
+std::string BossFirst::Brake::GetStateName() const { return "Brake"; }
+
+void BossFirst::Damage::Init( BossFirst *p )
+{
+	MoverBase::Init( p );
+}
+void BossFirst::Damage::Uninit( BossFirst *p ) {}
+void BossFirst::Damage::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
+{
+
+}
+bool BossFirst::Damage::ShouldChangeMover( BossFirst *p ) const
+{
+	return false;
+}
+std::function<void()> BossFirst::Damage::GetChangeStateMethod( BossFirst *p ) const
+{
+	return [&]() { p->AssignMover<Ready>(); };
+}
+std::string BossFirst::Damage::GetStateName() const { return "Damage"; }
+
+void BossFirst::Die::Init( BossFirst *p )
+{
+	MoverBase::Init( p );
+}
+void BossFirst::Die::Uninit( BossFirst *p ) {}
+void BossFirst::Die::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
+{
+
+}
+bool BossFirst::Die::ShouldChangeMover( BossFirst *p ) const
+{
+	return false;
+}
+std::function<void()> BossFirst::Die::GetChangeStateMethod( BossFirst *p ) const
+{
+	return [&]() {}; // No op.
+}
+std::string BossFirst::Die::GetStateName() const { return "Die"; }
+
+void BossFirst::Init( const BossInitializer &parameter )
+{
+	BossBase::Init( parameter );
+	AssignMover<Ready>();
+}
+void BossFirst::Uninit()
+{
+	BossBase::Uninit();
+
+	if ( pMover ) { pMover->Uninit( this ); }
+	pMover.reset();
+}
+void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
+{
+	BossBase::Update( elapsedTime, targetPos );
+
+	UpdateMotion( elapsedTime, 0 );
+
+	if ( IsDead() ) { return; }
+	// else
+
+	UpdateByMover( elapsedTime, targetPos );
+}
+void BossFirst::UpdateByMover( float elapsedTime, const Donya::Vector3 &targetPos )
+{
+	if ( !pMover ) { return; }
+	// else
+
+	pMover->Update( this, elapsedTime, targetPos );
+	if ( pMover->ShouldChangeMover( this ) )
+	{
+		auto ChangeState = pMover->GetChangeStateMethod( this );
+		ChangeState();
+	}
+}
 BossType BossFirst::GetType() const { return BossType::First; }
 #if USE_IMGUI
 void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
@@ -785,6 +1082,8 @@ void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text( u8"種類：%s", GetBossName( GetType() ).c_str() );
 
 	ImGui::DragInt( u8"現在の体力", &hp ); hp = std::max( 0, hp );
+	if ( pMover ) { ImGui::Text( u8"現在の状態：%s", pMover->GetStateName().c_str() ); }
+	ImGui::DragInt( u8"内部タイマ", &timer );
 	ImGui::DragFloat3( u8"現在の座標", &pos.x,		0.01f );
 	ImGui::DragFloat3( u8"現在の速度", &velocity.x,	0.01f );
 
@@ -797,3 +1096,5 @@ void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::TreePop();
 }
 #endif // USE_IMGUI
+// region First
+#pragma endregion
