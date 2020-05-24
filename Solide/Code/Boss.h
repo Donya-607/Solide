@@ -140,6 +140,7 @@ private:
 		virtual void Init( BossFirst &instance );
 		virtual void Uninit( BossFirst &instance ) = 0;
 		virtual void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) = 0;
+		virtual void PhysicUpdate( BossFirst &instance, const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
 		virtual bool ShouldChangeMover( BossFirst &instance ) const = 0;
 		virtual std::function<void()> GetChangeStateMethod( BossFirst &instance ) const = 0;
 		virtual std::string GetStateName() const = 0;
@@ -164,6 +165,7 @@ private:
 		void Init( BossFirst &instance ) override;
 		void Uninit( BossFirst &instance ) override;
 		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		void PhysicUpdate( BossFirst &instance, const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 		bool ShouldChangeMover( BossFirst &instance ) const override;
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
@@ -177,6 +179,7 @@ private:
 		void Init( BossFirst &instance ) override;
 		void Uninit( BossFirst &instance ) override;
 		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		void PhysicUpdate( BossFirst &instance, const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 		bool ShouldChangeMover( BossFirst &instance ) const override;
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
@@ -211,6 +214,7 @@ public:
 	void Init( const BossInitializer &parameter ) override;
 	void Uninit() override;
 	void Update( float elapsedTime, const Donya::Vector3 &targetPos ) override;
+	void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 private:
 	template<class Mover>
 	void AssignMover()

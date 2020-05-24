@@ -1019,6 +1019,10 @@ void BossFirst::MoverBase::Init( BossFirst &inst )
 {
 	inst.timer = 0;
 }
+void BossFirst::MoverBase::PhysicUpdate( BossFirst &inst, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix )
+{
+	inst.BossBase::PhysicUpdate( solids, pTerrain, pTerrainWorldMatrix );
+}
 
 void BossFirst::Ready::Init( BossFirst &inst )
 {
@@ -1084,10 +1088,26 @@ void BossFirst::Rush::Update( BossFirst &inst, float elapsedTime, const Donya::V
 	const Donya::Vector3 updatedVelocity = inst.orientation.LocalFront() * currentSpeed;
 	inst.velocity.x = updatedVelocity.x;
 	inst.velocity.z = updatedVelocity.z;
+}
+void BossFirst::Rush::PhysicUpdate( BossFirst &inst, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix )
+{
+	MoverBase::PhysicUpdate( inst, solids, pTerrain, pTerrainWorldMatrix );
 
-	const Donya::Vector2 XZPos = inst.GetPosition().XZ();
-	if ( data.movableRange < fabsf( XZPos.x ) ) { shouldStop = true; }
-	if ( data.movableRange < fabsf( XZPos.y ) ) { shouldStop = true; }
+	const Donya::Vector2 movedPos = inst.GetPosition().XZ();
+	const float movableRange = FetchMember().forFirst.rush.movableRange;
+	auto OnOutSide = []( const Donya::Vector2 &xzPos, float movableRange )
+	{
+		return ( movableRange < fabsf( xzPos.x ) || movableRange < fabsf( xzPos.y ) );
+	};
+	if ( OnOutSide( movedPos, movableRange ) )
+	{
+		shouldStop = true;
+
+		constexpr float ERROR_MARGIN = 0.99f;
+		const float insideRange = movableRange * ERROR_MARGIN;
+		Donya::Clamp( &inst.pos.x, -insideRange, insideRange );
+		Donya::Clamp( &inst.pos.z, -insideRange, insideRange );
+	}
 }
 bool BossFirst::Rush::ShouldChangeMover( BossFirst &inst ) const
 {
@@ -1134,6 +1154,26 @@ void BossFirst::Brake::Update( BossFirst &inst, float elapsedTime, const Donya::
 	if ( ZeroEqual( currentSpeed ) )
 	{
 		isStopping = true;
+	}
+}
+void BossFirst::Brake::PhysicUpdate( BossFirst &inst, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix )
+{
+	MoverBase::PhysicUpdate( inst, solids, pTerrain, pTerrainWorldMatrix );
+
+	// Prevent to starting the rush from outside.
+
+	const Donya::Vector2 movedPos = inst.GetPosition().XZ();
+	const float movableRange = FetchMember().forFirst.rush.movableRange;
+	auto OnOutSide = []( const Donya::Vector2 &xzPos, float movableRange )
+	{
+		return ( movableRange < fabsf( xzPos.x ) || movableRange < fabsf( xzPos.y ) );
+	};
+	if ( OnOutSide( movedPos, movableRange ) && !inst.element.Has( Element::Type::Oil ) )
+	{
+		constexpr float ERROR_MARGIN = 0.99f;
+		const float insideRange = movableRange * ERROR_MARGIN;
+		Donya::Clamp( &inst.pos.x, -insideRange, insideRange );
+		Donya::Clamp( &inst.pos.z, -insideRange, insideRange );
 	}
 }
 bool BossFirst::Brake::ShouldChangeMover( BossFirst &inst ) const
@@ -1206,6 +1246,13 @@ void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	// else
 
 	UpdateByMover( elapsedTime, targetPos );
+}
+void BossFirst::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix )
+{
+	if ( !pMover ) { return; }
+	// else
+
+	pMover->PhysicUpdate( *this, solids, pTerrain, pTerrainWorldMatrix );
 }
 void BossFirst::UpdateByMover( float elapsedTime, const Donya::Vector3 &targetPos )
 {
