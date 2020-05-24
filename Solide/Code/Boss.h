@@ -137,11 +137,11 @@ private:
 	class MoverBase
 	{
 	public:
-		virtual void Init( BossFirst *p );
-		virtual void Uninit( BossFirst *p ) = 0;
-		virtual void Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos ) = 0;
-		virtual bool ShouldChangeMover( BossFirst *p ) const = 0;
-		virtual std::function<void()> GetChangeStateMethod( BossFirst *p ) const = 0;
+		virtual void Init( BossFirst &instance );
+		virtual void Uninit( BossFirst &instance ) = 0;
+		virtual void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) = 0;
+		virtual bool ShouldChangeMover( BossFirst &instance ) const = 0;
+		virtual std::function<void()> GetChangeStateMethod( BossFirst &instance ) const = 0;
 		virtual std::string GetStateName() const = 0;
 	};
 	class Ready : public MoverBase
@@ -149,11 +149,11 @@ private:
 	private:
 		bool gotoNext = false;
 	public:
-		void Init( BossFirst *p ) override;
-		void Uninit( BossFirst *p ) override;
-		void Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos ) override;
-		bool ShouldChangeMover( BossFirst *p ) const override;
-		std::function<void()> GetChangeStateMethod( BossFirst *p ) const override;
+		void Init( BossFirst &instance ) override;
+		void Uninit( BossFirst &instance ) override;
+		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		bool ShouldChangeMover( BossFirst &instance ) const override;
+		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
 	};
 	class Rush : public MoverBase
@@ -161,11 +161,11 @@ private:
 	private:
 		bool shouldStop = false;
 	public:
-		void Init( BossFirst *p ) override;
-		void Uninit( BossFirst *p ) override;
-		void Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos ) override;
-		bool ShouldChangeMover( BossFirst *p ) const override;
-		std::function<void()> GetChangeStateMethod( BossFirst *p ) const override;
+		void Init( BossFirst &instance ) override;
+		void Uninit( BossFirst &instance ) override;
+		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		bool ShouldChangeMover( BossFirst &instance ) const override;
+		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
 	};
 	class Brake : public MoverBase
@@ -174,31 +174,31 @@ private:
 		bool isStopping	= false;
 		bool gotoNext	= false;
 	public:
-		void Init( BossFirst *p ) override;
-		void Uninit( BossFirst *p ) override;
-		void Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos ) override;
-		bool ShouldChangeMover( BossFirst *p ) const override;
-		std::function<void()> GetChangeStateMethod( BossFirst *p ) const override;
+		void Init( BossFirst &instance ) override;
+		void Uninit( BossFirst &instance ) override;
+		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		bool ShouldChangeMover( BossFirst &instance ) const override;
+		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
 	};
 	class Damage : public MoverBase
 	{
 	public:
-		void Init( BossFirst *p ) override;
-		void Uninit( BossFirst *p ) override;
-		void Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos ) override;
-		bool ShouldChangeMover( BossFirst *p ) const override;
-		std::function<void()> GetChangeStateMethod( BossFirst *p ) const override;
+		void Init( BossFirst &instance ) override;
+		void Uninit( BossFirst &instance ) override;
+		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		bool ShouldChangeMover( BossFirst &instance ) const override;
+		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
 	};
 	class Die : public MoverBase
 	{
 	public:
-		void Init( BossFirst *p ) override;
-		void Uninit( BossFirst *p ) override;
-		void Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos ) override;
-		bool ShouldChangeMover( BossFirst *p ) const override;
-		std::function<void()> GetChangeStateMethod( BossFirst *p ) const override;
+		void Init( BossFirst &instance ) override;
+		void Uninit( BossFirst &instance ) override;
+		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		bool ShouldChangeMover( BossFirst &instance ) const override;
+		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
 	};
 // region Mover
@@ -215,10 +215,10 @@ private:
 	template<class Mover>
 	void AssignMover()
 	{
-		if ( pMover ) { pMover->Uninit( this ); }
+		if ( pMover ) { pMover->Uninit( *this ); }
 
 		pMover = std::make_unique<Mover>();
-		pMover->Init( this );
+		pMover->Init( *this );
 	}
 
 	void UpdateByMover( float elapsedTime, const Donya::Vector3 &targetPos );

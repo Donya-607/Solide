@@ -1015,107 +1015,107 @@ std::vector<Donya::AABB>	BossBase::FetchOwnHitBoxes( bool wantHurtBoxes ) const
 
 
 #pragma region First
-void BossFirst::MoverBase::Init( BossFirst *p )
+void BossFirst::MoverBase::Init( BossFirst &inst )
 {
-	p->timer = 0;
+	inst.timer = 0;
 }
 
-void BossFirst::Ready::Init( BossFirst *p )
+void BossFirst::Ready::Init( BossFirst &inst )
 {
-	MoverBase::Init( p );
-	p->velocity.x = 0.0f;
-	p->velocity.z = 0.0f;
+	MoverBase::Init( inst );
+	inst.velocity.x = 0.0f;
+	inst.velocity.z = 0.0f;
 
 	gotoNext = false;
 }
-void BossFirst::Ready::Uninit( BossFirst *p ) {}
-void BossFirst::Ready::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
+void BossFirst::Ready::Uninit( BossFirst &inst ) {}
+void BossFirst::Ready::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
 	const auto data = FetchMember().forFirst.ready;
 	const int preFrame	= data.preAimingFrame;
 	const int midFrame	= preFrame + data.aimingFrame;
 	const int postFrame	= midFrame + data.postAimingFrame;
 
-	p->timer++;
+	inst.timer++;
 
-	if ( preFrame <= p->timer && p->timer < postFrame )
+	if ( preFrame <= inst.timer && inst.timer < postFrame )
 	{
-		const Donya::Vector3 aimingVector = p->CalcAimingVector( targetPos, data.maxAimDegree );
-		p->orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
-		p->aimingPos	= targetPos;
+		const Donya::Vector3 aimingVector = inst.CalcAimingVector( targetPos, data.maxAimDegree );
+		inst.orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
+		inst.aimingPos	= targetPos;
 	}
 	else
-	if ( postFrame < p->timer )
+	if ( postFrame < inst.timer )
 	{
 		gotoNext = true;
 	}
 }
-bool BossFirst::Ready::ShouldChangeMover( BossFirst *p ) const
+bool BossFirst::Ready::ShouldChangeMover( BossFirst &inst ) const
 {
 	return gotoNext;
 }
-std::function<void()> BossFirst::Ready::GetChangeStateMethod( BossFirst *p ) const
+std::function<void()> BossFirst::Ready::GetChangeStateMethod( BossFirst &inst ) const
 {
-	return [&]() { p->AssignMover<Rush>(); };
+	return [&]() { inst.AssignMover<Rush>(); };
 }
 std::string BossFirst::Ready::GetStateName() const { return "Ready"; }
 
-void BossFirst::Rush::Init( BossFirst *p )
+void BossFirst::Rush::Init( BossFirst &inst )
 {
-	MoverBase::Init( p );
-	const Donya::Vector3 initialVelocity = p->orientation.LocalFront() * FetchMember().forFirst.rush.initialSpeed;
-	p->velocity.x = initialVelocity.x;
-	p->velocity.z = initialVelocity.z;
+	MoverBase::Init( inst );
+	const Donya::Vector3 initialVelocity = inst.orientation.LocalFront() * FetchMember().forFirst.rush.initialSpeed;
+	inst.velocity.x = initialVelocity.x;
+	inst.velocity.z = initialVelocity.z;
 
 	shouldStop = false;
 }
-void BossFirst::Rush::Uninit( BossFirst *p ) {}
-void BossFirst::Rush::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
+void BossFirst::Rush::Uninit( BossFirst &inst ) {}
+void BossFirst::Rush::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
 	if ( shouldStop ) { return; }
 	// else
 
 	const auto data = FetchMember().forFirst.rush;
 
-	float currentSpeed = p->velocity.XZ().Length();
+	float currentSpeed = inst.velocity.XZ().Length();
 	currentSpeed += data.accel;
 	currentSpeed = std::min( data.maxSpeed, currentSpeed );
 
-	const Donya::Vector3 updatedVelocity = p->orientation.LocalFront() * currentSpeed;
-	p->velocity.x = updatedVelocity.x;
-	p->velocity.z = updatedVelocity.z;
+	const Donya::Vector3 updatedVelocity = inst.orientation.LocalFront() * currentSpeed;
+	inst.velocity.x = updatedVelocity.x;
+	inst.velocity.z = updatedVelocity.z;
 
-	const Donya::Vector2 XZPos = p->GetPosition().XZ();
+	const Donya::Vector2 XZPos = inst.GetPosition().XZ();
 	if ( data.movableRange < fabsf( XZPos.x ) ) { shouldStop = true; }
 	if ( data.movableRange < fabsf( XZPos.y ) ) { shouldStop = true; }
 }
-bool BossFirst::Rush::ShouldChangeMover( BossFirst *p ) const
+bool BossFirst::Rush::ShouldChangeMover( BossFirst &inst ) const
 {
 	return shouldStop;
 }
-std::function<void()> BossFirst::Rush::GetChangeStateMethod( BossFirst *p ) const
+std::function<void()> BossFirst::Rush::GetChangeStateMethod( BossFirst &inst ) const
 {
-	return [&]() { p->AssignMover<Brake>(); };
+	return [&]() { inst.AssignMover<Brake>(); };
 }
 std::string BossFirst::Rush::GetStateName() const { return "Rush"; }
 
-void BossFirst::Brake::Init( BossFirst *p )
+void BossFirst::Brake::Init( BossFirst &inst )
 {
-	MoverBase::Init( p );
+	MoverBase::Init( inst );
 
 	isStopping	= false;
 	gotoNext	= false;
 }
-void BossFirst::Brake::Uninit( BossFirst *p ) {}
-void BossFirst::Brake::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
+void BossFirst::Brake::Uninit( BossFirst &inst ) {}
+void BossFirst::Brake::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
 	const auto data = FetchMember().forFirst.brake;
 
 	if ( isStopping )
 	{
-		p->timer++;
+		inst.timer++;
 
-		if ( data.waitFrameAfterStop <= p->timer )
+		if ( data.waitFrameAfterStop <= inst.timer )
 		{
 			gotoNext = true;
 		}
@@ -1123,62 +1123,62 @@ void BossFirst::Brake::Update( BossFirst *p, float elapsedTime, const Donya::Vec
 	}
 	// else
 
-	float currentSpeed = p->velocity.XZ().Length();
-	currentSpeed -= ( p->element.Has( Element::Type::Oil ) ) ? data.oiledDecel : data.normalDecel;
+	float currentSpeed = inst.velocity.XZ().Length();
+	currentSpeed -= ( inst.element.Has( Element::Type::Oil ) ) ? data.oiledDecel : data.normalDecel;
 	currentSpeed = std::max( 0.0f, currentSpeed );
 
-	const Donya::Vector3 updatedVelocity = p->orientation.LocalFront() * currentSpeed;
-	p->velocity.x = updatedVelocity.x;
-	p->velocity.z = updatedVelocity.z;
+	const Donya::Vector3 updatedVelocity = inst.orientation.LocalFront() * currentSpeed;
+	inst.velocity.x = updatedVelocity.x;
+	inst.velocity.z = updatedVelocity.z;
 
 	if ( ZeroEqual( currentSpeed ) )
 	{
 		isStopping = true;
 	}
 }
-bool BossFirst::Brake::ShouldChangeMover( BossFirst *p ) const
+bool BossFirst::Brake::ShouldChangeMover( BossFirst &inst ) const
 {
 	return gotoNext;
 }
-std::function<void()> BossFirst::Brake::GetChangeStateMethod( BossFirst *p ) const
+std::function<void()> BossFirst::Brake::GetChangeStateMethod( BossFirst &inst ) const
 {
-	return [&]() { p->AssignMover<Ready>(); };
+	return [&]() { inst.AssignMover<Ready>(); };
 }
 std::string BossFirst::Brake::GetStateName() const { return "Brake"; }
 
-void BossFirst::Damage::Init( BossFirst *p )
+void BossFirst::Damage::Init( BossFirst &inst )
 {
-	MoverBase::Init( p );
+	MoverBase::Init( inst );
 }
-void BossFirst::Damage::Uninit( BossFirst *p ) {}
-void BossFirst::Damage::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
+void BossFirst::Damage::Uninit( BossFirst &inst ) {}
+void BossFirst::Damage::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
 
 }
-bool BossFirst::Damage::ShouldChangeMover( BossFirst *p ) const
+bool BossFirst::Damage::ShouldChangeMover( BossFirst &inst ) const
 {
 	return false;
 }
-std::function<void()> BossFirst::Damage::GetChangeStateMethod( BossFirst *p ) const
+std::function<void()> BossFirst::Damage::GetChangeStateMethod( BossFirst &inst ) const
 {
-	return [&]() { p->AssignMover<Ready>(); };
+	return [&]() { inst.AssignMover<Ready>(); };
 }
 std::string BossFirst::Damage::GetStateName() const { return "Damage"; }
 
-void BossFirst::Die::Init( BossFirst *p )
+void BossFirst::Die::Init( BossFirst &inst )
 {
-	MoverBase::Init( p );
+	MoverBase::Init( inst );
 }
-void BossFirst::Die::Uninit( BossFirst *p ) {}
-void BossFirst::Die::Update( BossFirst *p, float elapsedTime, const Donya::Vector3 &targetPos )
+void BossFirst::Die::Uninit( BossFirst &inst ) {}
+void BossFirst::Die::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
 
 }
-bool BossFirst::Die::ShouldChangeMover( BossFirst *p ) const
+bool BossFirst::Die::ShouldChangeMover( BossFirst &inst ) const
 {
 	return false;
 }
-std::function<void()> BossFirst::Die::GetChangeStateMethod( BossFirst *p ) const
+std::function<void()> BossFirst::Die::GetChangeStateMethod( BossFirst &inst ) const
 {
 	return [&]() {}; // No op.
 }
@@ -1193,7 +1193,7 @@ void BossFirst::Uninit()
 {
 	BossBase::Uninit();
 
-	if ( pMover ) { pMover->Uninit( this ); }
+	if ( pMover ) { pMover->Uninit( *this ); }
 	pMover.reset();
 }
 void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1212,10 +1212,10 @@ void BossFirst::UpdateByMover( float elapsedTime, const Donya::Vector3 &targetPo
 	if ( !pMover ) { return; }
 	// else
 
-	pMover->Update( this, elapsedTime, targetPos );
-	if ( pMover->ShouldChangeMover( this ) )
+	pMover->Update( *this, elapsedTime, targetPos );
+	if ( pMover->ShouldChangeMover( *this ) )
 	{
-		auto ChangeState = pMover->GetChangeStateMethod( this );
+		auto ChangeState = pMover->GetChangeStateMethod( *this );
 		ChangeState();
 	}
 }
