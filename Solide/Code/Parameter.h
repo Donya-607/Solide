@@ -74,6 +74,8 @@ public:
 };
 
 #if USE_IMGUI
+#include <functional>
+#include <vector>
 #include "Donya/Collision.h"
 #include "Renderer.h"
 namespace ParameterHelper
@@ -83,5 +85,18 @@ namespace ParameterHelper
 
 	void ShowConstantNode( const std::string &nodeCaption, RenderingHelper::TransConstant *pConstant );
 	void ShowConstantNode( const std::string &nodeCaption, RenderingHelper::AdjustColorConstant *pConstant );
+
+	template<class T>
+	void ResizeByButton( std::vector<T> *p, const T &initializeValue = T{}, const char *captionAppend = u8"’Ç‰Á", const char *captionPop = u8"––”ö‚ðíœ" )
+	{
+		if ( ImGui::Button( captionAppend ) )
+		{
+			p->emplace_back( initializeValue );
+		}
+		if ( p->size() && ImGui::Button( captionPop ) )
+		{
+			p->pop_back();
+		}
+	}
 }
 #endif // USE_IMGUI

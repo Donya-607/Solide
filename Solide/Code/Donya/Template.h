@@ -2,7 +2,8 @@
 
 #include <memory>
 
-#include "Constant.h"
+#undef max
+#undef min
 
 namespace Donya
 {
@@ -14,8 +15,13 @@ namespace Donya
 	class Singleton
 	{
 	protected:
-		Singleton() {}
-		DELETE_COPY_AND_ASSIGN( Singleton )
+		Singleton() = default;
+		Singleton( const Singleton &  ) = delete;
+		Singleton(	     Singleton && ) = delete;
+		Singleton &operator = ( const Singleton &  ) = delete;
+		Singleton &operator = (	      Singleton && ) = delete;
+	public:
+		~Singleton() = default;
 	public:
 		static T &Get()
 		{
@@ -38,7 +44,16 @@ namespace Donya
 	constexpr std::unique_ptr<T> Clone( const std::unique_ptr<T> &source )
 	{
 		return	( !source )
-			? std::make_unique<T>()
-			: std::make_unique<T>( *source );
+				? std::make_unique<T>()
+				: std::make_unique<T>( *source );
+	}
+
+	/// <summary>
+	/// *v = max( min, min( max, *v ) );
+	/// </summary>
+	template<typename T>
+	constexpr void Clamp( T *v, const T &min, const T &max )
+	{
+		*v = std::max( min, std::min( max, *v ) );
 	}
 }

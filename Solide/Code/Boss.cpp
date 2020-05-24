@@ -15,6 +15,7 @@
 
 #if DEBUG_MODE
 #include "Donya/Keyboard.h"
+#include "Donya/Template.h"		// Use Clamp().
 #endif // DEBUG_MODE
 
 #include "Common.h"
@@ -542,12 +543,76 @@ public:
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
 
+					ImGui::DragInt( u8"狙い始めるまでの待ち時間（フレーム）",	&p->preAimingFrame	);
+					ImGui::DragInt( u8"狙いつける時間（フレーム）",			&p->aimingFrame		);
+					ImGui::DragInt( u8"狙いをつけた後の待ち時間（フレーム）",	&p->postAimingFrame	);
+					Donya::Clamp( &p->preAimingFrame,	0, p->preAimingFrame	);
+					Donya::Clamp( &p->aimingFrame,		0, p->aimingFrame		);
+					Donya::Clamp( &p->postAimingFrame,	0, p->postAimingFrame	);
+					ImGui::Text( u8"%d：合計所要時間（フレーム）", p->preAimingFrame + p->aimingFrame + p->postAimingFrame );
+
+					ImGui::SliderFloat( u8"一度に曲がる最大角度（Degree）", &p->maxAimDegree, -180.0f, 180.0f );
+
 					ImGui::TreePop();
 				};
-				auto ShowRush = [&]( const std::string &nodeCaption, FirstParam::Rush *p )
+				auto ShowRush  = [&]( const std::string &nodeCaption, FirstParam::Rush *p )
 				{
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
+
+					ImGui::DragFloat( u8"初期速度",				&p->initialSpeed	);
+					ImGui::DragFloat( u8"加速度",				&p->accel			);
+					ImGui::DragFloat( u8"最高速度",				&p->maxSpeed		);
+					ImGui::DragFloat( u8"移動可能範囲（半分）",	&p->movableRange	);
+					p->initialSpeed	= std::max( 0.0f, p->initialSpeed	);
+					p->accel		= std::max( 0.0f, p->accel			);
+					p->maxSpeed		= std::max( 0.0f, p->maxSpeed		);
+					p->movableRange	= std::max( 0.0f, p->movableRange	);
+
+					if ( ImGui::TreeNode( u8"フェイント回数設定" ) )
+					{
+						if ( ImGui::TreeNode( u8"説明" ) )
+						{
+							ImGui::Text( u8"フェイント回数は，[最大HP - 現在HP]をインデックスに使われます。" );
+							ImGui::Text( u8"また，要素数が最大HPより少ない場合は，切り詰めて末尾のものが使われます。" );
+							ImGui::Text( u8"例：最大HP = 5; フェイント回数 = { 0, 2, 1, 5 };" );
+							ImGui::Text( u8"現在HP: 5 -> フェイント回数: (5-5) -> [0番] -> 0" );
+							ImGui::Text( u8"現在HP: 4 -> フェイント回数: (5-4) -> [1番] -> 2" );
+							ImGui::Text( u8"現在HP: 3 -> フェイント回数: (5-3) -> [2番] -> 1" );
+							ImGui::Text( u8"現在HP: 2 -> フェイント回数: (5-2) -> [3番] -> 5" );
+							ImGui::Text( u8"現在HP: 1 -> フェイント回数: (5-1) -> [4番](範囲外) -> 5" );
+							ImGui::TreePop();
+						}
+
+						auto &HPData = p->feintCountPerHP;
+						ParameterHelper::ResizeByButton( &HPData, 0 );
+
+						std::string caption{};
+						const size_t count = HPData.size();
+						size_t eraseIndex = count;
+						for ( size_t i = 0; i < count; ++i )
+						{
+							caption = Donya::MakeArraySuffix( i );
+
+							caption = caption + u8"を削除";
+							if ( ImGui::Button( ( caption + u8"を削除" ).c_str() ) )
+							{
+								eraseIndex = i;
+							}
+							ImGui::SameLine();
+
+							caption = u8"フェイントする回数##" + caption;
+							ImGui::DragInt( caption.c_str(), &HPData[i] );
+							HPData[i] = std::max( 0, HPData[i] );
+						}
+
+						if ( eraseIndex != count )
+						{
+							HPData.erase( HPData.begin() + eraseIndex );
+						}
+
+						ImGui::TreePop();
+					}
 
 					ImGui::TreePop();
 				};
@@ -555,6 +620,19 @@ public:
 				{
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
+
+					/*
+					float	normalDecel			= 1.0f;
+					float	oiledDecel			= 1.0f;
+					int		waitFrameAfterStop	= 1;
+					*/
+
+					ImGui::DragFloat( u8"通常減速量",				&p->normalDecel			);
+					ImGui::DragFloat( u8"オイル時減速量",				&p->oiledDecel			);
+					ImGui::DragInt  ( u8"停止後の待ち時間",			&p->waitFrameAfterStop	);
+					p->normalDecel			= std::max( 0.0001f,	p->normalDecel			);
+					p->oiledDecel			= std::max( 0.0001f,	p->oiledDecel			);
+					p->waitFrameAfterStop	= std::max( 1,			p->waitFrameAfterStop	);
 
 					ImGui::TreePop();
 				};
