@@ -85,7 +85,7 @@ public:
 		Donya::Model::MotionHolder	motionHolder;
 	};
 protected:
-	int					hp = 3;
+	int					hp = 2;			// 0-based. Non-negative value is alive(greater equal than 0).
 	Donya::Vector3		velocity;
 	Donya::Quaternion	orientation;
 	mutable Element		element;		// Will change in const method.
@@ -192,6 +192,18 @@ private:
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
 	};
+	class Breath : public MoverBase
+	{
+	private:
+		bool gotoNext = false;
+	public:
+		void Init( BossFirst &instance ) override;
+		void Uninit( BossFirst &instance ) override;
+		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		bool ShouldChangeMover( BossFirst &instance ) const override;
+		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
+		std::string GetStateName() const override;
+	};
 	class Damage : public MoverBase
 	{
 	public:
@@ -216,8 +228,7 @@ private:
 #pragma endregion
 private:
 	int							timer = 0;
-	ActionType					currentAction = ActionType::Rush;
-	ActionType					nextAction = ActionType::Rush;
+	int							actionIndex = 0;
 	Donya::Vector3				aimingPos;
 	std::unique_ptr<MoverBase>	pMover = nullptr;
 public:
@@ -234,10 +245,15 @@ private:
 		pMover = std::make_unique<Mover>();
 		pMover->Init( *this );
 	}
+	void AssignMoverByAction( ActionType type );
+	void AssignMoverByAction( int actionIndex );
 
 	void UpdateByMover( float elapsedTime, const Donya::Vector3 &targetPos );
 
 	Donya::Vector3 CalcAimingVector( const Donya::Vector3 &targetPos, float maxRotatableDegree = 360.0f ) const;
+
+	std::vector<ActionType> FetchActionPatterns() const;
+	ActionType FetchAction( int actionIndex ) const;
 private:
 	BossType GetType() const override;
 public:

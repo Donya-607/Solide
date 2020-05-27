@@ -321,7 +321,7 @@ namespace
 		Rush	rush;
 		Brake	brake;
 
-		std::vector<std::vector<BossFirst::ActionType>> actionPatterns; // Per HPs.
+		std::vector<std::vector<BossFirst::ActionType>> actionPatterns; // Per HPs. The index is calced by: maxHP - nowHP(e.g. nowHP == maxHP -> 0, nowHP = maxHP-1 -> 1, ...)
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -375,7 +375,7 @@ namespace
 		/// <summary>
 		/// Returns zero if the type outs of range.
 		/// </summary>
-		int FetchInitialHP( BossType type )
+		int FetchInitialHP( BossType type ) const
 		{
 			const int intType = scast<int>( type );
 			if ( intType < 0 || scast<int>( BossType::BossCount ) )
@@ -707,7 +707,7 @@ public:
 						ParameterHelper::ResizeByButton( &patterns, BossFirst::ActionType::Rush );
 
 						const size_t patternCount = patterns.size();
-						for ( int j = 0; j < patternCount; ++j )
+						for ( size_t j = 0; j < patternCount; ++j )
 						{
 							caption = Donya::MakeArraySuffix( j );
 							ShowActionGuiNode( caption, &patterns[j] );
@@ -1305,7 +1305,8 @@ std::string BossFirst::Die::GetStateName() const { return "Die"; }
 void BossFirst::Init( const BossInitializer &parameter )
 {
 	BossBase::Init( parameter );
-	AssignMover<Ready>();
+	actionIndex = 0;
+	AssignMoverByAction( actionIndex );
 }
 void BossFirst::Uninit()
 {
@@ -1332,6 +1333,19 @@ void BossFirst::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Dony
 
 	pMover->PhysicUpdate( *this, solids, pTerrain, pTerrainWorldMatrix );
 }
+void BossFirst::AssignMoverByAction( ActionType type )
+{
+	switch ( type )
+	{
+	case ActionType::Rush:		AssignMover<Ready>();		return;
+	case ActionType::Breath:	AssignMover<Breath>();		return;
+	default: _ASSERT_EXPR( 0, L"Error: Unexpected Type!" );	return;
+	}
+}
+void BossFirst::AssignMoverByAction( int actionIndex )
+{
+	AssignMoverByAction( FetchAction( actionIndex ) );
+}
 void BossFirst::UpdateByMover( float elapsedTime, const Donya::Vector3 &targetPos )
 {
 	if ( !pMover ) { return; }
@@ -1357,6 +1371,23 @@ Donya::Vector3 BossFirst::CalcAimingVector( const Donya::Vector3 &targetPos, flo
 	const auto rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( maxRotDegree ) );
 	return rotation.RotateVector( front );
 }
+std::vector<BossFirst::ActionType> BossFirst::FetchActionPatterns() const
+{
+	const auto data = FetchMember();
+	const auto &patterns = data.forFirst.actionPatterns;
+	const int  maxHP = data.FetchInitialHP( GetType() );
+	return	( maxHP - hp < 0 )
+			? std::vector<ActionType>{}
+			: patterns[maxHP - hp];
+}
+BossFirst::ActionType BossFirst::FetchAction( int actionIndex ) const
+{
+	const auto patterns		= FetchActionPatterns();
+	const int  patternCount	= scast<int>( patterns.size() );
+	return	( !patternCount ) 
+			? ActionType::Rush // Fail safe
+			: patterns[actionIndex % patternCount];
+}
 BossType BossFirst::GetType() const { return BossType::First; }
 #if USE_IMGUI
 void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
@@ -1373,8 +1404,10 @@ void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 	}
 	ImGui::DragInt( u8"内部タイマ", &timer );
 
-	ShowActionGuiNode( u8"現在の行動",	&currentAction	);
-	ShowActionGuiNode( u8"次の行動",		&nextAction		);
+	const int actionPatternCount = scast<int>( FetchActionPatterns().size() );
+	ImGui::Text( u8"現在の行動：%s",	ToString( FetchAction( actionIndex ) ).c_str() );
+	ImGui::SameLine(); ImGui::SliderInt( "##", &actionIndex, 0, actionPatternCount - 1 );
+	ImGui::Text( u8"次の行動：%s",	ToString( FetchAction( actionIndex + 1 ) ).c_str() );
 
 	ImGui::DragFloat3( u8"現在の座標", &pos.x,		0.01f );
 	ImGui::DragFloat3( u8"現在の速度", &velocity.x,	0.01f );
