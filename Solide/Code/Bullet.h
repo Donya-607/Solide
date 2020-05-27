@@ -15,7 +15,7 @@
 #include "Element.h"
 #include "Renderer.h"
 
-class  EffectHandle;
+class EffectHandle;
 
 namespace Bullet
 {
@@ -25,6 +25,8 @@ namespace Bullet
 		FlameSmoke,
 		IceSmoke,
 		Arrow,
+		Breath,
+		Burning,
 
 		KindCount
 	};
@@ -237,6 +239,51 @@ namespace Bullet
 			std::shared_ptr<EffectHandle> pEffect = nullptr; // Will used as burning effect.
 		public:
 			~Arrow();
+		public:
+			void Uninit() override;
+			void Update( float elapsedTime ) override;
+			void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
+			void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+			void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) override;
+		private:
+			void AttachSelfKind() override;
+		public:
+			bool				ShouldRemove()		const override;
+			Donya::AABB			GetHitBoxAABB()		const override;
+			Donya::Vector4x4	GetWorldMatrix()	const override;
+		};
+
+
+		class Breath : public BulletBase
+		{
+		private:
+			int aliveTime = 0;
+			std::shared_ptr<EffectHandle> pEffect = nullptr; // Will used as burning effect.
+		public:
+			~Breath();
+		public:
+			void Uninit() override;
+			void Update( float elapsedTime ) override;
+			void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
+			void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
+			void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) override;
+		private:
+			void AttachSelfKind() override;
+			void GenerateBurning() const;
+		public:
+			bool				ShouldRemove()		const override;
+			Donya::AABB			GetHitBoxAABB()		const override;
+			Donya::Vector4x4	GetWorldMatrix()	const override;
+		};
+		
+		
+		class Burning : public BulletBase
+		{
+		private:
+			int aliveTime = 0;
+			std::shared_ptr<EffectHandle> pEffect = nullptr; // Will used as burning effect.
+		public:
+			~Burning();
 		public:
 			void Uninit() override;
 			void Update( float elapsedTime ) override;

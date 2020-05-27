@@ -26,6 +26,8 @@ namespace Bullet
 			"Flame",
 			"Ice",
 			"Arrow",
+			"Breath",
+			"Burning",
 		};
 
 		struct StorageBundle
@@ -155,10 +157,14 @@ namespace Bullet
 		case Kind::FlameSmoke:	return std::make_shared<Impl::FlameSmoke>();
 		case Kind::IceSmoke:	return std::make_shared<Impl::IceSmoke>();
 		case Kind::Arrow:		return std::make_shared<Impl::Arrow>();
+		case Kind::Breath:		return std::make_shared<Impl::Breath>();
+		case Kind::Burning:		return std::make_shared<Impl::Burning>();
 		default: _ASSERT_EXPR( 0, L"Error : Unexpected bullet kind!" );	break;
 		}
 		return nullptr;
 	}
+
+	// HACK : These parameter structs has many same member.
 
 	struct OilMember
 	{
@@ -409,11 +415,107 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 
+	struct BreathMember
+	{
+		int				aliveFrame	= 1;
+		float			drawScale	= 1.0f;
+		Donya::AABB		hitBox;
+		Donya::Vector4	color{ 1.0f, 1.0f, 1.0f, 1.0f };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( aliveFrame	),
+				CEREAL_NVP( hitBox		),
+				CEREAL_NVP( drawScale	),
+				CEREAL_NVP( color		)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const std::string &nodeCaption )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ImGui::DragInt   ( u8"生存時間（フレーム）", &aliveFrame );
+			aliveFrame	= std::max( 0, aliveFrame );
+
+			ImGui::DragFloat ( u8"描画スケール",	&drawScale,	0.01f );
+			drawScale	= std::max( 0.0f, drawScale );
+
+
+			ImGui::ColorEdit4( u8"色",			&color.x );
+
+			ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
+
+			ImGui::TreePop();
+		}
+	#endif // USE_IMGUI
+	};
+
+	struct BurningMember
+	{
+		int				aliveFrame	= 1;
+		float			drawScale	= 1.0f;
+		Donya::AABB		hitBox;
+		Donya::Vector4	color{ 1.0f, 1.0f, 1.0f, 1.0f };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( aliveFrame	),
+				CEREAL_NVP( hitBox		),
+				CEREAL_NVP( drawScale	),
+				CEREAL_NVP( color		)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const std::string &nodeCaption )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ImGui::DragInt   ( u8"生存時間（フレーム）", &aliveFrame );
+			aliveFrame	= std::max( 0, aliveFrame );
+
+			ImGui::DragFloat ( u8"描画スケール",	&drawScale,	0.01f );
+			drawScale	= std::max( 0.0f, drawScale );
+
+
+			ImGui::ColorEdit4( u8"色",			&color.x );
+
+			ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
+
+			ImGui::TreePop();
+		}
+	#endif // USE_IMGUI
+	};
+
 	struct Member
 	{
-		OilMember	oil;
-		SmokeMember	smoke;
-		ArrowMember	arrow;
+		OilMember		oil;
+		SmokeMember		smoke;
+		ArrowMember		arrow;
+		BreathMember	breath;
+		BurningMember	burning;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -431,6 +533,14 @@ namespace Bullet
 			}
 			if ( 2 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( breath  ),
+					CEREAL_NVP( burning )
+				);
+			}
+			if ( 3 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -442,7 +552,9 @@ CEREAL_CLASS_VERSION( Bullet::SmokeMember::General,	0 )
 CEREAL_CLASS_VERSION( Bullet::SmokeMember::Flame,	0 )
 CEREAL_CLASS_VERSION( Bullet::SmokeMember::Ice,		0 )
 CEREAL_CLASS_VERSION( Bullet::ArrowMember,			0 )
-CEREAL_CLASS_VERSION( Bullet::Member,				1 )
+CEREAL_CLASS_VERSION( Bullet::BreathMember,			0 )
+CEREAL_CLASS_VERSION( Bullet::BurningMember,		0 )
+CEREAL_CLASS_VERSION( Bullet::Member,				2 )
 
 class ParamBullet : public ParameterBase<ParamBullet>
 {
@@ -479,6 +591,10 @@ public:
 			m.smoke.ShowImGuiNode( u8"ケムリ関係" );
 
 			m.arrow.ShowImGuiNode( u8"矢関係" );
+			
+			m.breath.ShowImGuiNode( u8"ブレス" );
+			
+			m.burning.ShowImGuiNode( u8"炎上" );
 
 			ShowIONode( m );
 			ImGui::TreePop();
@@ -1249,5 +1365,177 @@ namespace Bullet
 			return world;
 		}
 
+
+		Breath::~Breath()
+		{
+			if ( pEffect )
+			{
+				pEffect->Stop();
+				pEffect.reset();
+			}
+		}
+		void Breath::Uninit()
+		{
+			if ( pEffect )
+			{
+				pEffect->Stop();
+				pEffect.reset();
+			}
+		}
+		void Breath::Update( float elapsedTime )
+		{
+			aliveTime++;
+
+			if ( !pEffect && element.Has( Element::Type::Flame ) )
+			{
+				pEffect = std::make_shared<EffectHandle>
+				(
+					EffectHandle::Generate( EffectAttribute::Flame, pos )
+				);
+			}
+			if ( pEffect )
+			{
+				pEffect->SetPosition( pos );
+			}
+		}
+		void Breath::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+		{
+			const auto raycastResult	= CalcCorrectedVector( RECURSION_RAY_COUNT, velocity, pTerrain, pTerrainMatrix );
+			const auto aabbResult		= CalcCorrectedVector( raycastResult.correctedVector, solids );
+			if ( raycastResult.raycastResult.wasHit || aabbResult.wasHit )
+			{
+				wasHitToObject = true;
+				GenerateBurning();
+			}
+
+			velocity = aabbResult.correctedVector;
+			pos += velocity;
+		}
+		void Breath::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+		{
+			BulletBase::Draw( pRenderer, ParamBullet::Get().Data().breath.color.Product( color ) );
+		}
+		void Breath::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+		{
+			BulletBase::DrawHitBox( pRenderer, VP, ParamBullet::Get().Data().breath.color.Product( color ) );
+		}
+		void Breath::AttachSelfKind()
+		{
+			kind	= Kind::Breath;
+			element	= Element::Type::Nil;
+		}
+		void Breath::GenerateBurning() const
+		{
+			BulletAdmin::FireDesc desc{};
+			desc.kind			= Kind::Burning;
+			desc.addElement		= Element::Type::Nil;
+			desc.speed			= 0.0f;
+			desc.direction		= Donya::Vector3::Zero();
+			desc.generatePos	= GetPosition();
+			BulletAdmin::Get().Append( desc );
+		}
+		bool Breath::ShouldRemove() const
+		{
+			return ( ParamBullet::Get().Data().breath.aliveFrame <= aliveTime || wasHitToObject ) ? true : false;
+		}
+		Donya::AABB Breath::GetHitBoxAABB() const
+		{
+			Donya::AABB tmp = ParamBullet::Get().Data().breath.hitBox;
+			tmp.pos += GetPosition();
+			return tmp;
+		}
+		Donya::Vector4x4 Breath::GetWorldMatrix() const
+		{
+			const auto data = ParamBullet::Get().Data().breath;
+			Donya::Vector4x4 world{};
+			world._11 = data.drawScale;
+			world._22 = data.drawScale;
+			world._33 = data.drawScale;
+			world *= orientation.MakeRotationMatrix();
+			world._41 = pos.x;
+			world._42 = pos.y;
+			world._43 = pos.z;
+			return world;
+		}
+
+		Burning::~Burning()
+		{
+			if ( pEffect )
+			{
+				pEffect->Stop();
+				pEffect.reset();
+			}
+		}
+		void Burning::Uninit()
+		{
+			if ( pEffect )
+			{
+				pEffect->Stop();
+				pEffect.reset();
+			}
+		}
+		void Burning::Update( float elapsedTime )
+		{
+			aliveTime++;
+
+			if ( !pEffect && element.Has( Element::Type::Flame ) )
+			{
+				pEffect = std::make_shared<EffectHandle>
+				(
+					EffectHandle::Generate( EffectAttribute::Flame, pos )
+				);
+			}
+			if ( pEffect )
+			{
+				pEffect->SetPosition( pos );
+			}
+		}
+		void Burning::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+		{
+			if ( velocity.IsZero() ) { return; }
+			// else
+
+			const auto raycastResult	= CalcCorrectedVector( RECURSION_RAY_COUNT, velocity, pTerrain, pTerrainMatrix );
+			const auto aabbResult		= CalcCorrectedVector( raycastResult.correctedVector, solids );
+			
+			velocity = aabbResult.correctedVector;
+			pos += velocity;
+		}
+		void Burning::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
+		{
+			BulletBase::Draw( pRenderer, ParamBullet::Get().Data().burning.color.Product( color ) );
+		}
+		void Burning::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color )
+		{
+			BulletBase::DrawHitBox( pRenderer, VP, ParamBullet::Get().Data().burning.color.Product( color ) );
+		}
+		void Burning::AttachSelfKind()
+		{
+			kind	= Kind::Burning;
+			element	= Element::Type::Nil;
+		}
+		bool Burning::ShouldRemove() const
+		{
+			return ( ParamBullet::Get().Data().burning.aliveFrame <= aliveTime || wasHitToObject ) ? true : false;
+		}
+		Donya::AABB Burning::GetHitBoxAABB() const
+		{
+			Donya::AABB tmp = ParamBullet::Get().Data().burning.hitBox;
+			tmp.pos += GetPosition();
+			return tmp;
+		}
+		Donya::Vector4x4 Burning::GetWorldMatrix() const
+		{
+			const auto data = ParamBullet::Get().Data().burning;
+			Donya::Vector4x4 world{};
+			world._11 = data.drawScale;
+			world._22 = data.drawScale;
+			world._33 = data.drawScale;
+			world *= orientation.MakeRotationMatrix();
+			world._41 = pos.x;
+			world._42 = pos.y;
+			world._43 = pos.z;
+			return world;
+		}
 	}
 }
