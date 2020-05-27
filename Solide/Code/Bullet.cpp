@@ -1516,7 +1516,7 @@ namespace Bullet
 		}
 		bool Burning::ShouldRemove() const
 		{
-			return ( ParamBullet::Get().Data().burning.aliveFrame <= aliveTime || wasHitToObject ) ? true : false;
+			return ( ParamBullet::Get().Data().burning.aliveFrame <= aliveTime ) ? true : false;
 		}
 		Donya::AABB Burning::GetHitBoxAABB() const
 		{
