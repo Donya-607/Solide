@@ -41,6 +41,31 @@ namespace
 		_ASSERT_EXPR( 0, L"Error : Unexpected type!" );
 		return "ERROR";
 	}
+
+	std::string ToString( BossFirst::ActionType type )
+	{
+		switch ( type )
+		{
+		case BossFirst::ActionType::Rush:	return u8"突進";
+		case BossFirst::ActionType::Breath:	return u8"ブレス";
+		default: break;
+		}
+		_ASSERT_EXPR( 0, L"Error: Unexpected type!" );
+		return "ERROR_ACTION";
+	}
+#if USE_IMGUI
+	void ShowActionGuiNode( const std::string &caption, BossFirst::ActionType *p )
+	{
+		ImGui::Text( ( caption + u8"：%s" ).c_str(), ToString( *p ).c_str() );
+		ImGui::SameLine();
+
+		constexpr int count = scast<int>( BossFirst::ActionType::ActionCount );
+
+		int intType = scast<int>( *p );
+		ImGui::DragInt( "##currAction", &intType, 0, count - 1 );
+		*p = scast<BossFirst::ActionType>( intType );
+	}
+#endif // USE_IMGUI
 }
 
 
@@ -295,6 +320,8 @@ namespace
 		Ready	ready;
 		Rush	rush;
 		Brake	brake;
+
+		std::vector<std::vector<BossFirst::ActionType>> actionPatterns; // Per HPs.
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -308,6 +335,10 @@ namespace
 			);
 
 			if ( 1 <= version )
+			{
+				archive( CEREAL_NVP( actionPatterns ) );
+			}
+			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -340,12 +371,27 @@ namespace
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
+	public:
+		/// <summary>
+		/// Returns zero if the type outs of range.
+		/// </summary>
+		int FetchInitialHP( BossType type )
+		{
+			const int intType = scast<int>( type );
+			if ( intType < 0 || scast<int>( BossType::BossCount ) )
+			{
+				_ASSERT_EXPR( 0, L"Error: Out of range!" );
+				return 0;
+			}
+			// else
+			return ( scast<int>( initialHPs.size() ) <= intType ) ? 0 : initialHPs[intType];
+		}
 	};
 }
 CEREAL_CLASS_VERSION( Member,				1 )
 CEREAL_CLASS_VERSION( DrawingParam,			0 )
 CEREAL_CLASS_VERSION( CollisionParam,		0 )
-CEREAL_CLASS_VERSION( FirstParam,			0 )
+CEREAL_CLASS_VERSION( FirstParam,			1 )
 CEREAL_CLASS_VERSION( FirstParam::Ready,	0 )
 CEREAL_CLASS_VERSION( FirstParam::Rush,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Brake,	0 )
@@ -373,12 +419,12 @@ public:
 private:
 	void ResizeVectorIfNeeded()
 	{
-		auto ResizeIfNeeded = []( auto *pVector, auto initialValue )
+		auto ResizeIfNeeded = []( auto *pVector, auto initialValue, size_t size = TYPE_COUNT )
 		{
-			if ( pVector->size() == TYPE_COUNT ) { return; };
+			if ( pVector->size() == size ) { return; };
 			// else
 
-			pVector->resize( TYPE_COUNT, initialValue );
+			pVector->resize( size, initialValue );
 		};
 
 		ResizeIfNeeded( &m.drawer.accelerations, 1.0f );
@@ -391,6 +437,13 @@ private:
 		ResizeIfNeeded( &m.collider.collisions, defaultHitBox );
 		
 		ResizeIfNeeded( &m.initialHPs, 3 );
+
+		const int firstSize = m.FetchInitialHP( BossType::First );
+		ResizeIfNeeded
+		(
+			&m.forFirst.actionPatterns, std::vector<BossFirst::ActionType>(),
+			( firstSize < 0 ) ? 0U : scast<size_t>( firstSize )
+		);
 	}
 private:
 	std::string GetSerializeIdentifier()			override { return ID; }
@@ -640,6 +693,31 @@ public:
 				ShowReady( u8"待機・軸あわせ",	&data.ready		);
 				ShowRush( u8"突進",				&data.rush		);
 				ShowBrake( u8"ブレーキ",			&data.brake		);
+
+				if ( ImGui::TreeNode( u8"行動パターン設定" ) )
+				{
+					std::string caption{};
+					const int hpCount = m.FetchInitialHP( BossType::First );
+					for ( int i = 0; i < hpCount; ++i )
+					{
+						caption = "[HP:" + std::to_string( i ) + "]";
+						if ( !ImGui::TreeNode( caption.c_str() ) ) { return; }
+
+						auto &patterns = data.actionPatterns[i];
+						ParameterHelper::ResizeByButton( &patterns, BossFirst::ActionType::Rush );
+
+						const size_t patternCount = patterns.size();
+						for ( int j = 0; j < patternCount; ++j )
+						{
+							caption = Donya::MakeArraySuffix( j );
+							ShowActionGuiNode( caption, &patterns[j] );
+						}
+
+						ImGui::TreePop();
+					}
+
+					ImGui::TreePop();
+				}
 
 				ImGui::TreePop();
 			}
@@ -1294,6 +1372,10 @@ void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 		ImGui::Text( u8"現在の状態：%s", pMover->GetStateName().c_str() );
 	}
 	ImGui::DragInt( u8"内部タイマ", &timer );
+
+	ShowActionGuiNode( u8"現在の行動",	&currentAction	);
+	ShowActionGuiNode( u8"次の行動",		&nextAction		);
+
 	ImGui::DragFloat3( u8"現在の座標", &pos.x,		0.01f );
 	ImGui::DragFloat3( u8"現在の速度", &velocity.x,	0.01f );
 	if ( pMover )

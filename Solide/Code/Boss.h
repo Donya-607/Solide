@@ -132,6 +132,14 @@ public:
 
 class BossFirst : public BossBase
 {
+public:
+	enum class ActionType
+	{
+		Rush,
+		Breath,
+
+		ActionCount
+	};
 private:
 #pragma region Mover
 	class MoverBase
@@ -208,6 +216,8 @@ private:
 #pragma endregion
 private:
 	int							timer = 0;
+	ActionType					currentAction = ActionType::Rush;
+	ActionType					nextAction = ActionType::Rush;
 	Donya::Vector3				aimingPos;
 	std::unique_ptr<MoverBase>	pMover = nullptr;
 public:
