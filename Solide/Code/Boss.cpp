@@ -316,10 +316,36 @@ namespace
 				}
 			}
 		};
+		struct Breath
+		{
+			int		aimingFrame		= 1;
+			int		postAimingFrame = 1;
+			int		afterWaitFrame	= 1;
+			float	maxAimDegree	= 180.0f;	// Per frame.
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( aimingFrame		),
+					CEREAL_NVP( postAimingFrame	),
+					CEREAL_NVP( afterWaitFrame	),
+					CEREAL_NVP( maxAimDegree	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
 
 		Ready	ready;
 		Rush	rush;
 		Brake	brake;
+		Breath	breath;
 
 		std::vector<std::vector<BossFirst::ActionType>> actionPatterns; // Per HPs. The index is calced by: maxHP - nowHP(e.g. nowHP == maxHP -> 0, nowHP = maxHP-1 -> 1, ...)
 	private:
@@ -336,7 +362,11 @@ namespace
 
 			if ( 1 <= version )
 			{
-				archive( CEREAL_NVP( actionPatterns ) );
+				archive
+				(
+					CEREAL_NVP( breath			),
+					CEREAL_NVP( actionPatterns	)
+				);
 			}
 			if ( 2 <= version )
 			{
@@ -395,6 +425,7 @@ CEREAL_CLASS_VERSION( FirstParam,			1 )
 CEREAL_CLASS_VERSION( FirstParam::Ready,	0 )
 CEREAL_CLASS_VERSION( FirstParam::Rush,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Brake,	0 )
+CEREAL_CLASS_VERSION( FirstParam::Breath,	0 )
 
 class ParamBoss : public ParameterBase<ParamBoss>
 {
@@ -689,10 +720,28 @@ public:
 
 					ImGui::TreePop();
 				};
+				auto ShowBreath = [&]( const std::string &nodeCaption, FirstParam::Breath *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					ImGui::DragInt( u8"狙いをつける時間（フレーム）",			&p->aimingFrame		);
+					ImGui::DragInt( u8"狙いをつけた後の待ち時間（フレーム）",	&p->postAimingFrame );
+					ImGui::DragInt( u8"発射後の待ち時間（フレーム）",			&p->afterWaitFrame	);
+					Donya::Clamp( &p->aimingFrame,		0, p->aimingFrame		);
+					Donya::Clamp( &p->postAimingFrame,	0, p->postAimingFrame	);
+					Donya::Clamp( &p->afterWaitFrame,	0, p->afterWaitFrame	);
+					ImGui::Text( u8"%d：合計所要時間（フレーム）", p->aimingFrame + p->postAimingFrame + p->afterWaitFrame );
+
+					ImGui::SliderFloat( u8"一度に曲がる最大角度（Degree）", &p->maxAimDegree, -180.0f, 180.0f );
+
+					ImGui::TreePop();
+				};
 
 				ShowReady( u8"待機・軸あわせ",	&data.ready		);
 				ShowRush( u8"突進",				&data.rush		);
 				ShowBrake( u8"ブレーキ",			&data.brake		);
+				ShowBreath( u8"ブレス",			&data.breath	);
 
 				if ( ImGui::TreeNode( u8"行動パターン設定" ) )
 				{
@@ -1263,6 +1312,25 @@ std::function<void()> BossFirst::Brake::GetChangeStateMethod( BossFirst &inst ) 
 	return [&]() { inst.AssignMover<Ready>(); };
 }
 std::string BossFirst::Brake::GetStateName() const { return "Brake"; }
+
+void BossFirst::Breath::Init( BossFirst &inst )
+{
+	MoverBase::Init( inst );
+}
+void BossFirst::Breath::Uninit( BossFirst &inst ) {}
+void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
+{
+
+}
+bool BossFirst::Breath::ShouldChangeMover( BossFirst &inst ) const
+{
+	return false;
+}
+std::function<void()> BossFirst::Breath::GetChangeStateMethod( BossFirst &inst ) const
+{
+	return [&]() {}; // No op.
+}
+std::string BossFirst::Breath::GetStateName() const { return "Breath"; }
 
 void BossFirst::Damage::Init( BossFirst &inst )
 {

@@ -195,7 +195,7 @@ private:
 	class Breath : public MoverBase
 	{
 	private:
-		bool gotoNext = false;
+		
 	public:
 		void Init( BossFirst &instance ) override;
 		void Uninit( BossFirst &instance ) override;
