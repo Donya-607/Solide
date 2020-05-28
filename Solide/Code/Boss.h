@@ -195,7 +195,7 @@ private:
 	class Breath : public MoverBase
 	{
 	private:
-		
+		bool gotoNext = false;
 	public:
 		void Init( BossFirst &instance ) override;
 		void Uninit( BossFirst &instance ) override;
@@ -203,6 +203,8 @@ private:
 		bool ShouldChangeMover( BossFirst &instance ) const override;
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
+	private:
+		void Fire( BossFirst &instance, const Donya::Vector3 &targetPos ) override;
 	};
 	class Damage : public MoverBase
 	{

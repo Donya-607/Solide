@@ -18,6 +18,7 @@
 #include "Donya/Template.h"		// Use Clamp().
 #endif // DEBUG_MODE
 
+#include "Bullet.h"
 #include "Common.h"
 #include "FilePath.h"
 #include "Music.h"
@@ -322,6 +323,7 @@ namespace
 			int		postAimingFrame = 1;
 			int		afterWaitFrame	= 1;
 			float	maxAimDegree	= 180.0f;	// Per frame.
+			Bullet::BulletAdmin::FireDesc fireDesc;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -332,7 +334,8 @@ namespace
 					CEREAL_NVP( aimingFrame		),
 					CEREAL_NVP( postAimingFrame	),
 					CEREAL_NVP( afterWaitFrame	),
-					CEREAL_NVP( maxAimDegree	)
+					CEREAL_NVP( maxAimDegree	),
+					CEREAL_NVP( fireDesc		)
 				);
 
 				if ( 1 <= version )
@@ -622,7 +625,7 @@ public:
 			{
 				auto &data = m.forFirst;
 				
-				auto ShowReady = [&]( const std::string &nodeCaption, FirstParam::Ready *p )
+				auto ShowReady	= [&]( const std::string &nodeCaption, FirstParam::Ready *p )
 				{
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
@@ -639,7 +642,7 @@ public:
 
 					ImGui::TreePop();
 				};
-				auto ShowRush  = [&]( const std::string &nodeCaption, FirstParam::Rush *p )
+				auto ShowRush	= [&]( const std::string &nodeCaption, FirstParam::Rush *p )
 				{
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
@@ -700,7 +703,7 @@ public:
 
 					ImGui::TreePop();
 				};
-				auto ShowBrake = [&]( const std::string &nodeCaption, FirstParam::Brake *p )
+				auto ShowBrake	= [&]( const std::string &nodeCaption, FirstParam::Brake *p )
 				{
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
@@ -720,7 +723,7 @@ public:
 
 					ImGui::TreePop();
 				};
-				auto ShowBreath = [&]( const std::string &nodeCaption, FirstParam::Breath *p )
+				auto ShowBreath	= [&]( const std::string &nodeCaption, FirstParam::Breath *p )
 				{
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
@@ -734,6 +737,8 @@ public:
 					ImGui::Text( u8"%d：合計所要時間（フレーム）", p->aimingFrame + p->postAimingFrame + p->afterWaitFrame );
 
 					ImGui::SliderFloat( u8"一度に曲がる最大角度（Degree）", &p->maxAimDegree, -180.0f, 180.0f );
+
+					p->fireDesc.ShowImGuiNode( u8"発射弾の設定" );
 
 					ImGui::TreePop();
 				};
@@ -1316,21 +1321,54 @@ std::string BossFirst::Brake::GetStateName() const { return "Brake"; }
 void BossFirst::Breath::Init( BossFirst &inst )
 {
 	MoverBase::Init( inst );
+	gotoNext = false;
 }
 void BossFirst::Breath::Uninit( BossFirst &inst ) {}
 void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
+	inst.timer++;
 
+	const auto data = FetchMember().forFirst.breath;
+	const int  preFrame		= data.aimingFrame;
+	const int  aimFrame		= preFrame + data.postAimingFrame;
+	const int  afterFrame	= aimFrame + data.afterWaitFrame;
+
+	if ( preFrame <= inst.timer && inst.timer < aimFrame )
+	{
+		const Donya::Vector3 aimingVector = inst.CalcAimingVector( targetPos, data.maxAimDegree );
+		inst.orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
+	}
+
+	if ( inst.timer == aimFrame )
+	{
+		Fire( inst, targetPos );
+	}
+
+	if ( afterFrame <= inst.timer )
+	{
+		gotoNext = true;
+	}
 }
 bool BossFirst::Breath::ShouldChangeMover( BossFirst &inst ) const
 {
-	return false;
+	return gotoNext;
 }
 std::function<void()> BossFirst::Breath::GetChangeStateMethod( BossFirst &inst ) const
 {
 	return [&]() {}; // No op.
 }
 std::string BossFirst::Breath::GetStateName() const { return "Breath"; }
+void BossFirst::Breath::Fire( BossFirst &inst, const Donya::Vector3 &targetPos )
+{
+	auto fireDesc = FetchMember().forFirst.breath.fireDesc;
+
+	fireDesc.direction		=  inst.orientation.RotateVector( fireDesc.direction	);
+	fireDesc.generatePos	=  inst.orientation.RotateVector( fireDesc.generatePos	);
+	fireDesc.generatePos	+= inst.GetPosition();
+	fireDesc.addElement.Add( Element::Type::Flame );
+
+	Bullet::BulletAdmin::Get().Append( fireDesc );
+}
 
 void BossFirst::Damage::Init( BossFirst &inst )
 {

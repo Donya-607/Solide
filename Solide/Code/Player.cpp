@@ -1323,7 +1323,8 @@ void Player::Shot( float elapsedTime )
 					? data.oiled.basic.shotDesc
 					: data.normal.shotDesc;
 	useParam.speed			*= elapsedTime;
-	useParam.direction		=  orientation.RotateVector( useParam.direction );
+	useParam.direction		=  orientation.RotateVector( useParam.direction		);
+	useParam.generatePos	=  orientation.RotateVector( useParam.generatePos	);
 	useParam.generatePos	+= GetPosition();
 
 	if ( element.Has( Element::Type::Flame ) )
