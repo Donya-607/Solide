@@ -115,6 +115,7 @@ public:
 	}
 	virtual std::vector<Donya::AABB>	AcquireHitBoxes() const;
 	virtual std::vector<Donya::AABB>	AcquireHurtBoxes() const;
+	virtual std::vector<Element::Type>	GetUncollidableTypes() const { return {}; }
 private:
 	using Actor::GetHitBox;
 protected:
@@ -259,6 +260,7 @@ private:
 	ActionType FetchAction( int actionIndex ) const;
 private:
 	BossType GetType() const override;
+	std::vector<Element::Type>	GetUncollidableTypes() const override;
 public:
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption ) override;

@@ -63,7 +63,7 @@ namespace
 		constexpr int count = scast<int>( BossFirst::ActionType::ActionCount );
 
 		int intType = scast<int>( *p );
-		ImGui::DragInt( "##currAction", &intType, 0, count - 1 );
+		ImGui::SliderInt( ( "##" + caption ).c_str(), &intType, 0, count - 1 );
 		*p = scast<BossFirst::ActionType>( intType );
 	}
 #endif // USE_IMGUI
@@ -411,7 +411,7 @@ namespace
 		int FetchInitialHP( BossType type ) const
 		{
 			const int intType = scast<int>( type );
-			if ( intType < 0 || scast<int>( BossType::BossCount ) )
+			if ( intType < 0 || scast<int>( BossType::BossCount ) <= intType )
 			{
 				_ASSERT_EXPR( 0, L"Error: Out of range!" );
 				return 0;
@@ -735,10 +735,13 @@ public:
 					Donya::Clamp( &p->postAimingFrame,	0, p->postAimingFrame	);
 					Donya::Clamp( &p->afterWaitFrame,	0, p->afterWaitFrame	);
 					ImGui::Text( u8"%d：合計所要時間（フレーム）", p->aimingFrame + p->postAimingFrame + p->afterWaitFrame );
+					ImGui::Text( u8"ルーチン：[狙いをつける]->[待機]->[発射]->[待機]" );
 
 					ImGui::SliderFloat( u8"一度に曲がる最大角度（Degree）", &p->maxAimDegree, -180.0f, 180.0f );
 
 					p->fireDesc.ShowImGuiNode( u8"発射弾の設定" );
+					ImGui::Text( u8"発射弾の方向は自機へのベクトルに，" );
+					ImGui::Text( u8"発射弾の属性は[Flame]になります。" );
 
 					ImGui::TreePop();
 				};
@@ -754,8 +757,9 @@ public:
 					const int hpCount = m.FetchInitialHP( BossType::First );
 					for ( int i = 0; i < hpCount; ++i )
 					{
-						caption = "[HP:" + std::to_string( i ) + "]";
-						if ( !ImGui::TreeNode( caption.c_str() ) ) { return; }
+						caption = u8"[残ＨＰ:" + std::to_string( hpCount - i ) + u8"]";
+						if ( !ImGui::TreeNode( caption.c_str() ) ) { continue; }
+						// else
 
 						auto &patterns = data.actionPatterns[i];
 						ParameterHelper::ResizeByButton( &patterns, BossFirst::ActionType::Rush );
@@ -1336,7 +1340,8 @@ void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya:
 	if ( preFrame <= inst.timer && inst.timer < aimFrame )
 	{
 		const Donya::Vector3 aimingVector = inst.CalcAimingVector( targetPos, data.maxAimDegree );
-		inst.orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
+		inst.orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
+		inst.aimingPos		= targetPos;
 	}
 
 	if ( inst.timer == aimFrame )
@@ -1362,10 +1367,14 @@ void BossFirst::Breath::Fire( BossFirst &inst, const Donya::Vector3 &targetPos )
 {
 	auto fireDesc = FetchMember().forFirst.breath.fireDesc;
 
-	fireDesc.direction		=  inst.orientation.RotateVector( fireDesc.direction	);
 	fireDesc.generatePos	=  inst.orientation.RotateVector( fireDesc.generatePos	);
 	fireDesc.generatePos	+= inst.GetPosition();
-	fireDesc.addElement.Add( Element::Type::Flame );
+	fireDesc.addElement		=  Element::Type::Flame;
+
+	const Donya::Vector3 targetVec  = targetPos - fireDesc.generatePos;
+	const Donya::Vector3 rotatedDir = inst.orientation.RotateVector( fireDesc.direction );
+	const Donya::Vector3 projection = Donya::Vector3::Projection( rotatedDir, targetVec.Unit() );
+	fireDesc.direction		=  projection.Unit();
 
 	Bullet::BulletAdmin::Get().Append( fireDesc );
 }
@@ -1458,7 +1467,7 @@ void BossFirst::AdvanceAction()
 	const int  patternCount	= scast<int>( patterns.size() );
 
 	actionIndex++;
-	if ( 0 <= patternCount )
+	if ( 0 < patternCount )
 	{
 		actionIndex %= patternCount;
 	}
@@ -1508,6 +1517,13 @@ BossFirst::ActionType BossFirst::FetchAction( int actionIndex ) const
 			: patterns[actionIndex % patternCount];
 }
 BossType BossFirst::GetType() const { return BossType::First; }
+std::vector<Element::Type> BossFirst::GetUncollidableTypes() const
+{
+	// Prevent to the boss collides my fired bullet.
+	std::vector<Element::Type> tmp{};
+	tmp.emplace_back( Element::Type::Flame );
+	return tmp;
+}
 #if USE_IMGUI
 void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 {

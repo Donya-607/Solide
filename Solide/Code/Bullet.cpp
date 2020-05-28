@@ -693,8 +693,14 @@ namespace Bullet
 		{
 			if ( !pIt ) { continue; }
 			// else
-
+			assert(0);
+			// ƒoƒO‚ð‚È‚¨‚· ƒƒ‚’ ŽQÆ
 			pIt->Update( elapsedTime );
+			if ( pIt->ShouldRemove() )
+			{
+				// This element will be removed at below process
+				pIt->Uninit();
+			}
 		}
 
 		auto result = std::remove_if
@@ -705,10 +711,6 @@ namespace Bullet
 				return ( !pElement ) ? true : pElement->ShouldRemove();
 			}
 		);
-		for ( auto it = result; it != bulletPtrs.end(); ++it )
-		{
-			if ( *it ) { ( *it )->Uninit(); }
-		}
 		bulletPtrs.erase( result, bulletPtrs.end() );
 	}
 	void BulletAdmin::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
@@ -717,7 +719,6 @@ namespace Bullet
 		{
 			if ( !pIt ) { continue; }
 			// else
-
 			pIt->PhysicUpdate( solids, pTerrain, pTerrainMatrix );
 		}
 	}
@@ -747,8 +748,8 @@ namespace Bullet
 		if ( !tmp ) { assert( !"Unexpected error in bullet." ); return; }
 		// else
 
+		tmp->Init( param );
 		bulletPtrs.emplace_back( std::move( tmp ) );
-		bulletPtrs.back()->Init( param );
 	}
 	size_t BulletAdmin::GetBulletCount() const
 	{
@@ -1405,7 +1406,7 @@ namespace Bullet
 			if ( raycastResult.raycastResult.wasHit || aabbResult.wasHit )
 			{
 				wasHitToObject = true;
-				GenerateBurning();
+				//GenerateBurning();
 			}
 
 			velocity = aabbResult.correctedVector;

@@ -1750,11 +1750,12 @@ void SceneGame::ProcessBossCollision()
 	if ( !pBoss ) { return; }
 	// else
 
-	std::vector<Donya::AABB> bodies = pBoss->AcquireHurtBoxes();
+	const std::vector<Donya::AABB> bodies = pBoss->AcquireHurtBoxes();
+	const std::vector<Element::Type> exceptTypes = pBoss->GetUncollidableTypes();
 
 	for ( const auto &it : bodies )
 	{
-		const auto pCollidedBullet = FindCollidedBulletOrNullptr( it );
+		const auto pCollidedBullet = FindCollidedBulletOrNullptr( it, exceptTypes );
 		if ( pCollidedBullet )
 		{
 			pBoss->MakeDamage( pCollidedBullet->GetElement() );

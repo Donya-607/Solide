@@ -58,6 +58,11 @@ namespace Enemy
 			if ( !pIt ) { continue; }
 			// else
 			pIt->Update( elapsedTime, targetPos );
+			if ( pIt->ShouldRemove() )
+			{
+				// This element will be removed at below process
+				pIt->Uninit();
+			}
 		}
 
 		EraseEnemiesIfNeeded();
@@ -147,10 +152,6 @@ namespace Enemy
 				return ( !pElement ) ? true : pElement->ShouldRemove();
 			}
 		);
-		for ( auto it = result; it != enemyPtrs.end(); ++it )
-		{
-			if ( *it ) { ( *it )->Uninit(); }
-		}
 		enemyPtrs.erase( result, enemyPtrs.end() );
 	}
 

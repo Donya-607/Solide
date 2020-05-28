@@ -42,6 +42,11 @@ void ObstacleContainer::Update( float elapsedTime )
 		if ( !pIt ) { continue; }
 		// else
 		pIt->Update( elapsedTime );
+		if ( pIt->ShouldRemove() )
+		{
+			// This element will be removed at below process
+			pIt->Uninit();
+		}
 	}
 
 	auto result = std::remove_if
@@ -52,10 +57,6 @@ void ObstacleContainer::Update( float elapsedTime )
 			return ( !pElement ) ? true : pElement->ShouldRemove();
 		}
 	);
-	for ( auto it = result; it != pObstacles.end(); ++it )
-	{
-		if ( *it ) { ( *it )->Uninit(); }
-	}
 	pObstacles.erase( result, pObstacles.end() );
 }
 
