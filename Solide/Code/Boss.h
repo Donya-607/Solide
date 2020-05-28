@@ -204,7 +204,7 @@ private:
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
 	private:
-		void Fire( BossFirst &instance, const Donya::Vector3 &targetPos ) override;
+		void Fire( BossFirst &instance, const Donya::Vector3 &targetPos );
 	};
 	class Damage : public MoverBase
 	{
@@ -249,6 +249,7 @@ private:
 	}
 	void AssignMoverByAction( ActionType type );
 	void AssignMoverByAction( int actionIndex );
+	void AdvanceAction();
 
 	void UpdateByMover( float elapsedTime, const Donya::Vector3 &targetPos );
 

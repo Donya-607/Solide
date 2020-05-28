@@ -1314,7 +1314,7 @@ bool BossFirst::Brake::ShouldChangeMover( BossFirst &inst ) const
 }
 std::function<void()> BossFirst::Brake::GetChangeStateMethod( BossFirst &inst ) const
 {
-	return [&]() { inst.AssignMover<Ready>(); };
+	return [&]() { inst.AdvanceAction(); };
 }
 std::string BossFirst::Brake::GetStateName() const { return "Brake"; }
 
@@ -1355,7 +1355,7 @@ bool BossFirst::Breath::ShouldChangeMover( BossFirst &inst ) const
 }
 std::function<void()> BossFirst::Breath::GetChangeStateMethod( BossFirst &inst ) const
 {
-	return [&]() {}; // No op.
+	return [&]() { inst.AdvanceAction(); };
 }
 std::string BossFirst::Breath::GetStateName() const { return "Breath"; }
 void BossFirst::Breath::Fire( BossFirst &inst, const Donya::Vector3 &targetPos )
@@ -1451,6 +1451,19 @@ void BossFirst::AssignMoverByAction( ActionType type )
 void BossFirst::AssignMoverByAction( int actionIndex )
 {
 	AssignMoverByAction( FetchAction( actionIndex ) );
+}
+void BossFirst::AdvanceAction()
+{
+	const auto patterns		= FetchActionPatterns();
+	const int  patternCount	= scast<int>( patterns.size() );
+
+	actionIndex++;
+	if ( 0 <= patternCount )
+	{
+		actionIndex %= patternCount;
+	}
+
+	AssignMoverByAction( actionIndex );
 }
 void BossFirst::UpdateByMover( float elapsedTime, const Donya::Vector3 &targetPos )
 {
