@@ -1333,18 +1333,18 @@ void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya:
 	inst.timer++;
 
 	const auto data = FetchMember().forFirst.breath;
-	const int  preFrame		= data.aimingFrame;
-	const int  aimFrame		= preFrame + data.postAimingFrame;
-	const int  afterFrame	= aimFrame + data.afterWaitFrame;
+	const int  aimFrame		= data.aimingFrame;
+	const int  fireFrame	= aimFrame + data.postAimingFrame;
+	const int  afterFrame	= fireFrame + data.afterWaitFrame;
 
-	if ( preFrame <= inst.timer && inst.timer < aimFrame )
+	if ( inst.timer < aimFrame )
 	{
 		const Donya::Vector3 aimingVector = inst.CalcAimingVector( targetPos, data.maxAimDegree );
 		inst.orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
 		inst.aimingPos		= targetPos;
 	}
 
-	if ( inst.timer == aimFrame )
+	if ( inst.timer == fireFrame )
 	{
 		Fire( inst, targetPos );
 	}
