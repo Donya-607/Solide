@@ -1308,6 +1308,23 @@ void BossFirst::Rush::Init( BossFirst &inst )
 	inst.velocity.x = initialVelocity.x;
 	inst.velocity.z = initialVelocity.z;
 
+	constexpr int dontUseFeintSign = 0;
+	if ( inst.remainFeintCount == dontUseFeintSign )
+	{
+		// Set the count if first time.
+		const auto data		= FetchMember();
+		const auto &hpData	= data.initialHPs;
+		const int  intType	= scast<int>( inst.GetType() );
+
+		inst.remainFeintCount =	( intType < scast<int>( hpData.size() ) )
+								? data.forFirst.rush.feintCountPerHP[intType]
+								: dontUseFeintSign;
+	}
+	else
+	{
+		inst.remainFeintCount--;
+	}
+
 	shouldStop = false;
 }
 void BossFirst::Rush::Uninit( BossFirst &inst ) {}
@@ -1344,6 +1361,20 @@ void BossFirst::Rush::PhysicUpdate( BossFirst &inst, const std::vector<Donya::AA
 		const float insideRange = movableRange * ERROR_MARGIN;
 		Donya::Clamp( &inst.pos.x, -insideRange, insideRange );
 		Donya::Clamp( &inst.pos.z, -insideRange, insideRange );
+	}
+
+	auto IsCloseToTarget = [&]()
+	{
+		const float closeRange = std::max( 0.1f, inst.velocity.XZ().Length() );
+		const Donya::Vector2 diffXZ = inst.aimingPos.XZ() - inst.GetPosition().XZ();
+
+		return ( diffXZ.Length() <= closeRange );
+	};
+	if ( 0 < inst.remainFeintCount && IsCloseToTarget() )
+	{
+		shouldStop = true;
+		inst.pos.x = inst.aimingPos.x;
+		inst.pos.z = inst.aimingPos.z;
 	}
 }
 bool BossFirst::Rush::ShouldChangeMover( BossFirst &inst ) const
@@ -1419,6 +1450,11 @@ bool BossFirst::Brake::ShouldChangeMover( BossFirst &inst ) const
 }
 std::function<void()> BossFirst::Brake::GetChangeStateMethod( BossFirst &inst ) const
 {
+	if ( 0 < inst.remainFeintCount )
+	{
+		return [&]() { inst.AssignMover<Ready>(); };
+	}
+	// else
 	return [&]() { inst.AdvanceAction(); };
 }
 std::string BossFirst::Brake::GetStateName() const { return "Brake"; }
@@ -1709,7 +1745,14 @@ void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 	const int actionPatternCount = scast<int>( FetchActionPatterns().size() );
 	ImGui::Text( u8"現在の行動：%s",	ToString( FetchAction( actionIndex ) ).c_str() );
 	ImGui::SameLine(); ImGui::SliderInt( "##", &actionIndex, 0, actionPatternCount - 1 );
-	ImGui::Text( u8"次の行動：%s",	ToString( FetchAction( actionIndex + 1 ) ).c_str() );
+	ImGui::Text
+	(
+		u8"次の行動：%s",
+		( 0 < remainFeintCount )
+		? ToString( FetchAction( actionIndex     ) ).c_str()
+		: ToString( FetchAction( actionIndex + 1 ) ).c_str()
+	);
+	ImGui::Text( u8"残りフェイント使用数：%d", remainFeintCount );
 
 	ImGui::DragFloat3( u8"現在の座標", &pos.x,		0.01f );
 	ImGui::DragFloat3( u8"現在の速度", &velocity.x,	0.01f );

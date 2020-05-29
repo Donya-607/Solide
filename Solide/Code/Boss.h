@@ -262,8 +262,9 @@ private:
 // region Mover
 #pragma endregion
 private:
-	int							timer = 0;
-	int							actionIndex = 0;
+	int							timer				= 0;
+	int							actionIndex			= 0;
+	int							remainFeintCount	= 0; // 0 is invalid.
 	Donya::Vector3				aimingPos;
 	std::unique_ptr<MoverBase>	pMover = nullptr;
 public:
