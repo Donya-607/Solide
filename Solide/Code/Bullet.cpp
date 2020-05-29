@@ -689,18 +689,28 @@ namespace Bullet
 	}
 	void BulletAdmin::Update( float elapsedTime )
 	{
+		std::vector<BulletAdmin::FireDesc> requests{}; // Use for prevent to be added a bullet when the bullets vector iterating.
 		for ( auto &pIt : bulletPtrs )
 		{
 			if ( !pIt ) { continue; }
 			// else
-			assert(0);
-			// ƒoƒO‚ð‚È‚¨‚· ƒƒ‚’ ŽQÆ
+			
 			pIt->Update( elapsedTime );
+
+			if ( pIt->IsRequestingFire() )
+			{
+				requests.emplace_back( pIt->RequestingFireDesc() );
+			}
+
 			if ( pIt->ShouldRemove() )
 			{
 				// This element will be removed at below process
 				pIt->Uninit();
 			}
+		}
+		for ( const auto &desc : requests )
+		{
+			Append( desc );
 		}
 
 		auto result = std::remove_if
@@ -1406,7 +1416,6 @@ namespace Bullet
 			if ( raycastResult.raycastResult.wasHit || aabbResult.wasHit )
 			{
 				wasHitToObject = true;
-				//GenerateBurning();
 			}
 
 			velocity = aabbResult.correctedVector;
@@ -1424,16 +1433,6 @@ namespace Bullet
 		{
 			kind	= Kind::Breath;
 			element	= Element::Type::Nil;
-		}
-		void Breath::GenerateBurning() const
-		{
-			BulletAdmin::FireDesc desc{};
-			desc.kind			= Kind::Burning;
-			desc.addElement		= Element::Type::Nil;
-			desc.speed			= 0.0f;
-			desc.direction		= Donya::Vector3::Zero();
-			desc.generatePos	= GetPosition();
-			BulletAdmin::Get().Append( desc );
 		}
 		bool Breath::ShouldRemove() const
 		{
@@ -1458,6 +1457,21 @@ namespace Bullet
 			world._43 = pos.z;
 			return world;
 		}
+		bool Breath::IsRequestingFire()	const
+		{
+			// It looks to returns true continuously, but I can expects to be removed after send request.
+			return wasHitToObject;
+		}
+		BulletAdmin::FireDesc Breath::RequestingFireDesc()const
+		{
+			BulletAdmin::FireDesc desc{};
+			desc.kind			= Kind::Burning;
+			desc.addElement		= Element::Type::Nil;
+			desc.speed			= 0.0f;
+			desc.direction		= Donya::Vector3::Zero();
+			desc.generatePos	= GetPosition();
+			return desc;
+		}
 
 		Burning::~Burning()
 		{
@@ -1466,6 +1480,11 @@ namespace Bullet
 				pEffect->Stop();
 				pEffect.reset();
 			}
+		}
+		void Burning::Init( const BulletAdmin::FireDesc &param )
+		{
+			BulletBase::Init( param );
+			element.Add( Element::Type::Flame );
 		}
 		void Burning::Uninit()
 		{

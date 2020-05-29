@@ -140,21 +140,26 @@ namespace Bullet
 		AABBResult		CalcCorrectedVectorImpl( const Donya::Vector3 &targetVector, const std::vector<Donya::AABB> &solids ) const;
 		RecursionResult	CalcCorrectedVectorImpl( int recursionLimit, int recursionCount, RecursionResult prevResult, const Donya::Model::PolygonGroup &terrain, const Donya::Vector4x4 &terrainWorldMatrix ) const;
 	public:
-		virtual bool				ShouldRemove()		const = 0;
-		virtual Kind				GetKind()			const { return kind;	}
-		virtual void				GiveElement( Element::Type addType );
-		virtual Element				GetElement()		const { return element;	}
-		virtual Donya::Vector3		GetPosition()		const { return pos;		}
+		virtual bool					ShouldRemove()		const = 0;
+		virtual Kind					GetKind()			const { return kind;	}
+		virtual void					GiveElement( Element::Type addType );
+		virtual Element					GetElement()		const { return element;	}
+		virtual Donya::Vector3			GetPosition()		const { return pos;		}
 		/// <summary>
 		/// Returns a nil if I didn't have AABB.
 		/// </summary>
-		virtual Donya::AABB			GetHitBoxAABB()		const { return Donya::AABB::Nil();		}
+		virtual Donya::AABB				GetHitBoxAABB()		const { return Donya::AABB::Nil();		}
 		/// <summary>
 		/// Returns a nil if I didn't have Sphere.
 		/// </summary>
-		virtual Donya::Sphere		GetHitBoxSphere()	const { return Donya::Sphere::Nil();	}
-		virtual Donya::Vector4x4	GetWorldMatrix()	const;
-		virtual void				HitToObject()		const;
+		virtual Donya::Sphere			GetHitBoxSphere()	const { return Donya::Sphere::Nil();	}
+		virtual Donya::Vector4x4		GetWorldMatrix()	const;
+		virtual void					HitToObject()		const;
+		virtual bool					IsRequestingFire()	const { return false;	};
+		/// <summary>
+		/// The return value is valid only when IsRequestingFire() returns true.
+		/// </summary>
+		virtual BulletAdmin::FireDesc	RequestingFireDesc()const { return {};		}
 	public:
 	#if USE_IMGUI
 		/// <summary>
@@ -269,11 +274,12 @@ namespace Bullet
 			void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) override;
 		private:
 			void AttachSelfKind() override;
-			void GenerateBurning() const;
 		public:
-			bool				ShouldRemove()		const override;
-			Donya::AABB			GetHitBoxAABB()		const override;
-			Donya::Vector4x4	GetWorldMatrix()	const override;
+			bool					ShouldRemove()		const override;
+			Donya::AABB				GetHitBoxAABB()		const override;
+			Donya::Vector4x4		GetWorldMatrix()	const override;
+			bool					IsRequestingFire()	const override;
+			BulletAdmin::FireDesc	RequestingFireDesc()const override;
 		};
 		
 		
@@ -285,6 +291,7 @@ namespace Bullet
 		public:
 			~Burning();
 		public:
+			void Init( const BulletAdmin::FireDesc &initializeParameter ) override;
 			void Uninit() override;
 			void Update( float elapsedTime ) override;
 			void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
