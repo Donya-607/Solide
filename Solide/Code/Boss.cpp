@@ -1596,7 +1596,7 @@ void BossFirst::Breath::Fire( BossFirst &inst, const Donya::Vector3 &targetPos )
 	fireDesc.generatePos	+= inst.GetPosition();
 	fireDesc.addElement		=  Element::Type::Flame;
 
-	const Donya::Vector3 targetVec  = targetPos - fireDesc.generatePos;
+	const Donya::Vector3 targetVec = targetPos - fireDesc.generatePos;
 	fireDesc.direction		=  targetVec.Unit();
 
 	Bullet::BulletAdmin::Get().Append( fireDesc );
