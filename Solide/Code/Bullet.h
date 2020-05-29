@@ -145,6 +145,7 @@ namespace Bullet
 		virtual void					GiveElement( Element::Type addType );
 		virtual Element					GetElement()		const { return element;	}
 		virtual Donya::Vector3			GetPosition()		const { return pos;		}
+		virtual Donya::Vector3			GetVelocity()		const { return velocity;}
 		/// <summary>
 		/// Returns a nil if I didn't have AABB.
 		/// </summary>

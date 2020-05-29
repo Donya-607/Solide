@@ -1758,7 +1758,7 @@ void SceneGame::ProcessBossCollision()
 		const auto pCollidedBullet = FindCollidedBulletOrNullptr( it, exceptTypes );
 		if ( pCollidedBullet )
 		{
-			pBoss->MakeDamage( pCollidedBullet->GetElement() );
+			pBoss->MakeDamage( pCollidedBullet->GetElement(), pCollidedBullet->GetVelocity() );
 			pCollidedBullet->HitToObject();
 			break;
 		}

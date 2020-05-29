@@ -396,6 +396,29 @@ namespace
 				}
 			}
 		};
+		struct Damage
+		{
+			int reactFrame		= 1;
+			int reactFrameFinal	= 1; // Use for critical damage(hp will be 0) frame.
+			int flushInterval	= 1;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( reactFrame		),
+					CEREAL_NVP( reactFrameFinal	),
+					CEREAL_NVP( flushInterval	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
 
 		Ready	ready;
 		Rush	rush;
@@ -407,6 +430,7 @@ namespace
 
 		Wait	wait;
 		Walk	walk;
+		Damage	damage;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -437,6 +461,10 @@ namespace
 				);
 			}
 			if ( 3 <= version )
+			{
+				archive( CEREAL_NVP( damage ) );
+			}
+			if ( 4 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -489,13 +517,14 @@ namespace
 CEREAL_CLASS_VERSION( Member,				1 )
 CEREAL_CLASS_VERSION( DrawingParam,			0 )
 CEREAL_CLASS_VERSION( CollisionParam,		0 )
-CEREAL_CLASS_VERSION( FirstParam,			2 )
+CEREAL_CLASS_VERSION( FirstParam,			3 )
 CEREAL_CLASS_VERSION( FirstParam::Ready,	0 )
 CEREAL_CLASS_VERSION( FirstParam::Rush,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Brake,	0 )
 CEREAL_CLASS_VERSION( FirstParam::Breath,	0 )
 CEREAL_CLASS_VERSION( FirstParam::Wait,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Walk,		0 )
+CEREAL_CLASS_VERSION( FirstParam::Damage,	0 )
 
 class ParamBoss : public ParameterBase<ParamBoss>
 {
@@ -842,13 +871,29 @@ public:
 
 					ImGui::TreePop();
 				};
+				auto ShowDamage	= [&]( const std::string &nodeCaption, FirstParam::Damage *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
 
-				ShowReady( u8"待機・軸あわせ",	&data.ready		);
-				ShowRush( u8"突進",				&data.rush		);
-				ShowBrake( u8"ブレーキ",			&data.brake		);
-				ShowBreath( u8"ブレス",			&data.breath	);
-				ShowWait( u8"待機",				&data.wait		);
-				ShowWalk( u8"歩行",				&data.walk		);
+					ImGui::DragInt( u8"リアクション時間（フレーム）",			&p->reactFrame		);
+					ImGui::DragInt( u8"トドメのリアクション時間（フレーム）",	&p->reactFrameFinal	);
+					ImGui::DragInt( u8"点滅間隔（フレーム）",					&p->flushInterval	);
+					ImGui::Text( u8"点滅間隔＝０で点滅無効" );
+					Donya::Clamp( &p->reactFrame,		0, p->reactFrame		);
+					Donya::Clamp( &p->reactFrameFinal,	0, p->reactFrameFinal	);
+					Donya::Clamp( &p->flushInterval,	0, p->flushInterval		);
+
+					ImGui::TreePop();
+				};
+
+				ShowReady	( u8"待機・軸あわせ",	&data.ready		);
+				ShowRush	( u8"突進",			&data.rush		);
+				ShowBrake	( u8"ブレーキ",		&data.brake		);
+				ShowBreath	( u8"ブレス",		&data.breath	);
+				ShowWait	( u8"待機",			&data.wait		);
+				ShowWalk	( u8"歩行",			&data.walk		);
+				ShowDamage	( u8"ダメージ",		&data.damage	);
 
 				if ( ImGui::TreeNode( u8"行動パターン設定" ) )
 				{
@@ -1136,7 +1181,7 @@ void BossBase::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &m
 	}
 #endif // DEBUG_MODE
 }
-void BossBase::MakeDamage( const Element &effect ) const
+void BossBase::MakeDamage( const Element &effect, const Donya::Vector3 &othersVelocity ) const
 {
 	element.Add( effect.Get() );
 }
@@ -1260,6 +1305,8 @@ void BossFirst::MoverBase::PhysicUpdate( BossFirst &inst, const std::vector<Dony
 {
 	inst.BossBase::PhysicUpdate( solids, pTerrain, pTerrainWorldMatrix );
 }
+bool BossFirst::MoverBase::AcceptDamage( const BossFirst &inst ) const { return true; }
+bool BossFirst::MoverBase::AcceptDraw( const BossFirst &inst ) const { return true; }
 
 void BossFirst::Ready::Init( BossFirst &inst )
 {
@@ -1578,19 +1625,66 @@ std::string BossFirst::Walk::GetStateName() const { return "Walk"; }
 void BossFirst::Damage::Init( BossFirst &inst )
 {
 	MoverBase::Init( inst );
+	inst.remainFeintCount	= 0;
+	inst.actionIndex		= 0;
+	inst.hp--;
+	inst.velocity.x			= 0.0f;
+	inst.velocity.z			= 0.0f;
+
+	gotoNext = false;
 }
 void BossFirst::Damage::Uninit( BossFirst &inst ) {}
 void BossFirst::Damage::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
+	inst.timer++;
 
+	const auto data = FetchMember().forFirst.damage;
+
+	if ( inst.hp < 0 )
+	{
+		if ( data.reactFrameFinal <= inst.timer )
+		{
+			gotoNext = true;
+		}
+	}
+	else
+	{
+		if ( data.reactFrame <= inst.timer )
+		{
+			gotoNext = true;
+		}
+	}
 }
-bool BossFirst::Damage::ShouldChangeMover( BossFirst &inst ) const
+bool BossFirst::Damage::AcceptDamage( const BossFirst &inst ) const
 {
 	return false;
 }
+bool BossFirst::Damage::AcceptDraw( const BossFirst &inst ) const
+{
+	const auto data = FetchMember().forFirst.damage;
+	const int &interval = data.flushInterval;
+	if ( interval <= 0 ) { return true; }
+	// else
+
+	const int rem = inst.timer % ( interval << 1 );
+	return ( rem < interval );
+}
+bool BossFirst::Damage::ShouldChangeMover( BossFirst &inst ) const
+{
+	return gotoNext;
+}
 std::function<void()> BossFirst::Damage::GetChangeStateMethod( BossFirst &inst ) const
 {
-	return [&]() { inst.AssignMover<Ready>(); };
+	if ( inst.hp < 0 )
+	{
+		return [&]() { inst.AssignMover<Die>(); };
+	}
+	// else
+	return [&]()
+	{
+		inst.actionIndex = -1; // I want assign the zero action. This expects will be increment.
+		inst.AdvanceAction();
+	};
 }
 std::string BossFirst::Damage::GetStateName() const { return "Damage"; }
 
@@ -1605,7 +1699,7 @@ void BossFirst::Die::Update( BossFirst &inst, float elapsedTime, const Donya::Ve
 }
 bool BossFirst::Die::ShouldChangeMover( BossFirst &inst ) const
 {
-	return false;
+	return false; // Don't revive.
 }
 std::function<void()> BossFirst::Die::GetChangeStateMethod( BossFirst &inst ) const
 {
@@ -1629,8 +1723,15 @@ void BossFirst::Uninit()
 }
 void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 {
+	if ( receiveDamage )
+	{
+		AssignMover<Damage>();
+		receiveDamage = false;
+	}
+
 	BossBase::Update( elapsedTime, targetPos );
 
+	// TODO: Adjust the motion-index by mover.
 	UpdateMotion( elapsedTime, 0 );
 
 	if ( IsDead() ) { return; }
@@ -1644,6 +1745,38 @@ void BossFirst::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Dony
 	// else
 
 	pMover->PhysicUpdate( *this, solids, pTerrain, pTerrainWorldMatrix );
+}
+void BossFirst::Draw( RenderingHelper *pRenderer ) const
+{
+	if ( pMover && !pMover->AcceptDraw( *this ) ) { return; }
+	// else
+	BossBase::Draw( pRenderer );
+}
+void BossFirst::MakeDamage( const Element &effect, const Donya::Vector3 &othersVelocity ) const
+{
+	if ( pMover && !pMover->AcceptDamage( *this ) ) { return; }
+	// else
+
+	constexpr Element::Type impactableType = Element::Type::Oil | Element::Type::Flame;
+	if ( effect.Has( impactableType ) && !othersVelocity.IsZero() )
+	{
+		receiveDamage = true;
+		return;
+	}
+	// else
+
+	// Flame check is only do when already has oil.
+	if ( effect.Has( Element::Type::Flame ) && element.Has( Element::Type::Oil ) )
+	{
+		receiveDamage = true;
+		return;
+	}
+	// else
+
+	if ( effect.Has( Element::Type::Oil ) )
+	{
+		element.Add( Element::Type::Oil );
+	}
 }
 void BossFirst::AssignMoverByAction( ActionType type )
 {

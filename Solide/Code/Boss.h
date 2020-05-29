@@ -105,7 +105,7 @@ public:
 	virtual void Draw( RenderingHelper *pRenderer ) const;
 	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
-	virtual void MakeDamage( const Element &effect ) const;
+	virtual void MakeDamage( const Element &effect, const Donya::Vector3 &othersVelocity ) const;
 public:
 	virtual bool						IsDead() const;
 	virtual BossType					GetType() const = 0;
@@ -154,6 +154,8 @@ private:
 		virtual void Uninit( BossFirst &instance ) = 0;
 		virtual void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) = 0;
 		virtual void PhysicUpdate( BossFirst &instance, const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+		virtual bool AcceptDamage( const BossFirst &instance ) const;
+		virtual bool AcceptDraw( const BossFirst &instance ) const;
 		virtual bool ShouldChangeMover( BossFirst &instance ) const = 0;
 		virtual std::function<void()> GetChangeStateMethod( BossFirst &instance ) const = 0;
 		virtual std::string GetStateName() const = 0;
@@ -241,10 +243,14 @@ private:
 	};
 	class Damage : public MoverBase
 	{
+	private:
+		bool gotoNext = false;
 	public:
 		void Init( BossFirst &instance ) override;
 		void Uninit( BossFirst &instance ) override;
 		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		bool AcceptDamage( const BossFirst &instance ) const override;
+		bool AcceptDraw( const BossFirst &instance ) const override;
 		bool ShouldChangeMover( BossFirst &instance ) const override;
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
@@ -267,11 +273,15 @@ private:
 	int							remainFeintCount	= 0; // 0 is invalid.
 	Donya::Vector3				aimingPos;
 	std::unique_ptr<MoverBase>	pMover = nullptr;
+	mutable bool receiveDamage = false; // Will be changed at const method.
 public:
 	void Init( const BossInitializer &parameter ) override;
 	void Uninit() override;
 	void Update( float elapsedTime, const Donya::Vector3 &targetPos ) override;
 	void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
+	void Draw( RenderingHelper *pRenderer ) const override;
+public:
+	void MakeDamage( const Element &effect, const Donya::Vector3 &othersVelocity ) const override;
 private:
 	template<class Mover, typename CtorArgument>
 	void AssignMover( const CtorArgument &arg )
