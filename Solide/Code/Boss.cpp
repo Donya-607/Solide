@@ -787,7 +787,7 @@ public:
 							caption = Donya::MakeArraySuffix( i );
 
 							caption = caption + u8"を削除";
-							if ( ImGui::Button( ( caption + u8"を削除" ).c_str() ) )
+							if ( ImGui::Button( caption.c_str() ) )
 							{
 								eraseIndex = i;
 							}
@@ -912,7 +912,7 @@ public:
 					const int hpCount = m.FetchInitialHP( BossType::First );
 					for ( int i = 0; i < hpCount; ++i )
 					{
-						caption = u8"[残ＨＰ:" + std::to_string( hpCount - i ) + u8"]";
+						caption = u8"[残ＨＰ:" + std::to_string( hpCount - 1 - i ) + u8"]";
 						if ( !ImGui::TreeNode( caption.c_str() ) ) { continue; }
 						// else
 
@@ -924,6 +924,26 @@ public:
 						{
 							caption = Donya::MakeArraySuffix( j );
 							ShowActionGuiNode( caption, &patterns[j] );
+						}
+
+						auto IsContainBreath = [&]( const std::vector<BossFirst::ActionType> &pattern )
+						{
+							for ( const auto &it : pattern )
+							{
+								if ( it == BossFirst::ActionType::Breath )
+								{
+									return true;
+								}
+							}
+							return false;
+						};
+						if ( !IsContainBreath( patterns ) )
+						{
+							ImGui::TextColored
+							(
+								ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f },
+								u8"！ブレスがありません！"
+							 );
 						}
 
 						ImGui::TreePop();
@@ -1316,7 +1336,7 @@ void BossFirst::MoverBase::PhysicUpdate( BossFirst &inst, const std::vector<Dony
 }
 bool BossFirst::MoverBase::IsDead( const BossFirst &inst ) const
 {
-	return inst.IsDead();
+	return false;
 }
 bool BossFirst::MoverBase::AcceptDamage( const BossFirst &inst ) const { return true; }
 bool BossFirst::MoverBase::AcceptDraw( const BossFirst &inst ) const { return true; }
@@ -1527,6 +1547,9 @@ std::string BossFirst::Brake::GetStateName() const { return "Brake"; }
 void BossFirst::Breath::Init( BossFirst &inst )
 {
 	MoverBase::Init( inst );
+	inst.velocity.x = 0.0f;
+	inst.velocity.z = 0.0f;
+
 	gotoNext = false;
 }
 void BossFirst::Breath::Uninit( BossFirst &inst ) {}
@@ -1615,6 +1638,8 @@ BossFirst::Walk::Walk( int walkFrame )
 void BossFirst::Walk::Init( BossFirst &inst )
 {
 	MoverBase::Init( inst );
+	inst.velocity.x = 0.0f;
+	inst.velocity.z = 0.0f;
 }
 void BossFirst::Walk::Uninit( BossFirst &inst ) {}
 void BossFirst::Walk::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1709,6 +1734,8 @@ std::string BossFirst::Damage::GetStateName() const { return "Damage"; }
 void BossFirst::Die::Init( BossFirst &inst )
 {
 	MoverBase::Init( inst );
+	inst.velocity.x = 0.0f;
+	inst.velocity.z = 0.0f;
 }
 void BossFirst::Die::Uninit( BossFirst &inst ) {}
 void BossFirst::Die::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1745,12 +1772,6 @@ void BossFirst::Uninit()
 }
 void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 {
-	if ( receiveDamage )
-	{
-		AssignMover<Damage>();
-		receiveDamage = false;
-	}
-
 	BossBase::Update( elapsedTime, targetPos );
 
 	// TODO: Adjust the motion-index by mover.
@@ -1758,6 +1779,12 @@ void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 
 	if ( IsDead() ) { return; }
 	// else
+
+	if ( receiveDamage )
+	{
+		AssignMover<Damage>();
+		receiveDamage = false;
+	}
 
 	UpdateByMover( elapsedTime, targetPos );
 
@@ -1792,8 +1819,14 @@ void BossFirst::MakeDamage( const Element &effect, const Donya::Vector3 &othersV
 	if ( pMover && !pMover->AcceptDamage( *this ) ) { return; }
 	// else
 
-	constexpr Element::Type impactableType = Element::Type::Oil | Element::Type::Flame;
-	if ( effect.Has( impactableType ) && !othersVelocity.IsZero() )
+	auto IsImpactableType = []( const Element &element )
+	{
+		if ( !element.Has( Element::Type::Oil	) ) { return false; }
+		if ( !element.Has( Element::Type::Flame	) ) { return false; }
+		// else
+		return true;
+	};
+	if ( IsImpactableType( effect ) && !othersVelocity.IsZero() )
 	{
 		receiveDamage = true;
 		return;
@@ -1875,11 +1908,12 @@ std::vector<BossFirst::ActionType> BossFirst::FetchActionPatterns() const
 	const auto data = FetchMember();
 	const auto &patterns = data.forFirst.actionPatterns;
 	const int  maxHP = data.FetchInitialHP( GetType() );
-	return	( maxHP - hp < 0 )
+	const int  index = maxHP - hp;
+	return	(  index < 0 )
 			? std::vector<ActionType>{}
-			:	( scast<int>( patterns.size() ) <= maxHP )
+			:	( scast<int>( patterns.size() ) <= maxHP - hp )
 				? patterns.back()
-				: patterns[maxHP - hp];
+				: patterns[index];
 }
 BossFirst::ActionType BossFirst::FetchAction( int actionIndex ) const
 {
@@ -1891,7 +1925,7 @@ BossFirst::ActionType BossFirst::FetchAction( int actionIndex ) const
 }
 bool BossFirst::IsDead() const
 {
-	return ( pMover ) ? pMover->IsDead() : BossBase::IsDead();
+	return ( pMover ) ? pMover->IsDead( *this ) : BossBase::IsDead();
 }
 BossType BossFirst::GetType() const { return BossType::First; }
 std::vector<Element::Type> BossFirst::GetUncollidableTypes() const
@@ -1909,7 +1943,7 @@ void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 
 	ImGui::Text( u8"種類：%s", GetBossName( GetType() ).c_str() );
 
-	ImGui::DragInt( u8"現在の体力", &hp ); hp = std::max( 0, hp );
+	ImGui::DragInt( u8"現在の体力", &hp ); hp = std::max( -1, hp );
 	if ( ImGui::Button( u8"ダメージを与える" ) )
 	{
 		receiveDamage = true;
