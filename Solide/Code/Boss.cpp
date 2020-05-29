@@ -61,7 +61,7 @@ namespace
 #if USE_IMGUI
 	void ShowActionGuiNode( const std::string &caption, BossFirst::ActionType *p )
 	{
-		ImGui::Text( ( caption + u8"：%s" ).c_str(), ToString( *p ).c_str() );
+		ImGui::Text( ( caption + u8"：%-64s" ).c_str(), ToString( *p ).c_str() );
 		ImGui::SameLine();
 
 		constexpr int count = scast<int>( BossFirst::ActionType::ActionCount );
@@ -831,8 +831,8 @@ public:
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
 
-					ImGui::DragInt( u8"待機時間・長（フレーム）", &p->longFrame  );
-					ImGui::DragInt( u8"待機時間・短（フレーム）", &p->shortFrame );
+					ImGui::DragInt( u8"歩行時間・長（フレーム）", &p->longFrame  );
+					ImGui::DragInt( u8"歩行時間・短（フレーム）", &p->shortFrame );
 					Donya::Clamp( &p->longFrame,  0, p->longFrame  );
 					Donya::Clamp( &p->shortFrame, 0, p->shortFrame );
 					
@@ -850,9 +850,10 @@ public:
 				ShowWait( u8"待機",				&data.wait		);
 				ShowWalk( u8"歩行",				&data.walk		);
 
-				ShowActionGuiNode( u8"初期行動", &data.initialAction );
 				if ( ImGui::TreeNode( u8"行動パターン設定" ) )
 				{
+					ShowActionGuiNode( u8"初期行動", &data.initialAction );
+
 					std::string caption{};
 					const int hpCount = m.FetchInitialHP( BossType::First );
 					for ( int i = 0; i < hpCount; ++i )
