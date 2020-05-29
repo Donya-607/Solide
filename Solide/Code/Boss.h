@@ -138,6 +138,10 @@ public:
 	{
 		Rush,
 		Breath,
+		Wait_Long,
+		Wait_Short,
+		Walk_Long,
+		Walk_Short,
 
 		ActionCount
 	};
@@ -207,6 +211,34 @@ private:
 	private:
 		void Fire( BossFirst &instance, const Donya::Vector3 &targetPos );
 	};
+	class Wait : public MoverBase
+	{
+	private:
+		const int waitFrame = 0;
+	public:
+		Wait( int waitFrmae );
+	public:
+		void Init( BossFirst &instance ) override;
+		void Uninit( BossFirst &instance ) override;
+		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		bool ShouldChangeMover( BossFirst &instance ) const override;
+		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
+		std::string GetStateName() const override;
+	};
+	class Walk : public MoverBase
+	{
+	private:
+		const int walkFrame = 0;
+	public:
+		Walk( int walkFrmae );
+	public:
+		void Init( BossFirst &instance ) override;
+		void Uninit( BossFirst &instance ) override;
+		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		bool ShouldChangeMover( BossFirst &instance ) const override;
+		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
+		std::string GetStateName() const override;
+	};
 	class Damage : public MoverBase
 	{
 	public:
@@ -240,6 +272,14 @@ public:
 	void Update( float elapsedTime, const Donya::Vector3 &targetPos ) override;
 	void PhysicUpdate( const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 private:
+	template<class Mover, typename CtorArgument>
+	void AssignMover( const CtorArgument &arg )
+	{
+		if ( pMover ) { pMover->Uninit( *this ); }
+
+		pMover = std::make_unique<Mover>( arg );
+		pMover->Init( *this );
+	}
 	template<class Mover>
 	void AssignMover()
 	{

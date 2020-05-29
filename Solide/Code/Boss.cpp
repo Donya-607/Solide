@@ -47,8 +47,12 @@ namespace
 	{
 		switch ( type )
 		{
-		case BossFirst::ActionType::Rush:	return u8"突進";
-		case BossFirst::ActionType::Breath:	return u8"ブレス";
+		case BossFirst::ActionType::Rush:		return u8"突進";
+		case BossFirst::ActionType::Breath:		return u8"ブレス";
+		case BossFirst::ActionType::Wait_Long:	return u8"待機・長";
+		case BossFirst::ActionType::Wait_Short:	return u8"待機・短";
+		case BossFirst::ActionType::Walk_Long:	return u8"歩行・長";
+		case BossFirst::ActionType::Walk_Short:	return u8"歩行・短";
 		default: break;
 		}
 		_ASSERT_EXPR( 0, L"Error: Unexpected type!" );
@@ -344,6 +348,54 @@ namespace
 				}
 			}
 		};
+		struct Wait
+		{
+			int		longFrame		= 1;
+			int		shortFrame		= 1;
+			float	maxAimDegree	= 180.0f;	// Per frame.
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( longFrame		),
+					CEREAL_NVP( shortFrame		),
+					CEREAL_NVP( maxAimDegree	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		struct Walk
+		{
+			int		longFrame		= 1;
+			int		shortFrame		= 1;
+			float	maxAimDegree	= 180.0f;	// Per frame.
+			float	walkSpeed		= 1.0f;		// Per frame.
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( longFrame		),
+					CEREAL_NVP( shortFrame		),
+					CEREAL_NVP( maxAimDegree	),
+					CEREAL_NVP( walkSpeed		)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
 
 		Ready	ready;
 		Rush	rush;
@@ -351,6 +403,10 @@ namespace
 		Breath	breath;
 
 		std::vector<std::vector<BossFirst::ActionType>> actionPatterns; // Per HPs. The index is calced by: maxHP - nowHP(e.g. nowHP == maxHP -> 0, nowHP = maxHP-1 -> 1, ...)
+		BossFirst::ActionType initialAction = BossFirst::ActionType::Wait_Long;
+
+		Wait	wait;
+		Walk	walk;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -372,6 +428,15 @@ namespace
 				);
 			}
 			if ( 2 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( initialAction	),
+					CEREAL_NVP( wait			),
+					CEREAL_NVP( walk			)
+				);
+			}
+			if ( 3 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -424,11 +489,13 @@ namespace
 CEREAL_CLASS_VERSION( Member,				1 )
 CEREAL_CLASS_VERSION( DrawingParam,			0 )
 CEREAL_CLASS_VERSION( CollisionParam,		0 )
-CEREAL_CLASS_VERSION( FirstParam,			1 )
+CEREAL_CLASS_VERSION( FirstParam,			2 )
 CEREAL_CLASS_VERSION( FirstParam::Ready,	0 )
 CEREAL_CLASS_VERSION( FirstParam::Rush,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Brake,	0 )
 CEREAL_CLASS_VERSION( FirstParam::Breath,	0 )
+CEREAL_CLASS_VERSION( FirstParam::Wait,		0 )
+CEREAL_CLASS_VERSION( FirstParam::Walk,		0 )
 
 class ParamBoss : public ParameterBase<ParamBoss>
 {
@@ -745,12 +812,45 @@ public:
 
 					ImGui::TreePop();
 				};
+				auto ShowWait	= [&]( const std::string &nodeCaption, FirstParam::Wait *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					ImGui::DragInt( u8"待機時間・長（フレーム）", &p->longFrame  );
+					ImGui::DragInt( u8"待機時間・短（フレーム）", &p->shortFrame );
+					Donya::Clamp( &p->longFrame,  0, p->longFrame  );
+					Donya::Clamp( &p->shortFrame, 0, p->shortFrame );
+					
+					ImGui::SliderFloat( u8"一度に曲がる最大角度（Degree）", &p->maxAimDegree, -180.0f, 180.0f );
+
+					ImGui::TreePop();
+				};
+				auto ShowWalk	= [&]( const std::string &nodeCaption, FirstParam::Walk *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					ImGui::DragInt( u8"待機時間・長（フレーム）", &p->longFrame  );
+					ImGui::DragInt( u8"待機時間・短（フレーム）", &p->shortFrame );
+					Donya::Clamp( &p->longFrame,  0, p->longFrame  );
+					Donya::Clamp( &p->shortFrame, 0, p->shortFrame );
+					
+					ImGui::SliderFloat( u8"一度に曲がる最大角度（Degree）", &p->maxAimDegree, -180.0f, 180.0f );
+					ImGui::DragFloat( u8"歩行速度", &p->walkSpeed, 0.01f );
+					Donya::Clamp( &p->walkSpeed, 0.0f, p->walkSpeed );
+
+					ImGui::TreePop();
+				};
 
 				ShowReady( u8"待機・軸あわせ",	&data.ready		);
 				ShowRush( u8"突進",				&data.rush		);
 				ShowBrake( u8"ブレーキ",			&data.brake		);
 				ShowBreath( u8"ブレス",			&data.breath	);
+				ShowWait( u8"待機",				&data.wait		);
+				ShowWalk( u8"歩行",				&data.walk		);
 
+				ShowActionGuiNode( u8"初期行動", &data.initialAction );
 				if ( ImGui::TreeNode( u8"行動パターン設定" ) )
 				{
 					std::string caption{};
@@ -1182,7 +1282,7 @@ void BossFirst::Ready::Update( BossFirst &inst, float elapsedTime, const Donya::
 	{
 		const Donya::Vector3 aimingVector = inst.CalcAimingVector( targetPos, data.maxAimDegree );
 		inst.orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
-		inst.aimingPos	= targetPos;
+		inst.aimingPos		= targetPos;
 	}
 	else
 	if ( postFrame < inst.timer )
@@ -1379,6 +1479,65 @@ void BossFirst::Breath::Fire( BossFirst &inst, const Donya::Vector3 &targetPos )
 	Bullet::BulletAdmin::Get().Append( fireDesc );
 }
 
+BossFirst::Wait::Wait( int waitFrame )
+	: BossFirst::MoverBase(), waitFrame( waitFrame )
+{}
+void BossFirst::Wait::Init( BossFirst &inst )
+{
+	MoverBase::Init( inst );
+	inst.velocity.x = 0.0f;
+	inst.velocity.z = 0.0f;
+}
+void BossFirst::Wait::Uninit( BossFirst &inst ) {}
+void BossFirst::Wait::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
+{
+	inst.timer++;
+
+	const auto data = FetchMember().forFirst.wait;
+	const Donya::Vector3 aimingVector = inst.CalcAimingVector( targetPos, data.maxAimDegree );
+	inst.orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
+}
+bool BossFirst::Wait::ShouldChangeMover( BossFirst &inst ) const
+{
+	return ( waitFrame <= inst.timer );
+}
+std::function<void()> BossFirst::Wait::GetChangeStateMethod( BossFirst &inst ) const
+{
+	return [&]() { inst.AdvanceAction(); };
+}
+std::string BossFirst::Wait::GetStateName() const { return "Wait"; }
+
+BossFirst::Walk::Walk( int walkFrame )
+	: BossFirst::MoverBase(), walkFrame( walkFrame )
+{}
+void BossFirst::Walk::Init( BossFirst &inst )
+{
+	MoverBase::Init( inst );
+}
+void BossFirst::Walk::Uninit( BossFirst &inst ) {}
+void BossFirst::Walk::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
+{
+	inst.timer++;
+
+	const auto data = FetchMember().forFirst.walk;
+	const Donya::Vector3 aimingVector = inst.CalcAimingVector( targetPos, data.maxAimDegree );
+	inst.orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
+
+	const float speed = data.walkSpeed * elapsedTime;
+	const Donya::Vector3 updatedVelocity = inst.orientation.LocalFront() * speed;
+	inst.velocity.x = updatedVelocity.x;
+	inst.velocity.z = updatedVelocity.z;
+}
+bool BossFirst::Walk::ShouldChangeMover( BossFirst &inst ) const
+{
+	return ( walkFrame <= inst.timer );
+}
+std::function<void()> BossFirst::Walk::GetChangeStateMethod( BossFirst &inst ) const
+{
+	return [&]() { inst.AdvanceAction(); };
+}
+std::string BossFirst::Walk::GetStateName() const { return "Walk"; }
+
 void BossFirst::Damage::Init( BossFirst &inst )
 {
 	MoverBase::Init( inst );
@@ -1421,7 +1580,8 @@ void BossFirst::Init( const BossInitializer &parameter )
 {
 	BossBase::Init( parameter );
 	actionIndex = 0;
-	AssignMoverByAction( actionIndex );
+
+	AssignMoverByAction( FetchMember().forFirst.initialAction );
 }
 void BossFirst::Uninit()
 {
@@ -1450,11 +1610,17 @@ void BossFirst::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Dony
 }
 void BossFirst::AssignMoverByAction( ActionType type )
 {
+	const auto data = FetchMember().forFirst;
+
 	switch ( type )
 	{
-	case ActionType::Rush:		AssignMover<Ready>();		return;
-	case ActionType::Breath:	AssignMover<Breath>();		return;
-	default: _ASSERT_EXPR( 0, L"Error: Unexpected Type!" );	return;
+	case ActionType::Rush:			AssignMover<Ready>();		return;
+	case ActionType::Breath:		AssignMover<Breath>();		return;
+	case ActionType::Wait_Long:		AssignMover<Wait>( data.wait.longFrame  );	return;
+	case ActionType::Wait_Short:	AssignMover<Wait>( data.wait.shortFrame );	return;
+	case ActionType::Walk_Long:		AssignMover<Walk>( data.walk.longFrame  );	return;
+	case ActionType::Walk_Short:	AssignMover<Walk>( data.walk.shortFrame );	return;
+	default: _ASSERT_EXPR( 0, L"Error: Unexpected Type!" );		return;
 	}
 }
 void BossFirst::AssignMoverByAction( int actionIndex )
