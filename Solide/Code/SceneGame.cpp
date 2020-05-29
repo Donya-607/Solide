@@ -1816,6 +1816,12 @@ bool SceneGame::NowGoalMoment() const
 	if ( Fader::Get().IsExist()	) { return false; }
 	// else
 
+	if ( pBoss )
+	{
+		return pBoss->IsDead();
+	}
+	// else
+
 	const Donya::AABB goalArea		= pGoal->GetHitBox();
 	const Donya::AABB playerBody	= pPlayer->GetHitBox();
 

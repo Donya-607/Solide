@@ -431,6 +431,8 @@ namespace
 		Wait	wait;
 		Walk	walk;
 		Damage	damage;
+
+		int		releaseOilFrame = 1;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -462,7 +464,11 @@ namespace
 			}
 			if ( 3 <= version )
 			{
-				archive( CEREAL_NVP( damage ) );
+				archive
+				(
+					CEREAL_NVP( damage			),
+					CEREAL_NVP( releaseOilFrame	)
+				);
 			}
 			if ( 4 <= version )
 			{
@@ -720,6 +726,9 @@ public:
 			if ( ImGui::TreeNode( u8"１体目のパラメータ" ) )
 			{
 				auto &data = m.forFirst;
+
+				ImGui::DragInt( u8"オイルが剥がれる時間（フレーム）", &data.releaseOilFrame );
+				Donya::Clamp( &data.releaseOilFrame, 0, data.releaseOilFrame );
 				
 				auto ShowReady	= [&]( const std::string &nodeCaption, FirstParam::Ready *p )
 				{
@@ -1305,6 +1314,10 @@ void BossFirst::MoverBase::PhysicUpdate( BossFirst &inst, const std::vector<Dony
 {
 	inst.BossBase::PhysicUpdate( solids, pTerrain, pTerrainWorldMatrix );
 }
+bool BossFirst::MoverBase::IsDead( const BossFirst &inst ) const
+{
+	return inst.IsDead();
+}
 bool BossFirst::MoverBase::AcceptDamage( const BossFirst &inst ) const { return true; }
 bool BossFirst::MoverBase::AcceptDraw( const BossFirst &inst ) const { return true; }
 
@@ -1389,6 +1402,11 @@ void BossFirst::Rush::Update( BossFirst &inst, float elapsedTime, const Donya::V
 	const Donya::Vector3 updatedVelocity = inst.orientation.LocalFront() * currentSpeed;
 	inst.velocity.x = updatedVelocity.x;
 	inst.velocity.z = updatedVelocity.z;
+
+	if ( inst.element.Has( Element::Type::Oil ) )
+	{
+		inst.element.Subtract( Element::Type::Oil );
+	}
 }
 void BossFirst::Rush::PhysicUpdate( BossFirst &inst, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix )
 {
@@ -1697,6 +1715,10 @@ void BossFirst::Die::Update( BossFirst &inst, float elapsedTime, const Donya::Ve
 {
 
 }
+bool BossFirst::Die::IsDead( const BossFirst &inst ) const
+{
+	return true;
+}
 bool BossFirst::Die::ShouldChangeMover( BossFirst &inst ) const
 {
 	return false; // Don't revive.
@@ -1738,6 +1760,19 @@ void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	// else
 
 	UpdateByMover( elapsedTime, targetPos );
+
+	if ( element.Has( Element::Type::Oil ) )
+	{
+		oilTimer++;
+		if ( FetchMember().forFirst.releaseOilFrame <= oilTimer )
+		{
+			element.Subtract( Element::Type::Oil );
+		}
+	}
+	else
+	{
+		oilTimer = 0;
+	}
 }
 void BossFirst::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix )
 {
@@ -1842,7 +1877,9 @@ std::vector<BossFirst::ActionType> BossFirst::FetchActionPatterns() const
 	const int  maxHP = data.FetchInitialHP( GetType() );
 	return	( maxHP - hp < 0 )
 			? std::vector<ActionType>{}
-			: patterns[maxHP - hp];
+			:	( scast<int>( patterns.size() ) <= maxHP )
+				? patterns.back()
+				: patterns[maxHP - hp];
 }
 BossFirst::ActionType BossFirst::FetchAction( int actionIndex ) const
 {
@@ -1851,6 +1888,10 @@ BossFirst::ActionType BossFirst::FetchAction( int actionIndex ) const
 	return	( !patternCount ) 
 			? ActionType::Rush // Fail safe
 			: patterns[actionIndex % patternCount];
+}
+bool BossFirst::IsDead() const
+{
+	return ( pMover ) ? pMover->IsDead() : BossBase::IsDead();
 }
 BossType BossFirst::GetType() const { return BossType::First; }
 std::vector<Element::Type> BossFirst::GetUncollidableTypes() const
@@ -1869,11 +1910,16 @@ void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text( u8"種類：%s", GetBossName( GetType() ).c_str() );
 
 	ImGui::DragInt( u8"現在の体力", &hp ); hp = std::max( 0, hp );
+	if ( ImGui::Button( u8"ダメージを与える" ) )
+	{
+		receiveDamage = true;
+	}
 	if ( pMover )
 	{
 		ImGui::Text( u8"現在の状態：%s", pMover->GetStateName().c_str() );
 	}
-	ImGui::DragInt( u8"内部タイマ", &timer );
+	ImGui::DragInt( u8"内部タイマ",				&timer		);
+	ImGui::DragInt( u8"オイルがついている時間",	&oilTimer	);
 
 	const int actionPatternCount = scast<int>( FetchActionPatterns().size() );
 	ImGui::Text( u8"現在の行動：%s",	ToString( FetchAction( actionIndex ) ).c_str() );

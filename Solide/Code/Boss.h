@@ -154,6 +154,7 @@ private:
 		virtual void Uninit( BossFirst &instance ) = 0;
 		virtual void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) = 0;
 		virtual void PhysicUpdate( BossFirst &instance, const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+		virtual bool IsDead( const BossFirst &instance ) const;
 		virtual bool AcceptDamage( const BossFirst &instance ) const;
 		virtual bool AcceptDraw( const BossFirst &instance ) const;
 		virtual bool ShouldChangeMover( BossFirst &instance ) const = 0;
@@ -261,6 +262,7 @@ private:
 		void Init( BossFirst &instance ) override;
 		void Uninit( BossFirst &instance ) override;
 		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		bool IsDead( const BossFirst &instance ) const override;
 		bool ShouldChangeMover( BossFirst &instance ) const override;
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
@@ -269,6 +271,7 @@ private:
 #pragma endregion
 private:
 	int							timer				= 0;
+	int							oilTimer			= 0;
 	int							actionIndex			= 0;
 	int							remainFeintCount	= 0; // 0 is invalid.
 	Donya::Vector3				aimingPos;
@@ -310,6 +313,7 @@ private:
 	std::vector<ActionType> FetchActionPatterns() const;
 	ActionType FetchAction( int actionIndex ) const;
 private:
+	bool IsDead() const override;
 	BossType GetType() const override;
 	std::vector<Element::Type>	GetUncollidableTypes() const override;
 public:
