@@ -61,7 +61,7 @@ namespace
 #if USE_IMGUI
 	void ShowActionGuiNode( const std::string &caption, BossFirst::ActionType *p )
 	{
-		ImGui::Text( ( caption + u8"ÅF%-64s" ).c_str(), ToString( *p ).c_str() );
+		ImGui::Text( ( caption + u8"ÅF%-24s" ).c_str(), ToString( *p ).c_str() );
 		ImGui::SameLine();
 
 		constexpr int count = scast<int>( BossFirst::ActionType::ActionCount );

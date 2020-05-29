@@ -680,6 +680,10 @@ void SceneTitle::UseImGui()
 			{
 				pTerrain->ShowImGuiNode( u8"地形" );
 			}
+			if ( pPlayerIniter )
+			{
+				pPlayerIniter->ShowImGuiNode( u8"自機の初期化情報", TITLE_STAGE_NO );
+			}
 			if ( pObstacles )
 			{
 				pObstacles->ShowImGuiNode( u8"障害物の生成・破棄" );
