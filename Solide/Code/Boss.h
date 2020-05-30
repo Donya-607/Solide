@@ -16,6 +16,7 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+#include "Bullet.h"
 #include "ObjectBase.h"
 #include "Element.h"
 #include "Renderer.h"
@@ -212,7 +213,7 @@ private:
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
 	private:
-		void Fire( BossFirst &instance, const Donya::Vector3 &targetPos );
+		void Fire( BossFirst &instance, const Bullet::BulletAdmin::FireDesc &desc );
 	};
 	class Wait : public MoverBase
 	{

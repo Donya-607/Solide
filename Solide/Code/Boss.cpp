@@ -18,7 +18,6 @@
 #include "Donya/Template.h"		// Use Clamp().
 #endif // DEBUG_MODE
 
-#include "Bullet.h"
 #include "Common.h"
 #include "FilePath.h"
 #include "Music.h"
@@ -325,28 +324,55 @@ namespace
 		};
 		struct Breath
 		{
-			int		aimingFrame		= 1;
-			int		postAimingFrame = 1;
-			int		afterWaitFrame	= 1;
-			float	maxAimDegree	= 180.0f;	// Per frame.
-			Bullet::BulletAdmin::FireDesc fireDesc;
+			struct PerHP
+			{
+				int		preFireFrame	= 1;
+				int		fireFrame		= 1;
+				int		fireInterval	= 5;
+				int		postFireFrame	= 1;
+				float	maxAimDegree	= 180.0f;	// Per frame.
+				Bullet::BulletAdmin::FireDesc fireDesc;
+			private:
+				friend class cereal::access;
+				template<class Archive>
+				void serialize( Archive &archive, std::uint32_t version )
+				{
+					archive
+					(
+						CEREAL_NVP( preFireFrame	),
+						CEREAL_NVP( fireFrame		),
+						CEREAL_NVP( fireInterval	),
+						CEREAL_NVP( postFireFrame	),
+						CEREAL_NVP( maxAimDegree	),
+						CEREAL_NVP( fireDesc		)
+					);
+
+					if ( 1 <= version )
+					{
+						// archive( CEREAL_NVP( x ) );
+					}
+				}
+			};
+			
+			std::vector<PerHP> paramPerHP;
 		private:
 			friend class cereal::access;
 			template<class Archive>
 			void serialize( Archive &archive, std::uint32_t version )
 			{
-				archive
-				(
-					CEREAL_NVP( aimingFrame		),
-					CEREAL_NVP( postAimingFrame	),
-					CEREAL_NVP( afterWaitFrame	),
-					CEREAL_NVP( maxAimDegree	),
-					CEREAL_NVP( fireDesc		)
-				);
+				// OLD version
+				// archive
+				// (
+				// 	CEREAL_NVP( aimingFrame		),
+				// 	CEREAL_NVP( postAimingFrame	),
+				// 	CEREAL_NVP( afterWaitFrame	),
+				// 	CEREAL_NVP( maxAimDegree	),
+				// 	CEREAL_NVP( fireDesc		)
+				// );
 
 				if ( 1 <= version )
 				{
-					// archive( CEREAL_NVP( x ) );
+					archive( CEREAL_NVP( paramPerHP ) );
 				}
 			}
 		};
@@ -522,17 +548,18 @@ namespace
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member,				1 )
-CEREAL_CLASS_VERSION( DrawingParam,			0 )
-CEREAL_CLASS_VERSION( CollisionParam,		0 )
-CEREAL_CLASS_VERSION( FirstParam,			3 )
-CEREAL_CLASS_VERSION( FirstParam::Ready,	0 )
-CEREAL_CLASS_VERSION( FirstParam::Rush,		0 )
-CEREAL_CLASS_VERSION( FirstParam::Brake,	0 )
-CEREAL_CLASS_VERSION( FirstParam::Breath,	0 )
-CEREAL_CLASS_VERSION( FirstParam::Wait,		0 )
-CEREAL_CLASS_VERSION( FirstParam::Walk,		0 )
-CEREAL_CLASS_VERSION( FirstParam::Damage,	0 )
+CEREAL_CLASS_VERSION( Member,					1 )
+CEREAL_CLASS_VERSION( DrawingParam,				0 )
+CEREAL_CLASS_VERSION( CollisionParam,			0 )
+CEREAL_CLASS_VERSION( FirstParam,				3 )
+CEREAL_CLASS_VERSION( FirstParam::Ready,		0 )
+CEREAL_CLASS_VERSION( FirstParam::Rush,			0 )
+CEREAL_CLASS_VERSION( FirstParam::Brake,		0 )
+CEREAL_CLASS_VERSION( FirstParam::Breath,		1 )
+CEREAL_CLASS_VERSION( FirstParam::Breath::PerHP,0 )
+CEREAL_CLASS_VERSION( FirstParam::Wait,			0 )
+CEREAL_CLASS_VERSION( FirstParam::Walk,			0 )
+CEREAL_CLASS_VERSION( FirstParam::Damage,		0 )
 
 class ParamBoss : public ParameterBase<ParamBoss>
 {
@@ -580,6 +607,11 @@ private:
 		ResizeIfNeeded
 		(
 			&m.forFirst.actionPatterns, std::vector<BossFirst::ActionType>(),
+			( firstSize < 0 ) ? 0U : scast<size_t>( firstSize )
+		);
+		ResizeIfNeeded
+		(
+			&m.forFirst.breath.paramPerHP, FirstParam::Breath::PerHP{},
 			( firstSize < 0 ) ? 0U : scast<size_t>( firstSize )
 		);
 	}
@@ -837,20 +869,41 @@ public:
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
 
-					ImGui::DragInt( u8"狙いをつける時間（フレーム）",			&p->aimingFrame		);
-					ImGui::DragInt( u8"狙いをつけた後の待ち時間（フレーム）",	&p->postAimingFrame );
-					ImGui::DragInt( u8"発射後の待ち時間（フレーム）",			&p->afterWaitFrame	);
-					Donya::Clamp( &p->aimingFrame,		0, p->aimingFrame		);
-					Donya::Clamp( &p->postAimingFrame,	0, p->postAimingFrame	);
-					Donya::Clamp( &p->afterWaitFrame,	0, p->afterWaitFrame	);
-					ImGui::Text( u8"%d：合計所要時間（フレーム）", p->aimingFrame + p->postAimingFrame + p->afterWaitFrame );
-					ImGui::Text( u8"ルーチン：[狙いをつける]->[待機]->[発射]->[待機]" );
+					auto &data = p->paramPerHP;
 
-					ImGui::SliderFloat( u8"一度に曲がる最大角度（Degree）", &p->maxAimDegree, -180.0f, 180.0f );
+					ParameterHelper::ResizeByButton( &data );
 
-					p->fireDesc.ShowImGuiNode( u8"発射弾の設定" );
-					ImGui::Text( u8"発射弾の方向は自機へのベクトルに，" );
-					ImGui::Text( u8"発射弾の属性は[Flame]になります。" );
+					auto ShowPerHP = [&]( const std::string &caption, FirstParam::Breath::PerHP *p )
+					{
+						if ( !ImGui::TreeNode( caption.c_str() ) ) { return; }
+						// else
+
+						ImGui::DragInt( u8"発射前の時間（フレーム）",	&p->preFireFrame	);
+						ImGui::DragInt( u8"発射時間（フレーム）",		&p->fireFrame		);
+						ImGui::DragInt( u8"発射間隔（フレーム）",		&p->fireInterval	);
+						ImGui::DragInt( u8"発射後の時間（フレーム）",	&p->postFireFrame	);
+						Donya::Clamp( &p->preFireFrame,		0, p->preFireFrame	);
+						Donya::Clamp( &p->fireFrame,		0, p->fireFrame		);
+						Donya::Clamp( &p->fireInterval,		0, p->fireInterval	);
+						Donya::Clamp( &p->postFireFrame,	0, p->postFireFrame	);
+						ImGui::Text( u8"%d：合計所要時間（フレーム）", p->preFireFrame + p->fireFrame + p->postFireFrame );
+						ImGui::Text( u8"この間，常に自機を向き続けます" );
+
+						ImGui::SliderFloat( u8"一度に曲がる最大角度（Degree）", &p->maxAimDegree, -180.0f, 180.0f );
+
+						p->fireDesc.ShowImGuiNode( u8"発射弾の設定" );
+						ImGui::Text( u8"発射弾の属性は[Flame]になります。" );
+
+						ImGui::TreePop();
+					};
+
+					std::string  caption{};
+					const size_t hpCount = data.size();
+					for ( size_t i = 0; i < hpCount; ++i )
+					{
+						caption = u8"[残りＨＰ：" + std::to_string( hpCount - 1 - i ) + u8"]";
+						ShowPerHP( caption, &data[i] );
+					}
 
 					ImGui::TreePop();
 				};
@@ -913,7 +966,7 @@ public:
 					ShowActionGuiNode( u8"初期行動", &data.initialAction );
 
 					std::string caption{};
-					const int hpCount = m.FetchInitialHP( BossType::First );
+					const int hpCount = m.FetchInitialHP( BossType::First ); // == data.actionPatterns.size()
 					for ( int i = 0; i < hpCount; ++i )
 					{
 						caption = u8"[残ＨＰ:" + std::to_string( hpCount - 1 - i ) + u8"]";
@@ -1567,24 +1620,40 @@ void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya:
 {
 	inst.timer++;
 
-	const auto data = FetchMember().forFirst.breath;
-	const int  aimFrame		= data.aimingFrame;
-	const int  fireFrame	= aimFrame + data.postAimingFrame;
-	const int  afterFrame	= fireFrame + data.afterWaitFrame;
+	const int	maxHP	= FetchMember().FetchInitialHP( inst.GetType() );
+	const int	index	= maxHP - inst.hp;
+	const auto	data	= FetchMember().forFirst.breath.paramPerHP;
+	const auto	&source	= ( index < 0 )
+				? data.front()
+				:	( scast<int>( data.size() ) <= index )
+					? data.back()
+					: data[index];
+	const int preFrame	= source.preFireFrame;
+	const int fireFrame	= preFrame + source.fireFrame;
+	const int postFrame	= fireFrame + source.postFireFrame;
 
-	if ( inst.timer < aimFrame )
+	const Donya::Vector3 aimingVector = inst.CalcAimingVector( targetPos, source.maxAimDegree );
+	inst.orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
+	inst.aimingPos		= targetPos;
+
+	if ( preFrame <= inst.timer && inst.timer < fireFrame )
 	{
-		const Donya::Vector3 aimingVector = inst.CalcAimingVector( targetPos, data.maxAimDegree );
-		inst.orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
-		inst.aimingPos		= targetPos;
+		auto ShouldFire = [&]()
+		{
+			const int &interval = source.fireInterval;
+			if ( interval <= 1 ) { return true; }
+			// else
+
+			const int rem = inst.timer % interval;
+			return ( rem == 0 );
+		};
+		if ( ShouldFire() )
+		{
+			Fire( inst, source.fireDesc );
+		}
 	}
 
-	if ( inst.timer == fireFrame )
-	{
-		Fire( inst, targetPos );
-	}
-
-	if ( afterFrame <= inst.timer )
+	if ( postFrame <= inst.timer )
 	{
 		gotoNext = true;
 	}
@@ -1598,18 +1667,15 @@ std::function<void()> BossFirst::Breath::GetChangeStateMethod( BossFirst &inst )
 	return [&]() { inst.AdvanceAction(); };
 }
 std::string BossFirst::Breath::GetStateName() const { return "Breath"; }
-void BossFirst::Breath::Fire( BossFirst &inst, const Donya::Vector3 &targetPos )
+void BossFirst::Breath::Fire( BossFirst &inst, const Bullet::BulletAdmin::FireDesc &desc )
 {
-	auto fireDesc = FetchMember().forFirst.breath.fireDesc;
+	Bullet::BulletAdmin::FireDesc tmp = desc;
+	tmp.direction	=  inst.orientation.RotateVector( tmp.direction		);
+	tmp.generatePos	=  inst.orientation.RotateVector( tmp.generatePos	);
+	tmp.generatePos	+= inst.GetPosition();
+	tmp.addElement	=  Element::Type::Flame;
 
-	fireDesc.generatePos	=  inst.orientation.RotateVector( fireDesc.generatePos	);
-	fireDesc.generatePos	+= inst.GetPosition();
-	fireDesc.addElement		=  Element::Type::Flame;
-
-	const Donya::Vector3 targetVec = targetPos - fireDesc.generatePos;
-	fireDesc.direction		=  targetVec.Unit();
-
-	Bullet::BulletAdmin::Get().Append( fireDesc );
+	Bullet::BulletAdmin::Get().Append( tmp );
 }
 
 BossFirst::Wait::Wait( int waitFrame )
@@ -1927,7 +1993,7 @@ std::vector<BossFirst::ActionType> BossFirst::FetchActionPatterns() const
 	const int  index = maxHP - hp;
 	return	(  index < 0 )
 			? std::vector<ActionType>{}
-			:	( scast<int>( patterns.size() ) <= maxHP - hp )
+			:	( scast<int>( patterns.size() ) <= index )
 				? patterns.back()
 				: patterns[index];
 }
