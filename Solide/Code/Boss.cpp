@@ -70,6 +70,8 @@ namespace
 		ImGui::SliderInt( ( "##" + caption ).c_str(), &intType, 0, count - 1 );
 		*p = scast<BossFirst::ActionType>( intType );
 	}
+
+	bool wantPauseUpdates = false;
 #endif // USE_IMGUI
 }
 
@@ -594,6 +596,8 @@ public:
 		if ( ImGui::TreeNode( u8"ボスのパラメータ調整" ) )
 		{
 			ResizeVectorIfNeeded();
+
+			ImGui::Checkbox( u8"ボスの更新を止める", &wantPauseUpdates );
 
 			if ( ImGui::TreeNode( u8"描画系" ) )
 			{
@@ -1143,10 +1147,16 @@ void BossBase::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 {
 #if USE_IMGUI
 	ParamBoss::Get().UseImGui();
+
+	if ( wantPauseUpdates ) { return; }
 #endif // USE_IMGUI
 }
 void BossBase::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMat )
 {
+#if USE_IMGUI
+	if ( wantPauseUpdates ) { return; }
+#endif // USE_IMGUI
+
 	if ( IsDead() ) { return; }
 	// else
 
@@ -1772,6 +1782,10 @@ void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 {
 	BossBase::Update( elapsedTime, targetPos );
 
+#if USE_IMGUI
+	if ( wantPauseUpdates ) { return; }
+#endif // USE_IMGUI
+
 	// TODO: Adjust the motion-index by mover.
 	UpdateMotion( elapsedTime, 0 );
 
@@ -1801,6 +1815,10 @@ void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 }
 void BossFirst::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix )
 {
+#if USE_IMGUI
+	if ( wantPauseUpdates ) { return; }
+#endif // USE_IMGUI
+
 	if ( !pMover ) { return; }
 	// else
 
