@@ -146,7 +146,7 @@ namespace
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 5 )
+CEREAL_CLASS_VERSION( Member, 6 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -201,11 +201,11 @@ public:
 			if ( ImGui::TreeNode( u8"ボス戦時のカメラ" ) )
 			{
 				ImGui::DragFloat ( u8"補間倍率",							&m.cameraBoss.slerpFactor,			0.01f );
-				ImGui::DragFloat3( u8"tangent角（Degree）",				&m.cameraBoss.tangentDegree,		0.01f );
-				ImGui::DragFloat3( u8"距離の影響度",						&m.cameraBoss.distanceInfluence,	0.01f );
-				ImGui::DragFloat3( u8"カメラのＸＺ座標（自機からの相対）",	&m.cameraBoss.leaveDistance,		0.01f );
-				ImGui::DragFloat3( u8"カメラＹ座標（自機からの相対）",		&m.cameraBoss.relatedCameraPosY,	0.01f );
-				ImGui::DragFloat3( u8"注視点（ボスからの相対）",			&m.cameraBoss.offsetFocus.x,		0.01f );
+				ImGui::DragFloat ( u8"tangent角（Degree）",				&m.cameraBoss.tangentDegree,		0.1f );
+				ImGui::DragFloat ( u8"距離の影響度",						&m.cameraBoss.distanceInfluence,	0.01f );
+				ImGui::DragFloat ( u8"カメラのＸＺ座標（自機からの相対）",	&m.cameraBoss.leaveDistance,		0.1f );
+				ImGui::DragFloat ( u8"カメラＹ座標（自機からの相対）",		&m.cameraBoss.relatedCameraPosY,	0.1f );
+				ImGui::DragFloat3( u8"注視点（ボスからの相対）",			&m.cameraBoss.offsetFocus.x,		0.1f );
 
 				ImGui::TreePop();
 			}
@@ -1136,9 +1136,14 @@ void SceneGame::AssignCameraPos( const Donya::Vector3 &offsetPos, const Donya::V
 		const auto data = FetchMember().cameraBoss;
 
 		const Donya::Vector3 targetPos = pBoss->GetPosition();
-		const Donya::Vector3 targetVec = targetPos - playerPos;
+		const Donya::Vector3 targetVec
+		{
+			targetPos.x - playerPos.x,
+			0.0f,
+			targetPos.z - playerPos.z
+		};
 
-		const Donya::Vector3 posOffset = -targetVec.Unit() * data.leaveDistance;
+		const Donya::Vector3 posOffset = targetVec.Unit() * data.leaveDistance;
 		const Donya::Vector3 cameraPos
 		{
 			playerPos.x + posOffset.x,
@@ -1150,13 +1155,34 @@ void SceneGame::AssignCameraPos( const Donya::Vector3 &offsetPos, const Donya::V
 		const float divedDist = targetVec.Length() / data.distanceInfluence;
 		const Donya::Vector3 cameraFocus
 		{
-			data.offsetFocus.x + targetPos.x,
-			data.offsetFocus.y + ( tan * divedDist ),
-			data.offsetFocus.z + targetPos.z
+			targetPos.x			+ data.offsetFocus.x,
+			( tan * divedDist )	+ data.offsetFocus.y,
+			targetPos.z			+ data.offsetFocus.z
 		};
 
 		iCamera.SetPosition  ( cameraPos   );
 		iCamera.SetFocusPoint( cameraFocus );
+
+		// Setting orientation by two step, this prevent a roll-rotation(Z-axis) in local space of camera.
+		{
+			const Donya::Vector3 unitDirection = ( cameraFocus - cameraPos ).Unit();
+			constexpr Donya::Vector3 disableY{ 1.0f, 0.0f, 1.0f };
+			Donya::Quaternion orientation = Donya::Quaternion::LookAt
+			(
+				Donya::Vector3::Front(), disableY.Product( unitDirection ),
+				Donya::Quaternion::Freeze::Up
+			);
+
+			float theta = Donya::Dot( unitDirection, orientation.LocalFront() );
+			Donya::Clamp( &theta, -1.0f, 1.0f );
+			const float acos = acosf( theta );
+			orientation.RotateBy
+			(
+				Donya::Quaternion::Make( orientation.LocalRight(), acos )
+			);
+			iCamera.SetOrientation( orientation );
+		}
+
 		return;
 	}
 	// else
