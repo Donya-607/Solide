@@ -902,6 +902,7 @@ public:
 						ImGui::SliderFloat( u8"一度に曲がる最大角度（Degree）", &p->maxAimDegree, -180.0f, 180.0f );
 
 						p->fireDesc.ShowImGuiNode( u8"発射弾の設定" );
+						ImGui::Text( u8"発射方向は無視されます。" );
 						ImGui::Text( u8"発射弾の属性は[Flame]になります。" );
 
 						ImGui::TreePop();
@@ -1672,7 +1673,7 @@ void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya:
 		};
 		if ( ShouldFire() )
 		{
-			Fire( inst, source.fireDesc );
+			Fire( inst, targetPos, source.fireDesc );
 		}
 	}
 
@@ -1690,13 +1691,22 @@ std::function<void()> BossFirst::Breath::GetChangeStateMethod( BossFirst &inst )
 	return [&]() { inst.AdvanceAction(); };
 }
 std::string BossFirst::Breath::GetStateName() const { return "Breath"; }
-void BossFirst::Breath::Fire( BossFirst &inst, const Bullet::BulletAdmin::FireDesc &desc )
+void BossFirst::Breath::Fire( BossFirst &inst, const Donya::Vector3 &targetPos, const Bullet::BulletAdmin::FireDesc &desc )
 {
 	Bullet::BulletAdmin::FireDesc tmp = desc;
-	tmp.direction	=  inst.orientation.RotateVector( tmp.direction		);
-	tmp.generatePos	=  inst.orientation.RotateVector( tmp.generatePos	);
+	tmp.generatePos	=  inst.orientation.RotateVector( tmp.generatePos );
 	tmp.generatePos	+= inst.GetPosition();
 	tmp.addElement	=  Element::Type::Flame;
+
+	// I want vector that looking my front and Y of "to target vector".
+	// That is made by rotate front vector by proper radian.
+	const Donya::Vector3 targetVec = targetPos - tmp.generatePos;
+	const Donya::Vector3 exceptY{ targetVec.x, 0.0f, targetVec.z };
+	float cosTheta = Donya::Dot( targetVec.Unit(), exceptY.Unit() );
+	Donya::Clamp( &cosTheta, -1.0f, 1.0f );
+	const float radian   = acosf( cosTheta );
+	const auto  rotation = Donya::Quaternion::Make( inst.orientation.LocalRight(), radian );
+	tmp.direction = rotation.RotateVector( inst.orientation.LocalFront() );
 
 	Bullet::BulletAdmin::Get().Append( tmp );
 }
