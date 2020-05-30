@@ -901,7 +901,7 @@ public:
 					const size_t hpCount = data.size();
 					for ( size_t i = 0; i < hpCount; ++i )
 					{
-						caption = u8"[Žc‚è‚g‚oF" + std::to_string( hpCount - 1 - i ) + u8"]";
+						caption = u8"[Žc‚è‚g‚oF" + std::to_string( hpCount - i ) + u8"]";
 						ShowPerHP( caption, &data[i] );
 					}
 
@@ -969,7 +969,7 @@ public:
 					const int hpCount = m.FetchInitialHP( BossType::First ); // == data.actionPatterns.size()
 					for ( int i = 0; i < hpCount; ++i )
 					{
-						caption = u8"[Žc‚g‚o:" + std::to_string( hpCount - 1 - i ) + u8"]";
+						caption = u8"[Žc‚g‚o:" + std::to_string( hpCount - i ) + u8"]";
 						if ( !ImGui::TreeNode( caption.c_str() ) ) { continue; }
 						// else
 
@@ -1623,10 +1623,12 @@ void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya:
 	const int	maxHP	= FetchMember().FetchInitialHP( inst.GetType() );
 	const int	index	= maxHP - inst.hp;
 	const auto	data	= FetchMember().forFirst.breath.paramPerHP;
-	const auto	&source	= ( index < 0 )
-				? data.front()
-				:	( scast<int>( data.size() ) <= index )
-					? data.back()
+	if ( data.empty() ) { gotoNext = true; return; }
+	// else
+	const auto	&source	= ( scast<int>( data.size() ) <= index )
+				? data.back()
+				:	( index < 0 )
+					? data.front()
 					: data[index];
 	const int preFrame	= source.preFireFrame;
 	const int fireFrame	= preFrame + source.fireFrame;
@@ -1757,7 +1759,7 @@ void BossFirst::Damage::Update( BossFirst &inst, float elapsedTime, const Donya:
 
 	const auto data = FetchMember().forFirst.damage;
 
-	if ( inst.hp < 0 )
+	if ( inst.hp <= 0 )
 	{
 		if ( data.reactFrameFinal <= inst.timer )
 		{
@@ -1792,7 +1794,7 @@ bool BossFirst::Damage::ShouldChangeMover( BossFirst &inst ) const
 }
 std::function<void()> BossFirst::Damage::GetChangeStateMethod( BossFirst &inst ) const
 {
-	if ( inst.hp < 0 )
+	if ( inst.hp <= 0 )
 	{
 		return [&]() { inst.AssignMover<Die>(); };
 	}
@@ -1989,12 +1991,15 @@ std::vector<BossFirst::ActionType> BossFirst::FetchActionPatterns() const
 {
 	const auto data = FetchMember();
 	const auto &patterns = data.forFirst.actionPatterns;
+	if ( patterns.empty() ) { return {}; }
+	// else
+
 	const int  maxHP = data.FetchInitialHP( GetType() );
 	const int  index = maxHP - hp;
-	return	(  index < 0 )
-			? std::vector<ActionType>{}
-			:	( scast<int>( patterns.size() ) <= index )
-				? patterns.back()
+	return	( scast<int>( patterns.size() ) <= index )
+			? patterns.back()
+			:	( index < 0 )
+				? patterns.front()
 				: patterns[index];
 }
 BossFirst::ActionType BossFirst::FetchAction( int actionIndex ) const

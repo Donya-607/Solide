@@ -86,7 +86,7 @@ public:
 		Donya::Model::MotionHolder	motionHolder;
 	};
 protected:
-	int					hp = 2;			// 0-based. Non-negative value is alive(greater equal than 0).
+	int					hp = 3;			// 1-based. alive when hp is greater than 0.
 	Donya::Vector3		velocity;
 	Donya::Quaternion	orientation;
 	mutable Element		element;		// Will change in const method.
