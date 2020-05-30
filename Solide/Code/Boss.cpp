@@ -461,6 +461,8 @@ namespace
 		Damage	damage;
 
 		int		releaseOilFrame = 1;
+		Ready	readyInFeint;
+		Brake	brakeInFeint;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -496,6 +498,14 @@ namespace
 				(
 					CEREAL_NVP( damage			),
 					CEREAL_NVP( releaseOilFrame	)
+				);
+			}
+			if ( 5 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( readyInFeint ),
+					CEREAL_NVP( brakeInFeint )
 				);
 			}
 			if ( 4 <= version )
@@ -551,7 +561,7 @@ namespace
 CEREAL_CLASS_VERSION( Member,					1 )
 CEREAL_CLASS_VERSION( DrawingParam,				0 )
 CEREAL_CLASS_VERSION( CollisionParam,			0 )
-CEREAL_CLASS_VERSION( FirstParam,				3 )
+CEREAL_CLASS_VERSION( FirstParam,				5 )
 CEREAL_CLASS_VERSION( FirstParam::Ready,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Rush,			0 )
 CEREAL_CLASS_VERSION( FirstParam::Brake,		0 )
@@ -954,8 +964,10 @@ public:
 				};
 
 				ShowReady	( u8"待機・軸あわせ",	&data.ready		);
+				ShowReady	( u8"待機・軸あわせ（フェイント）",	&data.readyInFeint );
 				ShowRush	( u8"突進",			&data.rush		);
 				ShowBrake	( u8"ブレーキ",		&data.brake		);
+				ShowBrake	( u8"ブレーキ（フェイント）",			&data.brakeInFeint );
 				ShowBreath	( u8"ブレス",		&data.breath	);
 				ShowWait	( u8"待機",			&data.wait		);
 				ShowWalk	( u8"歩行",			&data.walk		);
@@ -1415,7 +1427,9 @@ void BossFirst::Ready::Init( BossFirst &inst )
 void BossFirst::Ready::Uninit( BossFirst &inst ) {}
 void BossFirst::Ready::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
-	const auto data = FetchMember().forFirst.ready;
+	const auto data		= ( 0 < inst.remainFeintCount )
+						? FetchMember().forFirst.readyInFeint
+						: FetchMember().forFirst.ready;
 	const int preFrame	= data.preAimingFrame;
 	const int midFrame	= preFrame + data.aimingFrame;
 	const int postFrame	= midFrame + data.postAimingFrame;
@@ -1456,12 +1470,17 @@ void BossFirst::Rush::Init( BossFirst &inst )
 	{
 		// Set the count if first time.
 		const auto data		= FetchMember();
-		const auto &hpData	= data.initialHPs;
-		const int  intType	= scast<int>( inst.GetType() );
-
-		inst.remainFeintCount =	( intType < scast<int>( hpData.size() ) )
-								? data.forFirst.rush.feintCountPerHP[intType]
-								: dontUseFeintSign;
+		const int  maxHP	= data.FetchInitialHP( inst.GetType() );
+		const int  index	= maxHP - inst.hp;
+		const auto &source	= data.forFirst.rush.feintCountPerHP;
+		if ( index < 0 || scast<int>( source.size() ) <= index )
+		{
+			inst.remainFeintCount = dontUseFeintSign;
+		}
+		else
+		{
+			inst.remainFeintCount =	source[index];
+		}
 	}
 	else
 	{
@@ -1545,7 +1564,9 @@ void BossFirst::Brake::Init( BossFirst &inst )
 void BossFirst::Brake::Uninit( BossFirst &inst ) {}
 void BossFirst::Brake::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
-	const auto data = FetchMember().forFirst.brake;
+	const auto data	= ( 0 < inst.remainFeintCount )
+					? FetchMember().forFirst.brakeInFeint
+					: FetchMember().forFirst.brake;
 
 	if ( isStopping )
 	{
