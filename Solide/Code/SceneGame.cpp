@@ -56,6 +56,37 @@ namespace
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
 
 		int maxPlayerRemains = 1;
+
+		struct BossCamera
+		{
+			float slerpFactor		= 1.0f;
+			float tangentDegree		= 45.0f;
+			float distanceInfluence	= 1.0f;
+			float leaveDistance		= 1.0f;	// The leave amount of camera from the player.
+			float relatedCameraPosY	= 1.0f;	// The related Y position of camera from the player.
+			Donya::Vector3 offsetFocus;		// The offset of focus from the boss position.
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( slerpFactor			),
+					CEREAL_NVP( tangentDegree		),
+					CEREAL_NVP( distanceInfluence	),
+					CEREAL_NVP( leaveDistance		),
+					CEREAL_NVP( relatedCameraPosY	),
+					CEREAL_NVP( offsetFocus			)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		BossCamera cameraBoss;
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -105,6 +136,10 @@ namespace
 				archive( CEREAL_NVP( maxPlayerRemains ) );
 			}
 			if ( 6 <= version )
+			{
+				archive( CEREAL_NVP( cameraBoss ) );
+			}
+			if ( 7 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -160,6 +195,17 @@ public:
 				ImGui::DragFloat ( u8"補間倍率",						&m.camera.slerpFactor,		0.01f );
 				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&m.camera.offsetPos.x,		0.01f );
 				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&m.camera.offsetFocus.x,	0.01f );
+
+				ImGui::TreePop();
+			}
+			if ( ImGui::TreeNode( u8"ボス戦時のカメラ" ) )
+			{
+				ImGui::DragFloat ( u8"補間倍率",							&m.cameraBoss.slerpFactor,			0.01f );
+				ImGui::DragFloat3( u8"tangent角（Degree）",				&m.cameraBoss.tangentDegree,		0.01f );
+				ImGui::DragFloat3( u8"距離の影響度",						&m.cameraBoss.distanceInfluence,	0.01f );
+				ImGui::DragFloat3( u8"カメラのＸＺ座標（自機からの相対）",	&m.cameraBoss.leaveDistance,		0.01f );
+				ImGui::DragFloat3( u8"カメラＹ座標（自機からの相対）",		&m.cameraBoss.relatedCameraPosY,	0.01f );
+				ImGui::DragFloat3( u8"注視点（ボスからの相対）",			&m.cameraBoss.offsetFocus.x,		0.01f );
 
 				ImGui::TreePop();
 			}
@@ -560,6 +606,103 @@ void SceneGame::Draw( float elapsedTime )
 		}
 	}
 #endif // DEBUG_MODE
+
+#if USE_IMGUI
+	if ( ImGui::TreeNode( u8"Tanテスト" ) )
+	{
+		const Donya::Vector4x4 VP = iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix();
+
+		static Donya::Geometric::Line debugLine{ 256U };
+		auto ReserveLine = [&]( const Donya::Vector3 &start, const Donya::Vector3 &end, const Donya::Vector4 &color )
+		{
+			debugLine.Init();
+
+			debugLine.Reserve( start, end, color );
+		};
+		auto FlushLine = [&]()
+		{
+			debugLine.Flush( VP );
+		};
+		auto DrawSphere = [&]( const Donya::Vector3 &pos, const float scale, const Donya::Vector4 color )
+		{
+			Donya::Vector4x4 W{};
+			W._11 = scale;
+			W._22 = scale;
+			W._33 = scale;
+			W._41 = pos.x;
+			W._42 = pos.y;
+			W._43 = pos.z;
+
+			Donya::Model::Sphere::Constant constant{};
+			constant.matWorld		= W;
+			constant.matViewProj	= VP;
+			constant.drawColor		= color;
+			pRenderer->ProcessDrawingSphere( constant );
+		};
+
+		static float leaveDistance		= 1.0f;
+		static float tanArg				= 90.0f;
+		static float distDenominator	= 8.0f;
+		static float cameraRelY			= 0.0f;
+		static float targetOfsDist		= 1.0f;
+		static Donya::Vector3 focusOfs{ 0.0f, 0.0f, 0.0f };
+
+		ImGui::DragFloat( u8"leaveDistance", &leaveDistance );
+		ImGui::DragFloat( u8"tanArg", &tanArg );
+		ImGui::DragFloat( u8"distDenominator", &distDenominator );
+		if ( ZeroEqual( distDenominator ) ) { distDenominator = 0.01f; }
+		ImGui::DragFloat( u8"cameraRelY", &cameraRelY );
+		ImGui::DragFloat( u8"targetOfsDist", &targetOfsDist );
+		ImGui::DragFloat3( u8"focusOfs", &focusOfs.x );
+
+		auto PrintVec3 = []( const std::string &name, const Donya::Vector3 &v )
+		{
+			const std::string format{ "[X:%6.3f][Y:%6.3f][Z:%6.3f]" };
+			const std::string caption = name + format;
+			ImGui::Text( caption.c_str(), v.x, v.y, v.z );
+		};
+
+		const Donya::Vector3 plPos = pPlayer->GetPosition();
+		const Donya::Vector3 targetPos = ( pBoss )
+			? pBoss->GetPosition()
+			: plPos + pPlayer->GetOrientation().LocalFront() * targetOfsDist;
+
+		const Donya::Vector3 targetVec = targetPos - plPos;
+
+		PrintVec3( "plPos", plPos );
+		PrintVec3( "targetPos", targetPos );
+		PrintVec3( "targetVec", targetVec );
+
+		Donya::Vector3 cameraPos = plPos - ( targetVec.Unit() * leaveDistance );
+		cameraPos.y = plPos.y + cameraRelY;
+
+		const float tan = tanf( tanArg );
+		const float divedDist = targetVec.Length() / distDenominator;
+		Donya::Vector3 cameraFocus = targetPos;
+		cameraFocus.y = tan * divedDist;
+		cameraFocus += focusOfs;
+
+		PrintVec3( "cameraPos", cameraPos );
+		PrintVec3( "cameraFocus", cameraFocus );
+		ImGui::Text( "tan[%6.3f]", tan );
+		ImGui::Text( "divedDist[%6.3f]", divedDist );
+
+		constexpr Donya::Vector4 red{ 1.0f, 0.0f, 0.0f, 1.0f };
+		constexpr Donya::Vector4 green{ 0.0f, 1.0f, 0.0f, 1.0f };
+		constexpr Donya::Vector4 blue{ 0.0f, 0.0f, 1.0f, 1.0f };
+
+		ReserveLine( targetPos, cameraPos, blue );
+		ReserveLine( cameraPos, cameraFocus, green );
+		ReserveLine( cameraFocus, targetPos, red );
+		DrawSphere( targetPos, 0.5f, green );
+		DrawSphere( cameraPos, 0.5f, blue );
+		DrawSphere( cameraFocus, 0.5f, red );
+
+		FlushLine();
+
+		ImGui::TreePop();
+	}
+#endif // USE_IMGUI
 }
 
 void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
@@ -986,7 +1129,37 @@ void SceneGame::AssignCameraPos( const Donya::Vector3 &offsetPos, const Donya::V
 	if ( !pPlayer ) { return; }
 	// else
 
-	const Donya::Vector3   playerPos = pPlayer->GetPosition();
+	const Donya::Vector3 playerPos = pPlayer->GetPosition();
+
+	if ( pBoss )
+	{
+		const auto data = FetchMember().cameraBoss;
+
+		const Donya::Vector3 targetPos = pBoss->GetPosition();
+		const Donya::Vector3 targetVec = targetPos - playerPos;
+
+		const Donya::Vector3 posOffset = -targetVec.Unit() * data.leaveDistance;
+		const Donya::Vector3 cameraPos
+		{
+			playerPos.x + posOffset.x,
+			playerPos.y + data.relatedCameraPosY,
+			playerPos.z + posOffset.z
+		};
+
+		const float tan = tanf( ToRadian( data.tangentDegree ) );
+		const float divedDist = targetVec.Length() / data.distanceInfluence;
+		const Donya::Vector3 cameraFocus
+		{
+			data.offsetFocus.x + targetPos.x,
+			data.offsetFocus.y + ( tan * divedDist ),
+			data.offsetFocus.z + targetPos.z
+		};
+
+		iCamera.SetPosition  ( cameraPos   );
+		iCamera.SetFocusPoint( cameraFocus );
+		return;
+	}
+	// else
 
 	iCamera.SetPosition  ( playerPos + offsetPos   );
 	iCamera.SetFocusPoint( playerPos + offsetFocus );
@@ -2038,7 +2211,7 @@ void SceneGame::UseImGui()
 
 		ImGui::TreePop();
 	}
-	
+
 	ImGui::End();
 }
 
