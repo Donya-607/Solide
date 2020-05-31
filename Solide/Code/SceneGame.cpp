@@ -1026,6 +1026,13 @@ void SceneGame::CameraInit()
 	moveInitPoint.SetNoOperation();
 	moveInitPoint.slerpPercent = 1.0f;
 	iCamera.Update( moveInitPoint );
+
+#if DEBUG_MODE
+	if ( nowDebugMode )
+	{
+		iCamera.ChangeMode( Donya::ICamera::Mode::Free );
+	}
+#endif // DEBUG_MODE
 }
 void SceneGame::AssignCameraPos( const Donya::Vector3 &offsetPos, const Donya::Vector3 &offsetFocus )
 {
