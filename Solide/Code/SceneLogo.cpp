@@ -84,11 +84,13 @@ Scene::Result SceneLogo::Update( float elapsedTime )
 			
 			if ( showCount <= showIndex )
 			{
+				/*
 				Fader::Configuration config{};
 				config.type			= Fader::Type::Gradually;
 				config.closeFrame	= Fader::GetDefaultCloseFrame();
 				config.SetColor( Donya::Color::Code::BLACK );
 				Fader::Get().StartFadeOut( config );
+				*/
 
 				status = State::END;
 			}
@@ -127,7 +129,8 @@ void SceneLogo::Draw( float elapsedTime )
 
 Scene::Result SceneLogo::ReturnResult()
 {
-	if ( Fader::Get().IsClosed() )
+	// if ( Fader::Get().IsClosed() )
+	if ( status == State::END )
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
