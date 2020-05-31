@@ -74,7 +74,8 @@ public:
 
 	void Update( float elapsedTime );
 
-	void Draw( float elapsedTime ) const;
+	void DrawLogo( float elapsedTime ) const;
+	void DrawPrompt( float elapsedTime ) const;
 public:
 	void AdvanceState();
 private:

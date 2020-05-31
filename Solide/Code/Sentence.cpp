@@ -10,6 +10,11 @@
 #undef max
 #undef min
 
+namespace
+{
+	constexpr float DRAW_DEPTH = 0.0f;
+}
+
 #pragma region TitleSentence
 
 void TitleSentence::FlusherBase::Init( TitleSentence &target )
@@ -71,10 +76,12 @@ void TitleSentence::Update( float elapsedTime )
 	uiPrompt.alpha = drawAlpha;
 }
 
-void TitleSentence::Draw( float elapsedTime ) const
+void TitleSentence::DrawLogo( float elapsedTime ) const
 {
-	constexpr float DRAW_DEPTH = 0.0f;
 	uiLogo.Draw( DRAW_DEPTH );
+}
+void TitleSentence::DrawPrompt( float elapsedTime ) const
+{
 	uiPrompt.Draw( DRAW_DEPTH );
 }
 
@@ -220,7 +227,6 @@ void TutorialSentence::Draw( float elapsedTime ) const
 	if ( !pPerformer ) { return; }
 	// else
 
-	constexpr float DRAW_DEPTH = 0.0f;
 	uiTutorial.Draw( DRAW_DEPTH );
 }
 
@@ -383,7 +389,6 @@ void ClearSentence::Draw( float elapsedTime ) const
 	if ( nowHidden ) { return; }
 	// else
 
-	constexpr float DRAW_DEPTH = 0.0f;
 	uiClear.Draw( DRAW_DEPTH );
 }
 

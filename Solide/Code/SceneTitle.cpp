@@ -723,7 +723,8 @@ void SceneTitle::StartUpdate( float elapsedTime )
 }
 void SceneTitle::StartDraw( float elapsedTime )
 {
-	pSentence->Draw( elapsedTime );
+	pSentence->DrawLogo( elapsedTime );
+	pSentence->DrawPrompt( elapsedTime );
 }
 
 void SceneTitle::SelectInit()
@@ -836,6 +837,8 @@ void SceneTitle::SelectDraw( float elapsedTime )
 		const float depth = ( i == chosenIndex ) ? chosenDepth		: defaultDepth;
 		DrawItem( data.items[i], magni, depth );
 	}
+
+	pSentence->DrawLogo( elapsedTime );
 }
 
 void SceneTitle::ClearBackGround() const
