@@ -811,7 +811,7 @@ void SceneTitle::SelectUpdate( float elapsedTime )
 		pSentence->BackState();
 		SelectUninit();
 		StartInit();
-		Donya::Sound::Play( Music::ItemChoose );
+		Donya::Sound::Play( Music::ItemDecision );
 	}
 }
 void SceneTitle::SelectDraw( float elapsedTime )

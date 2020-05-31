@@ -320,8 +320,8 @@ void SceneLoad::Init()
 			Bundle{ ID::PlayerLanding,		"./Data/Sounds/SE/Player/Landing.wav",			false	},
 			Bundle{ ID::PlayerTrans,		"./Data/Sounds/SE/Player/Trans.wav",			false	},
 
-			Bundle{ ID::ItemChoose,			"./Data/Sounds/SE/DEBUG/ChooseItem.wav",		false	},
-			Bundle{ ID::ItemDecision,		"./Data/Sounds/SE/DEBUG/DecisionItem.wav",		false	},
+			Bundle{ ID::ItemChoose,			"./Data/Sounds/SE/UI/ChooseItem.wav",			false	},
+			Bundle{ ID::ItemDecision,		"./Data/Sounds/SE/UI/DecisionItem.wav",			false	},
 		};
 
 		bool succeeded = true;
