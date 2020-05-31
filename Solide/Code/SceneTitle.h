@@ -15,6 +15,7 @@
 #include "Sentence.h"
 #include "Scene.h"
 #include "Terrain.h"
+#include "UI.h"
 
 class SceneTitle : public Scene
 {
@@ -26,6 +27,12 @@ public:
 		LoadGame,
 
 		ItemCount
+	};
+private:
+	enum class State
+	{
+		Start,
+		SelectItem
 	};
 private:
 	Donya::ICamera						iCamera;
@@ -40,10 +47,14 @@ private:
 	std::unique_ptr<ObstacleContainer>	pObstacles;
 	std::unique_ptr<TitleSentence>		pSentence;
 
-	Choice								chooseItem = Choice::Nil;
+	Choice								chooseItem	= Choice::Nil;
+	State								status		= State::Start;
+	UIObject							sprItem;
 
-	int  timer		= 0;
-	bool nowWaiting	= false;
+	int		timer		= 0;
+	float	flushTimer	= 0;
+	float	flushAlpha	= 1.0f;
+	bool	nowWaiting	= false;
 
 #if DEBUG_MODE
 	bool nowDebugMode			= false;
@@ -74,8 +85,20 @@ private:
 	void	PlayerUninit();
 
 	bool	IsRequiredAdvance() const;
-	void	WaitInit();
-	void	WaitUpdate( float elapsedTime );
+	bool	NowAcceptableTiming() const;
+
+	void	UpdateByStatus( float elapsedTime );
+	void	DrawByStatus( float elapsedTime );
+
+	void	StartInit();
+	void	StartUninit();
+	void	StartUpdate( float elapsedTime );
+	void	StartDraw( float elapsedTime );
+
+	void	SelectInit();
+	void	SelectUninit();
+	void	SelectUpdate( float elapsedTime );
+	void	SelectDraw( float elapsedTime );
 
 	void	ClearBackGround() const;
 	void	StartFade() const;

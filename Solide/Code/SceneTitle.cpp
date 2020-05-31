@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "Donya/Blend.h"
 #include "Donya/GeometricPrimitive.h"
 #include "Donya/Keyboard.h"
 #include "Donya/Mouse.h"
@@ -14,6 +15,7 @@
 #include "FilePath.h"
 #include "Music.h"
 #include "Parameter.h"
+#include "SaveData.h"
 #include "StageNumberDefine.h"
 
 #undef max
@@ -83,7 +85,9 @@ namespace
 		std::vector<Item> items; // size() == SceneTitle::Choice::ItemCount
 		float	choiceMagni					= 1.2f;
 		int		waitFrameUntilChoiceItem	= 60;
-		int		flushInterval				= 5;
+		float	flushInterval				= 0.5f; // Seconds.
+		float	flushRange					= 1.0f;
+		float	flushLowestAlpha			= 0.0f;
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -122,7 +126,9 @@ namespace
 					CEREAL_NVP( items						),
 					CEREAL_NVP( choiceMagni					),
 					CEREAL_NVP( waitFrameUntilChoiceItem	),
-					CEREAL_NVP( flushInterval				)
+					CEREAL_NVP( flushInterval				),
+					CEREAL_NVP( flushRange					),
+					CEREAL_NVP( flushLowestAlpha			)
 				);
 			}
 			if ( 4 <= version )
@@ -204,9 +210,12 @@ public:
 
 			if ( ImGui::TreeNode( u8"項目" ) )
 			{
-				ImGui::DragFloat( u8"選択項目の拡大率", &m.choiceMagni, 0.01f );
-				ImGui::DragInt  ( u8"項目選択時の点滅間隔（フレーム）", &m.flushInterval );
-				m.flushInterval = std::max( 1, m.flushInterval );
+				ImGui::DragFloat( u8"選択項目の拡大率",			&m.choiceMagni,			0.01f );
+				ImGui::DragFloat( u8"項目選択時の点滅間隔（秒）",	&m.flushInterval,		0.01f );
+				ImGui::DragFloat( u8"項目選択時の点滅幅（秒）",	&m.flushRange,			0.01f );
+				ImGui::SliderFloat( u8"点滅時のアルファの最低値",	&m.flushLowestAlpha,	0.0f, 1.0f );
+				m.flushInterval	= std::max( 0.0f, m.flushInterval	);
+				m.flushRange	= std::max( 0.0f, m.flushRange		);
 
 				auto ShowItem = []( const std::string &nodeCaption, Member::Item *p )
 				{
@@ -279,6 +288,9 @@ void SceneTitle::Init()
 	result = pSentence->LoadSprites( GetSpritePath( Spr::TitleLogo ), GetSpritePath( Spr::TitlePrompt ) );
 	assert( result );
 
+	result = sprItem.LoadSprite( GetSpritePath( Spr::TitleItems ), 16U );
+	assert( result );
+
 	pTerrain = std::make_unique<Terrain>( TITLE_STAGE_NO );
 	pTerrain->SetWorldConfig( Donya::Vector3{ 1.0f, 1.0f, 1.0f }, Donya::Vector3::Zero() );
 
@@ -294,6 +306,8 @@ void SceneTitle::Init()
 	PlayerInit();
 
 	CameraInit();
+
+	StartInit();
 }
 void SceneTitle::Uninit()
 {
@@ -351,18 +365,7 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	CameraUpdate();
 
-	if ( IsRequiredAdvance() )
-	{
-		nowWaiting = true;
-		WaitInit();
-	}
-
-	if ( nowWaiting )
-	{
-		WaitUpdate( elapsedTime );
-	}
-
-	pSentence->Update( elapsedTime );
+	UpdateByStatus( elapsedTime );
 
 	return ReturnResult();
 }
@@ -427,7 +430,7 @@ void SceneTitle::Draw( float elapsedTime )
 	// Drawing to far for avoiding to trans the BG's blue.
 	pBG->Draw( elapsedTime );
 
-	pSentence->Draw( elapsedTime );
+	DrawByStatus( elapsedTime );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -653,26 +656,154 @@ void SceneTitle::PlayerUninit()
 
 bool SceneTitle::IsRequiredAdvance() const
 {
-	if ( Fader::Get().IsExist() ) { return false; }
-	if ( nowWaiting ) { return false; }
-	// else
-
 	return	( controller.IsConnected() )
 			? controller.Trigger( Donya::Gamepad::A )
 			: Donya::Keyboard::Trigger( 'Z' );
 }
-void SceneTitle::WaitInit()
+bool SceneTitle::NowAcceptableTiming() const
 {
-	pSentence->AdvanceState();
-	Donya::Sound::Play( Music::UI_StartGame );
-}
-void SceneTitle::WaitUpdate( float elapsedTime )
-{
-	timer++;
+	if ( Fader::Get().IsExist()	) { return false; }
+	if ( nowWaiting				) { return false; }
+	// else
 
-	if ( timer == FetchMember().waitFrameUntilFade )
+	return true;
+}
+
+void SceneTitle::UpdateByStatus( float elapsedTime )
+{
+	switch ( status )
 	{
-		StartFade();
+	case State::Start:		StartUpdate( elapsedTime );		return;
+	case State::SelectItem:	SelectUpdate( elapsedTime );	return;
+	default: return;
+	}
+}
+void SceneTitle::DrawByStatus( float elapsedTime )
+{
+	switch ( status )
+	{
+	case State::Start:		StartDraw( elapsedTime );		return;
+	case State::SelectItem:	SelectDraw( elapsedTime );		return;
+	default: return;
+	}
+}
+
+void SceneTitle::StartInit()
+{
+	timer		= 0;
+	nowWaiting	= false;
+	status		= State::Start;
+}
+void SceneTitle::StartUninit()
+{
+	pSentence.reset();
+}
+void SceneTitle::StartUpdate( float elapsedTime )
+{
+	if ( IsRequiredAdvance() && NowAcceptableTiming() )
+	{
+		nowWaiting = true;
+		
+		pSentence->AdvanceState();
+		Donya::Sound::Play( Music::UI_StartGame );
+	}
+
+	pSentence->Update( elapsedTime );
+
+	if ( nowWaiting )
+	{
+		timer++;
+
+		if ( timer == FetchMember().waitFrameUntilChoiceItem )
+		{
+			StartUninit();
+			SelectInit();
+		}
+	}
+}
+void SceneTitle::StartDraw( float elapsedTime )
+{
+	pSentence->Draw( elapsedTime );
+}
+
+void SceneTitle::SelectInit()
+{
+	timer		= 0;
+	flushTimer	= 0.0f;
+	flushAlpha	= 0.0f;
+	nowWaiting	= false;
+	status		= State::SelectItem;
+}
+void SceneTitle::SelectUninit() {}
+void SceneTitle::SelectUpdate( float elapsedTime )
+{
+	if ( IsRequiredAdvance() && NowAcceptableTiming() )
+	{
+		nowWaiting = true;
+		if ( chooseItem == Choice::NewGame )
+		{
+			SaveDataAdmin::Get().Clear();
+		}
+
+		Donya::Sound::Play( Music::UI_StartGame );
+	}
+
+	if ( nowWaiting )
+	{
+		const auto data = FetchMember();
+
+		timer++;
+		if ( timer == data.waitFrameUntilFade )
+		{
+			StartFade();
+		}
+
+		// Calc flushing alpha that copied by TitleSentence.
+		{
+			const float increaseAmount = 360.0f / ( 60.0f * data.flushInterval );
+			flushTimer += increaseAmount;
+
+			const float sin_01 = ( sinf( ToRadian( flushTimer ) ) + 1.0f ) * 0.5f;
+			const float shake  = sin_01 * data.flushRange;
+
+			flushAlpha = std::max( data.flushLowestAlpha, std::min( 1.0f, shake ) );
+		}
+	}
+}
+void SceneTitle::SelectDraw( float elapsedTime )
+{
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA );
+
+	auto DrawItem = [&]( const Member::Item &source, float scaleMagni, float drawDepth )
+	{
+		sprItem.drawScale	= source.drawScale * scaleMagni;
+		sprItem.pos			= source.ssDrawPos;
+		sprItem.texPos		= source.texPartPos;
+		sprItem.texSize		= source.texPartSize;
+
+		sprItem.DrawPart( drawDepth );
+	};
+
+	constexpr float defaultDepth = 0.1f;
+	constexpr float chosenDepth  = defaultDepth * 0.5f;
+
+	const auto data = FetchMember();
+
+	const int chosenIndex = scast<int>( chooseItem );
+	for ( int i = 0; i < ItemCount; ++i )
+	{
+		if ( i == chosenIndex && nowWaiting )
+		{
+			sprItem.alpha = flushAlpha;
+		}
+		else
+		{
+			sprItem.alpha = 1.0f;
+		}
+
+		const float magni = ( i == chosenIndex ) ? data.choiceMagni	: 1.0f;
+		const float depth = ( i == chosenIndex ) ? chosenDepth		: defaultDepth;
+		DrawItem( data.items[i], magni, depth );
 	}
 }
 
