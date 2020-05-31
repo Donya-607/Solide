@@ -260,6 +260,13 @@ namespace
 
 void SceneTitle::Init()
 {
+	SaveDataAdmin::Get().RemoveChangeStageRequest();
+	SaveDataAdmin::Get().Load();
+
+	// This save is making a save data file if that does not exist,
+	// also updates the file version if the admin loads old version.
+	SaveDataAdmin::Get().Save();
+
 	Donya::Sound::Play( Music::BGM_Title );
 #if DEBUG_MODE
 	Donya::Sound::AppendFadePoint( Music::BGM_Title, 2.0f, 0.0f, true ); // Too noisy.
@@ -654,6 +661,10 @@ void SceneTitle::PlayerUninit()
 	pPlayer.reset();
 }
 
+bool SceneTitle::HasSaveData() const
+{
+	return !SaveDataAdmin::Get().IsEmptyCurrentData();
+}
 bool SceneTitle::IsRequiredAdvance() const
 {
 	return	( controller.IsConnected() )
@@ -762,6 +773,11 @@ void SceneTitle::SelectUpdate( float elapsedTime )
 		if ( up		) { chooseItem = Choice::NewGame;	}
 		if ( down	) { chooseItem = Choice::LoadGame;	}
 
+		if ( chooseItem == Choice::LoadGame && !HasSaveData() )
+		{
+			chooseItem = Choice::NewGame;
+		}
+
 		Donya::Sound::Play( Music::ItemChoose );
 	};
 	auto UpdateWaiting	= [&]()
@@ -836,6 +852,9 @@ void SceneTitle::SelectDraw( float elapsedTime )
 	const int chosenIndex = scast<int>( chooseItem );
 	for ( int i = 0; i < ItemCount; ++i )
 	{
+		if ( !HasSaveData() && i == scast<int>( Choice::LoadGame ) ) { continue; }
+		// else
+
 		if ( i == chosenIndex && nowWaiting )
 		{
 			sprItem.alpha = flushAlpha;
@@ -847,6 +866,7 @@ void SceneTitle::SelectDraw( float elapsedTime )
 
 		const float magni = ( i == chosenIndex ) ? data.choiceMagni	: 1.0f;
 		const float depth = ( i == chosenIndex ) ? chosenDepth		: defaultDepth;
+		
 		DrawItem( data.items[i], magni, depth );
 	}
 

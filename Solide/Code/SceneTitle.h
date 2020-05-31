@@ -84,6 +84,7 @@ private:
 	void	PlayerDrawHitBox( const Donya::Vector4x4 &matVP );
 	void	PlayerUninit();
 
+	bool	HasSaveData() const;
 	bool	IsRequiredAdvance() const;
 	bool	IsRequiredBack() const;
 	bool	NowAcceptableTiming() const;
