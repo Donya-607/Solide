@@ -737,18 +737,29 @@ void SceneTitle::SelectInit()
 void SceneTitle::SelectUninit() {}
 void SceneTitle::SelectUpdate( float elapsedTime )
 {
-	if ( IsRequiredAdvance() && NowAcceptableTiming() )
+	auto UpdateChoosing	= [&]()
 	{
-		nowWaiting = true;
-		if ( chooseItem == Choice::NewGame )
+		bool up{}, down{};
+		if ( controller.IsConnected() )
 		{
-			SaveDataAdmin::Get().Clear();
+			up		= controller.Trigger( Donya::Gamepad::Button::UP	) || controller.TriggerStick( Donya::Gamepad::StickDirection::UP	);
+			down	= controller.Trigger( Donya::Gamepad::Button::DOWN	) || controller.TriggerStick( Donya::Gamepad::StickDirection::DOWN	);
+		}
+		else
+		{
+			up		= Donya::Keyboard::Trigger( VK_UP   );
+			down	= Donya::Keyboard::Trigger( VK_DOWN );
 		}
 
-		Donya::Sound::Play( Music::UI_StartGame );
-	}
+		if ( up == down ) { return; } // Update is unnecessary when (!U && !D) or (U && D).
+		// else
 
-	if ( nowWaiting )
+		if ( up		) { chooseItem = Choice::NewGame;	}
+		if ( down	) { chooseItem = Choice::LoadGame;	}
+
+		Donya::Sound::Play( Music::ItemChoose );
+	};
+	auto UpdateWaiting	= [&]()
 	{
 		const auto data = FetchMember();
 
@@ -768,6 +779,26 @@ void SceneTitle::SelectUpdate( float elapsedTime )
 
 			flushAlpha = std::max( data.flushLowestAlpha, std::min( 1.0f, shake ) );
 		}
+	};
+
+	if ( nowWaiting )
+	{
+		UpdateWaiting();
+	}
+	else
+	{
+		UpdateChoosing();
+	}
+
+	if ( chooseItem != Choice::Nil && IsRequiredAdvance() && NowAcceptableTiming() )
+	{
+		nowWaiting = true;
+		if ( chooseItem == Choice::NewGame )
+		{
+			SaveDataAdmin::Get().Clear();
+		}
+
+		Donya::Sound::Play( Music::UI_StartGame );
 	}
 }
 void SceneTitle::SelectDraw( float elapsedTime )
