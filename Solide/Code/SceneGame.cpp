@@ -1466,6 +1466,10 @@ void SceneGame::PlayerVSJumpStand()
 
 	auto IsRidingOn = [&]( const Donya::AABB &other )
 	{
+		// Prevent to ride when the player is rising.
+		if ( 0 < pPlayer->GetVelocity().y ) { return false; }
+		// else
+
 		// If we wanna consider to riding, The previous player position must over the other's ceil.
 		const float otherCeil = other.pos.y + other.size.y;
 		const float playerTop = prevPlayerPos.y; // The center position is not as suitable as a top of dedicated hitBox, still so-so good.
