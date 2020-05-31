@@ -18,6 +18,15 @@
 
 class SceneTitle : public Scene
 {
+public:
+	enum class Choice
+	{
+		Nil = -1,
+		NewGame,
+		LoadGame,
+
+		ItemCount
+	};
 private:
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
@@ -30,6 +39,8 @@ private:
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 	std::unique_ptr<ObstacleContainer>	pObstacles;
 	std::unique_ptr<TitleSentence>		pSentence;
+
+	Choice								chooseItem = Choice::Nil;
 
 	int  timer		= 0;
 	bool nowWaiting	= false;

@@ -21,6 +21,20 @@
 
 namespace
 {
+	constexpr int ItemCount = scast<int>( SceneTitle::Choice::ItemCount );
+	std::string ToString( SceneTitle::Choice c )
+	{
+		switch ( c )
+		{
+		case SceneTitle::Choice::Nil:		return u8"Nil";
+		case SceneTitle::Choice::NewGame:	return u8"はじめから";
+		case SceneTitle::Choice::LoadGame:	return u8"つづきから";
+		default: break;
+		}
+		_ASSERT_EXPR( 0, L"Error : Unexpected type!" );
+		return "EROR";
+	}
+
 	struct Member
 	{
 		struct
@@ -41,6 +55,35 @@ namespace
 
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
 
+		struct Item
+		{
+			float			drawScale = 1.0f;
+			Donya::Vector2	ssDrawPos{};	// Center
+			Donya::Vector2	texPartPos{};	// Left-Top
+			Donya::Vector2	texPartSize{};	// Whole size
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( drawScale ),
+					CEREAL_NVP( ssDrawPos ),
+					CEREAL_NVP( texPartPos ),
+					CEREAL_NVP( texPartSize )
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		std::vector<Item> items; // size() == SceneTitle::Choice::ItemCount
+		float	choiceMagni					= 1.2f;
+		int		waitFrameUntilChoiceItem	= 60;
+		int		flushInterval				= 5;
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -74,12 +117,22 @@ namespace
 			}
 			if ( 3 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( items						),
+					CEREAL_NVP( choiceMagni					),
+					CEREAL_NVP( waitFrameUntilChoiceItem	),
+					CEREAL_NVP( flushInterval				)
+				);
+			}
+			if ( 4 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 2 )
+CEREAL_CLASS_VERSION( Member, 3 )
 
 class ParamTitle : public ParameterBase<ParamTitle>
 {
@@ -97,8 +150,18 @@ public:
 	#endif // DEBUG_MODE
 
 		Load( m, fromBinary );
+
+		ResizeVectorIfNeeded();
 	}
 	Member Data() const { return m; }
+private:
+	void ResizeVectorIfNeeded()
+	{
+		if ( scast<int>( m.items.size() ) != ItemCount )
+		{
+			m.items.resize( ItemCount );
+		}
+	}
 private:
 	std::string GetSerializeIdentifier()			override { return ID; }
 	std::string GetSerializePath( bool isBinary )	override { return GenerateSerializePath( ID, isBinary ); }
@@ -109,11 +172,15 @@ public:
 		if ( !ImGui::BeginIfAllowed() ) { return; }
 		// else
 
+		ResizeVectorIfNeeded();
+
 		if ( ImGui::TreeNode( u8"タイトルのパラメータ調整" ) )
 		{
 			ImGui::DragFloat3( u8"自機の初期位置", &m.playerInitialPos.x, 0.01f );
-			ImGui::DragInt( u8"入力から，フェードまでの待機時間（フレーム）", &m.waitFrameUntilFade, 1.0f, 1 );
-			m.waitFrameUntilFade = std::max( 1, m.waitFrameUntilFade );
+			ImGui::DragInt( u8"スタートから，項目表示までの待機時間（フレーム）", &m.waitFrameUntilChoiceItem	);
+			ImGui::DragInt( u8"項目選択から，フェードまでの待機時間（フレーム）", &m.waitFrameUntilFade			);
+			m.waitFrameUntilChoiceItem	= std::max( 1, m.waitFrameUntilChoiceItem	);
+			m.waitFrameUntilFade		= std::max( 1, m.waitFrameUntilFade			);
 			ImGui::Text( "" );
 
 			if ( ImGui::TreeNode( u8"カメラ" ) )
@@ -134,6 +201,35 @@ public:
 			}
 
 			ParameterHelper::ShowConstantNode( u8"近くのオブジェクトに適用する透明度", &m.transparency );
+
+			if ( ImGui::TreeNode( u8"項目" ) )
+			{
+				ImGui::DragFloat( u8"選択項目の拡大率", &m.choiceMagni, 0.01f );
+				ImGui::DragInt  ( u8"項目選択時の点滅間隔（フレーム）", &m.flushInterval );
+				m.flushInterval = std::max( 1, m.flushInterval );
+
+				auto ShowItem = []( const std::string &nodeCaption, Member::Item *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					ImGui::DragFloat ( u8"描画スケール",				&p->drawScale		);
+					ImGui::DragFloat2( u8"描画位置（中心点）",		&p->ssDrawPos.x		);
+					ImGui::DragFloat2( u8"テクスチャ原点（左上）",	&p->texPartPos.x	);
+					ImGui::DragFloat2( u8"テクスチャサイズ（全体）",	&p->texPartSize.x	);
+
+					ImGui::TreePop();
+				};
+
+				std::string caption{};
+				for ( int i = 0; i < ItemCount; ++i )
+				{
+					caption = u8"[" + std::to_string( i ) + u8":" + ToString( scast<SceneTitle::Choice>( i ) ) + u8"]";
+					ShowItem( caption, &m.items[i] );
+				}
+
+				ImGui::TreePop();
+			}
 
 			ShowIONode( m );
 
