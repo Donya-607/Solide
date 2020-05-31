@@ -1152,10 +1152,9 @@ namespace Bullet
 			const auto aabbResult		= CalcCorrectedVector( raycastResult.correctedVector, solids );
 			if ( raycastResult.raycastResult.wasHit || aabbResult.wasHit )
 			{
-				shouldStay = true;
+				shouldStay	= true;
+				velocity	= aabbResult.correctedVector;
 			}
-
-			velocity = aabbResult.correctedVector;
 
 			pos += velocity;
 		}
@@ -1332,10 +1331,9 @@ namespace Bullet
 			const auto aabbResult		= CalcCorrectedVector( raycastResult.correctedVector, solids );
 			if ( raycastResult.raycastResult.wasHit || aabbResult.wasHit )
 			{
-				shouldStay = true;
+				shouldStay	= true;
+				velocity	= aabbResult.correctedVector;
 			}
-
-			velocity = aabbResult.correctedVector;
 
 			pos += velocity;
 		}

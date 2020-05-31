@@ -228,7 +228,7 @@ Scene::Result ScenePause::Update( float elapsedTime )
 
 void ScenePause::Draw( float elapsedTime )
 {
-	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA );
 
 	DrawBackGround();
 
