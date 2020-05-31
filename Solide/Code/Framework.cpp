@@ -31,8 +31,7 @@ bool Framework::Init()
 
 #if DEBUG_MODE
 	pSceneMng->Init( Scene::Type::Load );
-	// pSceneMng->Init( Scene::Type::Game );
-	// pSceneMng->Init( Scene::Type::Title );
+	// pSceneMng->Init( Scene::Type::Logo );
 #else
 	pSceneMng->Init( Scene::Type::Logo );
 #endif // DEBUG_MODE
