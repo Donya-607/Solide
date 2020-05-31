@@ -85,6 +85,7 @@ private:
 	void	PlayerUninit();
 
 	bool	IsRequiredAdvance() const;
+	bool	IsRequiredBack() const;
 	bool	NowAcceptableTiming() const;
 
 	void	UpdateByStatus( float elapsedTime );

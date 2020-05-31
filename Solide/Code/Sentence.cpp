@@ -89,6 +89,10 @@ void TitleSentence::AdvanceState()
 {
 	ResetFlusher<FastFlusher>();
 }
+void TitleSentence::BackState()
+{
+	ResetFlusher<LateFlusher>();
+}
 
 void TitleSentence::LoadBin()
 {

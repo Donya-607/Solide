@@ -660,6 +660,12 @@ bool SceneTitle::IsRequiredAdvance() const
 			? controller.Trigger( Donya::Gamepad::A )
 			: Donya::Keyboard::Trigger( 'Z' );
 }
+bool SceneTitle::IsRequiredBack() const
+{
+	return	( controller.IsConnected() )
+			? controller.Trigger( Donya::Gamepad::B )
+			: Donya::Keyboard::Trigger( 'X' );
+}
 bool SceneTitle::NowAcceptableTiming() const
 {
 	if ( Fader::Get().IsExist()	) { return false; }
@@ -694,10 +700,7 @@ void SceneTitle::StartInit()
 	nowWaiting	= false;
 	status		= State::Start;
 }
-void SceneTitle::StartUninit()
-{
-	pSentence.reset();
-}
+void SceneTitle::StartUninit() {}
 void SceneTitle::StartUpdate( float elapsedTime )
 {
 	if ( IsRequiredAdvance() && NowAcceptableTiming() )
@@ -734,6 +737,7 @@ void SceneTitle::SelectInit()
 	flushAlpha	= 0.0f;
 	nowWaiting	= false;
 	status		= State::SelectItem;
+	chooseItem	= Choice::Nil;
 }
 void SceneTitle::SelectUninit() {}
 void SceneTitle::SelectUpdate( float elapsedTime )
@@ -791,7 +795,7 @@ void SceneTitle::SelectUpdate( float elapsedTime )
 		UpdateChoosing();
 	}
 
-	if ( chooseItem != Choice::Nil && IsRequiredAdvance() && NowAcceptableTiming() )
+	if ( IsRequiredAdvance() && NowAcceptableTiming() && chooseItem != Choice::Nil )
 	{
 		nowWaiting = true;
 		if ( chooseItem == Choice::NewGame )
@@ -800,6 +804,14 @@ void SceneTitle::SelectUpdate( float elapsedTime )
 		}
 
 		Donya::Sound::Play( Music::UI_StartGame );
+	}
+	else
+	if ( IsRequiredBack() && NowAcceptableTiming() )
+	{
+		pSentence->BackState();
+		SelectUninit();
+		StartInit();
+		Donya::Sound::Play( Music::ItemChoose );
 	}
 }
 void SceneTitle::SelectDraw( float elapsedTime )

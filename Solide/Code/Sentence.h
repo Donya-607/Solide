@@ -78,6 +78,7 @@ public:
 	void DrawPrompt( float elapsedTime ) const;
 public:
 	void AdvanceState();
+	void BackState();
 private:
 	template<class Flusher>
 	void ResetFlusher()
