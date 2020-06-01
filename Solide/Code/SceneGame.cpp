@@ -87,6 +87,8 @@ namespace
 			}
 		};
 		BossCamera cameraBoss;
+
+		Donya::Vector2 ssCurrentTimePos;
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -141,12 +143,16 @@ namespace
 			}
 			if ( 7 <= version )
 			{
+				archive( CEREAL_NVP( ssCurrentTimePos ) );
+			}
+			if ( 8 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 6 )
+CEREAL_CLASS_VERSION( Member, 7 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -220,6 +226,13 @@ public:
 
 			ParameterHelper::ShowConstantNode( u8"近くのオブジェクトに適用する透明度", &m.transparency );
 
+			if ( ImGui::TreeNode( u8"時間表示" ) )
+			{
+				ImGui::DragFloat2( u8"現在の時間描画位置", &m.ssCurrentTimePos.x );
+
+				ImGui::TreePop();
+			}
+
 			if ( ImGui::TreeNode( u8"その他" ) )
 			{
 				ImGui::DragInt( u8"自機の最大残機数", &m.maxPlayerRemains );
@@ -284,6 +297,9 @@ void SceneGame::Init()
 	pShadow = std::make_unique<Shadow>();
 	pShadow->LoadTexture();
 	pShadow->ClearInstances();
+
+	result = numberDrawer.Init( GetSpritePath( SpriteAttribute::Number ) );
+	assert( result );
 
 	const SaveData nowData = SaveDataAdmin::Get().GetNowData();
 #if 0 // ENABLE_RESTART_FROM_LAST_STATUS
@@ -380,6 +396,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 
 	controller.Update();
+	timer.Update();
 
 	pBG->Update( elapsedTime );
 
@@ -558,6 +575,11 @@ void SceneGame::Draw( float elapsedTime )
 	// Drawing to far for avoiding to trans the BG's blue.
 	pBG->Draw( elapsedTime );
 
+	if ( stageNumber != SELECT_STAGE_NO && stageNumber != TITLE_STAGE_NO )
+	{
+		DrawCurrentTime();
+	}
+
 	// A draw check of these sentences are doing at internal of these methods.
 	if ( pTutorialSentence	) { pTutorialSentence->Draw( elapsedTime );	}
 	if ( pClearSentence		) { pClearSentence->Draw( elapsedTime );	}
@@ -701,6 +723,8 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	pShadow->ClearInstances();
 
 	Bullet::BulletAdmin::Get().Init();
+
+	timer.Set( 0, 0, 0 );
 
 	nowWaiting = false;
 }
@@ -1406,6 +1430,17 @@ void SceneGame::GridControl()
 	}
 
 #endif // DEBUG_MODE
+}
+
+void SceneGame::DrawCurrentTime()
+{
+	std::vector<int> times{}; // [0:Min][1:Sec][2:MS]
+	times.emplace_back( timer.Minute()  );
+	times.emplace_back( timer.Second()  );
+	times.emplace_back( timer.Current() );
+
+	const auto data = FetchMember();
+	numberDrawer.DrawNumbers( times, NumberDrawer::Colon, data.ssCurrentTimePos );
 }
 
 void SceneGame::TutorialUpdate( float elapsedTime )

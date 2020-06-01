@@ -17,6 +17,7 @@
 #include "CheckPoint.h"
 #include "EnemyContainer.h"
 #include "Goal.h"
+#include "Numeric.h"
 #include "ObstacleContainer.h"
 #include "Player.h"
 #include "Renderer.h"
@@ -25,6 +26,7 @@
 #include "Scene.h"
 #include "Shadow.h"
 #include "Terrain.h"
+#include "Timer.h"
 #include "Warp.h"
 
 #if DEBUG_MODE
@@ -54,6 +56,9 @@ private:
 	std::unique_ptr<Shadow>				pShadow;
 	std::unique_ptr<TutorialSentence>	pTutorialSentence;
 	std::unique_ptr<ClearSentence>		pClearSentence;
+
+	Timer								timer;
+	NumberDrawer						numberDrawer;
 
 	int  stageNumber	= 1;
 	int  playerRemains	= 1;
@@ -130,6 +135,8 @@ private:
 	void	EnemyPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );
 
 	void	GridControl();
+
+	void	DrawCurrentTime();
 
 	void	TutorialUpdate( float elapsedTime );
 

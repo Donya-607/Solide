@@ -48,7 +48,7 @@ public:
 };
 CEREAL_CLASS_VERSION( Timer, 0 )
 
-static bool operator <  ( const Timer &L, const Timer &R );
+bool operator < ( const Timer &L, const Timer &R );
 static bool operator >  ( const Timer &L, const Timer &R ) { return R < L; }
 static bool operator <= ( const Timer &L, const Timer &R ) { return !( R < L ); }
 static bool operator >= ( const Timer &L, const Timer &R ) { return !( L < R ); }
