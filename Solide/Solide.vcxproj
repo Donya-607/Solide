@@ -211,6 +211,7 @@
     <ClCompile Include="Code\Shadow.cpp" />
     <ClCompile Include="Code\StorageForScene.cpp" />
     <ClCompile Include="Code\Terrain.cpp" />
+    <ClCompile Include="Code\Timer.cpp" />
     <ClCompile Include="Code\UI.cpp" />
     <ClCompile Include="Code\Warp.cpp" />
     <ClCompile Include="External\ImGui\imgui.cpp" />
@@ -311,6 +312,7 @@
     <ClInclude Include="Code\StorageForScene.h" />
     <ClInclude Include="Code\Terrain.h" />
     <ClInclude Include="Code\TexPart.h" />
+    <ClInclude Include="Code\Timer.h" />
     <ClInclude Include="Code\UI.h" />
     <ClInclude Include="Code\Warp.h" />
     <ClInclude Include="External\Cereal\include\cereal\access.hpp" />
