@@ -57,7 +57,8 @@ private:
 	std::unique_ptr<TutorialSentence>	pTutorialSentence;
 	std::unique_ptr<ClearSentence>		pClearSentence;
 
-	Timer								timer;
+	Timer								currentTime;
+	std::vector<Timer>					borderTimes;
 	NumberDrawer						numberDrawer;
 	bool								shouldDrawCurrentTimer = false;
 

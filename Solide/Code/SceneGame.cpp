@@ -404,8 +404,9 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	controller.Update();
 	if ( !nowWaiting )
 	{
-		timer.Update();
+		currentTime.Update();
 	}
+	borderTimes.clear();
 
 	pBG->Update( elapsedTime );
 
@@ -733,7 +734,7 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 
 	Bullet::BulletAdmin::Get().Init();
 
-	timer.Set( 0, 0, 0 );
+	currentTime.Set( 0, 0, 0 );
 	if ( stageNo == SELECT_STAGE_NO || stageNo == TITLE_STAGE_NO )
 	{
 		shouldDrawCurrentTimer = false;
@@ -1452,9 +1453,9 @@ void SceneGame::GridControl()
 void SceneGame::DrawCurrentTime()
 {
 	std::vector<int> times{}; // [0:Min][1:Sec][2:MS]
-	times.emplace_back( timer.Minute()  );
-	times.emplace_back( timer.Second()  );
-	times.emplace_back( timer.Current() );
+	times.emplace_back( currentTime.Minute()  );
+	times.emplace_back( currentTime.Second()  );
+	times.emplace_back( currentTime.Current() );
 
 	const auto data = FetchMember();
 	numberDrawer.DrawNumbers( times, NumberDrawer::Colon, data.ssCurrentTimePos, data.currentTimeScale );
@@ -1877,6 +1878,7 @@ void SceneGame::ProcessWarpCollision()
 		if ( Donya::AABB::IsHitAABB( playerBody, warpBody ) )
 		{
 			stageNumber = pWarp->GetDestinationStageNo();
+			borderTimes = pWarp->GetBorderTimes();
 			nowWaiting  = true;
 			StartFade();
 			break;
