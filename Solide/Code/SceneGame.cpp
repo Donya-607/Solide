@@ -88,7 +88,8 @@ namespace
 		};
 		BossCamera cameraBoss;
 
-		Donya::Vector2 ssCurrentTimePos;
+		Donya::Vector2	ssCurrentTimePos;
+		float			currentTimeScale = 1.0f;
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -143,7 +144,11 @@ namespace
 			}
 			if ( 7 <= version )
 			{
-				archive( CEREAL_NVP( ssCurrentTimePos ) );
+				archive
+				(
+					CEREAL_NVP( ssCurrentTimePos ),
+					CEREAL_NVP( currentTimeScale )
+				);
 			}
 			if ( 8 <= version )
 			{
@@ -228,7 +233,8 @@ public:
 
 			if ( ImGui::TreeNode( u8"ŽžŠÔ•\Ž¦" ) )
 			{
-				ImGui::DragFloat2( u8"Œ»Ý‚ÌŽžŠÔ•`‰æˆÊ’u", &m.ssCurrentTimePos.x );
+				ImGui::DragFloat2( u8"Œ»Ý‚ÌŽžŠÔ•`‰æˆÊ’u",		&m.ssCurrentTimePos.x );
+				ImGui::DragFloat ( u8"Œ»Ý‚ÌŽžŠÔ•`‰æƒXƒP[ƒ‹",	&m.currentTimeScale );
 
 				ImGui::TreePop();
 			}
@@ -1440,7 +1446,7 @@ void SceneGame::DrawCurrentTime()
 	times.emplace_back( timer.Current() );
 
 	const auto data = FetchMember();
-	numberDrawer.DrawNumbers( times, NumberDrawer::Colon, data.ssCurrentTimePos );
+	numberDrawer.DrawNumbers( times, NumberDrawer::Colon, data.ssCurrentTimePos, data.currentTimeScale );
 }
 
 void SceneGame::TutorialUpdate( float elapsedTime )
