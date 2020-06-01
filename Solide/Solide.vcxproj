@@ -192,6 +192,7 @@
     <ClCompile Include="Code\Goal.cpp" />
     <ClCompile Include="Code\Grid.cpp" />
     <ClCompile Include="Code\main.cpp" />
+    <ClCompile Include="Code\Numeric.cpp" />
     <ClCompile Include="Code\ObjectBase.cpp" />
     <ClCompile Include="Code\ObstacleContainer.cpp" />
     <ClCompile Include="Code\Obstacles.cpp" />
@@ -290,6 +291,7 @@
     <ClInclude Include="Code\Grid.h" />
     <ClInclude Include="Code\Icon.h" />
     <ClInclude Include="Code\Music.h" />
+    <ClInclude Include="Code\Numeric.h" />
     <ClInclude Include="Code\ObjectBase.h" />
     <ClInclude Include="Code\ObstacleContainer.h" />
     <ClInclude Include="Code\Obstacles.h" />

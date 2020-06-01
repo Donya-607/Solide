@@ -43,6 +43,11 @@ bool UIObject::DrawPart( float depth ) const
 	return result;
 }
 
+Donya::Int2 UIObject::GetSpriteSize() const
+{
+	return Donya::Sprite::GetTextureSize( sprite );
+}
+
 #if USE_IMGUI
 void UIObject::ShowImGuiNode( const std::string &nodeCaption )
 {

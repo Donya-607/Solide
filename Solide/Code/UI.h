@@ -46,7 +46,10 @@ public:
 	bool Draw( float drawDepth = 1.0f ) const;
 	bool DrawPart( float drawDepth = 1.0f ) const;
 public:
-
+	/// <summary>
+	/// Returns whole size. or -1 if the sprite didn't loaded.
+	/// </summary>
+	Donya::Int2 GetSpriteSize() const;
 public:
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption );
