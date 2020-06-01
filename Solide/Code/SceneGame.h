@@ -59,6 +59,7 @@ private:
 
 	Timer								timer;
 	NumberDrawer						numberDrawer;
+	bool								shouldDrawCurrentTimer = false;
 
 	int  stageNumber	= 1;
 	int  playerRemains	= 1;

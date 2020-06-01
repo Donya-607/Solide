@@ -402,7 +402,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 
 	controller.Update();
-	timer.Update();
+	if ( !nowWaiting )
+	{
+		timer.Update();
+	}
 
 	pBG->Update( elapsedTime );
 
@@ -581,7 +584,7 @@ void SceneGame::Draw( float elapsedTime )
 	// Drawing to far for avoiding to trans the BG's blue.
 	pBG->Draw( elapsedTime );
 
-	if ( stageNumber != SELECT_STAGE_NO && stageNumber != TITLE_STAGE_NO )
+	if ( shouldDrawCurrentTimer )
 	{
 		DrawCurrentTime();
 	}
@@ -731,6 +734,14 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	Bullet::BulletAdmin::Get().Init();
 
 	timer.Set( 0, 0, 0 );
+	if ( stageNo == SELECT_STAGE_NO || stageNo == TITLE_STAGE_NO )
+	{
+		shouldDrawCurrentTimer = false;
+	}
+	else
+	{
+		shouldDrawCurrentTimer = true;
+	}
 
 	nowWaiting = false;
 }
