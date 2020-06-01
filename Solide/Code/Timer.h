@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Donya/Serializer.h"
+#include "Donya/UseImGui.h"
 
 /// <summary>
 /// Measure elapsed time. this class can count until 99min-59sec-59ms with frame.
@@ -45,6 +46,10 @@ public:
 	/// Returns string is "XX:XX:XX", min:sec:ms.
 	/// </summary>
 	std::string ToStr( bool isInsertColon = true );
+public:
+#if USE_IMGUI
+	void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode );
+#endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( Timer, 0 )
 

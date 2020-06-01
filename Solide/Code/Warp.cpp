@@ -101,6 +101,7 @@ Donya::Vector4x4	Warp::CalcWorldMatrix( bool useForHitBox ) const
 	W._43 = translation.z;
 	return W;
 }
+std::vector<Timer>	Warp::GetBorderTimes()			const { return borderTimes; }
 
 void Warp::Init() {}
 void Warp::Uninit() {}
@@ -175,6 +176,38 @@ void Warp::ShowImGuiNode( const std::string &nodeCaption, bool *wantRemoveMe )
 	ImGui::DragFloat( u8"描画スケール",	&drawScale, 0.01f );
 	ImGui::ColorEdit4( u8"描画色",		&drawColor.x );
 	drawScale = std::max( 0.0f, drawScale );
+
+	if ( ImGui::TreeNode( u8"ランクのボーダーラインとなる時間の設定" ) )
+	{
+		ParameterHelper::ResizeByButton( &borderTimes );
+
+		std::string caption{};
+		auto GetRankStr = []( size_t index )->std::string
+		{
+			const std::string ranks = "SABCDE";
+			// The size() method returns character count("SABCDE" size is 6), does not contain the null-termination.
+			if ( ranks.size() <= index ) { index = ranks.size() - 1; }
+			return ranks[index] + u8"ランク";
+		};
+
+		const size_t count = borderTimes.size();
+		size_t eraseIndex = count;
+
+		for ( size_t i = 0; i < count; ++i )
+		{
+			caption = GetRankStr( i ) + u8"を削除";
+			if ( ImGui::Button( caption.c_str() ) )
+			{
+				eraseIndex = i;
+			}
+			ImGui::SameLine();
+
+			caption = GetRankStr( i ) + u8"となるボーダー";
+			borderTimes[i].ShowImGuiNode( caption, /* useTreeNode = */ true );
+		}
+
+		ImGui::TreePop();
+	}
 
 	ImGui::TreePop();
 }

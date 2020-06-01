@@ -9,17 +9,19 @@
 #include "Donya/Vector.h"
 
 #include "Renderer.h"
+#include "Timer.h"
 
 class Warp
 {
 private:
 	bool unlocked = false;
-private: // Serializer member.
+private: // Serialize members.
 	int					destStageNo	= 1;
 	float				drawScale	= 1.0f;
 	Donya::Vector3		wsPos;
 	Donya::Vector4		drawColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 	Donya::AABB			hitBox;
+	std::vector<Timer>	borderTimes;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -36,6 +38,10 @@ private:
 
 		if ( 1 <= version )
 		{
+			archive( CEREAL_NVP( borderTimes ) );
+		}
+		if ( 2 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -48,11 +54,12 @@ public:
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
 public:
-	bool				IsUnlocked() const;
+	bool				IsUnlocked()			const;
 	int					GetDestinationStageNo()	const;
 	Donya::Vector3		GetPosition()			const;
 	Donya::AABB			GetHitBox()				const;
 	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox ) const;
+	std::vector<Timer>	GetBorderTimes()		const;
 private:
 	Donya::Vector4		MakeDrawColor( const Donya::Vector4 &blendColor ) const;
 #if USE_IMGUI

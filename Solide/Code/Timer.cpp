@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Donya/Useful.h"	// Use SeparateDigits().
+#include "Donya/Template.h"	// Use Clamp().
 
 #undef max
 #undef min
@@ -24,14 +25,12 @@ void Timer::Update()
 		}
 	}
 }
-
 void Timer::Set( int newMinute, int newSecond, int newCurrent )
 {
 	if ( 0 <= newMinute  ) { minute  = newMinute;  }
 	if ( 0 <= newSecond  ) { second  = newSecond;  }
 	if ( 0 <= newCurrent ) { current = newCurrent; }
 }
-
 std::string Timer::ToStr( bool isInsertColon )
 {
 	constexpr int		DIGIT = 2;
@@ -71,6 +70,22 @@ std::string Timer::ToStr( bool isInsertColon )
 	std::reverse( reverseNumberStr.begin(), reverseNumberStr.end() );
 	return reverseNumberStr;
 }
+#if USE_IMGUI
+void Timer::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
+{
+	if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	ImGui::DragInt( u8"Min:•ª",		&minute  );
+	ImGui::DragInt( u8"Sec:•b",		&second  );
+	ImGui::DragInt( u8"MSec:ƒ~ƒŠ•b",	&current );
+	Donya::Clamp( &minute,  0, 59 );
+	Donya::Clamp( &second,  0, 99 );
+	Donya::Clamp( &current, 0, 99 );
+
+	if ( useTreeNode ) { ImGui::TreePop(); }
+}
+#endif // USE_IMGUI
 
 bool operator < ( const Timer &L, const Timer &R )
 {
