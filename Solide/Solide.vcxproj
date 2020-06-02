@@ -144,6 +144,7 @@
     <ClCompile Include="Code\Bullet.cpp" />
     <ClCompile Include="Code\CameraOption.cpp" />
     <ClCompile Include="Code\CheckPoint.cpp" />
+    <ClCompile Include="Code\ClearPerformance.cpp" />
     <ClCompile Include="Code\Common.cpp" />
     <ClCompile Include="Code\Donya\AudioSystem.cpp" />
     <ClCompile Include="Code\Donya\Blend.cpp" />
@@ -229,6 +230,7 @@
     <ClInclude Include="Code\Bullet.h" />
     <ClInclude Include="Code\CameraOption.h" />
     <ClInclude Include="Code\CheckPoint.h" />
+    <ClInclude Include="Code\ClearPerformance.h" />
     <ClInclude Include="Code\Common.h" />
     <ClInclude Include="Code\Donya\AudioSystem.h" />
     <ClInclude Include="Code\Donya\Benchmark.h" />
