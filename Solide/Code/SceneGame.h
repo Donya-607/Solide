@@ -15,6 +15,7 @@
 #include "Boss.h"
 #include "CameraOption.h"
 #include "CheckPoint.h"
+#include "ClearPerformance.h"
 #include "EnemyContainer.h"
 #include "Goal.h"
 #include "Numeric.h"
@@ -56,6 +57,7 @@ private:
 	std::unique_ptr<Shadow>				pShadow;
 	std::unique_ptr<TutorialSentence>	pTutorialSentence;
 	std::unique_ptr<ClearSentence>		pClearSentence;
+	std::unique_ptr<ClearPerformance>	pClearPerformance;
 
 	Timer								currentTime;
 	std::vector<Timer>					borderTimes;

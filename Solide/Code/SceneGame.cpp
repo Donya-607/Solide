@@ -51,7 +51,7 @@ namespace
 
 		int waitFrameUntilShowTutorial	= 60;
 		int waitFrameUntilSlideTutorial	= 60;
-		int waitFrameUntilFade			= 60;
+		int waitFrameUntilPerformance	= 60;
 
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
 
@@ -106,7 +106,7 @@ namespace
 
 			if ( 1 <= version )
 			{
-				archive( CEREAL_NVP( waitFrameUntilFade ) );
+				archive( CEREAL_NVP( waitFrameUntilPerformance ) );
 			}
 			if ( 2 <= version )
 			{
@@ -193,10 +193,10 @@ public:
 			{
 				ImGui::DragInt( u8"開始からチュートリアル画像表示までの秒数", &m.waitFrameUntilShowTutorial,  1.0f, 1 );
 				ImGui::DragInt( u8"チュートリアル画像表示から縮小までの秒数", &m.waitFrameUntilSlideTutorial, 1.0f, 1 );
-				ImGui::DragInt( u8"ゴールからフェードまでの秒数", &m.waitFrameUntilFade, 1.0f, 1 );
+				ImGui::DragInt( u8"クリア表示から演出開始までの秒数", &m.waitFrameUntilPerformance, 1.0f, 1 );
 				m.waitFrameUntilShowTutorial	= std::max( 1, m.waitFrameUntilShowTutorial		);
 				m.waitFrameUntilSlideTutorial	= std::max( 1, m.waitFrameUntilSlideTutorial	);
-				m.waitFrameUntilFade			= std::max( 1, m.waitFrameUntilFade				);
+				m.waitFrameUntilPerformance		= std::max( 1, m.waitFrameUntilPerformance		);
 
 				ImGui::TreePop();
 			}
@@ -676,6 +676,9 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	pClearSentence->Init();
 	result = pClearSentence->LoadSprite( GetSpritePath( Spr::ClearSentence ) );
 	assert( result );
+
+	pClearPerformance = std::make_unique<ClearPerformance>();
+	pClearPerformance->Init();
 
 	pTerrain = std::make_unique<Terrain>( stageNo );
 
@@ -1488,6 +1491,7 @@ void SceneGame::ClearInit()
 {
 	clearTimer	= 0;
 	pClearSentence->Appear();
+	pClearPerformance->ResetProcess( currentTime );
 
 	stageNumber	= SELECT_STAGE_NO;
 	nowWaiting	= true;
@@ -1500,7 +1504,11 @@ void SceneGame::ClearUpdate( float elapsedTime )
 	pClearSentence->Update( elapsedTime );
 
 	clearTimer++;
-	if ( clearTimer == FetchMember().waitFrameUntilFade )
+	if ( FetchMember().waitFrameUntilPerformance <= clearTimer )
+	{
+		pClearPerformance->Update();
+	}
+	if ( pClearPerformance->IsDone() && !Fader::Get().IsExist() )
 	{
 		StartFade();
 	}
@@ -2201,6 +2209,8 @@ void SceneGame::UseImGui()
 		{ pTutorialSentence->ShowImGuiNode( u8"チュートリアル画像" ); }
 		if ( pClearSentence )
 		{ pClearSentence->ShowImGuiNode( u8"クリア画像" ); }
+		if ( pClearPerformance )
+		{ pClearPerformance->ShowImGuiNode( u8"クリア演出" ); }
 		ImGui::Text( "" );
 
 		ImGui::TreePop();
