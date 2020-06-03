@@ -649,6 +649,7 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	Bullet::BulletAdmin::Get().Init();
 	Bullet::LoadBulletsResource();
 	ObstacleBase::ParameterInit();
+	ClearPerformance::LoadParameter();
 #endif // DEBUG_MODE
 
 	using Spr = SpriteAttribute;
