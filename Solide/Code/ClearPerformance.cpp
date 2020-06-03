@@ -185,18 +185,13 @@ public:
 
 		if ( ImGui::TreeNode( u8"クリア演出のパラメータ調整" ) )
 		{
-			auto Clamp01 = []( auto *p )
-			{
-				Donya::Clamp( p, 0, 1 );
-			};
-
 			auto ShowFrame = [&]( const std::string &nodeCaption, Member::ShowFrame *p )
 			{
 				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 				// else
 
 				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
-				Clamp01( &p->wholeFrame );
+				p->wholeFrame = std::max( 0, p->wholeFrame );
 
 				ImGui::TreePop();
 			};
@@ -206,7 +201,7 @@ public:
 				// else
 
 				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
-				Clamp01( &p->wholeFrame );
+				p->wholeFrame = std::max( 0, p->wholeFrame );
 
 				ImGui::TreePop();
 			};
@@ -214,6 +209,9 @@ public:
 			{
 				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 				// else
+
+				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
+				p->wholeFrame = std::max( 0, p->wholeFrame );
 
 				ImGui::TreePop();
 			};
@@ -223,7 +221,7 @@ public:
 				// else
 
 				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
-				Clamp01( &p->wholeFrame );
+				p->wholeFrame = std::max( 0, p->wholeFrame );
 
 				ImGui::TreePop();
 			};
@@ -233,7 +231,7 @@ public:
 				// else
 
 				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
-				Clamp01( &p->wholeFrame );
+				p->wholeFrame = std::max( 0, p->wholeFrame );
 
 				ImGui::TreePop();
 			};
@@ -305,7 +303,7 @@ void ClearPerformance::ShowFrame::Draw( ClearPerformance &inst )
 
 ClearPerformance::Result ClearPerformance::ShowDesc::Update( ClearPerformance &inst )
 {
-	const auto data = FetchMember().wait;
+	const auto data = FetchMember().showDesc;
 
 	timer++;
 	if ( data.wholeFrame <= timer )
@@ -323,7 +321,7 @@ void ClearPerformance::ShowDesc::Draw( ClearPerformance &inst )
 
 ClearPerformance::Result ClearPerformance::ShowTime::Update( ClearPerformance &inst )
 {
-	const auto data = FetchMember().wait;
+	const auto data = FetchMember().showTime;
 
 	timer++;
 	if ( data.wholeFrame <= timer )
@@ -341,7 +339,7 @@ void ClearPerformance::ShowTime::Draw( ClearPerformance &inst )
 
 ClearPerformance::Result ClearPerformance::ShowRank::Update( ClearPerformance &inst )
 {
-	const auto data = FetchMember().wait;
+	const auto data = FetchMember().showRank;
 
 	timer++;
 	if ( data.wholeFrame <= timer )
@@ -395,6 +393,11 @@ void ClearPerformance::ResetProcess( const Timer &currentTime )
 	timer		= 0;
 	clearTime	= currentTime;
 	isFinished	= false;
+
+	for ( auto &pIt : processPtrs )
+	{
+		if ( pIt ) { pIt->Init( *this ); }
+	}
 }
 void ClearPerformance::Uninit()
 {
@@ -412,7 +415,14 @@ void ClearPerformance::Update()
 		if ( result == Result::Finish )
 		{
 			const size_t limit = scast<size_t>( Type::TypeCount );
-			nowType = scast<Type>( std::min( index + 1, limit - 1 ) );
+			if ( limit <= index + 1 )
+			{
+				isFinished = true;
+			}
+			else
+			{
+				nowType = scast<Type>( std::min( index + 1, limit - 1 ) );
+			}
 		}
 	}
 }
