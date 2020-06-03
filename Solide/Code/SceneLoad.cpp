@@ -24,6 +24,7 @@
 #include "Boss.h"
 #include "Bullet.h"
 #include "Common.h"
+#include "ClearPerformance.h"
 #include "EffectAdmin.h"
 #include "Enemy.h"
 #include "Fader.h"
@@ -228,6 +229,7 @@ void SceneLoad::Init()
 		if ( !Player::LoadModels()			) { succeeded = false; }
 		if ( !BossBase::LoadModels()		) { succeeded = false; }
 		if ( !WarpContainer::LoadResource()	) { succeeded = false; }
+		ClearPerformance::LoadParameter();
 
 		_ASSERT_EXPR( succeeded, L"Failed: Models load is failed." );
 

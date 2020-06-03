@@ -12,6 +12,11 @@
 class ClearPerformance
 {
 public:
+#if USE_IMGUI
+	static void LoadParameter();
+	static void UseImGui();
+#endif // USE_IMGUI
+public:
 	enum class Type : int
 	{
 		ShowFrame = 0,

@@ -369,6 +369,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Enemy::UseImGui();
 	ObstacleBase::UseImGui();
 	Bullet::UseBulletsImGui();
+	ClearPerformance::UseImGui();
 #endif // USE_IMGUI
 
 	if ( SaveDataAdmin::Get().HasRequiredChangeStage() )

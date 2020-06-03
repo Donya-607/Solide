@@ -263,6 +263,16 @@ namespace
 }
 
 
+#if USE_IMGUI
+void ClearPerformance::LoadParameter()
+{
+	ParamClearPerformance::Get().Init();
+}
+void ClearPerformance::UseImGui()
+{
+	ParamClearPerformance::Get().UseImGui();
+}
+#endif // USE_IMGUI
 #pragma region States
 void ClearPerformance::ProcessBase::Init( ClearPerformance &inst )
 {
