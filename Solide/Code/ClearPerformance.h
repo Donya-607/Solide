@@ -29,6 +29,9 @@ private:
 #pragma region States
 	class ProcessBase
 	{
+	protected:
+		int		timer	= 0;
+		float	factor	= 0.0f; // 0.0f ~ 1.0f
 	public:
 		virtual void	Init( ClearPerformance &instance );
 		virtual void	Uninit( ClearPerformance &instance );

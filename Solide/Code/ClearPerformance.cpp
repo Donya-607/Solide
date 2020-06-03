@@ -2,6 +2,61 @@
 
 
 #pragma region States
+void ClearPerformance::ProcessBase::Init( ClearPerformance &inst )
+{
+	timer	= 0;
+	factor	= 0.0f;
+}
+void ClearPerformance::ProcessBase::Uninit( ClearPerformance &inst )
+{
+	timer	= 0;
+	factor	= 0.0f;
+}
+
+ClearPerformance::Result ClearPerformance::ShowFrame::Update( ClearPerformance &inst )
+{
+	return Result::Finish;
+}
+void ClearPerformance::ShowFrame::Draw( ClearPerformance &inst )
+{
+
+}
+
+ClearPerformance::Result ClearPerformance::ShowDesc::Update( ClearPerformance &inst )
+{
+	return Result::Finish;
+}
+void ClearPerformance::ShowDesc::Draw( ClearPerformance &inst )
+{
+
+}
+
+ClearPerformance::Result ClearPerformance::ShowTime::Update( ClearPerformance &inst )
+{
+	return Result::Finish;
+}
+void ClearPerformance::ShowTime::Draw( ClearPerformance &inst )
+{
+
+}
+
+ClearPerformance::Result ClearPerformance::ShowRank::Update( ClearPerformance &inst )
+{
+	return Result::Finish;
+}
+void ClearPerformance::ShowRank::Draw( ClearPerformance &inst )
+{
+
+}
+
+ClearPerformance::Result ClearPerformance::Wait::Update( ClearPerformance &inst )
+{
+	return Result::Finish;
+}
+void ClearPerformance::Wait::Draw( ClearPerformance &inst )
+{
+
+}
 
 // region States
 #pragma endregion
@@ -33,15 +88,25 @@ void ClearPerformance::Uninit()
 }
 void ClearPerformance::Update()
 {
-	for ( auto &pIt : processPtrs )
+	const size_t index = std::min( scast<size_t>( nowType ), processPtrs.size() );
+	if ( processPtrs[index] )
 	{
-		if ( pIt ) { pIt->Update( *this ); }
+		Result result = processPtrs[index]->Update( *this );
+		if ( result == Result::Finish )
+		{
+			const size_t limit = scast<size_t>( Type::TypeCount );
+			nowType = scast<Type>( std::min( index + 1, limit - 1 ) );
+		}
 	}
 }
 void ClearPerformance::Draw()
 {
-	for ( auto &pIt : processPtrs )
+	const size_t drawLimit = std::min( scast<size_t>( nowType ), processPtrs.size() );
+	for ( size_t i = 0; i < drawLimit; ++i )
 	{
-		if ( pIt ) { pIt->Draw( *this ); }
+		if ( processPtrs[i] )
+		{
+			processPtrs[i]->Draw( *this );
+		}
 	}
 }
