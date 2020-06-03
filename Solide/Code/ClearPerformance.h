@@ -2,14 +2,16 @@
 
 #include <array>
 #include <memory>
+#include <string>
 
 #include "Donya/Constant.h"	// Use scast macro
+#include "Donya/UseImGui.h"	// Use USE_IMGUI macro
 
 #include "Timer.h"
 
 class ClearPerformance
 {
-private:
+public:
 	enum class Type : int
 	{
 		ShowFrame = 0,
@@ -20,6 +22,7 @@ private:
 
 		TypeCount
 	};
+private:
 	enum class Result
 	{
 		Continue,
@@ -101,4 +104,8 @@ private:
 
 		ptr->Init( *this );
 	}
+public:
+#if USE_IMGUI
+	void ShowImGuiNode( const std::string &nodeCaption );
+#endif // USE_IMGUI
 };

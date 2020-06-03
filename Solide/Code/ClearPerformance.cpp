@@ -1,5 +1,267 @@
 #include "ClearPerformance.h"
 
+#include "Donya/Template.h"
+
+#include "FilePath.h"
+#include "Parameter.h"
+
+
+namespace
+{
+	std::string GetTypeName( ClearPerformance::Type type )
+	{
+		switch ( type )
+		{
+		case ClearPerformance::Type::ShowFrame:			return u8"枠表示";
+		case ClearPerformance::Type::ShowDescription:	return u8"説明表示";
+		case ClearPerformance::Type::ShowTime:			return u8"時間表示";
+		case ClearPerformance::Type::ShowRank:			return u8"ランク表示";
+		case ClearPerformance::Type::Wait:				return u8"待機";
+		default: break;
+		}
+
+		_ASSERT_EXPR( 0, L"Error: Unexpected Type!" );
+		return "ERROR";
+	};
+
+	struct Member
+	{
+		struct ShowFrame
+		{
+			int wholeFrame = 1;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( wholeFrame )
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		struct ShowDesc
+		{
+			int wholeFrame = 1;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( wholeFrame )
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		struct ShowTime
+		{
+			int wholeFrame = 1;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( wholeFrame )
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		struct ShowRank
+		{
+			int wholeFrame = 1;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( wholeFrame )
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		struct Wait
+		{
+			int wholeFrame = 1;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( wholeFrame )
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+
+		ShowFrame	showFrame;
+		ShowDesc	showDesc;
+		ShowTime	showTime;
+		ShowRank	showRank;
+		Wait		wait;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( showFrame	),
+				CEREAL_NVP( showDesc	),
+				CEREAL_NVP( showTime	),
+				CEREAL_NVP( showRank	),
+				CEREAL_NVP( wait		)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
+}
+CEREAL_CLASS_VERSION( Member,				0 )
+CEREAL_CLASS_VERSION( Member::ShowFrame,	0 )
+CEREAL_CLASS_VERSION( Member::ShowDesc,		0 )
+CEREAL_CLASS_VERSION( Member::ShowTime,		0 )
+CEREAL_CLASS_VERSION( Member::ShowRank,		0 )
+CEREAL_CLASS_VERSION( Member::Wait,			0 )
+
+class ParamClearPerformance : public ParameterBase<ParamClearPerformance>
+{
+public:
+	static constexpr const char *ID = "ClearPerformance";
+private:
+	Member m;
+public:
+	void Init() override
+	{
+	#if DEBUG_MODE
+		constexpr bool fromBinary = false;
+	#else
+		constexpr bool fromBinary = true;
+	#endif // DEBUG_MODE
+
+		Load( m, fromBinary );
+	}
+	Member Data() const { return m; }
+private:
+	std::string GetSerializeIdentifier()			override { return ID; }
+	std::string GetSerializePath( bool isBinary )	override { return GenerateSerializePath( ID, isBinary ); }
+public:
+#if USE_IMGUI
+	void UseImGui() override
+	{
+		if ( !ImGui::BeginIfAllowed() ) { return; }
+		// else
+
+		if ( ImGui::TreeNode( u8"クリア演出のパラメータ調整" ) )
+		{
+			auto Clamp01 = []( auto *p )
+			{
+				Donya::Clamp( p, 0, 1 );
+			};
+
+			auto ShowFrame = [&]( const std::string &nodeCaption, Member::ShowFrame *p )
+			{
+				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+				// else
+
+				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
+				Clamp01( &p->wholeFrame );
+
+				ImGui::TreePop();
+			};
+			auto ShowDesc = [&]( const std::string &nodeCaption, Member::ShowDesc *p )
+			{
+				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+				// else
+
+				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
+				Clamp01( &p->wholeFrame );
+
+				ImGui::TreePop();
+			};
+			auto ShowTime = [&]( const std::string &nodeCaption, Member::ShowTime *p )
+			{
+				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+				// else
+
+				ImGui::TreePop();
+			};
+			auto ShowRank = [&]( const std::string &nodeCaption, Member::ShowRank *p )
+			{
+				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+				// else
+
+				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
+				Clamp01( &p->wholeFrame );
+
+				ImGui::TreePop();
+			};
+			auto ShowWait = [&]( const std::string &nodeCaption, Member::Wait *p )
+			{
+				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+				// else
+
+				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
+				Clamp01( &p->wholeFrame );
+
+				ImGui::TreePop();
+			};
+
+			ShowFrame( u8"枠",		&m.showFrame	);
+			ShowDesc ( u8"説明",		&m.showDesc		);
+			ShowTime ( u8"時間",		&m.showTime		);
+			ShowRank ( u8"ランク",	&m.showRank		);
+			ShowWait ( u8"待機",		&m.wait			);
+
+			ShowIONode( m );
+
+			ImGui::TreePop();
+		}
+
+		ImGui::End();
+	}
+#endif // USE_IMGUI
+};
+
+namespace
+{
+	Member FetchMember()
+	{
+		return ParamClearPerformance::Get().Data();
+	}
+}
+
 
 #pragma region States
 void ClearPerformance::ProcessBase::Init( ClearPerformance &inst )
@@ -15,7 +277,16 @@ void ClearPerformance::ProcessBase::Uninit( ClearPerformance &inst )
 
 ClearPerformance::Result ClearPerformance::ShowFrame::Update( ClearPerformance &inst )
 {
-	return Result::Finish;
+	const auto data = FetchMember().showFrame;
+
+	timer++;
+	if ( data.wholeFrame <= timer )
+	{
+		timer = data.wholeFrame;
+		return Result::Finish;
+	}
+	// else
+	return Result::Continue;
 }
 void ClearPerformance::ShowFrame::Draw( ClearPerformance &inst )
 {
@@ -24,7 +295,16 @@ void ClearPerformance::ShowFrame::Draw( ClearPerformance &inst )
 
 ClearPerformance::Result ClearPerformance::ShowDesc::Update( ClearPerformance &inst )
 {
-	return Result::Finish;
+	const auto data = FetchMember().wait;
+
+	timer++;
+	if ( data.wholeFrame <= timer )
+	{
+		timer = data.wholeFrame;
+		return Result::Finish;
+	}
+	// else
+	return Result::Continue;
 }
 void ClearPerformance::ShowDesc::Draw( ClearPerformance &inst )
 {
@@ -33,7 +313,16 @@ void ClearPerformance::ShowDesc::Draw( ClearPerformance &inst )
 
 ClearPerformance::Result ClearPerformance::ShowTime::Update( ClearPerformance &inst )
 {
-	return Result::Finish;
+	const auto data = FetchMember().wait;
+
+	timer++;
+	if ( data.wholeFrame <= timer )
+	{
+		timer = data.wholeFrame;
+		return Result::Finish;
+	}
+	// else
+	return Result::Continue;
 }
 void ClearPerformance::ShowTime::Draw( ClearPerformance &inst )
 {
@@ -42,7 +331,16 @@ void ClearPerformance::ShowTime::Draw( ClearPerformance &inst )
 
 ClearPerformance::Result ClearPerformance::ShowRank::Update( ClearPerformance &inst )
 {
-	return Result::Finish;
+	const auto data = FetchMember().wait;
+
+	timer++;
+	if ( data.wholeFrame <= timer )
+	{
+		timer = data.wholeFrame;
+		return Result::Finish;
+	}
+	// else
+	return Result::Continue;
 }
 void ClearPerformance::ShowRank::Draw( ClearPerformance &inst )
 {
@@ -51,7 +349,16 @@ void ClearPerformance::ShowRank::Draw( ClearPerformance &inst )
 
 ClearPerformance::Result ClearPerformance::Wait::Update( ClearPerformance &inst )
 {
-	return Result::Finish;
+	const auto data = FetchMember().wait;
+
+	timer++;
+	if ( data.wholeFrame <= timer )
+	{
+		timer = data.wholeFrame;
+		return Result::Finish;
+	}
+	// else
+	return Result::Continue;
 }
 void ClearPerformance::Wait::Draw( ClearPerformance &inst )
 {
@@ -110,3 +417,20 @@ void ClearPerformance::Draw()
 		}
 	}
 }
+#if USE_IMGUI
+void ClearPerformance::ShowImGuiNode( const std::string &nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	ImGui::DragInt( u8"内部タイマ", &timer );
+	ImGui::Text( u8"状態：[%s]", GetTypeName( nowType ).c_str() );
+	if ( ImGui::Button( u8"状態をリセット" ) )
+	{
+		ResetProcess( clearTime );
+	}
+	ImGui::Checkbox( u8"終了したか", &isFinished );
+
+	ImGui::TreePop();
+}
+#endif // USE_IMGUI
