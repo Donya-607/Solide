@@ -78,8 +78,14 @@ std::wstring GetSpritePath( SpriteAttribute attr )
 		return ToRelPath( L"BG/Back.png" );
 	case SpriteAttribute::CircleShadow:
 		return ToRelPath( L"Shadow/Circle.png" );
+	case SpriteAttribute::ClearDescription:
+		return ToRelPath( L"Clear/Description.png" );
+	case SpriteAttribute::ClearFrame:
+		return ToRelPath( L"Clear/Frame.png" );
+	case SpriteAttribute::ClearRank:
+		return ToRelPath( L"Clear/Rank.png" );
 	case SpriteAttribute::ClearSentence:
-		return ToRelPath( L"Game/Clear.png" );
+		return ToRelPath( L"Clear/Clear.png" );
 	case SpriteAttribute::Cloud:
 		return ToRelPath( L"BG/Cloud.png" );
 	case SpriteAttribute::LoadingIcon:

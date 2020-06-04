@@ -26,6 +26,32 @@ namespace
 
 	struct Member
 	{
+		struct Item
+		{
+			float			drawScale = 1.0f;
+			Donya::Vector2	ssDrawPos{};	// Center
+			Donya::Vector2	texPartPos{};	// Left-Top
+			Donya::Vector2	texPartSize{};	// Whole size
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( drawScale	),
+					CEREAL_NVP( ssDrawPos	),
+					CEREAL_NVP( texPartPos	),
+					CEREAL_NVP( texPartSize	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+
 		struct ShowFrame
 		{
 			int wholeFrame = 1;
@@ -149,6 +175,7 @@ namespace
 	};
 }
 CEREAL_CLASS_VERSION( Member,				0 )
+CEREAL_CLASS_VERSION( Member::Item,			0 )
 CEREAL_CLASS_VERSION( Member::ShowFrame,	0 )
 CEREAL_CLASS_VERSION( Member::ShowDesc,		0 )
 CEREAL_CLASS_VERSION( Member::ShowTime,		0 )

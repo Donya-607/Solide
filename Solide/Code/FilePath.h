@@ -32,6 +32,9 @@ enum class SpriteAttribute
 
 	BackGround,
 	CircleShadow,
+	ClearDescription,
+	ClearFrame,
+	ClearRank,
 	ClearSentence,
 	Cloud,
 	LoadingIcon,
