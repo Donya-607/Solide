@@ -680,7 +680,13 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	assert( result );
 
 	pClearPerformance = std::make_unique<ClearPerformance>();
-	pClearPerformance->Init();
+	pClearPerformance->Init
+	(
+		GetSpritePath( Spr::ClearFrame			),
+		GetSpritePath( Spr::ClearDescription	),
+		GetSpritePath( Spr::Number				),
+		GetSpritePath( Spr::ClearRank			)
+	);
 
 	pTerrain = std::make_unique<Terrain>( stageNo );
 
@@ -1493,7 +1499,11 @@ void SceneGame::ClearInit()
 {
 	clearTimer	= 0;
 	pClearSentence->Appear();
-	pClearPerformance->ResetProcess( currentTime );
+	pClearPerformance->ResetProcess
+	(
+		currentTime,
+		Rank::Calculate( currentTime, borderTimes )
+	);
 
 	stageNumber	= SELECT_STAGE_NO;
 	nowWaiting	= true;

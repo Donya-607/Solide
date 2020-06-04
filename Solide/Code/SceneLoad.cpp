@@ -267,6 +267,9 @@ void SceneLoad::Init()
 		if ( !MakeTextureCache( Attr::BackGround,		2U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::CircleShadow,		1U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::ClearSentence,	4U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::ClearFrame,		2U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::ClearDescription,	8U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::ClearRank,	  128U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::Cloud,			2U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::Number,		 1024U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::TutorialSentence,	4U ) ) { succeeded = false; }

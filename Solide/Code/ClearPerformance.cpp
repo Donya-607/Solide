@@ -403,8 +403,14 @@ void ClearPerformance::Wait::Draw( ClearPerformance &inst )
 // region States
 #pragma endregion
 
-void ClearPerformance::Init()
+bool ClearPerformance::Init( const std::wstring &frameSpritePath, const std::wstring &descSpritePath, const std::wstring &numberSpritePath, const std::wstring &rankSpritePath )
 {
+	bool succeeded = true;
+	if ( !sprFrame.LoadSprite( frameSpritePath, 2U ) ) { succeeded = false; }
+	if ( !sprDesc.LoadSprite ( descSpritePath,  8U ) ) { succeeded = false; }
+	if ( !numberDrawer.Init( numberSpritePath ) ) { succeeded = false; }
+	if ( !rankDrawer.Init  ( rankSpritePath   ) ) { succeeded = false; }
+
 	AssignProcess<ShowFrame>( &processPtrs[scast<int>( Type::ShowFrame			)] );
 	AssignProcess<ShowDesc>	( &processPtrs[scast<int>( Type::ShowDescription	)] );
 	AssignProcess<ShowTime>	( &processPtrs[scast<int>( Type::ShowTime			)] );
@@ -412,12 +418,15 @@ void ClearPerformance::Init()
 	AssignProcess<Wait>		( &processPtrs[scast<int>( Type::Wait				)] );
 
 	Timer zero{}; zero.Set( 0, 0, 0 );
-	ResetProcess( zero );
+	ResetProcess( zero, 0 );
+
+	return succeeded;
 }
-void ClearPerformance::ResetProcess( const Timer &currentTime )
+void ClearPerformance::ResetProcess( const Timer &currentTime, int resultRank )
 {
 	nowType		= scast<Type>( 0 );
 	timer		= 0;
+	clearRank	= resultRank;
 	clearTime	= currentTime;
 	isFinished	= false;
 
@@ -474,7 +483,7 @@ void ClearPerformance::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text( u8"状態：[%s]", GetTypeName( nowType ).c_str() );
 	if ( ImGui::Button( u8"状態をリセット" ) )
 	{
-		ResetProcess( clearTime );
+		ResetProcess( clearTime, clearRank );
 	}
 	ImGui::Checkbox( u8"終了したか", &isFinished );
 

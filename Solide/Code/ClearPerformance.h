@@ -7,7 +7,10 @@
 #include "Donya/Constant.h"	// Use scast macro
 #include "Donya/UseImGui.h"	// Use USE_IMGUI macro
 
+#include "Numeric.h"
+#include "Rank.h"
 #include "Timer.h"
+#include "UI.h"
 
 class ClearPerformance
 {
@@ -84,12 +87,18 @@ private:
 	Type nowType = scast<Type>( 0 );
 	std::array<std::shared_ptr<ProcessBase>, TypeCount> processPtrs;
 
-	int		timer = 0;
-	Timer	clearTime;
-	bool	isFinished = false;
+	int				timer		= 0;
+	int				clearRank	= 0;
+	Timer			clearTime;
+	bool			isFinished	= false;
+
+	UIObject		sprFrame;
+	UIObject		sprDesc;
+	NumberDrawer	numberDrawer;
+	Rank			rankDrawer;
 public:
-	void Init();
-	void ResetProcess( const Timer &clearTime );
+	bool Init( const std::wstring &frameSpritePath, const std::wstring &descriptionSpritePath, const std::wstring &numberSpritePath, const std::wstring &rankSpritePath );
+	void ResetProcess( const Timer &clearTime, int clearRank );
 	void Uninit();
 	void Update();
 	void Draw();
