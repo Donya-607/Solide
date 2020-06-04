@@ -2,6 +2,7 @@
 
 #include "Donya/Easing.h"
 #include "Donya/Template.h"
+#include "Donya/Useful.h"		// Use Lerp
 
 #include "FilePath.h"
 #include "Parameter.h"
@@ -31,8 +32,9 @@ namespace
 		{
 			struct Param
 			{
-				float			drawScale	= 1.0f;
+				float			drawAlpha	= 0.0f;
 				float			drawDegree	= 0.0f;
+				float			drawScale	= 1.0f;
 				Donya::Vector2	ssDrawPos{};	// Center
 			private:
 				friend class cereal::access;
@@ -41,8 +43,9 @@ namespace
 				{
 					archive
 					(
-						CEREAL_NVP( drawScale  ),
+						CEREAL_NVP( drawAlpha  ),
 						CEREAL_NVP( drawDegree ),
+						CEREAL_NVP( drawScale  ),
 						CEREAL_NVP( ssDrawPos  )
 					);
 
@@ -266,15 +269,20 @@ public:
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
 
+					ImGui::DragFloat ( u8"描画アルファ",			&p->drawAlpha,  0.01f );
 					ImGui::DragFloat ( u8"描画スケール",			&p->drawScale,  0.01f );
 					ImGui::DragFloat ( u8"描画角度（Degree）",	&p->drawDegree  );
 					ImGui::DragFloat2( u8"描画位置",				&p->ssDrawPos.x );
+
+					p->drawAlpha = std::max( 0.0f, std::min( 1.0f, p->drawAlpha ) );
+					p->drawScale = std::max( 0.0f, p->drawScale );
 
 					ImGui::TreePop();
 				};
 
 				ParameterHelper::ShowEaseParam( u8"イージングタイプ", &p->easeKind, &p->easeType );
 				ImGui::DragFloat( u8"イージングにかける時間（秒）", &p->easeTakeSecond, 0.1f );
+				p->easeTakeSecond = std::max( 0.0001f, p->easeTakeSecond );
 
 				ShowParam( u8"始点", &p->paramStart );
 				ShowParam( u8"終点", &p->paramDest  );
@@ -398,6 +406,10 @@ ClearPerformance::Result ClearPerformance::ShowFrame::Update( ClearPerformance &
 {
 	const auto data = FetchMember().showFrame;
 
+	const float elapseTime = 1.0f / ( 60.0f * data.item.easeTakeSecond );
+	factor += elapseTime;
+	factor =  std::min( 1.0f, factor );
+
 	timer++;
 	if ( data.wholeFrame <= timer )
 	{
@@ -409,7 +421,9 @@ ClearPerformance::Result ClearPerformance::ShowFrame::Update( ClearPerformance &
 }
 void ClearPerformance::ShowFrame::Draw( ClearPerformance &inst )
 {
-
+	const auto  data = FetchMember().showFrame.item;
+	const float time = Donya::Easing::Ease( data.easeKind, data.easeType, factor );
+	inst.sprFrame.degree = Donya::Lerp( data.paramStart.drawDegree, data.paramDest.drawDegree, time );
 }
 
 ClearPerformance::Result ClearPerformance::ShowDesc::Update( ClearPerformance &inst )
