@@ -74,6 +74,6 @@ float4 main( VS_OUT pin ) : SV_TARGET
 	float4	outputColor		= float4( resultColor, diffuseMapAlpha * cbDiffuse.a );
 			outputColor		= outputColor * cbDrawColor;
 			outputColor.a	= outputColor.a * CalcTransparency( pin.wsPos.xyz );
-	clip (	outputColor.a );
+	clip (	outputColor.a - 0.01f ); // I wanna except a depth of very low alpha.
 	return	LinearToSRGB( outputColor );
 }

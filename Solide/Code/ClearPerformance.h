@@ -15,8 +15,8 @@
 class ClearPerformance
 {
 public:
-#if USE_IMGUI
 	static void LoadParameter();
+#if USE_IMGUI
 	static void UseImGui();
 #endif // USE_IMGUI
 public:

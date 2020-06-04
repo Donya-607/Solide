@@ -380,11 +380,11 @@ namespace
 }
 
 
-#if USE_IMGUI
 void ClearPerformance::LoadParameter()
 {
 	ParamClearPerformance::Get().Init();
 }
+#if USE_IMGUI
 void ClearPerformance::UseImGui()
 {
 	ParamClearPerformance::Get().UseImGui();
