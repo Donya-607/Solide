@@ -76,10 +76,13 @@ public:
 #if USE_IMGUI
 #include <functional>
 #include <vector>
+#include "Donya/Easing.h"
 #include "Donya/Collision.h"
 #include "Renderer.h"
 namespace ParameterHelper
 {
+	void ShowEaseParam( const std::string &nodeCaption, Donya::Easing::Kind *pKind, Donya::Easing::Type *pType );
+
 	void ShowAABBNode( const std::string &nodeCaption, Donya::AABB *pAABB );
 	void ShowSphereNode( const std::string &nodeCaption, Donya::Sphere *pSphere );
 

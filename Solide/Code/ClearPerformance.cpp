@@ -1,5 +1,6 @@
 #include "ClearPerformance.h"
 
+#include "Donya/Easing.h"
 #include "Donya/Template.h"
 
 #include "FilePath.h"
@@ -28,8 +29,38 @@ namespace
 	{
 		struct Item
 		{
-			float			drawScale = 1.0f;
-			Donya::Vector2	ssDrawPos{};	// Center
+			struct Param
+			{
+				float			drawScale	= 1.0f;
+				float			drawDegree	= 0.0f;
+				Donya::Vector2	ssDrawPos{};	// Center
+			private:
+				friend class cereal::access;
+				template<class Archive>
+				void serialize( Archive &archive, std::uint32_t version )
+				{
+					archive
+					(
+						CEREAL_NVP( drawScale  ),
+						CEREAL_NVP( drawDegree ),
+						CEREAL_NVP( ssDrawPos  )
+					);
+
+					if ( 1 <= version )
+					{
+						// archive( CEREAL_NVP( x ) );
+					}
+				}
+			};
+
+			Donya::Easing::Kind easeKind	= Donya::Easing::Kind::Linear;
+			Donya::Easing::Type easeType	= Donya::Easing::Type::In;
+			float	easeTakeSecond			= 1.0f;
+			int		waitFrameAfterFinish	= 0;
+
+			Param	paramStart;
+			Param	paramDest;
+
 			Donya::Vector2	texPartPos{};	// Left-Top
 			Donya::Vector2	texPartSize{};	// Whole size
 		private:
@@ -39,10 +70,14 @@ namespace
 			{
 				archive
 				(
-					CEREAL_NVP( drawScale	),
-					CEREAL_NVP( ssDrawPos	),
-					CEREAL_NVP( texPartPos	),
-					CEREAL_NVP( texPartSize	)
+					CEREAL_NVP( easeKind				),
+					CEREAL_NVP( easeType				),
+					CEREAL_NVP( easeTakeSecond			),
+					CEREAL_NVP( waitFrameAfterFinish	),
+					CEREAL_NVP( paramStart				),
+					CEREAL_NVP( paramDest				),
+					CEREAL_NVP( texPartPos				),
+					CEREAL_NVP( texPartSize				)
 				);
 
 				if ( 1 <= version )
@@ -54,18 +89,20 @@ namespace
 
 		struct ShowFrame
 		{
-			int wholeFrame = 1;
+			int		wholeFrame = 1;
+			Item	item;
 		private:
 			friend class cereal::access;
 			template<class Archive>
 			void serialize( Archive &archive, std::uint32_t version )
 			{
-				archive
-				(
-					CEREAL_NVP( wholeFrame )
-				);
+				archive( CEREAL_NVP( wholeFrame ) );
 
 				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( item ) );
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -73,18 +110,20 @@ namespace
 		};
 		struct ShowDesc
 		{
-			int wholeFrame = 1;
+			int		wholeFrame = 1;
+			Item	item;
 		private:
 			friend class cereal::access;
 			template<class Archive>
 			void serialize( Archive &archive, std::uint32_t version )
 			{
-				archive
-				(
-					CEREAL_NVP( wholeFrame )
-				);
+				archive( CEREAL_NVP( wholeFrame ) );
 
 				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( item ) );
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -92,18 +131,20 @@ namespace
 		};
 		struct ShowTime
 		{
-			int wholeFrame = 1;
+			int		wholeFrame = 1;
+			Item	item;
 		private:
 			friend class cereal::access;
 			template<class Archive>
 			void serialize( Archive &archive, std::uint32_t version )
 			{
-				archive
-				(
-					CEREAL_NVP( wholeFrame )
-				);
+				archive( CEREAL_NVP( wholeFrame ) );
 
 				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( item ) );
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -111,18 +152,20 @@ namespace
 		};
 		struct ShowRank
 		{
-			int wholeFrame = 1;
+			int		wholeFrame = 1;
+			Item	item;
 		private:
 			friend class cereal::access;
 			template<class Archive>
 			void serialize( Archive &archive, std::uint32_t version )
 			{
-				archive
-				(
-					CEREAL_NVP( wholeFrame )
-				);
+				archive( CEREAL_NVP( wholeFrame ) );
 
 				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( item ) );
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -176,10 +219,11 @@ namespace
 }
 CEREAL_CLASS_VERSION( Member,				0 )
 CEREAL_CLASS_VERSION( Member::Item,			0 )
-CEREAL_CLASS_VERSION( Member::ShowFrame,	0 )
-CEREAL_CLASS_VERSION( Member::ShowDesc,		0 )
-CEREAL_CLASS_VERSION( Member::ShowTime,		0 )
-CEREAL_CLASS_VERSION( Member::ShowRank,		0 )
+CEREAL_CLASS_VERSION( Member::Item::Param,	0 )
+CEREAL_CLASS_VERSION( Member::ShowFrame,	1 )
+CEREAL_CLASS_VERSION( Member::ShowDesc,		1 )
+CEREAL_CLASS_VERSION( Member::ShowTime,		1 )
+CEREAL_CLASS_VERSION( Member::ShowRank,		1 )
 CEREAL_CLASS_VERSION( Member::Wait,			0 )
 
 class ParamClearPerformance : public ParameterBase<ParamClearPerformance>
@@ -212,7 +256,39 @@ public:
 
 		if ( ImGui::TreeNode( u8"クリア演出のパラメータ調整" ) )
 		{
-			auto ShowFrame = [&]( const std::string &nodeCaption, Member::ShowFrame *p )
+			auto ShowItem	= [&]( const std::string &nodeCaption, Member::Item *p )
+			{
+				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+				// else
+
+				auto ShowParam = [&]( const std::string &nodeCaption, Member::Item::Param *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					ImGui::DragFloat ( u8"描画スケール",			&p->drawScale,  0.01f );
+					ImGui::DragFloat ( u8"描画角度（Degree）",	&p->drawDegree  );
+					ImGui::DragFloat2( u8"描画位置",				&p->ssDrawPos.x );
+
+					ImGui::TreePop();
+				};
+
+				ParameterHelper::ShowEaseParam( u8"イージングタイプ", &p->easeKind, &p->easeType );
+				ImGui::DragFloat( u8"イージングにかける時間（秒）", &p->easeTakeSecond, 0.1f );
+
+				ShowParam( u8"始点", &p->paramStart );
+				ShowParam( u8"終点", &p->paramDest  );
+
+				ImGui::DragInt( u8"イージング終了後の待機時間（フレーム）", &p->waitFrameAfterFinish );
+				p->waitFrameAfterFinish = std::max( 0, p->waitFrameAfterFinish );
+
+				ImGui::DragFloat2( u8"テクスチャ原点（左上）",	&p->texPartPos.x  );
+				ImGui::DragFloat2( u8"テクスチャサイズ（全体）",	&p->texPartSize.x );
+
+				ImGui::TreePop();
+			};
+
+			auto ShowFrame	= [&]( const std::string &nodeCaption, Member::ShowFrame *p )
 			{
 				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 				// else
@@ -220,9 +296,11 @@ public:
 				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
 				p->wholeFrame = std::max( 0, p->wholeFrame );
 
+				ShowItem( u8"描画設定", &p->item );
+
 				ImGui::TreePop();
 			};
-			auto ShowDesc = [&]( const std::string &nodeCaption, Member::ShowDesc *p )
+			auto ShowDesc	= [&]( const std::string &nodeCaption, Member::ShowDesc *p )
 			{
 				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 				// else
@@ -230,9 +308,11 @@ public:
 				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
 				p->wholeFrame = std::max( 0, p->wholeFrame );
 
+				ShowItem( u8"描画設定", &p->item );
+
 				ImGui::TreePop();
 			};
-			auto ShowTime = [&]( const std::string &nodeCaption, Member::ShowTime *p )
+			auto ShowTime	= [&]( const std::string &nodeCaption, Member::ShowTime *p )
 			{
 				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 				// else
@@ -240,9 +320,11 @@ public:
 				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
 				p->wholeFrame = std::max( 0, p->wholeFrame );
 
+				ShowItem( u8"描画設定", &p->item );
+
 				ImGui::TreePop();
 			};
-			auto ShowRank = [&]( const std::string &nodeCaption, Member::ShowRank *p )
+			auto ShowRank	= [&]( const std::string &nodeCaption, Member::ShowRank *p )
 			{
 				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 				// else
@@ -250,9 +332,11 @@ public:
 				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
 				p->wholeFrame = std::max( 0, p->wholeFrame );
 
+				ShowItem( u8"描画設定", &p->item );
+
 				ImGui::TreePop();
 			};
-			auto ShowWait = [&]( const std::string &nodeCaption, Member::Wait *p )
+			auto ShowWait	= [&]( const std::string &nodeCaption, Member::Wait *p )
 			{
 				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 				// else
