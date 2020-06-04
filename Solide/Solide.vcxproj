@@ -199,6 +199,7 @@
     <ClCompile Include="Code\Obstacles.cpp" />
     <ClCompile Include="Code\Parameter.cpp" />
     <ClCompile Include="Code\Player.cpp" />
+    <ClCompile Include="Code\Rank.cpp" />
     <ClCompile Include="Code\Renderer.cpp" />
     <ClCompile Include="Code\SaveData.cpp" />
     <ClCompile Include="Code\SceneClear.cpp" />
@@ -299,6 +300,7 @@
     <ClInclude Include="Code\Obstacles.h" />
     <ClInclude Include="Code\Parameter.h" />
     <ClInclude Include="Code\Player.h" />
+    <ClInclude Include="Code\Rank.h" />
     <ClInclude Include="Code\Renderer.h" />
     <ClInclude Include="Code\SaveData.h" />
     <ClInclude Include="Code\Scene.h" />
