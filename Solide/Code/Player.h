@@ -189,7 +189,7 @@ public:
 	void Draw( RenderingHelper *pRenderer );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
 public:
-	void MakeDamage( const Element &effect ) const;
+	void MakeDamage( const Element &effect );
 	void JumpByStand();
 	void KillMe();
 public:

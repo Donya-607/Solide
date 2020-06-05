@@ -17,7 +17,7 @@ public:
 		Nil		= 0,
 		Oil		= 1 << 0,
 		Flame	= 1 << 1,
-		Ice		= 1 << 2,
+		Ice		= 1 << 2, // It will not sticking to other.
 
 		_TypeCount
 	};

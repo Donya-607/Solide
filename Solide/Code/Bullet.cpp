@@ -1062,6 +1062,7 @@ namespace Bullet
 	}
 	void BulletBase::GiveElement( Element::Type addType )
 	{
+		addType &= ~( Element::Type::Ice );
 		element.Add( addType );
 	}
 	Donya::Vector4x4 BulletBase::GetWorldMatrix() const

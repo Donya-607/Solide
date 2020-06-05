@@ -1876,6 +1876,23 @@ void SceneGame::ProcessBulletCollision()
 			// else
 
 			// The bullets are collided.
+
+			auto GenerateHardenedIfOilVSIce = [&]( std::shared_ptr<Bullet::BulletBase> *pSelf, const std::shared_ptr<Bullet::BulletBase> &other )
+			{
+				auto &self = *pSelf;
+				if (  self->GetElement().Has( Element::Type::Oil ) && other->GetElement().Has( Element::Type::Ice ) )
+				{
+					pObstacles->GenerateHardenedBlock( self->GetPosition() );
+					self->HitToObject();
+					return true;
+				}
+				// else
+				return false;
+			};
+			if ( GenerateHardenedIfOilVSIce( &pLhs, pRhs ) ) { break; }
+			if ( GenerateHardenedIfOilVSIce( &pRhs, pLhs ) ) { break; }
+			// else
+
 			const Element sumElement = pLhs->GetElement().Add( pRhs->GetElement().Get() );
 			pLhs->GiveElement( sumElement.Get() );
 			pRhs->GiveElement( sumElement.Get() );

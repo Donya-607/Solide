@@ -538,7 +538,9 @@ namespace Enemy
 	}
 	void Base::MakeDamage( const Element &effect ) const
 	{
-		element.Add( effect.Get() );
+		Element notTemporalElement = effect;
+		notTemporalElement.Subtract( Element::Type::Ice );
+		element.Add( notTemporalElement.Get() );
 	}
 	void Base::AcquireHitBoxes( std::vector<Donya::AABB> *pAppendDest ) const
 	{

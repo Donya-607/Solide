@@ -1228,8 +1228,15 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 #endif // DEBUG_MODE
 }
 
-void Player::MakeDamage( const Element &effect ) const
+void Player::MakeDamage( const Element &effect )
 {
+	if ( effect.Has( Element::Type::Ice ) )
+	{
+		if ( IsOiled() ) { KillMe(); }
+		return;
+	}
+	// else
+
 	// Except an oil element.
 	Element notOilyEffect = effect;
 	notOilyEffect.Subtract( Element::Type::Oil );
