@@ -216,6 +216,8 @@ private: // Serialize targets. usually do not change.
 	Donya::Quaternion				orientation;
 	EffectAttribute					attachEffect = EffectAttribute::AttributeCount; // EffectAttribute::AttributeCount means invalid.
 	Donya::Vector3 effectScale = 1.0f;
+public:
+	~Spray();
 private:
 	friend class cereal::access;
 	template<class Archive>

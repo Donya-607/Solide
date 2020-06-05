@@ -472,6 +472,14 @@ int Table::GetKind() const
 }
 
 
+Spray::~Spray()
+{
+	if ( pEffect )
+	{
+		pEffect->Stop();
+		pEffect.reset();
+	}
+}
 void Spray::Update( float elapsedTime )
 {
 	UpdateHitBox();
