@@ -26,6 +26,7 @@ public:
 	bool IsValid() const;
 public:
 	void SetScale( float scale );
+	void SetRotation( float pitch, float yaw, float roll );
 	void SetPosition( const Donya::Vector3 &position );
 	void Move( const Donya::Vector3 &velocity );
 	void Stop();

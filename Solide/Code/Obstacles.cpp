@@ -11,6 +11,7 @@
 #include "Donya/Useful.h"		// MultiByte char -> Wide char
 
 #include "Common.h"
+#include "Effect.h"
 #include "FilePath.h"
 #include "Parameter.h"
 #include "Renderer.h"
@@ -474,6 +475,14 @@ void Spray::Update( float elapsedTime )
 	UpdateHitBox();
 
 	UpdateShot( elapsedTime );
+
+	if ( pEffect )
+	{
+		pEffect->SetPosition( GetPosition() );
+
+		const auto radian = orientation.GetEulerAngles();
+		pEffect->SetRotation( radian.x, radian.y, radian.z );
+	}
 }
 void Spray::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
@@ -501,7 +510,6 @@ void Spray::UpdateShot( float elapsedTime )
 	}
 	// else
 
-
 	shotTimer++;
 
 	if ( nowSpraying )
@@ -526,10 +534,19 @@ void Spray::UpdateSpray( float elapsedTime )
 	{
 		GenerateShot();
 	}
+
+	if ( !pEffect && attachEffect != EffectAttribute::AttributeCount )
+	{
+		GenerateEffect();
+	}
 }
 void Spray::UpdateCooldown( float elapsedTime )
 {
-	// No op.
+	if ( pEffect )
+	{
+		pEffect->Stop();
+		pEffect.reset();
+	}
 }
 void Spray::GenerateShot()
 {
@@ -547,6 +564,19 @@ bool Spray::ShouldChangeMode() const
 	return	( nowSpraying )
 			? ( sprayingFrame < shotTimer )
 			: ( cooldownFrame < shotTimer );
+}
+void Spray::GenerateEffect()
+{
+	if ( pEffect ) { pEffect->Stop(); }
+	pEffect.reset();
+
+	if ( attachEffect == EffectAttribute::AttributeCount ) { return; }
+	// else
+
+	pEffect = std::make_shared<EffectHandle>
+	(
+		EffectHandle::Generate( attachEffect, pos )
+	);
 }
 #if USE_IMGUI
 void Spray::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
@@ -584,6 +614,41 @@ void Spray::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 					degrees.y = ToDegree( radians.y );
 					degrees.z = ToDegree( radians.z );
 				}
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"エフェクト" ) )
+			{
+				auto GetName = []( EffectAttribute attr )
+				{
+					switch ( attr )
+					{
+					case EffectAttribute::Fire:			return u8"炎";
+					case EffectAttribute::FlameCannon:	return u8"放射・炎";
+					case EffectAttribute::IceCannon:	return u8"放射・冷気";
+					case EffectAttribute::ColdSmoke:	return u8"煙・冷気";
+					default: break;
+					}
+					_ASSERT_EXPR( 0, L"Error: Unexpected type!" );
+					return u8"ERROR";
+				};
+
+				const int range = scast<int>( EffectAttribute::AttributeCount );
+				int intAttr = scast<int>( attachEffect );
+				ImGui::SliderInt( u8"生成するエフェクトの種類", &intAttr, 0, range );
+				attachEffect = scast<EffectAttribute>( intAttr );
+
+				const std::string name =	( attachEffect == EffectAttribute::AttributeCount )
+											? u8"無"
+											: GetName( attachEffect );
+				const std::string caption = u8"エフェクト名：" + name;
+				ImGui::Text( caption.c_str() );
+
+				if ( ImGui::Button( u8"種類を反映" ) )
+				{
+					GenerateEffect();
+				}
+
 				ImGui::TreePop();
 			}
 

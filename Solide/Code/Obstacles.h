@@ -190,12 +190,14 @@ CEREAL_REGISTER_TYPE( Table )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Table )
 
 
+class EffectHandle;
 class Spray : public ObstacleBase
 {
 private:
 	int  shotTimer			= 0;
 	int  startupTimer		= 0;
 	bool nowSpraying		= false;
+	std::shared_ptr<EffectHandle> pEffect = nullptr;
 private: // Serialize targets. usually do not change.
 	int  startupFrame		= 0;
 	int  sprayingFrame		= 1;
@@ -203,6 +205,7 @@ private: // Serialize targets. usually do not change.
 	int  shotGenInterval	= 2;
 	Bullet::BulletAdmin::FireDesc	shotDesc;
 	Donya::Quaternion				orientation;
+	EffectAttribute					attachEffect = EffectAttribute::AttributeCount; // EffectAttribute::AttributeCount means invalid.
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -219,6 +222,10 @@ private:
 			CEREAL_NVP( orientation		)
 		);
 		if ( 1 <= version )
+		{
+			archive( CEREAL_NVP( attachEffect ) );
+		}
+		if ( 2 <= version )
 		{
 			// archive( CEREAL_NVP( x ) );
 		}
@@ -237,12 +244,14 @@ private:
 	void UpdateCooldown( float elapsedTime );
 	void GenerateShot();
 	bool ShouldChangeMode() const;
+private:
+	void GenerateEffect();
 public:
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( Spray, 0 )
+CEREAL_CLASS_VERSION( Spray, 1 )
 CEREAL_REGISTER_TYPE( Spray )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Spray )
 

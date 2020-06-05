@@ -62,7 +62,16 @@ void EffectHandle::SetScale( float scale )
 		[&]( Fx::Manager *pManager )
 		{
 			pManager->SetScale( handle, scale, scale, scale );
-
+		}
+	);
+}
+void EffectHandle::SetRotation( float pitch, float yaw, float roll )
+{
+	OperateIfManagerIsAvailable
+	(
+		[&]( Fx::Manager *pManager )
+		{
+			pManager->SetRotation(handle, pitch, yaw, roll );
 		}
 	);
 }
@@ -73,7 +82,6 @@ void EffectHandle::SetPosition( const Donya::Vector3 &pos )
 		[&]( Fx::Manager *pManager )
 		{
 			pManager->SetLocation( handle, ToFxVector( pos ) );
-
 		}
 	);
 }
