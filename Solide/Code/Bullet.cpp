@@ -1210,7 +1210,11 @@ namespace Bullet
 		{
 			BulletBase::DrawHitBox( pRenderer, VP, ParamBullet::Get().Data().smoke.flame.general.color.Product( color ) );
 		}
-		
+		void SmokeBase::HitToObject() const
+		{
+			// No op.
+		}
+
 		void FlameSmoke::Update( float elapsedTime )
 		{
 			aliveTime++;

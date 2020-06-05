@@ -211,6 +211,7 @@ namespace Bullet
 			virtual bool				ShouldRemove()		const override = 0;
 			virtual Donya::Sphere		GetHitBoxSphere()	const override = 0;
 			virtual Donya::Vector4x4	GetWorldMatrix()	const override = 0;
+			virtual void				HitToObject()		const override;
 		};
 
 		class FlameSmoke : public SmokeBase
