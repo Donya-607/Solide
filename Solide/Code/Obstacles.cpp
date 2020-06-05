@@ -480,10 +480,12 @@ void Spray::Update( float elapsedTime )
 
 	if ( pEffect )
 	{
-		pEffect->SetPosition( GetPosition() );
+		pEffect->SetScale( effectScale.x, effectScale.y, effectScale.z );
 
 		const auto radian = orientation.GetEulerAngles();
 		pEffect->SetRotation( radian.x, radian.y, radian.z );
+
+		pEffect->SetPosition( GetPosition() );
 	}
 }
 void Spray::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
@@ -646,6 +648,11 @@ void Spray::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 				const std::string caption = u8"エフェクト名：" + name;
 				ImGui::Text( caption.c_str() );
 
+				ImGui::DragFloat3( u8"描画スケール", &effectScale.x, 0.01f );
+				effectScale.x = std::max( 0.0f, effectScale.x );
+				effectScale.y = std::max( 0.0f, effectScale.y );
+				effectScale.z = std::max( 0.0f, effectScale.z );
+
 				ImGui::TreePop();
 			}
 
@@ -757,6 +764,7 @@ void Water::Generate()
 	(
 		EffectHandle::Generate( EffectAttribute::ColdSmoke, generatePos )
 	);
+	tmp.pEffect->SetScale( effectScale.x, effectScale.y, effectScale.z );
 	smokes.emplace_back( std::move( tmp ) );
 }
 void Water::UpdateSmokes()
@@ -796,8 +804,12 @@ void Water::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 	{
 		ImGui::DragInt( u8"生成間隔", &generateInterval	);
 		ImGui::DragInt( u8"生存時間", &aliveFrame		);
-		generateInterval	= std::max( 2, generateInterval	);
-		aliveFrame			= std::max( 1, aliveFrame		);
+		ImGui::DragFloat3( u8"描画スケール", &effectScale.x, 0.01f );
+		generateInterval	= std::max( 2,		generateInterval	);
+		aliveFrame			= std::max( 1,		aliveFrame			);
+		effectScale.x		= std::max( 0.0f,	effectScale.x		);
+		effectScale.y		= std::max( 0.0f,	effectScale.y		);
+		effectScale.z		= std::max( 0.0f,	effectScale.z		);
 
 		ImGui::TreePop();
 	}

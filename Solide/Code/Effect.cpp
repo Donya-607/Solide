@@ -57,11 +57,15 @@ namespace
 }
 void EffectHandle::SetScale( float scale )
 {
+	SetScale( scale, scale, scale );
+}
+void EffectHandle::SetScale( float scaleX, float scaleY, float scaleZ )
+{
 	OperateIfManagerIsAvailable
 	(
 		[&]( Fx::Manager *pManager )
 		{
-			pManager->SetScale( handle, scale, scale, scale );
+			pManager->SetScale( handle, scaleX, scaleY, scaleZ );
 		}
 	);
 }

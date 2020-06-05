@@ -215,6 +215,7 @@ private: // Serialize targets. usually do not change.
 	Bullet::BulletAdmin::FireDesc	shotDesc;
 	Donya::Quaternion				orientation;
 	EffectAttribute					attachEffect = EffectAttribute::AttributeCount; // EffectAttribute::AttributeCount means invalid.
+	Donya::Vector3 effectScale = 1.0f;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -235,6 +236,10 @@ private:
 			archive( CEREAL_NVP( attachEffect ) );
 		}
 		if ( 2 <= version )
+		{
+			archive( CEREAL_NVP( effectScale ) );
+		}
+		if ( 3 <= version )
 		{
 			// archive( CEREAL_NVP( x ) );
 		}
@@ -260,7 +265,7 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( Spray, 1 )
+CEREAL_CLASS_VERSION( Spray, 2 )
 CEREAL_REGISTER_TYPE( Spray )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Spray )
 
@@ -281,8 +286,9 @@ private:
 	std::vector<Smoke> smokes;
 private: // Serialize targets. usually do not change.
 	Donya::AABB hurtBox;
-	int generateInterval	= 5;
-	int aliveFrame			= 5;
+	int generateInterval		= 5;
+	int aliveFrame				= 5;
+	Donya::Vector3 effectScale	= 1.0f;
 public:
 	~Water();
 private:
@@ -305,6 +311,10 @@ private:
 		}
 		if ( 2 <= version )
 		{
+			archive( CEREAL_NVP( effectScale ) );
+		}
+		if ( 3 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -323,7 +333,7 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( Water, 1 )
+CEREAL_CLASS_VERSION( Water, 2 )
 CEREAL_REGISTER_TYPE( Water )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Water )
 
