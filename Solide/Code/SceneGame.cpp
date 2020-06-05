@@ -1506,7 +1506,6 @@ void SceneGame::ClearInit()
 		currentTime,
 		Rank::Calculate( currentTime, borderTimes )
 	);
-	pClearPerformance->Appear();
 
 	stageNumber	= SELECT_STAGE_NO;
 	nowWaiting	= true;
@@ -1519,7 +1518,13 @@ void SceneGame::ClearUpdate( float elapsedTime )
 	pClearSentence->Update( elapsedTime );
 
 	clearTimer++;
-	if ( FetchMember().waitFrameUntilPerformance <= clearTimer )
+
+	const int startPerformanceFrame = FetchMember().waitFrameUntilPerformance;
+	if ( startPerformanceFrame == clearTimer )
+	{
+		pClearPerformance->Appear();
+	}
+	if ( startPerformanceFrame <= clearTimer )
 	{
 		pClearPerformance->Update();
 	}
