@@ -1463,13 +1463,8 @@ void SceneGame::GridControl()
 
 void SceneGame::DrawCurrentTime()
 {
-	std::vector<int> times{}; // [0:Min][1:Sec][2:MS]
-	times.emplace_back( currentTime.Minute()  );
-	times.emplace_back( currentTime.Second()  );
-	times.emplace_back( currentTime.Current() );
-
 	const auto data = FetchMember();
-	numberDrawer.DrawNumbers( times, NumberDrawer::Colon, data.ssCurrentTimePos, data.currentTimeScale );
+	numberDrawer.DrawTime( currentTime, data.ssCurrentTimePos, data.currentTimeScale );
 }
 
 void SceneGame::TutorialUpdate( float elapsedTime )

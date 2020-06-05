@@ -21,5 +21,5 @@ private:
 	Donya::Int2	partSize;	// Whole size.
 public:
 	bool Init( const std::wstring &rankSpritePath );
-	void Draw( int rank, const Donya::Vector2 &ssPos, float scale, const Donya::Vector2 &posOrigin = { 0.5f, 0.5f }, float drawDepth = 0.0f );
+	void Draw( int rank, const Donya::Vector2 &ssPos, float scale, float degree = 0.0f, float alpha = 1.0f, const Donya::Vector2 &posOrigin = { 0.5f, 0.5f }, float drawDepth = 0.0f );
 };

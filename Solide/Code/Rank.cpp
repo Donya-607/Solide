@@ -29,12 +29,14 @@ bool Rank::Init( const std::wstring &sprPath )
 
 	return succeeded;
 }
-void Rank::Draw( int rank, const Donya::Vector2 &ssPos, float scale, const Donya::Vector2 &posOrigin, float drawDepth )
+void Rank::Draw( int rank, const Donya::Vector2 &ssPos, float scale, float degree, float alpha, const Donya::Vector2 &posOrigin, float drawDepth )
 {
 	rank = std::max( 0, std::min( rankCount - 1, rank ) );
 
 	sprite.pos			= ssPos;
 	sprite.drawScale	= scale;
+	sprite.degree		= degree;
+	sprite.alpha		= alpha;
 	sprite.texPos.x		= partSize.x * scast<float>( rank );
 	sprite.texPos.y		= 0.0f;
 

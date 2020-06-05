@@ -32,7 +32,7 @@ namespace
 		{
 			struct Param
 			{
-				float			drawAlpha	= 0.0f;
+				float			drawAlpha	= 1.0f;
 				float			drawDegree	= 0.0f;
 				float			drawScale	= 1.0f;
 				Donya::Vector2	ssDrawPos{};	// Center
@@ -114,7 +114,8 @@ namespace
 		struct ShowDesc
 		{
 			int		wholeFrame = 1;
-			Item	item;
+			Item	itemTime;
+			Item	itemRank; // Most of information is use from itemTime.
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -124,7 +125,11 @@ namespace
 
 				if ( 1 <= version )
 				{
-					archive( CEREAL_NVP( item ) );
+					archive
+					(
+						CEREAL_NVP( itemTime ),
+						CEREAL_NVP( itemRank )
+					);
 				}
 				if ( 2 <= version )
 				{
@@ -259,6 +264,11 @@ public:
 
 		if ( ImGui::TreeNode( u8"クリア演出のパラメータ調整" ) )
 		{
+			auto ShowTexPart= [&]( Donya::Vector2 *pPos, Donya::Vector2 *pSize )
+			{
+				ImGui::DragFloat2( u8"テクスチャ原点（左上）",	&pPos->x  );
+				ImGui::DragFloat2( u8"テクスチャサイズ（全体）",	&pSize->x );
+			};
 			auto ShowItem	= [&]( const std::string &nodeCaption, Member::Item *p )
 			{
 				if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
@@ -290,8 +300,7 @@ public:
 				ImGui::DragInt( u8"イージング終了後の待機時間（フレーム）", &p->waitFrameAfterFinish );
 				p->waitFrameAfterFinish = std::max( 0, p->waitFrameAfterFinish );
 
-				ImGui::DragFloat2( u8"テクスチャ原点（左上）",	&p->texPartPos.x  );
-				ImGui::DragFloat2( u8"テクスチャサイズ（全体）",	&p->texPartSize.x );
+				ShowTexPart( &p->texPartPos, &p->texPartSize );
 
 				ImGui::TreePop();
 			};
@@ -316,7 +325,19 @@ public:
 				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
 				p->wholeFrame = std::max( 0, p->wholeFrame );
 
-				ShowItem( u8"描画設定", &p->item );
+				ShowItem( u8"描画設定", &p->itemTime );
+
+				auto ShowTexInfo = [&]( const std::string &nodeCaption, Member::Item *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					ShowTexPart( &p->texPartPos, &p->texPartSize );
+
+					ImGui::TreePop();
+				};
+				ShowTexInfo( u8"テクスチャ位置・時間",	&p->itemTime );
+				ShowTexInfo( u8"テクスチャ位置・ランク",	&p->itemRank );
 
 				ImGui::TreePop();
 			};
@@ -330,6 +351,12 @@ public:
 
 				ShowItem( u8"描画設定", &p->item );
 
+				// Disable unused parameters.
+				p->item.paramStart.drawDegree = 0.0f;
+				p->item.paramDest.drawDegree  = 0.0f;
+				p->item.texPartPos  = 0.0f;
+				p->item.texPartSize = 0.0f;
+
 				ImGui::TreePop();
 			};
 			auto ShowRank	= [&]( const std::string &nodeCaption, Member::ShowRank *p )
@@ -341,6 +368,10 @@ public:
 				p->wholeFrame = std::max( 0, p->wholeFrame );
 
 				ShowItem( u8"描画設定", &p->item );
+
+				// Disable unused parameters.
+				p->item.texPartPos  = 0.0f;
+				p->item.texPartSize = 0.0f;
 
 				ImGui::TreePop();
 			};
@@ -377,6 +408,36 @@ namespace
 	{
 		return ParamClearPerformance::Get().Data();
 	}
+
+	Member::Item::Param Lerp( const Member::Item &source, float time )
+	{
+		const auto	&start	= source.paramStart;
+		const auto	&dest	= source.paramDest;
+		
+		Member::Item::Param param{};
+		param.drawAlpha		= Donya::Lerp( start.drawAlpha,  dest.drawAlpha,  time );
+		param.drawScale		= Donya::Lerp( start.drawScale,  dest.drawScale,  time );
+		param.drawDegree	= Donya::Lerp( start.drawDegree, dest.drawDegree, time );
+		param.ssDrawPos		= Donya::Lerp( start.ssDrawPos,  dest.ssDrawPos,  time );
+		return param;
+	}
+	void AssignLerpedItem( UIObject *pDest, const Member::Item &source, float lerpFactor )
+	{
+		const float	time	= Donya::Easing::Ease( source.easeKind, source.easeType, lerpFactor );
+		const auto	param	= Lerp( source, time );
+
+		pDest->alpha		= param.drawAlpha;
+		pDest->drawScale	= param.drawScale;
+		pDest->degree		= param.drawDegree;
+		pDest->pos			= param.ssDrawPos;
+		pDest->texPos		= source.texPartPos;
+		pDest->texSize		= source.texPartSize;
+	}
+
+	constexpr float depthFrame	= 0.1f;
+	constexpr float depthDesc	= 0.08f;
+	constexpr float depthTime	= 0.04f;
+	constexpr float depthRank	= 0.04f;
 }
 
 
@@ -401,14 +462,21 @@ void ClearPerformance::ProcessBase::Uninit( ClearPerformance &inst )
 	timer	= 0;
 	factor	= 0.0f;
 }
+void ClearPerformance::ProcessBase::UpdateEaseFactor( float wholeEaseSecond )
+{
+	wholeEaseSecond = std::max( 0.0001f, wholeEaseSecond );
+
+	const float elapseTime = 1.0f / ( 60.0f * wholeEaseSecond );
+	factor += elapseTime;
+	factor = std::min( 1.0f, factor );
+}
 
 ClearPerformance::Result ClearPerformance::ShowFrame::Update( ClearPerformance &inst )
 {
 	const auto data = FetchMember().showFrame;
 
-	const float elapseTime = 1.0f / ( 60.0f * data.item.easeTakeSecond );
-	factor += elapseTime;
-	factor =  std::min( 1.0f, factor );
+	UpdateEaseFactor( data.item.easeTakeSecond );
+	AssignLerpedItem( &inst.sprFrame, data.item, factor );
 
 	timer++;
 	if ( data.wholeFrame <= timer )
@@ -421,14 +489,19 @@ ClearPerformance::Result ClearPerformance::ShowFrame::Update( ClearPerformance &
 }
 void ClearPerformance::ShowFrame::Draw( ClearPerformance &inst )
 {
-	const auto  data = FetchMember().showFrame.item;
-	const float time = Donya::Easing::Ease( data.easeKind, data.easeType, factor );
-	inst.sprFrame.degree = Donya::Lerp( data.paramStart.drawDegree, data.paramDest.drawDegree, time );
+	inst.sprFrame.DrawPart( depthFrame );
 }
 
 ClearPerformance::Result ClearPerformance::ShowDesc::Update( ClearPerformance &inst )
 {
 	const auto data = FetchMember().showDesc;
+
+	UpdateEaseFactor( data.itemTime.easeTakeSecond );
+	AssignLerpedItem( &inst.sprDesc, data.itemTime, factor );
+	paramTime = inst.sprDesc;
+	paramRank = paramTime;
+	paramRank.texPos  = data.itemRank.texPartPos;
+	paramRank.texSize = data.itemRank.texPartSize;
 
 	timer++;
 	if ( data.wholeFrame <= timer )
@@ -441,12 +514,21 @@ ClearPerformance::Result ClearPerformance::ShowDesc::Update( ClearPerformance &i
 }
 void ClearPerformance::ShowDesc::Draw( ClearPerformance &inst )
 {
+	inst.sprDesc.texPos  = paramTime.texPos;
+	inst.sprDesc.texSize = paramTime.texSize;
+	inst.sprDesc.DrawPart( depthDesc );
 
+	inst.sprDesc.texPos  = paramRank.texPos;
+	inst.sprDesc.texSize = paramRank.texSize;
+	inst.sprDesc.DrawPart( depthDesc );
 }
 
 ClearPerformance::Result ClearPerformance::ShowTime::Update( ClearPerformance &inst )
 {
 	const auto data = FetchMember().showTime;
+
+	UpdateEaseFactor( data.item.easeTakeSecond );
+	AssignLerpedItem( &parameter, data.item, factor );
 
 	timer++;
 	if ( data.wholeFrame <= timer )
@@ -459,12 +541,23 @@ ClearPerformance::Result ClearPerformance::ShowTime::Update( ClearPerformance &i
 }
 void ClearPerformance::ShowTime::Draw( ClearPerformance &inst )
 {
-
+	inst.numberDrawer.DrawTime
+	(
+		inst.clearTime,
+		parameter.pos,
+		parameter.drawScale.x, // x == y.
+		parameter.alpha,
+		Donya::Vector2{ 0.5f, 0.5f },
+		depthTime
+	);
 }
 
 ClearPerformance::Result ClearPerformance::ShowRank::Update( ClearPerformance &inst )
 {
 	const auto data = FetchMember().showRank;
+
+	UpdateEaseFactor( data.item.easeTakeSecond );
+	AssignLerpedItem( &parameter, data.item, factor );
 
 	timer++;
 	if ( data.wholeFrame <= timer )
@@ -477,7 +570,16 @@ ClearPerformance::Result ClearPerformance::ShowRank::Update( ClearPerformance &i
 }
 void ClearPerformance::ShowRank::Draw( ClearPerformance &inst )
 {
-
+	inst.rankDrawer.Draw
+	(
+		inst.clearRank,
+		parameter.pos,
+		parameter.drawScale.x, // x == y.
+		parameter.degree,
+		parameter.alpha,
+		Donya::Vector2{ 0.5f, 0.5f },
+		depthRank
+	);
 }
 
 ClearPerformance::Result ClearPerformance::Wait::Update( ClearPerformance &inst )
@@ -495,7 +597,7 @@ ClearPerformance::Result ClearPerformance::Wait::Update( ClearPerformance &inst 
 }
 void ClearPerformance::Wait::Draw( ClearPerformance &inst )
 {
-
+	// No op.
 }
 
 // region States

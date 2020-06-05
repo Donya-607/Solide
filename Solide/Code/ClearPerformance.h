@@ -48,6 +48,8 @@ private:
 		virtual void	Uninit( ClearPerformance &instance );
 		virtual Result	Update( ClearPerformance &instance ) = 0;
 		virtual void	Draw( ClearPerformance &instance ) = 0;
+	protected:
+		void UpdateEaseFactor( float wholeEaseSecond );
 	};
 	class ShowFrame : public ProcessBase
 	{
@@ -57,18 +59,25 @@ private:
 	};
 	class ShowDesc : public ProcessBase
 	{
+	private:
+		UIObject paramTime; // Store only parameters.
+		UIObject paramRank; // Store only parameters.
 	public:
 		Result	Update( ClearPerformance &instance ) override;
 		void	Draw( ClearPerformance &instance ) override;
 	};
 	class ShowTime : public ProcessBase
 	{
+	private:
+		UIObject parameter;
 	public:
 		Result	Update( ClearPerformance &instance ) override;
 		void	Draw( ClearPerformance &instance ) override;
 	};
 	class ShowRank : public ProcessBase
 	{
+	private:
+		UIObject parameter;
 	public:
 		Result	Update( ClearPerformance &instance ) override;
 		void	Draw( ClearPerformance &instance ) override;
