@@ -2,7 +2,10 @@
 
 enum class EffectAttribute
 {
-	Flame,
+	Fire,
+	FlameCannon,
+	IceCannon,
+	ColdSmoke,
 
 	AttributeCount
 };

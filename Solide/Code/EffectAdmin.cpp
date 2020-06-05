@@ -27,7 +27,10 @@ namespace
 	{
 		switch ( attr )
 		{
-		case EffectAttribute::Flame: return "Flame";
+		case EffectAttribute::Fire:			return "Fire";
+		case EffectAttribute::FlameCannon:	return "FlameCannon";
+		case EffectAttribute::IceCannon:	return "IceCannon";
+		case EffectAttribute::ColdSmoke:	return "ColdSmoke";
 		default: break;
 		}
 

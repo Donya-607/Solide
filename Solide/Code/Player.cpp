@@ -1405,7 +1405,7 @@ void Player::BurnUpdate( float elapsedTime )
 	{
 		pEffect = std::make_shared<EffectHandle>
 		(
-			EffectHandle::Generate( EffectAttribute::Flame, pos )
+			EffectHandle::Generate( EffectAttribute::Fire, pos )
 		);
 	}
 	else

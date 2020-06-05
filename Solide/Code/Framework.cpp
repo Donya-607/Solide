@@ -126,7 +126,7 @@ void Framework::DebugShowInformation()
 			if ( pHandle ) { pHandle->Stop(); }
 			pHandle.reset();
 
-			pHandle = std::make_shared<EffectHandle>( EffectHandle::Generate( EffectAttribute::Flame, genPos ) );
+			pHandle = std::make_shared<EffectHandle>( EffectHandle::Generate( EffectAttribute::Fire, genPos ) );
 			if ( !pHandle->IsValid() ) { pHandle.reset(); }
 		}
 		if ( ImGui::Button( u8"İ’èˆÊ’u‚ğ‘ã“ü" ) && pHandle )

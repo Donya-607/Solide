@@ -607,7 +607,7 @@ namespace Enemy
 		{
 			pEffect = std::make_shared<EffectHandle>
 			(
-				EffectHandle::Generate( EffectAttribute::Flame, pos )
+				EffectHandle::Generate( EffectAttribute::Fire, pos )
 			);
 		}
 		if ( pEffect && !element.Has( Element::Type::Flame ) )

@@ -1136,7 +1136,7 @@ namespace Bullet
 			{
 				pEffect = std::make_shared<EffectHandle>
 				(
-					EffectHandle::Generate( EffectAttribute::Flame, pos )
+					EffectHandle::Generate( EffectAttribute::Fire, pos )
 				);
 			}
 			if ( pEffect )
@@ -1319,7 +1319,7 @@ namespace Bullet
 			{
 				pEffect = std::make_shared<EffectHandle>
 				(
-					EffectHandle::Generate( EffectAttribute::Flame, pos )
+					EffectHandle::Generate( EffectAttribute::Fire, pos )
 				);
 			}
 			if ( pEffect )
@@ -1404,7 +1404,7 @@ namespace Bullet
 			{
 				pEffect = std::make_shared<EffectHandle>
 				(
-					EffectHandle::Generate( EffectAttribute::Flame, pos )
+					EffectHandle::Generate( EffectAttribute::Fire, pos )
 				);
 			}
 			if ( pEffect )
@@ -1505,7 +1505,7 @@ namespace Bullet
 			{
 				pEffect = std::make_shared<EffectHandle>
 				(
-					EffectHandle::Generate( EffectAttribute::Flame, pos )
+					EffectHandle::Generate( EffectAttribute::Fire, pos )
 				);
 			}
 			if ( pEffect )
