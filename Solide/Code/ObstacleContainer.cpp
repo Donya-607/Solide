@@ -281,6 +281,9 @@ void ObstacleContainer::ShowImGuiNode( const std::string &nodeCaption )
 		}
 		if ( ImGui::Button( loadStr.c_str() ) )
 		{
+			for ( auto &pIt : pObstacles ) { if ( pIt ) { pIt->Uninit(); } }
+			pObstacles.clear();
+
 			( isBinary ) ? LoadBin( stageNo ) : LoadJson( stageNo );
 		}
 
