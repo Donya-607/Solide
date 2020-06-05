@@ -121,7 +121,7 @@ namespace
 		{
 			int		wholeFrame = 1;
 			Item	itemTime;
-			Item	itemRank; // Most of information is use from itemTime.
+			Item	itemRank;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -333,19 +333,8 @@ public:
 				ImGui::DragInt( u8"全体時間（フレーム）", &p->wholeFrame );
 				p->wholeFrame = std::max( 0, p->wholeFrame );
 
-				ShowItem( u8"描画設定", &p->itemTime );
-
-				auto ShowTexInfo = [&]( const std::string &nodeCaption, Member::Item *p )
-				{
-					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
-					// else
-
-					ShowTexPart( &p->texPartPos, &p->texPartSize );
-
-					ImGui::TreePop();
-				};
-				ShowTexInfo( u8"テクスチャ位置・時間",	&p->itemTime );
-				ShowTexInfo( u8"テクスチャ位置・ランク",	&p->itemRank );
+				ShowItem( u8"描画設定・時間",		&p->itemTime );
+				ShowItem( u8"描画設定・ランク",	&p->itemRank );
 
 				ImGui::TreePop();
 			};
@@ -525,22 +514,25 @@ ClearPerformance::Result ClearPerformance::ShowDesc::Update( ClearPerformance &i
 }
 void ClearPerformance::ShowDesc::Draw( ClearPerformance &inst )
 {
-	inst.sprDesc.texPos  = paramTime.texPos;
-	inst.sprDesc.texSize = paramTime.texSize;
+	const auto before = inst.sprDesc;
+
+	inst.sprDesc = paramTime;
 	inst.sprDesc.DrawPart( depthDesc );
 
-	inst.sprDesc.texPos  = paramRank.texPos;
-	inst.sprDesc.texSize = paramRank.texSize;
+	inst.sprDesc = paramRank;
 	inst.sprDesc.DrawPart( depthDesc );
+
+	inst.sprDesc = before;
 }
 void ClearPerformance::ShowDesc::AssignDrawData( ClearPerformance &inst )
 {
 	const auto data = FetchMember().showDesc;
+
 	AssignLerpedItem( &inst.sprDesc, data.itemTime, factor );
 	paramTime = inst.sprDesc;
-	paramRank = paramTime;
-	paramRank.texPos  = data.itemRank.texPartPos;
-	paramRank.texSize = data.itemRank.texPartSize;
+
+	AssignLerpedItem( &inst.sprDesc, data.itemRank, factor );
+	paramRank = inst.sprDesc;
 }
 
 ClearPerformance::Result ClearPerformance::ShowTime::Update( ClearPerformance &inst )
@@ -714,8 +706,8 @@ void ClearPerformance::Update()
 }
 void ClearPerformance::Draw()
 {
-	const size_t drawLimit = std::min( scast<size_t>( nowType ), processPtrs.size() );
-	for ( size_t i = 0; i < drawLimit; ++i )
+	const size_t drawLimit = std::min( scast<size_t>( nowType ), processPtrs.size() - 1 );
+	for ( size_t i = 0; i <= drawLimit; ++i )
 	{
 		if ( processPtrs[i] )
 		{
