@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #undef max
 #undef min
@@ -14,6 +15,7 @@
 #include "EffectAttribute.h"
 #include "ObjectBase.h"
 
+class EffectHandle;
 class RenderingHelper;
 
 class ObstacleBase : protected Solid
@@ -40,6 +42,13 @@ public:
 #if USE_IMGUI
 	static void UseImGui();
 #endif // USE_IMGUI
+public:
+	ObstacleBase() = default;
+	ObstacleBase( const ObstacleBase &  ) = default;
+	ObstacleBase(       ObstacleBase && ) = default;
+	ObstacleBase &operator = ( const ObstacleBase &  ) = default;
+	ObstacleBase &operator = (       ObstacleBase && ) = default;
+	virtual ~ObstacleBase() = default;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -191,7 +200,6 @@ CEREAL_REGISTER_TYPE( Table )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Table )
 
 
-class EffectHandle;
 class Spray : public ObstacleBase
 {
 private:
@@ -260,7 +268,23 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Spray )
 class Water : public ObstacleBase
 {
 private:
+	struct Smoke
+	{
+		int aliveFrame = 0;
+		std::shared_ptr<EffectHandle> pEffect;
+	public:
+		void Update();
+		void Uninit();
+	};
+private:
+	int timer = 0;
+	std::vector<Smoke> smokes;
+private: // Serialize targets. usually do not change.
 	Donya::AABB hurtBox;
+	int generateInterval	= 5;
+	int aliveFrame			= 5;
+public:
+	~Water();
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -273,6 +297,14 @@ private:
 		);
 		if ( 1 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( generateInterval	),
+				CEREAL_NVP( aliveFrame			)
+			);
+		}
+		if ( 2 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -283,12 +315,15 @@ public:
 public:
 	Donya::Vector4x4 GetWorldMatrix() const;
 	int GetKind() const override;
+private:
+	void Generate();
+	void UpdateSmokes();
 public:
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( Water, 0 )
+CEREAL_CLASS_VERSION( Water, 1 )
 CEREAL_REGISTER_TYPE( Water )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Water )
 

@@ -1,5 +1,6 @@
 #include "Obstacles.h"
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -7,6 +8,7 @@
 #include "Donya/Loader.h"
 #include "Donya/Model.h"
 #include "Donya/ModelPose.h"
+#include "Donya/Random.h"		// Use at Water
 #include "Donya/Serializer.h"
 #include "Donya/Useful.h"		// MultiByte char -> Wide char
 
@@ -682,9 +684,37 @@ void Spray::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 #endif // USE_IMGUI
 
 
+void Water::Smoke::Update()
+{
+	aliveFrame++;
+}
+void Water::Smoke::Uninit()
+{
+	if ( pEffect )
+	{
+		pEffect->Stop();
+		pEffect.reset();
+	}
+}
+Water::~Water()
+{
+	for ( auto &it : smokes )
+	{
+		it.Uninit();
+	}
+}
 void Water::Update( float elapsedTime )
 {
 	hitBox = hurtBox;
+
+	timer++;
+	if ( generateInterval <= timer )
+	{
+		timer = 0;
+		Generate();
+	}
+
+	UpdateSmokes();
 }
 void Water::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 {
@@ -710,6 +740,49 @@ int Water::GetKind() const
 {
 	return scast<int>( Kind::Water );
 }
+void Water::Generate()
+{
+	const Donya::Vector3 range  = GetHitBox().size;
+	const Donya::Vector3 random
+	{
+		Donya::Random::GenerateFloat( -1.0f, 1.0f ),
+		Donya::Random::GenerateFloat( -1.0f, 1.0f ),
+		Donya::Random::GenerateFloat( -1.0f, 1.0f )
+	};
+
+	const Donya::Vector3 generatePos = range.Product( random ) + GetPosition();
+
+	Smoke tmp{};
+	tmp.pEffect = std::make_shared<EffectHandle>
+	(
+		EffectHandle::Generate( EffectAttribute::ColdSmoke, generatePos )
+	);
+	smokes.emplace_back( std::move( tmp ) );
+}
+void Water::UpdateSmokes()
+{
+	auto ShouldRemove = [&]( Smoke &element )
+	{
+		return ( aliveFrame <= element.aliveFrame );
+	};
+
+	for ( auto &it : smokes )
+	{
+		it.Update();
+
+		if ( ShouldRemove( it ) )
+		{
+			it.Uninit();
+		}
+	}
+
+	auto result = std::remove_if
+	(
+		smokes.begin(), smokes.end(),
+		ShouldRemove
+	);
+	smokes.erase( result, smokes.end() );
+}
 #if USE_IMGUI
 void Water::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 {
@@ -718,6 +791,16 @@ void Water::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 
 	ImGui::DragFloat3( u8"ワールド座標", &pos.x, 0.1f );
 	ParameterHelper::ShowAABBNode( u8"当たり判定", &hurtBox );
+
+	if ( ImGui::TreeNode( u8"エフェクト" ) )
+	{
+		ImGui::DragInt( u8"生成間隔", &generateInterval	);
+		ImGui::DragInt( u8"生存時間", &aliveFrame		);
+		generateInterval	= std::max( 2, generateInterval	);
+		aliveFrame			= std::max( 1, aliveFrame		);
+
+		ImGui::TreePop();
+	}
 	
 	if ( useTreeNode ) { ImGui::TreePop(); }
 }
