@@ -49,7 +49,6 @@ private:
 		virtual Result	Update( ClearPerformance &instance ) = 0;
 		virtual void	Draw( ClearPerformance &instance ) = 0;
 	public:
-		// Used for update data by external.
 		virtual void	AssignDrawData( ClearPerformance &instance ) = 0;
 	protected:
 		void UpdateEaseFactor( float wholeEaseSecond );

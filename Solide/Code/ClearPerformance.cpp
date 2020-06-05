@@ -468,7 +468,6 @@ ClearPerformance::Result ClearPerformance::ShowFrame::Update( ClearPerformance &
 	const auto data = FetchMember().showFrame;
 
 	UpdateEaseFactor( data.item.easeTakeSecond );
-	AssignDrawData( inst );
 
 	timer++;
 	inst.timer = timer; // For visualize
@@ -482,6 +481,7 @@ ClearPerformance::Result ClearPerformance::ShowFrame::Update( ClearPerformance &
 }
 void ClearPerformance::ShowFrame::Draw( ClearPerformance &inst )
 {
+	AssignDrawData( inst );
 	inst.sprFrame.DrawPart( depthFrame );
 }
 void ClearPerformance::ShowFrame::AssignDrawData( ClearPerformance &inst )
@@ -495,7 +495,6 @@ ClearPerformance::Result ClearPerformance::ShowDesc::Update( ClearPerformance &i
 	const auto data = FetchMember().showDesc;
 
 	UpdateEaseFactor( data.itemTime.easeTakeSecond );
-	AssignDrawData( inst );
 
 	timer++;
 	inst.timer = timer; // For visualize
@@ -509,6 +508,8 @@ ClearPerformance::Result ClearPerformance::ShowDesc::Update( ClearPerformance &i
 }
 void ClearPerformance::ShowDesc::Draw( ClearPerformance &inst )
 {
+	AssignDrawData( inst );
+
 	const auto before = inst.sprDesc;
 
 	inst.sprDesc = paramTime;
@@ -535,8 +536,7 @@ ClearPerformance::Result ClearPerformance::ShowTime::Update( ClearPerformance &i
 	const auto data = FetchMember().showTime;
 
 	UpdateEaseFactor( data.item.easeTakeSecond );
-	AssignDrawData( inst );
-
+	
 	timer++;
 	inst.timer = timer; // For visualize
 	if ( data.wholeFrame <= timer )
@@ -549,6 +549,8 @@ ClearPerformance::Result ClearPerformance::ShowTime::Update( ClearPerformance &i
 }
 void ClearPerformance::ShowTime::Draw( ClearPerformance &inst )
 {
+	AssignDrawData( inst );
+
 	inst.numberDrawer.DrawTime
 	(
 		inst.clearTime,
@@ -570,7 +572,6 @@ ClearPerformance::Result ClearPerformance::ShowRank::Update( ClearPerformance &i
 	const auto data = FetchMember().showRank;
 
 	UpdateEaseFactor( data.item.easeTakeSecond );
-	AssignDrawData( inst );
 
 	timer++;
 	inst.timer = timer; // For visualize
@@ -584,6 +585,8 @@ ClearPerformance::Result ClearPerformance::ShowRank::Update( ClearPerformance &i
 }
 void ClearPerformance::ShowRank::Draw( ClearPerformance &inst )
 {
+	AssignDrawData( inst );
+
 	inst.rankDrawer.Draw
 	(
 		inst.clearRank,
