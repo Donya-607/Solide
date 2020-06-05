@@ -10,6 +10,12 @@
 
 namespace
 {
+#if USE_IMGUI
+	bool wantPauseUpdate = false;
+#endif // USE_IMGUI
+}
+namespace
+{
 	std::string GetTypeName( ClearPerformance::Type type )
 	{
 		switch ( type )
@@ -264,6 +270,8 @@ public:
 
 		if ( ImGui::TreeNode( u8"クリア演出のパラメータ調整" ) )
 		{
+			ImGui::Checkbox( u8"演出の更新を止める", &wantPauseUpdate );
+
 			auto ShowTexPart= [&]( Donya::Vector2 *pPos, Donya::Vector2 *pSize )
 			{
 				ImGui::DragFloat2( u8"テクスチャ原点（左上）",	&pPos->x  );
@@ -644,6 +652,10 @@ void ClearPerformance::Uninit()
 }
 void ClearPerformance::Update()
 {
+#if USE_IMGUI
+	if ( wantPauseUpdate ) { return; }
+#endif // USE_IMGUI
+
 	const size_t index = std::min( scast<size_t>( nowType ), processPtrs.size() );
 	if ( processPtrs[index] )
 	{
