@@ -22,7 +22,8 @@ public:
 public:
 	enum class Type : int
 	{
-		ShowFrame = 0,
+		Hidden		= -1,
+		ShowFrame	= 0,
 		ShowDescription,
 		ShowTime,
 		ShowRank,
@@ -100,7 +101,7 @@ private:
 private:
 	static constexpr int TypeCount = scast<int>( Type::TypeCount );
 private:
-	Type nowType = scast<Type>( 0 );
+	Type nowType = Type::Hidden;
 	std::array<std::shared_ptr<ProcessBase>, TypeCount> processPtrs;
 
 	int				timer		= 0;
@@ -119,6 +120,8 @@ public:
 	void Update();
 	void Draw();
 public:
+	void Appear();
+	bool IsHidden() const;
 	bool IsDone() const { return isFinished; }
 private:
 	template<class DerivedProcess>

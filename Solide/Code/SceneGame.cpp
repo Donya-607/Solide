@@ -1506,6 +1506,7 @@ void SceneGame::ClearInit()
 		currentTime,
 		Rank::Calculate( currentTime, borderTimes )
 	);
+	pClearPerformance->Appear();
 
 	stageNumber	= SELECT_STAGE_NO;
 	nowWaiting	= true;

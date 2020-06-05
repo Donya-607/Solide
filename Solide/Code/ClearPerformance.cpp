@@ -20,6 +20,7 @@ namespace
 	{
 		switch ( type )
 		{
+		case ClearPerformance::Type::Hidden:			return u8"隠蔽";
 		case ClearPerformance::Type::ShowFrame:			return u8"枠表示";
 		case ClearPerformance::Type::ShowDescription:	return u8"説明表示";
 		case ClearPerformance::Type::ShowTime:			return u8"時間表示";
@@ -651,7 +652,7 @@ bool ClearPerformance::Init( const std::wstring &frameSpritePath, const std::wst
 }
 void ClearPerformance::ResetProcess( const Timer &currentTime, int resultRank )
 {
-	nowType		= scast<Type>( 0 );
+	nowType		= Type::Hidden;
 	timer		= 0;
 	clearRank	= resultRank;
 	clearTime	= currentTime;
@@ -672,17 +673,11 @@ void ClearPerformance::Uninit()
 void ClearPerformance::Update()
 {
 #if USE_IMGUI
-	// Apply an update by ImGui.
-	for ( auto &pIt : processPtrs )
-	{
-		if ( pIt )
-		{
-			pIt->AssignDrawData( *this );
-		}
-	}
-
 	if ( wantPauseUpdate ) { return; }
 #endif // USE_IMGUI
+
+	if ( IsHidden() ) { return; }
+	// else
 
 	const size_t index = std::min( scast<size_t>( nowType ), processPtrs.size() );
 	if ( processPtrs[index] )
@@ -704,6 +699,9 @@ void ClearPerformance::Update()
 }
 void ClearPerformance::Draw()
 {
+	if ( IsHidden() ) { return; }
+	// else
+
 	const size_t drawLimit = std::min( scast<size_t>( nowType ), processPtrs.size() - 1 );
 	for ( size_t i = 0; i <= drawLimit; ++i )
 	{
@@ -713,6 +711,14 @@ void ClearPerformance::Draw()
 		}
 	}
 }
+void ClearPerformance::Appear()
+{
+	nowType = scast<Type>( 0 ); // Set to first process
+}
+bool ClearPerformance::IsHidden() const
+{
+	return ( nowType == Type::Hidden );
+}
 #if USE_IMGUI
 void ClearPerformance::ShowImGuiNode( const std::string &nodeCaption )
 {
@@ -721,9 +727,10 @@ void ClearPerformance::ShowImGuiNode( const std::string &nodeCaption )
 
 	ImGui::DragInt( u8"内部タイマ", &timer );
 	ImGui::Text( u8"状態：[%s]", GetTypeName( nowType ).c_str() );
-	if ( ImGui::Button( u8"状態をリセット" ) )
+	if ( ImGui::Button( u8"演出を再スタート" ) )
 	{
 		ResetProcess( clearTime, clearRank );
+		Appear();
 	}
 	ImGui::Checkbox( u8"終了したか", &isFinished );
 
