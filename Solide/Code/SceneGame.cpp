@@ -583,6 +583,8 @@ void SceneGame::Draw( float elapsedTime )
 	}
 #endif // DEBUG_MODE
 
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA );
+
 	// Drawing to far for avoiding to trans the BG's blue.
 	pBG->Draw( elapsedTime );
 
@@ -594,6 +596,7 @@ void SceneGame::Draw( float elapsedTime )
 	// A draw check of these sentences are doing at internal of these methods.
 	if ( pTutorialSentence	) { pTutorialSentence->Draw( elapsedTime );	}
 	if ( pClearSentence		) { pClearSentence->Draw( elapsedTime );	}
+	if ( pClearPerformance	) { pClearPerformance->Draw();				}
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -1493,6 +1496,10 @@ void SceneGame::TutorialUpdate( float elapsedTime )
 void SceneGame::ClearInit()
 {
 	clearTimer	= 0;
+
+	if ( !pClearPerformance ) { assert( !"Unexpected error!" ); return; }
+	// else
+
 	pClearSentence->Appear();
 	pClearPerformance->ResetProcess
 	(

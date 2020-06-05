@@ -48,6 +48,9 @@ private:
 		virtual void	Uninit( ClearPerformance &instance );
 		virtual Result	Update( ClearPerformance &instance ) = 0;
 		virtual void	Draw( ClearPerformance &instance ) = 0;
+	public:
+		// Used for update data by external.
+		virtual void	AssignDrawData( ClearPerformance &instance ) = 0;
 	protected:
 		void UpdateEaseFactor( float wholeEaseSecond );
 	};
@@ -56,6 +59,7 @@ private:
 	public:
 		Result	Update( ClearPerformance &instance ) override;
 		void	Draw( ClearPerformance &instance ) override;
+		void	AssignDrawData( ClearPerformance &instance ) override;
 	};
 	class ShowDesc : public ProcessBase
 	{
@@ -65,6 +69,7 @@ private:
 	public:
 		Result	Update( ClearPerformance &instance ) override;
 		void	Draw( ClearPerformance &instance ) override;
+		void	AssignDrawData( ClearPerformance &instance ) override;
 	};
 	class ShowTime : public ProcessBase
 	{
@@ -73,6 +78,7 @@ private:
 	public:
 		Result	Update( ClearPerformance &instance ) override;
 		void	Draw( ClearPerformance &instance ) override;
+		void	AssignDrawData( ClearPerformance &instance ) override;
 	};
 	class ShowRank : public ProcessBase
 	{
@@ -81,12 +87,14 @@ private:
 	public:
 		Result	Update( ClearPerformance &instance ) override;
 		void	Draw( ClearPerformance &instance ) override;
+		void	AssignDrawData( ClearPerformance &instance ) override;
 	};
 	class Wait : public ProcessBase
 	{
 	public:
 		Result	Update( ClearPerformance &instance ) override;
 		void	Draw( ClearPerformance &instance ) override;
+		void	AssignDrawData( ClearPerformance &instance ) override;
 	};
 // region States
 #pragma endregion

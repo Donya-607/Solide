@@ -484,9 +484,10 @@ ClearPerformance::Result ClearPerformance::ShowFrame::Update( ClearPerformance &
 	const auto data = FetchMember().showFrame;
 
 	UpdateEaseFactor( data.item.easeTakeSecond );
-	AssignLerpedItem( &inst.sprFrame, data.item, factor );
+	AssignDrawData( inst );
 
 	timer++;
+	inst.timer = timer; // For visualize
 	if ( data.wholeFrame <= timer )
 	{
 		timer = data.wholeFrame;
@@ -499,19 +500,21 @@ void ClearPerformance::ShowFrame::Draw( ClearPerformance &inst )
 {
 	inst.sprFrame.DrawPart( depthFrame );
 }
+void ClearPerformance::ShowFrame::AssignDrawData( ClearPerformance &inst )
+{
+	const auto data = FetchMember().showFrame;
+	AssignLerpedItem( &inst.sprFrame, data.item, factor );
+}
 
 ClearPerformance::Result ClearPerformance::ShowDesc::Update( ClearPerformance &inst )
 {
 	const auto data = FetchMember().showDesc;
 
 	UpdateEaseFactor( data.itemTime.easeTakeSecond );
-	AssignLerpedItem( &inst.sprDesc, data.itemTime, factor );
-	paramTime = inst.sprDesc;
-	paramRank = paramTime;
-	paramRank.texPos  = data.itemRank.texPartPos;
-	paramRank.texSize = data.itemRank.texPartSize;
+	AssignDrawData( inst );
 
 	timer++;
+	inst.timer = timer; // For visualize
 	if ( data.wholeFrame <= timer )
 	{
 		timer = data.wholeFrame;
@@ -530,15 +533,25 @@ void ClearPerformance::ShowDesc::Draw( ClearPerformance &inst )
 	inst.sprDesc.texSize = paramRank.texSize;
 	inst.sprDesc.DrawPart( depthDesc );
 }
+void ClearPerformance::ShowDesc::AssignDrawData( ClearPerformance &inst )
+{
+	const auto data = FetchMember().showDesc;
+	AssignLerpedItem( &inst.sprDesc, data.itemTime, factor );
+	paramTime = inst.sprDesc;
+	paramRank = paramTime;
+	paramRank.texPos  = data.itemRank.texPartPos;
+	paramRank.texSize = data.itemRank.texPartSize;
+}
 
 ClearPerformance::Result ClearPerformance::ShowTime::Update( ClearPerformance &inst )
 {
 	const auto data = FetchMember().showTime;
 
 	UpdateEaseFactor( data.item.easeTakeSecond );
-	AssignLerpedItem( &parameter, data.item, factor );
+	AssignDrawData( inst );
 
 	timer++;
+	inst.timer = timer; // For visualize
 	if ( data.wholeFrame <= timer )
 	{
 		timer = data.wholeFrame;
@@ -559,15 +572,21 @@ void ClearPerformance::ShowTime::Draw( ClearPerformance &inst )
 		depthTime
 	);
 }
+void ClearPerformance::ShowTime::AssignDrawData( ClearPerformance &inst )
+{
+	const auto data = FetchMember().showTime;
+	AssignLerpedItem( &parameter, data.item, factor );
+}
 
 ClearPerformance::Result ClearPerformance::ShowRank::Update( ClearPerformance &inst )
 {
 	const auto data = FetchMember().showRank;
 
 	UpdateEaseFactor( data.item.easeTakeSecond );
-	AssignLerpedItem( &parameter, data.item, factor );
+	AssignDrawData( inst );
 
 	timer++;
+	inst.timer = timer; // For visualize
 	if ( data.wholeFrame <= timer )
 	{
 		timer = data.wholeFrame;
@@ -589,12 +608,18 @@ void ClearPerformance::ShowRank::Draw( ClearPerformance &inst )
 		depthRank
 	);
 }
+void ClearPerformance::ShowRank::AssignDrawData( ClearPerformance &inst )
+{
+	const auto data = FetchMember().showRank;
+	AssignLerpedItem( &parameter, data.item, factor );
+}
 
 ClearPerformance::Result ClearPerformance::Wait::Update( ClearPerformance &inst )
 {
 	const auto data = FetchMember().wait;
 
 	timer++;
+	inst.timer = timer; // For visualize
 	if ( data.wholeFrame <= timer )
 	{
 		timer = data.wholeFrame;
@@ -604,6 +629,10 @@ ClearPerformance::Result ClearPerformance::Wait::Update( ClearPerformance &inst 
 	return Result::Continue;
 }
 void ClearPerformance::Wait::Draw( ClearPerformance &inst )
+{
+	// No op.
+}
+void ClearPerformance::Wait::AssignDrawData( ClearPerformance &inst )
 {
 	// No op.
 }
@@ -653,6 +682,15 @@ void ClearPerformance::Uninit()
 void ClearPerformance::Update()
 {
 #if USE_IMGUI
+	// Apply an update by ImGui.
+	for ( auto &pIt : processPtrs )
+	{
+		if ( pIt )
+		{
+			pIt->AssignDrawData( *this );
+		}
+	}
+
 	if ( wantPauseUpdate ) { return; }
 #endif // USE_IMGUI
 
