@@ -65,7 +65,6 @@ namespace
 			Donya::Easing::Kind easeKind	= Donya::Easing::Kind::Linear;
 			Donya::Easing::Type easeType	= Donya::Easing::Type::In;
 			float	easeTakeSecond			= 1.0f;
-			int		waitFrameAfterFinish	= 0;
 
 			Param	paramStart;
 			Param	paramDest;
@@ -82,7 +81,6 @@ namespace
 					CEREAL_NVP( easeKind				),
 					CEREAL_NVP( easeType				),
 					CEREAL_NVP( easeTakeSecond			),
-					CEREAL_NVP( waitFrameAfterFinish	),
 					CEREAL_NVP( paramStart				),
 					CEREAL_NVP( paramDest				),
 					CEREAL_NVP( texPartPos				),
@@ -304,9 +302,6 @@ public:
 
 				ShowParam( u8"始点", &p->paramStart );
 				ShowParam( u8"終点", &p->paramDest  );
-
-				ImGui::DragInt( u8"イージング終了後の待機時間（フレーム）", &p->waitFrameAfterFinish );
-				p->waitFrameAfterFinish = std::max( 0, p->waitFrameAfterFinish );
 
 				ShowTexPart( &p->texPartPos, &p->texPartSize );
 
