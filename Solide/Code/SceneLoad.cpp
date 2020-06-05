@@ -184,7 +184,10 @@ void SceneLoad::Init()
 		constexpr size_t attrCount = scast<size_t>( EffectAttribute::AttributeCount );
 		constexpr std::array<EffectAttribute, attrCount> attributes
 		{
-			EffectAttribute::Fire
+			EffectAttribute::Fire,
+			EffectAttribute::FlameCannon,
+			EffectAttribute::IceCannon,
+			EffectAttribute::ColdSmoke,
 		};
 
 		bool succeeded = true;

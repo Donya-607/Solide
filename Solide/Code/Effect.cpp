@@ -71,7 +71,7 @@ void EffectHandle::SetRotation( float pitch, float yaw, float roll )
 	(
 		[&]( Fx::Manager *pManager )
 		{
-			pManager->SetRotation(handle, pitch, yaw, roll );
+			pManager->SetRotation( handle, pitch, yaw, roll );
 		}
 	);
 }

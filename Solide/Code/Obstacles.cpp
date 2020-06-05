@@ -644,11 +644,6 @@ void Spray::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 				const std::string caption = u8"エフェクト名：" + name;
 				ImGui::Text( caption.c_str() );
 
-				if ( ImGui::Button( u8"種類を反映" ) )
-				{
-					GenerateEffect();
-				}
-
 				ImGui::TreePop();
 			}
 

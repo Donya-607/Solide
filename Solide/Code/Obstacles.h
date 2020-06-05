@@ -11,6 +11,7 @@
 #include "Donya/Serializer.h"
 
 #include "Bullet.h"		// For FireDesc.
+#include "EffectAttribute.h"
 #include "ObjectBase.h"
 
 class RenderingHelper;
