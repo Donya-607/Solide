@@ -54,10 +54,19 @@ void Tutorial::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &m
 	if ( !Common::IsShowCollision() ) { return; }
 	// else
 
+	Donya::Color::Code color = Donya::Color::Code::FUCHSIA;
+#if USE_IMGUI
+	if ( dontRemoveActivatedInstance && ShouldRemove() )
+	{
+		// Make invalid color
+		color = Donya::Color::Code::DARK_GRAY;
+	}
+#endif // USE_IMGUI
+
 	Donya::Model::Cube::Constant constant;
 	constant.matWorld		= CalcWorldMatrix();
 	constant.matViewProj	= matVP;
-	constant.drawColor		= Donya::Vector4{ Donya::Color::MakeColor( Donya::Color::Code::FUCHSIA ), alpha };
+	constant.drawColor		= Donya::Vector4{ Donya::Color::MakeColor( color ), alpha };
 	constant.lightDirection	= -Donya::Vector3::Up();
 	pRenderer->ProcessDrawingCube( constant );
 }
@@ -240,6 +249,13 @@ bool		TutorialContainer::ShouldPauseGame() const
 	{
 		if ( it.IsActive() )
 		{
+		#if USE_IMGUI
+			if ( dontRemoveActivatedInstance && it.ShouldRemove() )
+			{
+				// When debug dont-remove mode, I wanna ignore the instance.
+				continue;
+			}
+		#endif // USE_IMGUI
 			return true;
 		}
 	}
