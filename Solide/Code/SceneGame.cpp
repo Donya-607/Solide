@@ -594,7 +594,7 @@ void SceneGame::Draw( float elapsedTime )
 	}
 
 	// A draw check of these sentences are doing at internal of these methods.
-	if ( pTutorialSentence	) { pTutorialSentence->Draw( elapsedTime );	}
+	//if ( pTutorialSentence	) { pTutorialSentence->Draw( elapsedTime );	}
 	if ( pClearSentence		) { pClearSentence->Draw( elapsedTime );	}
 	if ( pClearPerformance	) { pClearPerformance->Draw();				}
 
@@ -665,6 +665,7 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	result = pBG->LoadSprites( GetSpritePath( Spr::BackGround ), GetSpritePath( Spr::Cloud ) );
 	assert( result );
 	
+	/*
 	if ( stageNo == FIRST_STAGE_NO )
 	{
 		pTutorialSentence = std::make_unique<TutorialSentence>();
@@ -676,6 +677,7 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	{
 		pTutorialSentence.reset();
 	}
+	*/
 
 	pClearSentence = std::make_unique<ClearSentence>();
 	pClearSentence->Init();
@@ -779,7 +781,7 @@ void SceneGame::UninitStage()
 	pObstacles.reset();
 	pGoal.reset();
 	pWarps.reset();
-	pTutorialSentence.reset();
+	//pTutorialSentence.reset();
 	pClearSentence.reset();
 
 	pShadow->ClearInstances();
@@ -1472,6 +1474,7 @@ void SceneGame::DrawCurrentTime()
 
 void SceneGame::TutorialUpdate( float elapsedTime )
 {
+	/*
 	if ( !pTutorialSentence ) { return; }
 	// else
 
@@ -1491,6 +1494,7 @@ void SceneGame::TutorialUpdate( float elapsedTime )
 	}
 
 	pTutorialSentence->Update( elapsedTime );
+	*/
 }
 
 void SceneGame::ClearInit()
@@ -2242,8 +2246,8 @@ void SceneGame::UseImGui()
 		{ pTerrain->ShowImGuiNode( u8"地形" ); }
 		ImGui::Text( "" );
 
-		if ( pTutorialSentence )
-		{ pTutorialSentence->ShowImGuiNode( u8"チュートリアル画像" ); }
+		// if ( pTutorialSentence )
+		// { pTutorialSentence->ShowImGuiNode( u8"チュートリアル画像" ); }
 		if ( pClearSentence )
 		{ pClearSentence->ShowImGuiNode( u8"クリア画像" ); }
 		if ( pClearPerformance )

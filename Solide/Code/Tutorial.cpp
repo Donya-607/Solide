@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "Donya/Color.h"
+#include "Donya/Sprite.h"
 #include "Donya/Useful.h"
 
 #include "Common.h"
@@ -11,12 +12,26 @@
 #include "SaveData.h"
 
 
+namespace
+{
+	constexpr float depthDarken		= 0.12f;
+	constexpr float depthFrame		= 0.1f;
+	constexpr float depthSentence	= 0.08f;
+}
+
+
 void Tutorial::Init() {}
 void Tutorial::Uninit() {}
 void Tutorial::Update( float elapsedTime ) {}
 void Tutorial::Draw( const UIObject &sprite, const Donya::Vector2 &ssBasePos )
 {
-
+	UIObject drawer		= sprite;
+	drawer.pos			= ssBasePos + ssRelatedPos;
+	drawer.texPos		= texPartPos;
+	drawer.texSize		= texPartSize;
+	drawer.drawScale	= drawScale;
+	
+	drawer.DrawPart( depthSentence );
 }
 void Tutorial::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, float alpha )
 {
@@ -64,7 +79,7 @@ void Tutorial::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::DragFloat ( u8"描画スケール",				&drawScale, 0.01f );
 	drawScale = std::max( 0.0f, drawScale );
 
-	ImGui::DragFloat2( u8"描画位置",					&ssRelatedPos.x );
+	ImGui::DragFloat2( u8"描画位置（相対）",			&ssRelatedPos.x );
 	ImGui::DragFloat2( u8"テクスチャ切り取り位置",	&texPartPos.x   );
 	ImGui::DragFloat2( u8"テクスチャ切り取りサイズ",	&texPartSize.x  );
 
@@ -75,12 +90,7 @@ void Tutorial::ShowImGuiNode( const std::string &nodeCaption )
 #endif // USE_IMGUI
 
 
-bool TutorialContainer::LoadResource()
-{
-	
-}
-
-void TutorialContainer::Init( int stageNumber )
+bool TutorialContainer::Init( int stageNumber )
 {
 	stageNo = stageNumber;
 #if DEBUG_MODE
@@ -93,6 +103,13 @@ void TutorialContainer::Init( int stageNumber )
 	{
 		it.Init();
 	}
+
+	using Spr = SpriteAttribute;
+	bool succeeded = true;
+	if ( !sprFrame.LoadSprite( GetSpritePath( Spr::TutorialFrame	), 2U ) ) { succeeded = false; }
+	if ( !sprFrame.LoadSprite( GetSpritePath( Spr::TutorialSentence	), 4U ) ) { succeeded = false; }
+
+	return succeeded;
 }
 void TutorialContainer::Uninit()
 {
@@ -127,10 +144,38 @@ void TutorialContainer::Update( float elapsedTime )
 }
 void TutorialContainer::Draw()
 {
+	bool isThereActiveInstance = false;
+	for ( const auto &it : instances )
+	{
+		if ( it.IsActive() )
+		{
+			isThereActiveInstance = true;
+		}
+	}
+
+	if ( !isThereActiveInstance ) { return; }
+	// else
+
+	const float oldDepth = Donya::Sprite::GetDrawDepth();
+
+	Donya::Sprite::SetDrawDepth( depthDarken );
+	Donya::Sprite::DrawRect
+	(
+		Common::HalfScreenWidth(),	Common::HalfScreenHeight(),
+		Common::ScreenWidth(),		Common::ScreenHeight(),
+		Donya::Color::Code::BLACK,	darkenAlpha
+	);
+
+	sprFrame.Draw( depthFrame );
+
 	for ( auto &it : instances )
 	{
-		it.Draw(  );
+		if ( !it.IsActive() ) { continue; }
+		// else
+		it.Draw( sprSentence, sprFrame.pos );
 	}
+
+	Donya::Sprite::SetDrawDepth( oldDepth );
 }
 void TutorialContainer::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, float alpha )
 {
@@ -187,9 +232,13 @@ void TutorialContainer::ShowImGuiNode( const std::string &nodeCaption, int stage
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ParameterHelper::ResizeByButton( &instances );
+	ImGui::DragFloat( u8"背景の黒アルファ", &darkenAlpha, 0.01f );
 
-	if ( ImGui::TreeNode( u8"各々の設定" ) )
+	sprFrame.ShowImGuiNode( u8"枠画像の設定" );
+	ImGui::Text( u8"枠画像の描画位置は，文章画像の描画基本位置にもなります" );
+
+	ParameterHelper::ResizeByButton( &instances );
+	if ( ImGui::TreeNode( u8"実体の設定" ) )
 	{
 		std::string caption{};
 		const size_t tutorialCount = GetTutorialCount();

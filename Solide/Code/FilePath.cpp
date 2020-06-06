@@ -96,8 +96,10 @@ std::wstring GetSpritePath( SpriteAttribute attr )
 		return ToRelPath( L"UI/Number.png" );
 	case SpriteAttribute::Pause:
 		return ToRelPath( L"Pause/Items.png" );
+	case SpriteAttribute::TutorialFrame:
+		return ToRelPath( L"Tutorial/Frame.png" );
 	case SpriteAttribute::TutorialSentence:
-		return ToRelPath( L"Game/Tutorial.png" );
+		return ToRelPath( L"Tutorial/Sentences.png" );
 	case SpriteAttribute::TitleItems:
 		return ToRelPath( L"Title/Items.png" );
 	case SpriteAttribute::TitleLogo:

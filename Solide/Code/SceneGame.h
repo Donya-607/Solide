@@ -55,7 +55,7 @@ private:
 	std::unique_ptr<Goal>				pGoal;
 	std::unique_ptr<WarpContainer>		pWarps;
 	std::unique_ptr<Shadow>				pShadow;
-	std::unique_ptr<TutorialSentence>	pTutorialSentence;
+	//std::unique_ptr<TutorialSentence>	pTutorialSentence;
 	std::unique_ptr<ClearSentence>		pClearSentence;
 	std::unique_ptr<ClearPerformance>	pClearPerformance;
 

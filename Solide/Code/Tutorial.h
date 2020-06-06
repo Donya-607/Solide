@@ -67,15 +67,12 @@ CEREAL_CLASS_VERSION( Tutorial, 0 )
 
 class TutorialContainer
 {
-public:
-	static bool LoadResource();
 private:
 	int			stageNo = 0;
-	UIObject	sprFrame;
 	UIObject	sprSentence;
 private: // Serializer member.
-	float					drawScale = 1.0f;
-	Donya::Vector2			ssDrawPos;
+	float					darkenAlpha = 0.5f;
+	UIObject				sprFrame;
 	std::vector<Tutorial>	instances;
 private:
 	friend class cereal::access;
@@ -84,9 +81,9 @@ private:
 	{
 		archive
 		(
-			CEREAL_NVP( drawScale ),
-			CEREAL_NVP( ssDrawPos ),
-			CEREAL_NVP( instances )
+			CEREAL_NVP( darkenAlpha	),
+			CEREAL_NVP( sprFrame	),
+			CEREAL_NVP( instances	)
 		);
 
 		if ( 1 <= version )
@@ -96,7 +93,7 @@ private:
 	}
 	static constexpr const char *ID = "Tutorial";
 public:
-	void Init( int stageNo );
+	bool Init( int stageNo );
 	void Uninit();
 
 	void Update( float elapsedTime );

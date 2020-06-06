@@ -98,7 +98,9 @@ public:
 };
 CEREAL_CLASS_VERSION( TitleSentence, 1 )
 
-
+/// <summary>
+/// Old version.
+/// </summary>
 class TutorialSentence
 {
 public:
