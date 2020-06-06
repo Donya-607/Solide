@@ -121,6 +121,8 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Stone )
 class Log : public ObstacleBase
 {
 private:
+	Donya::Vector3	drawScale = 1.0f;
+private:
 	friend class cereal::access;
 	template<class Archive>
 	void serialize( Archive &archive, std::uint32_t version )
@@ -131,6 +133,10 @@ private:
 		);
 		if ( 1 <= version )
 		{
+			archive( CEREAL_NVP( drawScale ) );
+		}
+		if ( 2 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -139,9 +145,10 @@ public:
 	void Draw( RenderingHelper *pRenderer,const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
+	Donya::Vector4x4 GetWorldMatrix() const;
 	int GetKind() const override;
 };
-CEREAL_CLASS_VERSION( Log, 0 )
+CEREAL_CLASS_VERSION( Log, 1 )
 CEREAL_REGISTER_TYPE( Log )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Log )
 
@@ -346,6 +353,7 @@ private:
 	int				aliveTimer		= 0;
 	float			submergeAmount	= 0.0f;
 	Donya::Vector3	initialPos;
+	Donya::Vector3	drawScale		= 1.0f;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -357,6 +365,10 @@ private:
 		);
 		if ( 1 <= version )
 		{
+			archive( CEREAL_NVP( drawScale ) );
+		}
+		if ( 2 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -366,6 +378,7 @@ public:
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
+	Donya::Vector4x4 GetWorldMatrix() const;
 	bool ShouldRemove() const override;
 	int  GetKind() const override;
 public:
@@ -373,7 +386,7 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true ) override;
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( Hardened, 0 )
+CEREAL_CLASS_VERSION( Hardened, 1 )
 CEREAL_REGISTER_TYPE( Hardened )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( ObstacleBase, Hardened )
 

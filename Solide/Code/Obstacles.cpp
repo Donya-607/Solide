@@ -432,6 +432,17 @@ void Log::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP,
 {
 	ObstacleBase::DrawHitBox( pRenderer, matVP, { 0.5f, 0.4f, 0.1f, 0.5f } );
 }
+Donya::Vector4x4 Log::GetWorldMatrix() const
+{
+	Donya::Vector4x4 W{};
+	W._11 = drawScale.x;
+	W._22 = drawScale.y;
+	W._33 = drawScale.z;
+	W._41 = pos.x + hitBox.pos.x;
+	W._42 = pos.y + hitBox.pos.y;
+	W._43 = pos.z + hitBox.pos.z;
+	return W;
+}
 int Log::GetKind() const
 {
 	return scast<int>( Kind::Log );
@@ -860,6 +871,18 @@ bool Hardened::ShouldRemove() const
 {
 	return ( ParamObstacle::Get().Data().hardened.aliveFrame <= aliveTimer ) ? true : false;
 }
+Donya::Vector4x4 Hardened::GetWorldMatrix() const
+{
+	Donya::Vector4x4 W{};
+	W._11 = hitBox.size.x * drawScale.x;
+	W._22 = hitBox.size.y * drawScale.y;
+	W._33 = hitBox.size.z * drawScale.z;
+	const auto pos = GetPosition();
+	W._41 = pos.x + hitBox.pos.x;
+	W._42 = pos.y + hitBox.pos.y;
+	W._43 = pos.z + hitBox.pos.z;
+	return W;
+}
 int  Hardened::GetKind() const
 {
 	return scast<int>( Kind::Hardened );
@@ -873,6 +896,7 @@ void Hardened::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 	if ( ImGui::TreeNode( u8"í≤êÆïîï™" ) )
 	{
 		ObstacleBase::ShowImGuiNode( "", /* useTreeNode = */ false );
+		ImGui::DragFloat3( u8"ï`âÊÉXÉPÅ[Éã", &drawScale.x, 0.01f );
 		ImGui::TreePop();
 	}
 	if ( ImGui::TreeNode( u8"åªç›ÇÃèÛë‘" ) )
