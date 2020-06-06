@@ -454,6 +454,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		MakeShadows( solids, terrain.get(), &terrainMatrix );
 	}
 
+	PlayerVSTutorialGenerator();
+
 	ProcessWarpCollision();
 	ProcessCheckPointCollision();
 	ProcessBulletCollision();
@@ -1620,7 +1622,7 @@ void SceneGame::PlayerVSTutorialGenerator()
 	{
 		auto *pTutorial = pTutorialContainer->GetTutorialPtrOrNullptr( i );
 		if ( !pTutorial				) { continue; }
-		if ( !pTutorial->IsActive()	) { continue; }
+		if ( pTutorial->IsActive()	) { continue; }
 		// else
 
 		tutorialBody = pTutorial->GetHitBox();

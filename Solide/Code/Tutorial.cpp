@@ -18,6 +18,10 @@ namespace
 	constexpr float depthDarken		= 0.12f;
 	constexpr float depthFrame		= 0.1f;
 	constexpr float depthSentence	= 0.08f;
+
+#if USE_IMGUI
+	static bool dontRemoveActivatedInstance = false;
+#endif // USE_IMGUI
 }
 
 
@@ -25,6 +29,9 @@ void Tutorial::Init() {}
 void Tutorial::Uninit() {}
 void Tutorial::Update( float elapsedTime, const Donya::XInput &controller )
 {
+	if ( !IsActive() ) { return; }
+	// else
+
 	timer++;
 
 	if ( RequiredAdvance( controller ) )
@@ -92,6 +99,12 @@ void Tutorial::ShowImGuiNode( const std::string &nodeCaption )
 		shouldRemove = true;
 	}
 
+	if ( ImGui::Button( u8"状態をリセット" ) )
+	{
+		nowActive		= false;
+		shouldRemove	= false;
+	}
+
 	ImGui::DragInt( u8"入力を無視する時間（フレーム）", &ignoreInputFrame );
 	ignoreInputFrame = std::max( 0, ignoreInputFrame );
 
@@ -153,6 +166,10 @@ void TutorialContainer::Update( float elapsedTime, const Donya::XInput &controll
 			it.Uninit();
 		}
 	}
+
+#if USE_IMGUI
+	if ( dontRemoveActivatedInstance ) { return; }
+#endif // USE_IMGUI
 
 	auto result = std::remove_if
 	(
@@ -263,10 +280,14 @@ void TutorialContainer::ShowImGuiNode( const std::string &nodeCaption, int stage
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
+	ImGui::Checkbox( u8"触れた実体を取り除かない（デバッグ用）", &dontRemoveActivatedInstance );
+
 	ImGui::DragFloat( u8"背景の黒アルファ", &darkenAlpha, 0.01f );
 
 	sprFrame.ShowImGuiNode( u8"枠画像の設定" );
 	ImGui::Text( u8"枠画像の描画位置は，文章画像の描画基本位置にもなります" );
+
+	ImGui::Text( "" );
 
 	ParameterHelper::ResizeByButton( &instances );
 	if ( ImGui::TreeNode( u8"実体の設定" ) )
