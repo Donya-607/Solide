@@ -41,6 +41,9 @@ void Tutorial::Update( float elapsedTime, const Donya::XInput &controller )
 }
 void Tutorial::Draw( const UIObject &sprite, const Donya::Vector2 &ssBasePos )
 {
+#if USE_IMGUI
+	if ( dontRemoveActivatedInstance && ShouldRemove() ) { return; }
+#endif // USE_IMGUI
 	UIObject drawer		= sprite;
 	drawer.pos			= ssBasePos + ssRelatedPos;
 	drawer.texPos		= texPartPos;
@@ -346,6 +349,9 @@ void TutorialContainer::ShowImGuiNode( const std::string &nodeCaption, int stage
 		}
 		if ( ImGui::Button( loadStr.c_str() ) )
 		{
+			for ( auto &it : instances ) { it.Uninit(); }
+			instances.clear();
+
 			( isBinary ) ? LoadBin( stageNo ) : LoadJson( stageNo );
 		}
 
