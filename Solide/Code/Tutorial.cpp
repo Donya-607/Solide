@@ -194,6 +194,9 @@ void TutorialContainer::Draw()
 	{
 		if ( it.IsActive() )
 		{
+		#if USE_IMGUI
+			if ( dontRemoveActivatedInstance && it.ShouldRemove() ) { continue; }
+		#endif // USE_IMGUI
 			isThereActiveInstance = true;
 		}
 	}

@@ -406,9 +406,14 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	if ( pTutorialContainer )
 	{
+		// I wanna skip a frame that immediately after a user confirmed.
+		// Because if allows that frame, the key of used for confirm is triggered in main update, that is not preferred(e.g. the player will jump when the confirmed frame).
+		// So that flag must take before update.
+		const bool wantPause = pTutorialContainer->ShouldPauseGame();
+
 		pTutorialContainer->Update( elapsedTime, controller );
 
-		if ( pTutorialContainer->ShouldPauseGame() )
+		if ( wantPause )
 		{
 			// If use ReturnResult(), that allows pause function. I do not want that.
 			Scene::Result noop{ Scene::Request::NONE, Scene::Type::Null };
