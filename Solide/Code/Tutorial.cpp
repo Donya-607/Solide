@@ -55,21 +55,21 @@ void Tutorial::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &m
 	pRenderer->ProcessDrawingCube( constant );
 }
 void Tutorial::Start() { nowActive = true; }
-bool				Tutorial::ShouldRemove()	const { return nowActive;		}
-bool				Tutorial::IsActive()		const { return shouldRemove;	}
+bool				Tutorial::ShouldRemove()	const { return shouldRemove;	}
+bool				Tutorial::IsActive()		const { return nowActive;		}
 Donya::Vector3		Tutorial::GetPosition()		const { return wsHitBox.pos;	}
 Donya::AABB			Tutorial::GetHitBox()		const { return wsHitBox;		}
 Donya::Vector4x4	Tutorial::CalcWorldMatrix()	const
 {
-	const Donya::Vector3 translation = GetPosition();
+	const auto body = GetHitBox();
 
 	Donya::Vector4x4 W{};
-	W._11 = 2.0f;
-	W._22 = 2.0f;
-	W._33 = 2.0f;
-	W._41 = translation.x;
-	W._42 = translation.y;
-	W._43 = translation.z;
+	W._11 = body.size.x * 2.0f;
+	W._22 = body.size.y * 2.0f;
+	W._33 = body.size.z * 2.0f;
+	W._41 = body.pos.x;
+	W._42 = body.pos.y;
+	W._43 = body.pos.z;
 	return W;
 }
 bool Tutorial::RequiredAdvance( const Donya::XInput &controller ) const
@@ -125,8 +125,8 @@ bool TutorialContainer::Init( int stageNumber )
 
 	using Spr = SpriteAttribute;
 	bool succeeded = true;
-	if ( !sprFrame.LoadSprite( GetSpritePath( Spr::TutorialFrame	), 2U ) ) { succeeded = false; }
-	if ( !sprFrame.LoadSprite( GetSpritePath( Spr::TutorialSentence	), 4U ) ) { succeeded = false; }
+	if ( !sprFrame.LoadSprite	( GetSpritePath( Spr::TutorialFrame		), 2U ) ) { succeeded = false; }
+	if ( !sprSentence.LoadSprite( GetSpritePath( Spr::TutorialSentence	), 4U ) ) { succeeded = false; }
 
 	return succeeded;
 }

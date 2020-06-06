@@ -593,6 +593,11 @@ void SceneGame::Draw( float elapsedTime )
 		pCameraOption->Visualize( pRenderer.get(), VP, blendColor );
 
 		BossDrawHitBox( VP );
+
+		if ( pTutorialContainer )
+		{
+			pTutorialContainer->DrawHitBoxes( pRenderer.get(), VP, blendColor.w );
+		}
 	}
 #endif // DEBUG_MODE
 
