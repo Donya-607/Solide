@@ -28,6 +28,7 @@
 #include "Shadow.h"
 #include "Terrain.h"
 #include "Timer.h"
+#include "Tutorial.h"
 #include "Warp.h"
 
 #if DEBUG_MODE
@@ -56,6 +57,7 @@ private:
 	std::unique_ptr<WarpContainer>		pWarps;
 	std::unique_ptr<Shadow>				pShadow;
 	//std::unique_ptr<TutorialSentence>	pTutorialSentence;
+	std::unique_ptr<TutorialContainer>	pTutorialContainer;
 	std::unique_ptr<ClearSentence>		pClearSentence;
 	std::unique_ptr<ClearPerformance>	pClearPerformance;
 
@@ -149,6 +151,7 @@ private:
 	bool	NowWaiting() const;
 
 	void	PlayerVSJumpStand();
+	void	PlayerVSTutorialGenerator();
 
 	std::shared_ptr<Bullet::BulletBase> FindCollidedBulletOrNullptr( const Donya::AABB &other, const std::vector<Element::Type> &exceptTypes = {} ) const;
 	void	ProcessPlayerCollision();

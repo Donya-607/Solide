@@ -403,6 +403,19 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 
 	controller.Update();
+
+	if ( pTutorialContainer )
+	{
+		pTutorialContainer->Update( elapsedTime, controller );
+
+		if ( pTutorialContainer->ShouldPauseGame() )
+		{
+			// If use ReturnResult(), that allows pause function. I do not want that.
+			Scene::Result noop{ Scene::Request::NONE, Scene::Type::Null };
+			return noop;
+		}
+	}
+
 	if ( !nowWaiting )
 	{
 		currentTime.Update();
@@ -597,6 +610,7 @@ void SceneGame::Draw( float elapsedTime )
 	//if ( pTutorialSentence	) { pTutorialSentence->Draw( elapsedTime );	}
 	if ( pClearSentence		) { pClearSentence->Draw( elapsedTime );	}
 	if ( pClearPerformance	) { pClearPerformance->Draw();				}
+	if ( pTutorialContainer ) { pTutorialContainer->Draw();				}
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -678,6 +692,9 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 		pTutorialSentence.reset();
 	}
 	*/
+	pTutorialContainer = std::make_unique<TutorialContainer>();
+	result = pTutorialContainer->Init( stageNo );
+	assert( result );
 
 	pClearSentence = std::make_unique<ClearSentence>();
 	pClearSentence->Init();
@@ -764,12 +781,13 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 }
 void SceneGame::UninitStage()
 {
-	if ( pCameraOption	) { pCameraOption->Uninit();}
-	if ( pCheckPoint	) { pCheckPoint->Uninit();	}
-	if ( pEnemies		) { pEnemies->Uninit();		}
-	if ( pGoal			) { pGoal->Uninit();		}
-	if ( pObstacles		) { pObstacles->Uninit();	}
-	if ( pWarps			) { pWarps->Uninit();		}
+	if ( pCameraOption		) { pCameraOption->Uninit();		}
+	if ( pCheckPoint		) { pCheckPoint->Uninit();			}
+	if ( pEnemies			) { pEnemies->Uninit();				}
+	if ( pGoal				) { pGoal->Uninit();				}
+	if ( pObstacles			) { pObstacles->Uninit();			}
+	if ( pWarps				) { pWarps->Uninit();				}
+	if ( pTutorialContainer	) { pTutorialContainer->Uninit();	}
 
 	pBG.reset();
 	pTerrain.reset();
@@ -782,6 +800,7 @@ void SceneGame::UninitStage()
 	pGoal.reset();
 	pWarps.reset();
 	//pTutorialSentence.reset();
+	pTutorialContainer.reset();
 	pClearSentence.reset();
 
 	pShadow->ClearInstances();
@@ -1580,6 +1599,33 @@ void SceneGame::PlayerVSJumpStand()
 		}
 	}
 }
+void SceneGame::PlayerVSTutorialGenerator()
+{
+	if ( nowWaiting				) { return; }	// Exempt if now is cleared.
+	if ( !pPlayer				) { return; }	// Do only player related collision.
+	if ( pPlayer->IsDead()		) { return; }	// Unnecessary if player already dead.
+	if ( !pTutorialContainer	) { return; }
+	// else
+
+	const Donya::AABB playerBody = pPlayer->GetHitBox();
+
+	Donya::AABB tutorialBody{};
+	const size_t tutorialCount = pTutorialContainer->GetTutorialCount();
+	for ( size_t i = 0;  i < tutorialCount; ++i )
+	{
+		auto *pTutorial = pTutorialContainer->GetTutorialPtrOrNullptr( i );
+		if ( !pTutorial				) { continue; }
+		if ( !pTutorial->IsActive()	) { continue; }
+		// else
+
+		tutorialBody = pTutorial->GetHitBox();
+		if ( Donya::AABB::IsHitAABB( playerBody, tutorialBody ) )
+		{
+			pTutorial->Start();
+			break;
+		}
+	}
+}
 
 std::shared_ptr<Bullet::BulletBase> SceneGame::FindCollidedBulletOrNullptr( const Donya::AABB &other, const std::vector<Element::Type> &exceptTypes ) const
 {
@@ -2238,6 +2284,8 @@ void SceneGame::UseImGui()
 		{ pWarps->ShowImGuiNode( u8"ワープオブジェクト", stageNumber ); }
 		if ( pGoal )
 		{ pGoal->ShowImGuiNode( u8"ゴールオブジェクト", stageNumber ); }
+		if ( pTutorialContainer )
+		{ pTutorialContainer->ShowImGuiNode( u8"チュートリアル生成器", stageNumber ); }
 		ImGui::Text( "" );
 
 		if ( pBG )

@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "Donya/Color.h"
+#include "Donya/Keyboard.h"
 #include "Donya/Sprite.h"
 #include "Donya/Useful.h"
 
@@ -22,7 +23,15 @@ namespace
 
 void Tutorial::Init() {}
 void Tutorial::Uninit() {}
-void Tutorial::Update( float elapsedTime ) {}
+void Tutorial::Update( float elapsedTime, const Donya::XInput &controller )
+{
+	timer++;
+
+	if ( RequiredAdvance( controller ) )
+	{
+		shouldRemove = true;
+	}
+}
 void Tutorial::Draw( const UIObject &sprite, const Donya::Vector2 &ssBasePos )
 {
 	UIObject drawer		= sprite;
@@ -45,8 +54,7 @@ void Tutorial::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &m
 	constant.lightDirection	= -Donya::Vector3::Up();
 	pRenderer->ProcessDrawingCube( constant );
 }
-void Tutorial::Start()	{ nowActive		= true; }
-void Tutorial::Remove()	{ shouldRemove	= true; }
+void Tutorial::Start() { nowActive = true; }
 bool				Tutorial::ShouldRemove()	const { return nowActive;		}
 bool				Tutorial::IsActive()		const { return shouldRemove;	}
 Donya::Vector3		Tutorial::GetPosition()		const { return wsHitBox.pos;	}
@@ -64,6 +72,14 @@ Donya::Vector4x4	Tutorial::CalcWorldMatrix()	const
 	W._43 = translation.z;
 	return W;
 }
+bool Tutorial::RequiredAdvance( const Donya::XInput &controller ) const
+{
+	if ( timer < ignoreInputFrame ) { return false; }
+	// else
+	return	( controller.IsConnected() )
+			? controller.Trigger( Donya::Gamepad::A )
+			: Donya::Keyboard::Trigger( 'Z' );
+}
 #if USE_IMGUI
 void Tutorial::ShowImGuiNode( const std::string &nodeCaption )
 {
@@ -75,6 +91,9 @@ void Tutorial::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		shouldRemove = true;
 	}
+
+	ImGui::DragInt( u8"入力を無視する時間（フレーム）", &ignoreInputFrame );
+	ignoreInputFrame = std::max( 0, ignoreInputFrame );
 
 	ImGui::DragFloat ( u8"描画スケール",				&drawScale, 0.01f );
 	drawScale = std::max( 0.0f, drawScale );
@@ -118,7 +137,7 @@ void TutorialContainer::Uninit()
 		it.Uninit();
 	}
 }
-void TutorialContainer::Update( float elapsedTime )
+void TutorialContainer::Update( float elapsedTime, const Donya::XInput &controller )
 {
 	auto ShouldRemove = []( Tutorial &element )
 	{
@@ -127,7 +146,7 @@ void TutorialContainer::Update( float elapsedTime )
 
 	for ( auto &it : instances )
 	{
-		it.Update( elapsedTime );
+		it.Update( elapsedTime, controller );
 
 		if ( ShouldRemove( it ) )
 		{
@@ -161,8 +180,8 @@ void TutorialContainer::Draw()
 	Donya::Sprite::SetDrawDepth( depthDarken );
 	Donya::Sprite::DrawRect
 	(
-		Common::HalfScreenWidth(),	Common::HalfScreenHeight(),
-		Common::ScreenWidth(),		Common::ScreenHeight(),
+		Common::HalfScreenWidthF(),	Common::HalfScreenHeightF(),
+		Common::ScreenWidthF(),		Common::ScreenHeightF(),
 		Donya::Color::Code::BLACK,	darkenAlpha
 	);
 
@@ -187,16 +206,28 @@ void TutorialContainer::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::V
 		it.DrawHitBox( pRenderer, matVP, alpha );
 	}
 }
-size_t			TutorialContainer::GetTutorialCount() const { return instances.size(); }
-bool			TutorialContainer::IsOutOfRange( size_t index ) const
+size_t		TutorialContainer::GetTutorialCount() const { return instances.size(); }
+bool		TutorialContainer::IsOutOfRange( size_t index ) const
 {
 	return ( GetTutorialCount() <= index ) ? true : false;
 }
-const Tutorial	*TutorialContainer::GetTutorialPtrOrNullptr( size_t index ) const
+Tutorial	*TutorialContainer::GetTutorialPtrOrNullptr( size_t index )
 {
 	if ( IsOutOfRange( index ) ) { return nullptr; }
 	// else
 	return &instances[index];
+}
+bool		TutorialContainer::ShouldPauseGame() const
+{
+	for ( const auto &it : instances )
+	{
+		if ( it.IsActive() )
+		{
+			return true;
+		}
+	}
+	// else
+	return false;
 }
 void TutorialContainer::LoadBin ( int stageNo )
 {

@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Donya/Collision.h"
+#include "Donya/GamepadXInput.h"
 #include "Donya/Serializer.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
@@ -13,10 +14,12 @@
 class Tutorial
 {
 private:
+	int	 timer			= 0;
 	bool nowActive		= false;
 	bool shouldRemove	= false;
 private: // Serialize members.
-	float			drawScale = 1.0f;
+	int				ignoreInputFrame	= 3;
+	float			drawScale			= 1.0f;
 	Donya::Vector2	ssRelatedPos;	// Center
 	Donya::Vector2	texPartPos;		// Left-Top
 	Donya::Vector2	texPartSize;	// Whole size
@@ -28,11 +31,12 @@ private:
 	{
 		archive
 		(
-			CEREAL_NVP( drawScale		),
-			CEREAL_NVP( ssRelatedPos	),
-			CEREAL_NVP( texPartPos		),
-			CEREAL_NVP( texPartSize		),
-			CEREAL_NVP( wsHitBox		)
+			CEREAL_NVP( ignoreInputFrame	),
+			CEREAL_NVP( drawScale			),
+			CEREAL_NVP( ssRelatedPos		),
+			CEREAL_NVP( texPartPos			),
+			CEREAL_NVP( texPartSize			),
+			CEREAL_NVP( wsHitBox			)
 		);
 
 		if ( 1 <= version )
@@ -44,19 +48,20 @@ public:
 	void Init();
 	void Uninit();
 
-	void Update( float elapsedTime );
+	void Update( float elapsedTime, const Donya::XInput &controller );
 
 	void Draw( const UIObject &sprite, const Donya::Vector2 &ssBasePos );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, float alpha );
 public:
 	void Start();
-	void Remove();
 public:
 	bool				ShouldRemove()		const;
 	bool				IsActive()			const;
 	Donya::Vector3		GetPosition()		const;
 	Donya::AABB			GetHitBox()			const;
 	Donya::Vector4x4	CalcWorldMatrix()	const;
+private:
+	bool RequiredAdvance( const Donya::XInput &controller ) const;
 #if USE_IMGUI
 public:
 	void ShowImGuiNode( const std::string &nodeCaption );
@@ -96,14 +101,16 @@ public:
 	bool Init( int stageNo );
 	void Uninit();
 
-	void Update( float elapsedTime );
+	void Update( float elapsedTime, const Donya::XInput &controller );
 
 	void Draw();
 	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, float alpha );
 public:
-	size_t			GetTutorialCount() const;
-	bool			IsOutOfRange( size_t tutorialIndex ) const;
-	const Tutorial	*GetTutorialPtrOrNullptr( size_t tutorialIndex ) const;
+	size_t		GetTutorialCount() const;
+	bool		IsOutOfRange( size_t tutorialIndex ) const;
+	Tutorial	*GetTutorialPtrOrNullptr( size_t tutorialIndex );
+public:
+	bool			ShouldPauseGame() const;
 private:
 	void LoadBin( int stageNo );
 	void LoadJson( int stageNo );
