@@ -188,6 +188,8 @@ namespace
 		} hardened;
 
 		float jumpStandStrength		= 1.0f;
+
+		std::vector<Donya::Vector3> drawScales;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -216,6 +218,10 @@ namespace
 			}
 			if ( 4 <= version )
 			{
+				archive( CEREAL_NVP( drawScales ) );
+			}
+			if ( 5 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -231,8 +237,19 @@ namespace
 
 		return data.collisions[kind];
 	}
+	Donya::Vector3 GetModelDrawScale( Kind kind, const Member &data )
+	{
+		if ( IsOutOfRange( kind ) )
+		{
+			_ASSERT_EXPR( 0, L"Error : Passed argument outs of range!" );
+			return Donya::Vector3::Zero();
+		}
+		// else
+
+		return data.drawScales[kind];
+	}
 }
-CEREAL_CLASS_VERSION( Member, 3 )
+CEREAL_CLASS_VERSION( Member, 4 )
 
 class ParamObstacle : public ParameterBase<ParamObstacle>
 {
@@ -250,8 +267,22 @@ public:
 	#endif // DEBUG_MODE
 
 		Load( m, fromBinary );
+
+		ResizeVectorIfNeeded();
 	}
 	Member Data() const { return m; }
+private:
+	void ResizeVectorIfNeeded()
+	{
+		if ( m.collisions.size() != KIND_COUNT )
+		{
+			m.collisions.resize( KIND_COUNT );
+		}
+		if ( m.drawScales.size() != KIND_COUNT )
+		{
+			m.drawScales.resize( KIND_COUNT, Donya::Vector3{ 1.0f, 1.0f, 1.0f } );
+		}
+	}
 private:
 	std::string GetSerializeIdentifier()			override { return ID; }
 	std::string GetSerializePath( bool isBinary )	override { return GenerateSerializePath( ID, isBinary ); }
@@ -262,10 +293,7 @@ public:
 		if ( !ImGui::BeginIfAllowed() ) { return; }
 		// else
 
-		if ( m.collisions.size() != KIND_COUNT )
-		{
-			m.collisions.resize( KIND_COUNT );
-		}
+		ResizeVectorIfNeeded();
 
 		if ( ImGui::TreeNode( u8"障害物のパラメータ調整" ) )
 		{
@@ -286,6 +314,28 @@ public:
 					else
 					{
 						ParameterHelper::ShowAABBNode( caption, &data[i] );
+					}
+				}
+
+				ImGui::TreePop();
+			}
+			if ( ImGui::TreeNode( u8"描画スケール" ) )
+			{
+				auto &data = m.drawScales;
+
+				std::string  caption{};
+				const size_t count = data.size();
+				for ( size_t i = 0; i < count; ++i )
+				{
+					Kind kind = scast<Kind>( i );
+					caption = GetModelName( kind );
+					if ( kind == Kind::Water )
+					{
+						ImGui::TextDisabled( caption.c_str() );
+					}
+					else
+					{
+						ImGui::DragFloat3( caption.c_str(), &data[i].x, 0.01f );
 					}
 				}
 
@@ -382,6 +432,19 @@ bool ObstacleBase::ShouldRemove() const
 #endif // USE_IMGUIs
 	return false;
 }
+Donya::Vector4x4 ObstacleBase::GetWorldMatrix() const
+{
+	const auto wsBody		= GetHitBox();
+	const auto drawScale	= GetModelDrawScale( scast<Kind>( GetKind() ), ParamObstacle::Get().Data() );
+	Donya::Vector4x4 W{};
+	W._11 = drawScale.x;
+	W._22 = drawScale.y;
+	W._33 = drawScale.z;
+	W._41 = wsBody.pos.x;
+	W._42 = wsBody.pos.y;
+	W._43 = wsBody.pos.z;
+	return W;
+}
 #if USE_IMGUI
 void ObstacleBase::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 {
@@ -431,17 +494,6 @@ void Log::Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color )
 void Log::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color )
 {
 	ObstacleBase::DrawHitBox( pRenderer, matVP, { 0.5f, 0.4f, 0.1f, 0.5f } );
-}
-Donya::Vector4x4 Log::GetWorldMatrix() const
-{
-	Donya::Vector4x4 W{};
-	W._11 = drawScale.x;
-	W._22 = drawScale.y;
-	W._33 = drawScale.z;
-	W._41 = pos.x + hitBox.pos.x;
-	W._42 = pos.y + hitBox.pos.y;
-	W._43 = pos.z + hitBox.pos.z;
-	return W;
 }
 int Log::GetKind() const
 {
@@ -871,18 +923,6 @@ bool Hardened::ShouldRemove() const
 {
 	return ( ParamObstacle::Get().Data().hardened.aliveFrame <= aliveTimer ) ? true : false;
 }
-Donya::Vector4x4 Hardened::GetWorldMatrix() const
-{
-	Donya::Vector4x4 W{};
-	W._11 = hitBox.size.x * drawScale.x;
-	W._22 = hitBox.size.y * drawScale.y;
-	W._33 = hitBox.size.z * drawScale.z;
-	const auto pos = GetPosition();
-	W._41 = pos.x + hitBox.pos.x;
-	W._42 = pos.y + hitBox.pos.y;
-	W._43 = pos.z + hitBox.pos.z;
-	return W;
-}
 int  Hardened::GetKind() const
 {
 	return scast<int>( Kind::Hardened );
@@ -896,7 +936,6 @@ void Hardened::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 	if ( ImGui::TreeNode( u8"調整部分" ) )
 	{
 		ObstacleBase::ShowImGuiNode( "", /* useTreeNode = */ false );
-		ImGui::DragFloat3( u8"描画スケール", &drawScale.x, 0.01f );
 		ImGui::TreePop();
 	}
 	if ( ImGui::TreeNode( u8"現在の状態" ) )
