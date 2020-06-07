@@ -10,7 +10,11 @@ namespace
 }
 
 GridLine::GridLine() : lineLength(), drawInterval(), drawOrigin(), pLine( nullptr ) {}
-GridLine::~GridLine() = default;
+GridLine::~GridLine()
+{
+	if ( pLine ) { pLine->Uninit(); }
+	pLine.reset();
+}
 
 bool GridLine::Init()
 {
