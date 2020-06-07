@@ -475,6 +475,11 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	if ( NowGoalMoment() )
 	{
+		SaveData::ClearData clearData{};
+		clearData.clearRank = Rank::Calculate( currentTime, borderTimes );
+		clearData.clearTime = currentTime;
+		SaveDataAdmin::Get().RegisterIfFastOrNew( stageNumber, clearData );
+
 		if ( pGoal )
 		{
 			const std::vector<int> unlockStageNumbers = pGoal->GetUnlockStageNumbers();
