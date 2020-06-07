@@ -12,6 +12,23 @@ void SaveData::Clear()
 	pCurrentIntializer.reset();
 	remainingCheckPoints.clear();
 	unlockedStageNumbers.clear();
+	clearData.clear();
+}
+bool SaveData::RegisterClearDataIfFastOrNew( int stageNo, const ClearData &newData )
+{
+	auto itr =  clearData.find( stageNo );
+	if ( itr == clearData.end() )
+	{
+		clearData.insert( std::make_pair( stageNo, newData ) );
+		return true;
+	}
+	// else
+
+	if ( itr->second.clearTime <= newData.clearTime ) { return false; }
+	// else
+
+	itr->second = newData;
+	return true;
 }
 
 SaveDataAdmin::SaveDataAdmin() = default;
@@ -117,6 +134,11 @@ void SaveDataAdmin::UnlockStage( int unlockStageNo )
 	if ( IsUnlockedStageNumber( unlockStageNo ) ) { return; }
 	// else
 	savedata.unlockedStageNumbers.emplace_back( unlockStageNo );
+}
+bool SaveDataAdmin::RegisterIfFastOrNew( int stageNo, const SaveData::ClearData &newData )
+{
+	savedata.isEmpty = false;
+	return savedata.RegisterClearDataIfFastOrNew( stageNo, newData );
 }
 void SaveDataAdmin::RequireGotoOtherStage( int destNo )
 {

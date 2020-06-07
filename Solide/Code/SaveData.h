@@ -1,10 +1,12 @@
 #pragma once
 
+#include <unordered_map>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include <cereal/types/memory.hpp>
+#include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
 
 #include "Donya/Serializer.h"
@@ -12,14 +14,39 @@
 #include "Donya/UseImGui.h"
 
 #include "CheckPoint.h"
+#include "Timer.h"
 
 struct SaveData
 {
+public:
+	struct ClearData
+	{
+		int		clearRank = 99;
+		Timer	clearTime;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( clearRank ),
+				CEREAL_NVP( clearTime )
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
+public:
 	bool								isEmpty				= true;		// True is indicates a value of this save data is not changes yet.
 	int									currentStageNumber	= 0;
 	std::shared_ptr<PlayerInitializer>	pCurrentIntializer;
 	std::vector<CheckPoint::Instance>	remainingCheckPoints;
 	std::vector<int>					unlockedStageNumbers;
+	std::unordered_map<int, ClearData>	clearData; // Per stage.
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -36,12 +63,22 @@ private:
 
 		if ( 1 <= version )
 		{
+			archive( CEREAL_NVP( clearData ) );
+		}
+		if ( 2 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
 public:
 	void Clear();
+	/// <summary>
+	/// Returns true if data was updated, or newly added.
+	/// </summary>
+	bool RegisterClearDataIfFastOrNew( int stageNo, const ClearData &newData );
 };
+CEREAL_CLASS_VERSION( SaveData,				1 )
+CEREAL_CLASS_VERSION( SaveData::ClearData,	0 )
 
 
 class SaveDataAdmin : public Donya::Singleton<SaveDataAdmin>
@@ -71,6 +108,10 @@ public:
 	void Write( const PlayerInitializer &currentInitializer );
 	void Write( const CheckPoint &remainingCheckPoints );
 	void UnlockStage( int unlockStageNumber );
+	/// <summary>
+	/// Returns true if data was updated, or newly added.
+	/// </summary>
+	bool RegisterIfFastOrNew( int stageNo, const SaveData::ClearData &newData );
 public:
 	void RequireGotoOtherStage( int destinationStageNo );
 	void RemoveChangeStageRequest();
