@@ -728,7 +728,7 @@ void SceneTitle::StartUpdate( float elapsedTime )
 	{
 		timer++;
 
-		if ( timer == FetchMember().waitFrameUntilChoiceItem )
+		if ( FetchMember().waitFrameUntilChoiceItem <= timer )
 		{
 			StartUninit();
 			SelectInit();

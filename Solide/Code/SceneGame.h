@@ -65,7 +65,7 @@ private:
 	Timer								currentTime;
 	std::vector<Timer>					borderTimes;
 	NumberDrawer						numberDrawer;
-	StageInfoDisplayer					infoDrawer;
+	std::unique_ptr<StageInfoDisplayer>	pInfoDrawer;
 	bool								shouldDrawCurrentTimer = false;
 
 	int  stageNumber	= 1;

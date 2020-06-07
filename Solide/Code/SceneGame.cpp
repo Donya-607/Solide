@@ -307,7 +307,8 @@ void SceneGame::Init()
 	result = numberDrawer.Init( GetSpritePath( SpriteAttribute::Number ) );
 	assert( result );
 	
-	result = infoDrawer.Init();
+	pInfoDrawer = std::make_unique<StageInfoDisplayer>();
+	result = pInfoDrawer->Init();
 	assert( result );
 
 	const SaveData nowData = SaveDataAdmin::Get().GetNowData();
@@ -328,6 +329,7 @@ void SceneGame::Uninit()
 
 	if ( pShadow ) { pShadow->ClearInstances(); }
 	pShadow.reset();
+	pInfoDrawer.reset();
 
 	ObstacleBase::ParameterUninit();
 	ParamGame::Get().Uninit();
@@ -1509,7 +1511,7 @@ void SceneGame::DrawCurrentTime()
 }
 void SceneGame::DrawStageInfo()
 {
-	if ( !pWarps || !pPlayer ) { return; }
+	if ( !pInfoDrawer || !pWarps || !pPlayer ) { return; }
 	// else
 
 	const Donya::Vector3 plPos = pPlayer->GetPosition();
@@ -1544,7 +1546,7 @@ void SceneGame::DrawStageInfo()
 	const Donya::Vector4x4 matScreen = MakeScreenTransformMatrix();
 	for ( const auto &it : drawData )
 	{
-		infoDrawer.DrawInfo
+		pInfoDrawer->DrawInfo
 		(
 			matScreen,
 			plPos,
@@ -2350,7 +2352,8 @@ void SceneGame::UseImGui()
 		{ pGoal->ShowImGuiNode( u8"ゴールオブジェクト", stageNumber ); }
 		if ( pTutorialContainer )
 		{ pTutorialContainer->ShowImGuiNode( u8"チュートリアル生成器", stageNumber ); }
-		infoDrawer.ShowImGuiNode( u8"ステージ情報描画" );
+		if ( pInfoDrawer )
+		{ pInfoDrawer->ShowImGuiNode( u8"ステージ情報描画" ); }
 		ImGui::Text( "" );
 
 		if ( pBG )

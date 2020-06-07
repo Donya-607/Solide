@@ -15,13 +15,13 @@ bool NumberDrawer::Init( const std::wstring &sprPath )
 
 	return succeeded;
 }
-void NumberDrawer::DrawNumber( int number, const Donya::Vector2 &ssPos, float scale, float alpha, const Donya::Vector2 &posOrigin, float drawDepth )
+void NumberDrawer::DrawNumber( int number, const Donya::Vector2 &ssPos, float scale, float alpha, const Donya::Vector2 &posOrigin, float drawDepth, int drawDigit )
 {
 	sprite.pos		= ssPos;
 	sprite.texPos.y	= 0.0f;
 
-	auto separated = Donya::SeparateDigits( number, 2 );	// Store '123' to [0:3][1:2][2:1], '1' to [0:1][1:0]
-	std::reverse( separated.begin(), separated.end() );		// [0:3][1:2][2:1] to [0:1][1:2][2:3], [0:1][1:0] to [0:0][1:1]
+	auto separated = Donya::SeparateDigits( number, drawDigit );	// Store '123' to [0:3][1:2][2:1], '1' to [0:1][1:0]
+	std::reverse( separated.begin(), separated.end() );				// [0:3][1:2][2:1] to [0:1][1:2][2:3], [0:1][1:0] to [0:0][1:1]
 
 	const size_t count = separated.size();
 	for ( size_t i = 0; i < count; ++i )
@@ -32,7 +32,7 @@ void NumberDrawer::DrawNumber( int number, const Donya::Vector2 &ssPos, float sc
 		sprite.pos.x += partSize.Float().x * scale;
 	}
 }
-void NumberDrawer::DrawNumbers( std::vector<int> numbers, Delimiter delim, const Donya::Vector2 &ssPos, float scale, float alpha, const Donya::Vector2 &posOrigin, float drawDepth )
+void NumberDrawer::DrawNumbers( std::vector<int> numbers, Delimiter delim, const Donya::Vector2 &ssPos, float scale, float alpha, const Donya::Vector2 &posOrigin, float drawDepth, int drawDigit )
 {
 	if ( delim < Empty || DelimiterCount <= delim )
 	{
@@ -44,7 +44,7 @@ void NumberDrawer::DrawNumbers( std::vector<int> numbers, Delimiter delim, const
 	const size_t count = numbers.size();
 	for ( size_t i = 0; i < count; ++i )
 	{
-		DrawNumber( numbers[i], basePos, scale, alpha, posOrigin, drawDepth );
+		DrawNumber( numbers[i], basePos, scale, alpha, posOrigin, drawDepth, drawDigit );
 		basePos.x =  sprite.pos.x; // "sprite.pos.x" will be increased in DrawNumber().
 
 		if ( delim != Empty && i < count - 1 )
