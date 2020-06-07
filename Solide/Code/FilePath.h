@@ -41,6 +41,7 @@ enum class SpriteAttribute
 	LoadingSentence,
 	Number,
 	Pause,
+	StageInfoFrame,
 	TutorialFrame,
 	TutorialSentence,
 	TitleItems,

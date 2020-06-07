@@ -24,7 +24,7 @@ bool Rank::Init( const std::wstring &sprPath )
 	const bool succeeded = sprite.LoadSprite( sprPath, 128U );
 
 	partSize		=  sprite.GetSpriteSize();
-	partSize.x		/= rankCount;
+	partSize.y		/= rankCount;
 	sprite.texSize	=  partSize.Float();
 
 	return succeeded;
@@ -37,8 +37,8 @@ void Rank::Draw( int rank, const Donya::Vector2 &ssPos, float scale, float degre
 	sprite.drawScale	= scale;
 	sprite.degree		= degree;
 	sprite.alpha		= alpha;
-	sprite.texPos.x		= partSize.x * scast<float>( rank );
-	sprite.texPos.y		= 0.0f;
+	sprite.texPos.x		= 0.0f;
+	sprite.texPos.y		= partSize.x * scast<float>( rank );
 
 	sprite.DrawPart( drawDepth );
 }

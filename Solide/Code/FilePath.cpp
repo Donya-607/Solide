@@ -83,7 +83,7 @@ std::wstring GetSpritePath( SpriteAttribute attr )
 	case SpriteAttribute::ClearFrame:
 		return ToRelPath( L"Clear/Frame.png" );
 	case SpriteAttribute::ClearRank:
-		return ToRelPath( L"Clear/Rank.png" );
+		return ToRelPath( L"UI/Rank.png" );
 	case SpriteAttribute::ClearSentence:
 		return ToRelPath( L"Clear/Clear.png" );
 	case SpriteAttribute::Cloud:
@@ -96,6 +96,8 @@ std::wstring GetSpritePath( SpriteAttribute attr )
 		return ToRelPath( L"UI/Number.png" );
 	case SpriteAttribute::Pause:
 		return ToRelPath( L"Pause/Items.png" );
+	case SpriteAttribute::StageInfoFrame:
+		return ToRelPath( L"UI/StageInfoFrame.png" );
 	case SpriteAttribute::TutorialFrame:
 		return ToRelPath( L"Tutorial/Frame.png" );
 	case SpriteAttribute::TutorialSentence:

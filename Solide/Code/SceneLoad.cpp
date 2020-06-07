@@ -276,6 +276,7 @@ void SceneLoad::Init()
 		if ( !MakeTextureCache( Attr::Cloud,			2U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::Number,		 1024U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::Pause,			8U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::StageInfoFrame,  32U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::TutorialFrame,	2U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::TutorialSentence,	4U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::TitleItems,	   16U ) ) { succeeded = false; }
