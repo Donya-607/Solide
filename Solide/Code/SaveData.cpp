@@ -30,6 +30,19 @@ bool SaveData::RegisterClearDataIfFastOrNew( int stageNo, const ClearData &newDa
 	itr->second = newData;
 	return true;
 }
+SaveData::ClearData SaveData::FetchRegisteredClearDataOrDefault( int stageNo ) const
+{
+	auto itr =  clearData.find( stageNo );
+	if ( itr == clearData.end() )
+	{
+		ClearData defaultData;
+		defaultData.clearRank = 99;
+		defaultData.clearTime.Set( 59, 99, 99 );
+		return defaultData;
+	}
+	// else
+	return itr->second;
+}
 
 SaveDataAdmin::SaveDataAdmin() = default;
 

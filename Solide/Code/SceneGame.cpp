@@ -306,6 +306,9 @@ void SceneGame::Init()
 
 	result = numberDrawer.Init( GetSpritePath( SpriteAttribute::Number ) );
 	assert( result );
+	
+	result = infoDrawer.Init();
+	assert( result );
 
 	const SaveData nowData = SaveDataAdmin::Get().GetNowData();
 #if 0 // ENABLE_RESTART_FROM_LAST_STATUS
@@ -617,6 +620,8 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		DrawCurrentTime();
 	}
+	
+	DrawStageInfo();
 
 	// A draw check of these sentences are doing at internal of these methods.
 	//if ( pTutorialSentence	) { pTutorialSentence->Draw( elapsedTime );	}
@@ -1502,6 +1507,53 @@ void SceneGame::DrawCurrentTime()
 	const auto data = FetchMember();
 	numberDrawer.DrawTime( currentTime, data.ssCurrentTimePos, data.currentTimeScale );
 }
+void SceneGame::DrawStageInfo()
+{
+	if ( !pWarps || !pPlayer ) { return; }
+	// else
+
+	const Donya::Vector3 plPos = pPlayer->GetPosition();
+
+	struct Data
+	{
+		int targetStageNo = -1;
+		Donya::Vector3 pos{};
+	};
+	std::vector<Data> drawData{};
+
+	const Warp *pWarp = nullptr;
+	const size_t warpCount = pWarps->GetWarpCount();
+	for ( size_t i = 0; i < warpCount; ++i )
+	{
+		pWarp = pWarps->GetWarpPtrOrNullptr( i );
+		if ( !pWarp ) { continue; }
+
+		Data tmp;
+		tmp.pos = pWarp->GetPosition();
+		tmp.targetStageNo = pWarp->GetDestinationStageNo();
+		drawData.emplace_back( std::move( tmp ) );
+	}
+
+	auto IsGreaterDepth = []( const Data &lhs, const Data &rhs )
+	{
+		return ( rhs.pos.z < lhs.pos.z );
+	};
+	std::sort( drawData.begin(), drawData.end(), IsGreaterDepth );
+
+	const auto savedata = SaveDataAdmin::Get().GetNowData();
+	const Donya::Vector4x4 matScreen = MakeScreenTransformMatrix();
+	for ( const auto &it : drawData )
+	{
+		infoDrawer.DrawInfo
+		(
+			matScreen,
+			plPos,
+			it.pos,
+			savedata.FetchRegisteredClearDataOrDefault( it.targetStageNo ),
+			it.targetStageNo
+		);
+	}
+}
 
 void SceneGame::TutorialUpdate( float elapsedTime )
 {
@@ -2298,6 +2350,7 @@ void SceneGame::UseImGui()
 		{ pGoal->ShowImGuiNode( u8"ゴールオブジェクト", stageNumber ); }
 		if ( pTutorialContainer )
 		{ pTutorialContainer->ShowImGuiNode( u8"チュートリアル生成器", stageNumber ); }
+		infoDrawer.ShowImGuiNode( u8"ステージ情報描画" );
 		ImGui::Text( "" );
 
 		if ( pBG )

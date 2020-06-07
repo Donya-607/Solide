@@ -76,6 +76,7 @@ public:
 	/// Returns true if data was updated, or newly added.
 	/// </summary>
 	bool RegisterClearDataIfFastOrNew( int stageNo, const ClearData &newData );
+	ClearData FetchRegisteredClearDataOrDefault( int stageNo ) const;
 };
 CEREAL_CLASS_VERSION( SaveData,				1 )
 CEREAL_CLASS_VERSION( SaveData::ClearData,	0 )

@@ -18,6 +18,7 @@
 #include "ClearPerformance.h"
 #include "EnemyContainer.h"
 #include "Goal.h"
+#include "InfoDisplayer.h"
 #include "Numeric.h"
 #include "ObstacleContainer.h"
 #include "Player.h"
@@ -64,6 +65,7 @@ private:
 	Timer								currentTime;
 	std::vector<Timer>					borderTimes;
 	NumberDrawer						numberDrawer;
+	StageInfoDisplayer					infoDrawer;
 	bool								shouldDrawCurrentTimer = false;
 
 	int  stageNumber	= 1;
@@ -143,6 +145,7 @@ private:
 	void	GridControl();
 
 	void	DrawCurrentTime();
+	void	DrawStageInfo();
 
 	void	TutorialUpdate( float elapsedTime );
 
