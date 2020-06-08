@@ -1496,6 +1496,7 @@ void BossFirst::MotionManager::ApplyMotion( BossFirst &inst, MotionKind kind )
 
 	currentKind = kind;
 
+	inst.model.animator.ResetTimer();
 	inst.AssignSpecifyPose( intKind );
 
 	ApplyLoopFlag( inst, kind );
