@@ -112,8 +112,8 @@ private:
 
 	void	WriteSaveData( int stageNo ) const;
 
-#if DEBUG_MODE
 	Donya::Vector4x4 MakeScreenTransformMatrix() const;
+#if DEBUG_MODE
 	void	DebugUpdate( float elapsedTime );
 	void	ChoiceObject( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd);
 	void	ChoiceEnemy( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd );

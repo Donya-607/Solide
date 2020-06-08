@@ -852,7 +852,6 @@ void SceneGame::WriteSaveData( int stageNo ) const
 	}
 }
 
-#if DEBUG_MODE
 Donya::Vector4x4 SceneGame::MakeScreenTransformMatrix() const
 {
 	const Donya::Vector4x4 V  = iCamera.CalcViewMatrix();
@@ -861,6 +860,7 @@ Donya::Vector4x4 SceneGame::MakeScreenTransformMatrix() const
 	return V * P * VP;
 }
 
+#if DEBUG_MODE
 #include <cmath> // Use round().
 void SceneGame::DebugUpdate( float elapsedTime )
 {
