@@ -67,7 +67,7 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption, bool *wantRemoveMe );
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( Warp, 0 )
+CEREAL_CLASS_VERSION( Warp, 1 )
 
 
 class WarpContainer

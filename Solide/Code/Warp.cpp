@@ -180,29 +180,32 @@ void Warp::ShowImGuiNode( const std::string &nodeCaption, bool *wantRemoveMe )
 	if ( ImGui::TreeNode( u8"ランクのボーダーラインとなる時間の設定" ) )
 	{
 		ParameterHelper::ResizeByButton( &borderTimes );
+		ImGui::Text( "" );
 
-		std::string caption{};
 		auto GetRankStr = []( size_t index )->std::string
 		{
 			const std::string ranks = "SABCDE";
 			// The size() method returns character count("SABCDE" size is 6), does not contain the null-termination.
 			if ( ranks.size() <= index ) { index = ranks.size() - 1; }
-			return ranks[index] + u8"ランク";
+			return std::string{ ranks[index] } + u8"ランク";
 		};
+
+		std::string caption{};
+		std::string rankStr{};
 
 		const size_t count = borderTimes.size();
 		size_t eraseIndex = count;
-
 		for ( size_t i = 0; i < count; ++i )
 		{
-			caption = GetRankStr( i ) + u8"を削除";
+			rankStr = GetRankStr( i );
+			caption = rankStr + u8"を削除";
 			if ( ImGui::Button( caption.c_str() ) )
 			{
 				eraseIndex = i;
 			}
 			ImGui::SameLine();
 
-			caption = GetRankStr( i ) + u8"となるボーダー";
+			caption = rankStr + u8"となるボーダー";
 			borderTimes[i].ShowImGuiNode( caption, /* useTreeNode = */ true );
 		}
 
