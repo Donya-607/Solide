@@ -1441,6 +1441,12 @@ namespace Bullet
 		{
 			return ( ParamBullet::Get().Data().breath.aliveFrame <= aliveTime || wasHitToObject ) ? true : false;
 		}
+		void Breath::GiveElement( Element::Type addType )
+		{
+			// To don't make damage to a boss(Breath generator).
+			addType &= ~( Element::Type::Oil );
+			BulletBase::GiveElement( addType );
+		}
 		Donya::AABB Breath::GetHitBoxAABB() const
 		{
 			Donya::AABB tmp = ParamBullet::Get().Data().breath.hitBox;

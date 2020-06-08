@@ -278,6 +278,7 @@ namespace Bullet
 			void AttachSelfKind() override;
 		public:
 			bool					ShouldRemove()		const override;
+			void					GiveElement( Element::Type addType ) override;
 			Donya::AABB				GetHitBoxAABB()		const override;
 			Donya::Vector4x4		GetWorldMatrix()	const override;
 			bool					IsRequestingFire()	const override;
