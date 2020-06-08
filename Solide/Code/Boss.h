@@ -170,9 +170,10 @@ private:
 		void Init( BossFirst &instance );
 		void Update( BossFirst &instance, float elapsedTime );
 	public:
-		void ApplyMotion( BossFirst &instance, MotionKind kind );
-		MotionKind GetCurrentKind() const { return currentKind; }
+		void ChangeMotion( MotionKind kind );
+		MotionKind GetCurrentKind() const;
 	private:
+		void ApplyMotion( BossFirst &instance, MotionKind kind );
 		void ApplyLoopFlag( BossFirst &instance, MotionKind kind );
 	};
 #pragma region Mover

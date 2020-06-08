@@ -1468,6 +1468,17 @@ void BossFirst::MotionManager::Update( BossFirst &inst, float elapsedTime )
 
 	const float acceleration = motionSpeeds[intKind];
 	inst.model.animator.Update( elapsedTime * acceleration );
+	ApplyMotion( inst, currentKind );
+}
+void BossFirst::MotionManager::ChangeMotion( MotionKind kind )
+{
+	if ( kind == MotionKind::MotionCount ) { return; }
+	// else
+	currentKind = kind;
+}
+BossFirst::MotionKind BossFirst::MotionManager::GetCurrentKind() const
+{
+	return currentKind;
 }
 void BossFirst::MotionManager::ApplyMotion( BossFirst &inst, MotionKind kind )
 {
@@ -1504,10 +1515,10 @@ void BossFirst::MotionManager::ApplyLoopFlag( BossFirst &inst, MotionKind kind )
 	case BossFirst::MotionKind::Walk:			Apply( true  );	return;
 	case BossFirst::MotionKind::RushReady:		Apply( true  );	return;
 	case BossFirst::MotionKind::RushProcess:	Apply( true  );	return;
-	case BossFirst::MotionKind::RushBrake:		Apply( false );	return;
+	case BossFirst::MotionKind::RushBrake:		Apply( true  );	return;
 	case BossFirst::MotionKind::BreathReady:	Apply( false );	return;
 	case BossFirst::MotionKind::BreathProcess:	Apply( true  );	return;
-	case BossFirst::MotionKind::Damage:			Apply( false );	return;
+	case BossFirst::MotionKind::Damage:			Apply( true  );	return;
 	case BossFirst::MotionKind::Die:			Apply( true  );	return;
 	default: _ASSERT_EXPR( 0, L"Error: Unexpected kind!" );		return;
 	}
@@ -1536,7 +1547,7 @@ void BossFirst::Ready::Init( BossFirst &inst )
 
 	gotoNext = false;
 
-	inst.motionManager.ApplyMotion( inst, MotionKind::RushReady );
+	inst.motionManager.ChangeMotion( MotionKind::RushReady );
 }
 void BossFirst::Ready::Uninit( BossFirst &inst ) {}
 void BossFirst::Ready::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1603,7 +1614,7 @@ void BossFirst::Rush::Init( BossFirst &inst )
 
 	shouldStop = false;
 
-	inst.motionManager.ApplyMotion( inst, MotionKind::RushProcess );
+	inst.motionManager.ChangeMotion( MotionKind::RushProcess );
 }
 void BossFirst::Rush::Uninit( BossFirst &inst ) {}
 void BossFirst::Rush::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1677,7 +1688,7 @@ void BossFirst::Brake::Init( BossFirst &inst )
 	isStopping	= false;
 	gotoNext	= false;
 
-	inst.motionManager.ApplyMotion( inst, MotionKind::RushBrake );
+	inst.motionManager.ChangeMotion( MotionKind::RushBrake );
 }
 void BossFirst::Brake::Uninit( BossFirst &inst ) {}
 void BossFirst::Brake::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1754,7 +1765,7 @@ void BossFirst::Breath::Init( BossFirst &inst )
 
 	gotoNext = false;
 
-	inst.motionManager.ApplyMotion( inst, MotionKind::BreathReady );
+	inst.motionManager.ChangeMotion( MotionKind::BreathReady );
 }
 void BossFirst::Breath::Uninit( BossFirst &inst ) {}
 void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1781,9 +1792,9 @@ void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya:
 
 	if ( preFrame <= inst.timer && inst.timer < fireFrame )
 	{
-		if ( inst.motionManager.GetCurrentKind() != MotionKind::RushProcess )
+		if ( inst.motionManager.GetCurrentKind() != MotionKind::BreathProcess )
 		{
-			inst.motionManager.ApplyMotion( inst, MotionKind::RushProcess );
+			inst.motionManager.ChangeMotion( MotionKind::BreathProcess );
 		}
 
 		auto ShouldFire = [&]()
@@ -1844,7 +1855,7 @@ void BossFirst::Wait::Init( BossFirst &inst )
 	inst.velocity.x = 0.0f;
 	inst.velocity.z = 0.0f;
 
-	inst.motionManager.ApplyMotion( inst, MotionKind::Wait );
+	inst.motionManager.ChangeMotion( MotionKind::Wait );
 }
 void BossFirst::Wait::Uninit( BossFirst &inst ) {}
 void BossFirst::Wait::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1874,7 +1885,7 @@ void BossFirst::Walk::Init( BossFirst &inst )
 	inst.velocity.x = 0.0f;
 	inst.velocity.z = 0.0f;
 
-	inst.motionManager.ApplyMotion( inst, MotionKind::Walk );
+	inst.motionManager.ChangeMotion( MotionKind::Walk );
 }
 void BossFirst::Walk::Uninit( BossFirst &inst ) {}
 void BossFirst::Walk::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1911,7 +1922,7 @@ void BossFirst::Damage::Init( BossFirst &inst )
 
 	gotoNext = false;
 
-	inst.motionManager.ApplyMotion( inst, MotionKind::Damage );
+	inst.motionManager.ChangeMotion( MotionKind::Damage );
 }
 void BossFirst::Damage::Uninit( BossFirst &inst ) {}
 void BossFirst::Damage::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1974,7 +1985,7 @@ void BossFirst::Die::Init( BossFirst &inst )
 	inst.velocity.x = 0.0f;
 	inst.velocity.z = 0.0f;
 
-	inst.motionManager.ApplyMotion( inst, MotionKind::Die );
+	inst.motionManager.ChangeMotion( MotionKind::Die );
 }
 void BossFirst::Die::Uninit( BossFirst &inst ) {}
 void BossFirst::Die::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -2018,9 +2029,6 @@ void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 #if USE_IMGUI
 	if ( wantPauseUpdates ) { return; }
 #endif // USE_IMGUI
-
-	// TODO: Adjust the motion-index by mover.
-	//UpdateMotion( elapsedTime, 0 );
 
 	if ( IsDead() ) { return; }
 	// else
