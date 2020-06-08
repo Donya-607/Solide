@@ -1402,6 +1402,56 @@ std::vector<Donya::AABB>	BossBase::FetchOwnHitBoxes( bool wantHurtBoxes ) const
 
 
 #pragma region First
+void BossFirst::MotionManager::Init( BossFirst &inst )
+{
+	inst.model.animator.ResetTimer();
+}
+void BossFirst::MotionManager::Update( BossFirst &inst, float elapsedTime )
+{
+	inst.model.animator.Update( elapsedTime );
+}
+void BossFirst::MotionManager::ApplyMotion( BossFirst &inst, MotionKind kind )
+{
+	if ( !inst.model.pResource ) { return; }
+	// else
+
+	const int intKind		= scast<int>( kind );
+	const int motionCount	= scast<int>( inst.model.pResource->motionHolder.GetMotionCount() );
+	if ( motionCount <= intKind )
+	{
+		_ASSERT_EXPR( 0, L"Error: Specified motion is out of range!" );
+		return;
+	}
+	// else
+
+	inst.AssignSpecifyPose( intKind );
+
+	ApplyLoopFlag( inst, kind );
+}
+void BossFirst::MotionManager::ApplyLoopFlag( BossFirst &inst, MotionKind kind )
+{
+	auto Apply = [&]( bool enableLoop )
+	{
+		( enableLoop )
+		? inst.model.animator.EnableLoop()
+		: inst.model.animator.DisableLoop();
+	};
+
+	switch ( kind )
+	{
+	case BossFirst::MotionKind::Wait:			Apply( true  );	return;
+	case BossFirst::MotionKind::Walk:			Apply( true  );	return;
+	case BossFirst::MotionKind::RushReady:		Apply( true  );	return;
+	case BossFirst::MotionKind::RushProcess:	Apply( true  );	return;
+	case BossFirst::MotionKind::RushBrake:		Apply( false );	return;
+	case BossFirst::MotionKind::BreathReady:	Apply( false );	return;
+	case BossFirst::MotionKind::BreathProcess:	Apply( true  );	return;
+	case BossFirst::MotionKind::Damage:			Apply( false );	return;
+	case BossFirst::MotionKind::Die:			Apply( true  );	return;
+	default: _ASSERT_EXPR( 0, L"Error: Unexpected kind!" );		return;
+	}
+}
+
 void BossFirst::MoverBase::Init( BossFirst &inst )
 {
 	inst.timer = 0;
@@ -1424,6 +1474,8 @@ void BossFirst::Ready::Init( BossFirst &inst )
 	inst.velocity.z = 0.0f;
 
 	gotoNext = false;
+
+	inst.motionManager.ApplyMotion( inst, MotionKind::RushReady );
 }
 void BossFirst::Ready::Uninit( BossFirst &inst ) {}
 void BossFirst::Ready::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1489,6 +1541,8 @@ void BossFirst::Rush::Init( BossFirst &inst )
 	}
 
 	shouldStop = false;
+
+	inst.motionManager.ApplyMotion( inst, MotionKind::RushProcess );
 }
 void BossFirst::Rush::Uninit( BossFirst &inst ) {}
 void BossFirst::Rush::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1561,6 +1615,8 @@ void BossFirst::Brake::Init( BossFirst &inst )
 
 	isStopping	= false;
 	gotoNext	= false;
+
+	inst.motionManager.ApplyMotion( inst, MotionKind::RushBrake );
 }
 void BossFirst::Brake::Uninit( BossFirst &inst ) {}
 void BossFirst::Brake::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1636,6 +1692,8 @@ void BossFirst::Breath::Init( BossFirst &inst )
 	inst.velocity.z = 0.0f;
 
 	gotoNext = false;
+
+	inst.motionManager.ApplyMotion( inst, MotionKind::BreathReady );
 }
 void BossFirst::Breath::Uninit( BossFirst &inst ) {}
 void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1660,6 +1718,10 @@ void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya:
 	inst.orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
 	inst.aimingPos		= targetPos;
 
+	if ( inst.timer == preFrame )
+	{
+		inst.motionManager.ApplyMotion( inst, MotionKind::RushProcess );
+	}
 	if ( preFrame <= inst.timer && inst.timer < fireFrame )
 	{
 		auto ShouldFire = [&]()
@@ -1719,6 +1781,8 @@ void BossFirst::Wait::Init( BossFirst &inst )
 	MoverBase::Init( inst );
 	inst.velocity.x = 0.0f;
 	inst.velocity.z = 0.0f;
+
+	inst.motionManager.ApplyMotion( inst, MotionKind::Wait );
 }
 void BossFirst::Wait::Uninit( BossFirst &inst ) {}
 void BossFirst::Wait::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1747,6 +1811,8 @@ void BossFirst::Walk::Init( BossFirst &inst )
 	MoverBase::Init( inst );
 	inst.velocity.x = 0.0f;
 	inst.velocity.z = 0.0f;
+
+	inst.motionManager.ApplyMotion( inst, MotionKind::Walk );
 }
 void BossFirst::Walk::Uninit( BossFirst &inst ) {}
 void BossFirst::Walk::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1782,6 +1848,8 @@ void BossFirst::Damage::Init( BossFirst &inst )
 	inst.velocity.z			= 0.0f;
 
 	gotoNext = false;
+
+	inst.motionManager.ApplyMotion( inst, MotionKind::Damage );
 }
 void BossFirst::Damage::Uninit( BossFirst &inst ) {}
 void BossFirst::Damage::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1843,6 +1911,8 @@ void BossFirst::Die::Init( BossFirst &inst )
 	MoverBase::Init( inst );
 	inst.velocity.x = 0.0f;
 	inst.velocity.z = 0.0f;
+
+	inst.motionManager.ApplyMotion( inst, MotionKind::Die );
 }
 void BossFirst::Die::Uninit( BossFirst &inst ) {}
 void BossFirst::Die::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1867,6 +1937,8 @@ void BossFirst::Init( const BossInitializer &parameter )
 {
 	BossBase::Init( parameter );
 	actionIndex = 0;
+
+	motionManager.Init( *this );
 
 	AssignMoverByAction( FetchMember().forFirst.initialAction );
 }
@@ -1911,6 +1983,8 @@ void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	{
 		oilTimer = 0;
 	}
+
+	motionManager.Update( *this, elapsedTime );
 }
 void BossFirst::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix )
 {

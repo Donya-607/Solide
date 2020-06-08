@@ -146,7 +146,29 @@ public:
 
 		ActionCount
 	};
+	enum class MotionKind
+	{
+		Wait = 0,
+		Walk,
+		RushReady,
+		RushProcess,
+		RushBrake,
+		BreathReady,
+		BreathProcess,
+		Damage,
+		Die
+	};
 private:
+	class MotionManager
+	{
+	public:
+		void Init( BossFirst &instance );
+		void Update( BossFirst &instance, float elapsedTime );
+	public:
+		void ApplyMotion( BossFirst &instance, MotionKind kind );
+	private:
+		void ApplyLoopFlag( BossFirst &instance, MotionKind kind );
+	};
 #pragma region Mover
 	class MoverBase
 	{
@@ -277,6 +299,7 @@ private:
 	int							remainFeintCount	= 0; // 0 is invalid.
 	Donya::Vector3				aimingPos;
 	std::unique_ptr<MoverBase>	pMover = nullptr;
+	MotionManager				motionManager;
 	mutable bool receiveDamage = false; // Will be changed at const method.
 public:
 	void Init( const BossInitializer &parameter ) override;
