@@ -430,7 +430,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	{
 		currentTime.Update();
 	}
-	borderTimes.clear();
 
 	pBG->Update( elapsedTime );
 

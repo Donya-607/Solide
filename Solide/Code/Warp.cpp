@@ -209,6 +209,11 @@ void Warp::ShowImGuiNode( const std::string &nodeCaption, bool *wantRemoveMe )
 			borderTimes[i].ShowImGuiNode( caption, /* useTreeNode = */ true );
 		}
 
+		if ( eraseIndex != count )
+		{
+			borderTimes.erase( borderTimes.begin() + eraseIndex );
+		}
+
 		ImGui::TreePop();
 	}
 
