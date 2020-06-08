@@ -156,16 +156,22 @@ public:
 		BreathReady,
 		BreathProcess,
 		Damage,
-		Die
+		Die,
+
+		MotionCount
 	};
+	static std::string GetMotionName( MotionKind kind );
 private:
 	class MotionManager
 	{
+	private:
+		MotionKind currentKind = MotionKind::Wait;
 	public:
 		void Init( BossFirst &instance );
 		void Update( BossFirst &instance, float elapsedTime );
 	public:
 		void ApplyMotion( BossFirst &instance, MotionKind kind );
+		MotionKind GetCurrentKind() const { return currentKind; }
 	private:
 		void ApplyLoopFlag( BossFirst &instance, MotionKind kind );
 	};

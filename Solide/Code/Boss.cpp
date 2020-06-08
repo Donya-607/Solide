@@ -463,6 +463,8 @@ namespace
 		int		releaseOilFrame = 1;
 		Ready	readyInFeint;
 		Brake	brakeInFeint;
+
+		std::vector<float> motionSpeeds; // size() == MotionKind::MotionCount
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -500,6 +502,7 @@ namespace
 					CEREAL_NVP( releaseOilFrame	)
 				);
 			}
+			// if ( 4 <= version ) // It's lost
 			if ( 5 <= version )
 			{
 				archive
@@ -508,7 +511,11 @@ namespace
 					CEREAL_NVP( brakeInFeint )
 				);
 			}
-			if ( 4 <= version )
+			if ( 6 <= version )
+			{
+				archive( CEREAL_NVP( motionSpeeds ) );
+			}
+			if ( 7 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -561,7 +568,7 @@ namespace
 CEREAL_CLASS_VERSION( Member,					1 )
 CEREAL_CLASS_VERSION( DrawingParam,				0 )
 CEREAL_CLASS_VERSION( CollisionParam,			0 )
-CEREAL_CLASS_VERSION( FirstParam,				5 )
+CEREAL_CLASS_VERSION( FirstParam,				6 )
 CEREAL_CLASS_VERSION( FirstParam::Ready,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Rush,			0 )
 CEREAL_CLASS_VERSION( FirstParam::Brake,		0 )
@@ -623,6 +630,11 @@ private:
 		(
 			&m.forFirst.breath.paramPerHP, FirstParam::Breath::PerHP{},
 			( firstSize < 0 ) ? 0U : scast<size_t>( firstSize )
+		);
+		ResizeIfNeeded
+		(
+			&m.forFirst.motionSpeeds, 1.0f,
+			scast<size_t>( BossFirst::MotionKind::MotionCount )
 		);
 	}
 private:
@@ -1022,6 +1034,23 @@ public:
 					ImGui::TreePop();
 				}
 
+				if ( ImGui::TreeNode( u8"モーション再生速度" ) )
+				{
+					constexpr size_t motionCount = scast<size_t>( BossFirst::MotionKind::MotionCount );
+					auto &speeds = data.motionSpeeds;
+					if ( speeds.size() != motionCount ) { speeds.resize( motionCount, 1.0f ); }
+
+					std::string caption;
+					for ( size_t i = 0; i < motionCount; ++i )
+					{
+						caption =  Donya::MakeArraySuffix( i );
+						caption += BossFirst::GetMotionName( scast<BossFirst::MotionKind>( i ) );
+						ImGui::DragFloat( caption.c_str(), &speeds[i], 0.01f );
+					}
+
+					ImGui::TreePop();
+				}
+
 				ImGui::TreePop();
 			}
 
@@ -1402,13 +1431,43 @@ std::vector<Donya::AABB>	BossBase::FetchOwnHitBoxes( bool wantHurtBoxes ) const
 
 
 #pragma region First
+std::string BossFirst::GetMotionName( MotionKind kind )
+{
+	switch ( kind )
+	{
+	case BossFirst::MotionKind::Wait:			return "Wait";
+	case BossFirst::MotionKind::Walk:			return "Walk";
+	case BossFirst::MotionKind::RushReady:		return "Rush-Ready";
+	case BossFirst::MotionKind::RushProcess:	return "Rush-Process";
+	case BossFirst::MotionKind::RushBrake:		return "Rush-Brake";
+	case BossFirst::MotionKind::BreathReady:	return "Breath-Ready";
+	case BossFirst::MotionKind::BreathProcess:	return "Breath-Process";
+	case BossFirst::MotionKind::Damage:			return "Damage";
+	case BossFirst::MotionKind::Die:			return "Die";
+	default: break;
+	}
+	_ASSERT_EXPR( 0, L"Error : Unexpected kind!" );
+	return "ERROR";
+}
 void BossFirst::MotionManager::Init( BossFirst &inst )
 {
 	inst.model.animator.ResetTimer();
 }
 void BossFirst::MotionManager::Update( BossFirst &inst, float elapsedTime )
 {
-	inst.model.animator.Update( elapsedTime );
+	const auto data = FetchMember().forFirst;
+	const auto &motionSpeeds = data.motionSpeeds;
+
+	const int intKind = scast<int>( currentKind );
+	if ( scast<int>( motionSpeeds.size() ) <= intKind )
+	{
+		_ASSERT_EXPR( 0, L"Error: Motion index out of range!" );
+		return;
+	}
+	// else
+
+	const float acceleration = motionSpeeds[intKind];
+	inst.model.animator.Update( elapsedTime * acceleration );
 }
 void BossFirst::MotionManager::ApplyMotion( BossFirst &inst, MotionKind kind )
 {
@@ -1423,6 +1482,8 @@ void BossFirst::MotionManager::ApplyMotion( BossFirst &inst, MotionKind kind )
 		return;
 	}
 	// else
+
+	currentKind = kind;
 
 	inst.AssignSpecifyPose( intKind );
 
@@ -1718,12 +1779,13 @@ void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya:
 	inst.orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
 	inst.aimingPos		= targetPos;
 
-	if ( inst.timer == preFrame )
-	{
-		inst.motionManager.ApplyMotion( inst, MotionKind::RushProcess );
-	}
 	if ( preFrame <= inst.timer && inst.timer < fireFrame )
 	{
+		if ( inst.motionManager.GetCurrentKind() != MotionKind::RushProcess )
+		{
+			inst.motionManager.ApplyMotion( inst, MotionKind::RushProcess );
+		}
+
 		auto ShouldFire = [&]()
 		{
 			const int &interval = source.fireInterval;
@@ -1958,7 +2020,7 @@ void BossFirst::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 #endif // USE_IMGUI
 
 	// TODO: Adjust the motion-index by mover.
-	UpdateMotion( elapsedTime, 0 );
+	//UpdateMotion( elapsedTime, 0 );
 
 	if ( IsDead() ) { return; }
 	// else
@@ -2158,6 +2220,7 @@ void BossFirst::ShowImGuiNode( const std::string &nodeCaption )
 		: ToString( FetchAction( actionIndex + 1 ) ).c_str()
 	);
 	ImGui::Text( u8"残りフェイント使用数：%d", remainFeintCount );
+	ImGui::Text( u8"現在のモーション：%s", GetMotionName( motionManager.GetCurrentKind() ).c_str() );
 
 	ImGui::DragFloat3( u8"現在の座標", &pos.x,		0.01f );
 	ImGui::DragFloat3( u8"現在の速度", &velocity.x,	0.01f );
