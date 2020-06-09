@@ -1600,7 +1600,7 @@ bool BossFirst::MoverBase::IsDead( const BossFirst &inst ) const
 }
 bool BossFirst::MoverBase::AcceptDamage( const BossFirst &inst ) const { return true; }
 bool BossFirst::MoverBase::AcceptDraw( const BossFirst &inst ) const { return true; }
-bool BossFirst::MoverBase::NowDiePerformance( BossFirst &inst ) const { return false; }
+bool BossFirst::MoverBase::NowDiePerformance( const BossFirst &inst ) const { return false; }
 
 void BossFirst::Ready::Init( BossFirst &inst )
 {
