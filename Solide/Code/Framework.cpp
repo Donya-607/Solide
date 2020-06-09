@@ -70,9 +70,7 @@ void Framework::Update( float elapsedTime/*Elapsed seconds from last frame*/ )
 
 	pSceneMng->Update( elapsedTime );
 
-#if DEBUG_MODE
 	EffectAdmin::Get().Update();
-#endif // DEBUG_MODE
 }
 
 void Framework::Draw( float elapsedTime/*Elapsed seconds from last frame*/ )
@@ -81,9 +79,7 @@ void Framework::Draw( float elapsedTime/*Elapsed seconds from last frame*/ )
 
 	pSceneMng->Draw( elapsedTime );
 
-#if DEBUG_MODE
 	EffectAdmin::Get().Draw();
-#endif // DEBUG_MODE
 }
 
 #if USE_IMGUI
