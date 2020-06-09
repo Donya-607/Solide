@@ -170,7 +170,7 @@ private:
 		void Init( BossFirst &instance );
 		void Update( BossFirst &instance, float elapsedTime );
 	public:
-		void ChangeMotion( MotionKind kind );
+		void ChangeMotion( BossFirst &instance, MotionKind kind );
 		MotionKind GetCurrentKind() const;
 	private:
 		void ApplyMotion( BossFirst &instance, MotionKind kind );

@@ -1470,10 +1470,16 @@ void BossFirst::MotionManager::Update( BossFirst &inst, float elapsedTime )
 	inst.model.animator.Update( elapsedTime * acceleration );
 	ApplyMotion( inst, currentKind );
 }
-void BossFirst::MotionManager::ChangeMotion( MotionKind kind )
+void BossFirst::MotionManager::ChangeMotion( BossFirst &inst, MotionKind kind )
 {
 	if ( kind == MotionKind::MotionCount ) { return; }
 	// else
+
+	if ( currentKind != kind )
+	{
+		inst.model.animator.ResetTimer();
+	}
+
 	currentKind = kind;
 }
 BossFirst::MotionKind BossFirst::MotionManager::GetCurrentKind() const
@@ -1494,11 +1500,7 @@ void BossFirst::MotionManager::ApplyMotion( BossFirst &inst, MotionKind kind )
 	}
 	// else
 
-	currentKind = kind;
-
-	inst.model.animator.ResetTimer();
 	inst.AssignSpecifyPose( intKind );
-
 	ApplyLoopFlag( inst, kind );
 }
 void BossFirst::MotionManager::ApplyLoopFlag( BossFirst &inst, MotionKind kind )
@@ -1548,7 +1550,7 @@ void BossFirst::Ready::Init( BossFirst &inst )
 
 	gotoNext = false;
 
-	inst.motionManager.ChangeMotion( MotionKind::RushReady );
+	inst.motionManager.ChangeMotion( inst, MotionKind::RushReady );
 }
 void BossFirst::Ready::Uninit( BossFirst &inst ) {}
 void BossFirst::Ready::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1615,7 +1617,7 @@ void BossFirst::Rush::Init( BossFirst &inst )
 
 	shouldStop = false;
 
-	inst.motionManager.ChangeMotion( MotionKind::RushProcess );
+	inst.motionManager.ChangeMotion( inst, MotionKind::RushProcess );
 }
 void BossFirst::Rush::Uninit( BossFirst &inst ) {}
 void BossFirst::Rush::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1689,7 +1691,7 @@ void BossFirst::Brake::Init( BossFirst &inst )
 	isStopping	= false;
 	gotoNext	= false;
 
-	inst.motionManager.ChangeMotion( MotionKind::RushBrake );
+	inst.motionManager.ChangeMotion( inst, MotionKind::RushBrake );
 }
 void BossFirst::Brake::Uninit( BossFirst &inst ) {}
 void BossFirst::Brake::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1766,7 +1768,7 @@ void BossFirst::Breath::Init( BossFirst &inst )
 
 	gotoNext = false;
 
-	inst.motionManager.ChangeMotion( MotionKind::BreathReady );
+	inst.motionManager.ChangeMotion( inst, MotionKind::BreathReady );
 }
 void BossFirst::Breath::Uninit( BossFirst &inst ) {}
 void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1795,7 +1797,7 @@ void BossFirst::Breath::Update( BossFirst &inst, float elapsedTime, const Donya:
 	{
 		if ( inst.motionManager.GetCurrentKind() != MotionKind::BreathProcess )
 		{
-			inst.motionManager.ChangeMotion( MotionKind::BreathProcess );
+			inst.motionManager.ChangeMotion( inst, MotionKind::BreathProcess );
 		}
 
 		auto ShouldFire = [&]()
@@ -1856,7 +1858,7 @@ void BossFirst::Wait::Init( BossFirst &inst )
 	inst.velocity.x = 0.0f;
 	inst.velocity.z = 0.0f;
 
-	inst.motionManager.ChangeMotion( MotionKind::Wait );
+	inst.motionManager.ChangeMotion( inst, MotionKind::Wait );
 }
 void BossFirst::Wait::Uninit( BossFirst &inst ) {}
 void BossFirst::Wait::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1886,7 +1888,7 @@ void BossFirst::Walk::Init( BossFirst &inst )
 	inst.velocity.x = 0.0f;
 	inst.velocity.z = 0.0f;
 
-	inst.motionManager.ChangeMotion( MotionKind::Walk );
+	inst.motionManager.ChangeMotion( inst, MotionKind::Walk );
 }
 void BossFirst::Walk::Uninit( BossFirst &inst ) {}
 void BossFirst::Walk::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1923,7 +1925,7 @@ void BossFirst::Damage::Init( BossFirst &inst )
 
 	gotoNext = false;
 
-	inst.motionManager.ChangeMotion( MotionKind::Damage );
+	inst.motionManager.ChangeMotion( inst, MotionKind::Damage );
 }
 void BossFirst::Damage::Uninit( BossFirst &inst ) {}
 void BossFirst::Damage::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
@@ -1986,7 +1988,7 @@ void BossFirst::Die::Init( BossFirst &inst )
 	inst.velocity.x = 0.0f;
 	inst.velocity.z = 0.0f;
 
-	inst.motionManager.ChangeMotion( MotionKind::Die );
+	inst.motionManager.ChangeMotion( inst, MotionKind::Die );
 }
 void BossFirst::Die::Uninit( BossFirst &inst ) {}
 void BossFirst::Die::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
