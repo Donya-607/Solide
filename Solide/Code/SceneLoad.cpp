@@ -339,8 +339,8 @@ void SceneLoad::Init()
 			Bundle{ ID::PlayerSliding,		"./Data/Sounds/SE/Player/Sliding.wav",			true	},
 			Bundle{ ID::PlayerTrans,		"./Data/Sounds/SE/Player/Trans.wav",			false	},
 			
-			Bundle{ ID::SprayCold,			"./Data/Sounds/SE/Obstacle/ColdSpay.wav",		false	},
-			Bundle{ ID::SprayFlame,			"./Data/Sounds/SE/Obstacle/FlameSpay.wav",		false	},
+			Bundle{ ID::SprayCold,			"./Data/Sounds/SE/Obstacle/ColdSpray.wav",		false	},
+			Bundle{ ID::SprayFlame,			"./Data/Sounds/SE/Obstacle/FlameSpray.wav",		false	},
 			
 			Bundle{ ID::BossImpact,			"./Data/Sounds/SE/Boss/Impact.wav",				false	},
 			Bundle{ ID::BossStep,			"./Data/Sounds/SE/Boss/Step.wav",				false	},
