@@ -154,6 +154,16 @@ namespace Donya
 			// else
 			return pAudio->AppendFadePoint( handle, sec, destVol, isEnableForAll );
 		}
+		
+		int NowPlayingCount( int id )
+		{
+			InitIfNullptr();
+
+			size_t handle = GetHandleOrNull( id );
+			if ( handle == NULL ) { return -1; }
+			// else
+			return pAudio->NowPlayingCount( handle );
+		}
 
 		int  GetNowPlayingSoundsCount()
 		{

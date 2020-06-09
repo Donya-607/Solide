@@ -162,7 +162,18 @@ void Framework::DebugShowInformation()
 
 		ImGui::TreePop();
 	}
-		
+
+	if ( ImGui::TreeNode( u8"サウンド新機能テスト" ) )
+	{
+		ImGui::Text( u8"ゴール音再生数：%d", Donya::Sound::NowPlayingCount( Music::UI_Goal ) );
+		if ( ImGui::Button( u8"ゴール音再生" ) )
+		{
+			Donya::Sound::Play( Music::UI_Goal );
+		}
+
+		ImGui::TreePop();
+	}
+
 	if ( ImGui::TreeNode( u8"イージングサンプル" ) )
 	{
 		using namespace Donya;

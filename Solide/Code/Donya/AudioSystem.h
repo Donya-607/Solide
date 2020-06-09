@@ -98,6 +98,12 @@ namespace Donya
 		bool AppendFadePoint( size_t soundHandle, float takeSeconds, float destinationVolume, bool isEnableForAll = false );
 
 		/// <summary>
+		/// Returns the count of now playing sound identified by handle.<para></para>
+		/// If the sound is not found, returns -1.
+		/// </summary>
+		int NowPlayingCount( size_t soundHandle );
+
+		/// <summary>
 		/// Release the sound identified by handle.<para></para>
 		/// If failed release, or not found, returns false.
 		/// </summary>

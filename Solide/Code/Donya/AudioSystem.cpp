@@ -1,10 +1,10 @@
 #include "AudioSystem.h"
 
+#include <algorithm>		// Use std::remove_if
 #include <fmod.hpp>
 #include <fmod_studio.hpp>
 #include <fmod_errors.h>
 #include <functional>
-
 #include <string>
 
 #include "Constant.h"
@@ -388,6 +388,24 @@ namespace Donya
 		}
 	public:
 		/// <summary>
+		/// If is there null channel, the channel will be removed.<para></para>
+		/// Return true if not failed.
+		/// </summary>
+		int NowPlayingCount()
+		{
+			using ElementType = FMOD::Channel *;
+			auto IsEmpty = []( ElementType &element )
+			{
+				return ( element == nullptr ) ? true : false;
+			};
+
+			auto result = std::remove_if( channels.begin(), channels.end(), IsEmpty );
+			channels.erase( result, channels.end() );
+
+			return scast<int>( channels.size() );
+		}
+	public:
+		/// <summary>
 		/// Pause one out of channels of not pausing.<para></para>
 		/// If found invalid channel, remove the channel.<para></para>
 		/// Returns true if successed pause.
@@ -659,6 +677,17 @@ namespace Donya
 
 		decltype( channels )::iterator itrChannel = channels.find( handle );
 		return ( isEnableForAll ) ? itrChannel->second->AppendFadePointAll( sec, destVol ) : itrChannel->second->AppendFadePointOne( sec, destVol );
+	
+	}
+	
+	int AudioSystem::NowPlayingCount( size_t handle )
+	{
+		decltype( sounds )::iterator itrSound = sounds.find( handle );
+		if ( itrSound == sounds.end() ) { return -1; }
+		// else
+
+		decltype( channels )::iterator itrChannel = channels.find( handle );
+		return itrChannel->second->NowPlayingCount();
 	}
 
 	bool AudioSystem::Release( size_t handle )

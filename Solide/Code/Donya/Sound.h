@@ -73,6 +73,12 @@ namespace Donya
 		bool AppendFadePoint( int soundIdentifier, float takeSeconds, float destinationVolume, bool isEnableForAll = false );
 
 		/// <summary>
+		/// Returns the count of now playing sound identified by handle.<para></para>
+		/// If the identifier is incorrect, returns -1.
+		/// </summary>
+		int NowPlayingCount( int soundIdentifier );
+
+		/// <summary>
 		/// If failed count, returns -1.
 		/// </summary>
 		int  GetNowPlayingSoundsCount();
