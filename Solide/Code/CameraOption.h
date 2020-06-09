@@ -61,6 +61,7 @@ public:
 public:
 	size_t GetOptionCount() const { return options.size(); }
 	Instance CalcCurrentOption( const Donya::Vector3 &targetPos );
+	void ResetToInitialState();
 private:
 	void LoadBin( int stageNo );
 	void LoadJson( int stageNo );

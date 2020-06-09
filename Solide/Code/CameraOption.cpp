@@ -124,6 +124,10 @@ CameraOption::Instance CameraOption::CalcCurrentOption( const Donya::Vector3 &ta
 
 	return current;
 }
+void CameraOption::ResetToInitialState()
+{
+	targetIndex = 0;
+}
 
 void CameraOption::LoadBin ( int stageNo )
 {

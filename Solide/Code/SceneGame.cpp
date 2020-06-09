@@ -1332,6 +1332,11 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 
 		// Re-generate.
 		PlayerInit( stageNumber );
+		if ( pCameraOption )
+		{
+			// I must reset an internal index.
+			pCameraOption->ResetToInitialState();
+		}
 	}
 
 	if ( playerRemains == wantReviveRemainsSign )
