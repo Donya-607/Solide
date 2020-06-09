@@ -279,11 +279,6 @@ void SceneGame::Init()
 	// also updates the file version if the admin loads old version.
 	SaveDataAdmin::Get().Save();
 
-	Donya::Sound::Play( Music::BGM_Game );
-#if DEBUG_MODE
-	Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
-#endif // DEBUG_MODE
-
 #if DEBUG_MODE
 	gridline.Init();
 	// My prefer initial settings.
@@ -338,7 +333,7 @@ void SceneGame::Uninit()
 	gridline.Uninit();
 #endif // DEBUG_MODE
 
-	Donya::Sound::Stop( Music::BGM_Game );
+	StopAllGameBGM();
 }
 
 Scene::Result SceneGame::Update( float elapsedTime )
@@ -679,6 +674,22 @@ void SceneGame::Draw( float elapsedTime )
 		}
 	}
 #endif // DEBUG_MODE
+}
+
+void SceneGame::StopAllGameBGM()
+{
+	// Stop() will returns if not playing the bgm currently.
+	Donya::Sound::Stop( Music::BGM_Title	);
+	Donya::Sound::Stop( Music::BGM_Stage1	);
+	Donya::Sound::Stop( Music::BGM_Stage2	);
+	Donya::Sound::Stop( Music::BGM_Stage3	);
+	Donya::Sound::Stop( Music::BGM_Stage4	);
+	Donya::Sound::Stop( Music::BGM_Boss		);
+	Donya::Sound::Stop( Music::BGM_Clear	);
+}
+void SceneGame::PlayBGM( int stageNo )
+{
+	
 }
 
 void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )

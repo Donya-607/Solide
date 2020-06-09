@@ -268,9 +268,6 @@ void SceneTitle::Init()
 	SaveDataAdmin::Get().Save();
 
 	Donya::Sound::Play( Music::BGM_Title );
-#if DEBUG_MODE
-	Donya::Sound::AppendFadePoint( Music::BGM_Title, 2.0f, 0.0f, true ); // Too noisy.
-#endif // DEBUG_MODE
 
 	using Spr = SpriteAttribute;
 

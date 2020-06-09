@@ -107,6 +107,9 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
+	void	StopAllGameBGM();
+	void	PlayBGM( int stageNo );
+
 	void	InitStage( int stageNo, bool useSaveDataIfValid );
 	void	UninitStage();
 
