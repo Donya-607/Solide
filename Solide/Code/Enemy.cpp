@@ -581,9 +581,6 @@ namespace Enemy
 	}
 	Donya::AABB Base::AcquireHitBox( bool wantWorldSpace ) const
 	{
-		if ( nowDead ) { return Donya::AABB::Nil(); }
-		// else
-
 		const auto	data		= FetchMember();
 		const auto	&collisions	= data.collider.collisions;
 		const int	intKind		= scast<int>( GetKind() );
@@ -596,13 +593,13 @@ namespace Enemy
 		{
 			wsHitBox.pos += GetPosition();
 		}
+
+		if ( nowDead ) { wsHitBox.exist = false; }
+
 		return wsHitBox;
 	}
 	Donya::AABB Base::AcquireHurtBox( bool wantWorldSpace ) const
 	{
-		if ( nowDead ) { return Donya::AABB::Nil(); }
-		// else
-
 		const auto	data		= FetchMember();
 		const auto	&collisions	= data.collider.collisions;
 		const int	intKind		= scast<int>( GetKind() );
@@ -615,6 +612,8 @@ namespace Enemy
 		{
 			wsHurtBox.pos += GetPosition();
 		}
+
+		if ( nowDead ) { wsHurtBox.exist = false; }
 
 		return wsHurtBox;
 	}
@@ -682,6 +681,7 @@ namespace Enemy
 		const auto &motion = pModelParam->motionHolder.GetMotion( MOTION_INDEX_DEFEAT );
 		animator.SetRepeatRange( motion );
 		animator.ResetTimer();
+		animator.DisableLoop();
 		pose.AssignSkeletal( animator.CalcCurrentPose( motion ) );
 	}
 	void Base::UpdateDieMotion( float elapsedTime )
@@ -1048,11 +1048,11 @@ namespace Enemy
 	}
 	void Straight::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	{
-		if ( WillSlip( element, velocity ) || WillBurn( element ) )
+		const bool willDie = WillSlip( element, velocity ) || WillBurn( element );
+		if ( willDie && !nowDead )
 		{
 			AssignDieState();
 		}
-
 		if ( nowDead )
 		{
 			UpdateDieMotion( elapsedTime );
@@ -1380,12 +1380,11 @@ namespace Enemy
 	}
 	void Archer::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	{
-		if ( WillBurn( element ) )
+		if ( WillBurn( element ) && !nowDead )
 		{
 			AssignDieState();
 			AssignMover<Wait>();
 		}
-
 		if ( nowDead )
 		{
 			UpdateDieMotion( elapsedTime );
@@ -1591,11 +1590,10 @@ namespace Enemy
 	}
 	void GateKeeper::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	{
-		if ( WillBurn( element ) )
+		if ( WillBurn( element ) && !nowDead )
 		{
 			AssignDieState();
 		}
-
 		if ( nowDead )
 		{
 			UpdateDieMotion( elapsedTime );
