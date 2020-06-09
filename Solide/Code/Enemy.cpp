@@ -24,8 +24,10 @@ namespace
 		"GateKeeper",
 		"Chaser",
 	};
+	constexpr const char *DEFEAT_MODEL_NAME = "Defeated";
 
 	static std::vector<std::shared_ptr<Enemy::ModelParam>> modelPtrs{};
+	static std::shared_ptr<Enemy::ModelParam> pDefeatModel{};
 
 	bool LoadModels()
 	{
@@ -56,20 +58,19 @@ namespace
 
 		std::string filePath{};
 		const std::string prefix = MODEL_DIRECTORY;
-		for ( size_t i = 0; i < KIND_COUNT; ++i )
+		auto LoadProcess = [&]( const std::string &modelName, std::shared_ptr<Enemy::ModelParam> &target )
 		{
-			filePath = prefix + MODEL_NAMES[i] + MODEL_EXTENSION;
+			filePath = prefix + modelName + MODEL_EXTENSION;
 			if ( !Donya::IsExistFile( filePath ) )
 			{
 				const std::string outputMsgBase{ "Error : The model file does not exist. That is : " };
 				Donya::OutputDebugStr( ( outputMsgBase + "[" + filePath + "]" + "\n" ).c_str() );
-				continue;
+				return;
 			}
 			// else
 
-			auto &pModel = modelPtrs[i];
-			pModel = std::make_shared<Enemy::ModelParam>();
-			result = Load( filePath, &( *pModel ) ); // std::shared_ptr<T> -> T -> T *
+			target = std::make_shared<Enemy::ModelParam>();
+			result = Load( filePath, &( *target ) ); // std::shared_ptr<T> -> T -> T *
 			if ( !result )
 			{
 				const std::wstring errMsgBase{ L"Failed : Loading a model. That is : " };
@@ -78,7 +79,14 @@ namespace
 
 				succeeded = false;
 			}
+		};
+
+		for ( size_t i = 0; i < KIND_COUNT; ++i )
+		{
+			LoadProcess( MODEL_NAMES[i], modelPtrs[i] );
 		}
+
+		LoadProcess( DEFEAT_MODEL_NAME, pDefeatModel );
 
 		if ( !succeeded )
 		{
@@ -108,6 +116,10 @@ namespace
 		}
 		// else
 		return modelPtrs[scast<int>( kind )];
+	}
+	const std::shared_ptr<Enemy::ModelParam> GetDefeatModelPtr()
+	{
+		return pDefeatModel;
 	}
 }
 namespace
