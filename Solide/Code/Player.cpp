@@ -183,15 +183,15 @@ namespace
 		struct OilMember
 		{
 			BasicMember	basic;
-			float		turnDegree		= 1.0f;		// Per frame.
-			float		turnThreshold	= 0.4f;		// Degree.
-			float		tiltDegree		= 1.0f;		// Per frame.
-			float		untiltDegree	= 2.0f;		// Per frame.
-			float		maxTiltDegree	= 45.0f;
+			float		turnDegree			= 1.0f;		// Per frame.
+			float		turnThreshold		= 0.4f;		// Degree.
+			float		tiltDegree			= 1.0f;		// Per frame.
+			float		untiltDegree		= 2.0f;		// Per frame.
+			float		maxTiltDegree		= 45.0f;
 			float		hopStrength			= 0.1f;
-			float		hopRotation			= 0.1f;	// Degree.
-			float		hopRotationDegree	= 0.1f;	// Degree.
-			int			burnUpFrame		= 1;
+			float		hopRotation			= 0.1f;		// Degree.
+			float		hopRotationDegree	= 0.1f;		// Degree.
+			int			burnUpFrame			= 1;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -410,7 +410,7 @@ public:
 				ImGui::DragFloat( u8"”­“®E‰ñ“]—Ê",			&m.oiled.hopRotation, 0.1f, 0.0f	);
 				ImGui::DragFloat( u8"”­“®E‚P‚e‚Ì‰ñ“]Šp“x",	&m.oiled.hopRotationDegree, 0.1f, 0.0f	);
 				ImGui::Text( "" );
-				ImGui::DragInt  ( u8"”R‚¦s‚«‚éŠÔiƒtƒŒ[ƒ€j", &m.oiled.burnUpFrame );
+				ImGui::DragInt  ( u8"”R‚¦s‚«‚éŠÔiƒtƒŒ[ƒ€j",	&m.oiled.burnUpFrame );
 				m.oiled.burnUpFrame = std::max( 0, m.oiled.burnUpFrame );
 
 				ImGui::TreePop();
@@ -889,7 +889,8 @@ void Player::NormalMover::Fall( Player &player, float elapsedTime )
 
 void Player::OilMover::Init( Player &player )
 {
-	tilt  = 0.0f;
+	tilt			= 0.0f;
+	shouldPlaySE	= true;
 	player.StartHopping();
 	player.element.Add( Element::Type::Oil );
 
@@ -905,7 +906,24 @@ void Player::OilMover::Uninit( Player &player )
 
 	AssignToXZ( &player.velocity, Donya::Vector2::Zero() );
 }
-void Player::OilMover::Update( Player &player, float elapsedTime ) {}
+void Player::OilMover::Update( Player &player, float elapsedTime )
+{
+	if ( player.OnGround() )
+	{
+		// This SE will be played with loop, so I should call only once time.
+		if ( shouldPlaySE )
+		{
+			shouldPlaySE = false;
+			Donya::Sound::Play( Music::PlayerSliding );
+		}
+
+		return;
+	}
+	// else
+
+	shouldPlaySE = true;
+	Donya::Sound::Stop( Music::PlayerSliding, /* isEnableForAll = */ true );
+}
 void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 {
 	input.moveVectorXZ.Normalize();
@@ -1347,6 +1365,7 @@ void Player::Shot( float elapsedTime )
 	}
 
 	Bullet::BulletAdmin::Get().Append( useParam );
+	Donya::Sound::Play( Music::PlayerShot );
 }
 
 bool Player::WillDie() const

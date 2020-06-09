@@ -141,7 +141,8 @@ private:
 	class OilMover : public MoverBase
 	{
 	private:
-		float tilt  = 0.0f; // Degree.
+		float	tilt			= 0.0f; // Degree.
+		bool	shouldPlaySE	= true;
 	public:
 		void Init( Player &player ) override;
 		void Uninit( Player &player ) override;
