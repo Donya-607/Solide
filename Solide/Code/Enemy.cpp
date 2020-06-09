@@ -384,6 +384,7 @@ namespace
 	static constexpr int MOTION_INDEX_BEGIN		= 0;
 	static constexpr int MOTION_INDEX_PROCESS	= 1;
 	static constexpr int MOTION_INDEX_END		= 2;
+	static constexpr int MOTION_INDEX_DEFEAT	= 0;
 
 	static constexpr int RECURSION_RAY_COUNT	= 4;
 
@@ -493,6 +494,7 @@ namespace Enemy
 		pos			= initializer.wsPos;
 		orientation	= initializer.orientation;
 		element		= Element::Type::Nil;
+		nowDead		= false;
 
 		animator.ResetTimer();
 
@@ -579,6 +581,9 @@ namespace Enemy
 	}
 	Donya::AABB Base::AcquireHitBox( bool wantWorldSpace ) const
 	{
+		if ( nowDead ) { return Donya::AABB::Nil(); }
+		// else
+
 		const auto	data		= FetchMember();
 		const auto	&collisions	= data.collider.collisions;
 		const int	intKind		= scast<int>( GetKind() );
@@ -595,6 +600,9 @@ namespace Enemy
 	}
 	Donya::AABB Base::AcquireHurtBox( bool wantWorldSpace ) const
 	{
+		if ( nowDead ) { return Donya::AABB::Nil(); }
+		// else
+
 		const auto	data		= FetchMember();
 		const auto	&collisions	= data.collider.collisions;
 		const int	intKind		= scast<int>( GetKind() );
@@ -655,6 +663,40 @@ namespace Enemy
 		{
 			pose.AssignSkeletal( animator.CalcCurrentPose( pModelParam->motionHolder.GetMotion( useMotionIndex ) ) );
 		}
+	}
+	void Base::AssignDieState()
+	{
+		nowDead = true;
+		AssignDieMotion();
+	}
+	void Base::AssignDieMotion()
+	{
+		pModelParam	= GetDefeatModelPtr();
+		if ( !pModelParam || !pModelParam->motionHolder.GetMotionCount() )
+		{
+			_ASSERT_EXPR( 0, L"Error: Unexpected error!" );
+			return;
+		}
+		// else
+
+		const auto &motion = pModelParam->motionHolder.GetMotion( MOTION_INDEX_DEFEAT );
+		animator.SetRepeatRange( motion );
+		animator.ResetTimer();
+		pose.AssignSkeletal( animator.CalcCurrentPose( motion ) );
+	}
+	void Base::UpdateDieMotion( float elapsedTime )
+	{
+		const float playSpeed = FetchMember().drawer.defeatMotionSpeed;
+		animator.Update( elapsedTime * playSpeed );
+
+		if ( !pModelParam ) { return; }
+		// else
+		
+		pose.AssignSkeletal( animator.CalcCurrentPose( pModelParam->motionHolder.GetMotion( MOTION_INDEX_DEFEAT ) ) );
+	}
+	bool Base::WasEndedDieMotion() const
+	{
+		return ( nowDead ) ? animator.WasEnded() : false;
 	}
 	Donya::Vector4			Base::CalcDrawColor() const
 	{
@@ -1006,6 +1048,18 @@ namespace Enemy
 	}
 	void Straight::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	{
+		if ( WillSlip( element, velocity ) || WillBurn( element ) )
+		{
+			AssignDieState();
+		}
+
+		if ( nowDead )
+		{
+			UpdateDieMotion( elapsedTime );
+			return;
+		}
+		// else
+
 		captured = ( moveParam.alignToTarget )
 		? IsTargetClose( initializer.searchRadius, pos, targetPos )
 		: false;
@@ -1058,7 +1112,7 @@ namespace Enemy
 	#if USE_IMGUI
 		if ( wantRemoveByGui ) { return true; }
 	#endif // USE_IMGUI
-		return WillSlip( element, velocity ) || WillBurn( element );
+		return WasEndedDieMotion();
 	}
 	Kind Straight::GetKind() const
 	{
@@ -1326,6 +1380,19 @@ namespace Enemy
 	}
 	void Archer::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	{
+		if ( WillBurn( element ) )
+		{
+			AssignDieState();
+			AssignMover<Wait>();
+		}
+
+		if ( nowDead )
+		{
+			UpdateDieMotion( elapsedTime );
+			return;
+		}
+		// else
+
 		pMover->Update( *this, elapsedTime, targetPos );
 
 		if ( pMover->ShouldChangeState( *this ) )
@@ -1346,7 +1413,7 @@ namespace Enemy
 	#if USE_IMGUI
 		if ( wantRemoveByGui ) { return true; }
 	#endif // USE_IMGUI
-		return WillBurn( element );
+		return WasEndedDieMotion();
 	}
 	Kind Archer::GetKind() const
 	{
@@ -1524,6 +1591,18 @@ namespace Enemy
 	}
 	void GateKeeper::Update( float elapsedTime, const Donya::Vector3 &targetPos )
 	{
+		if ( WillBurn( element ) )
+		{
+			AssignDieState();
+		}
+
+		if ( nowDead )
+		{
+			UpdateDieMotion( elapsedTime );
+			return;
+		}
+		// else
+
 		pMover->Update( *this, elapsedTime, targetPos );
 
 		if ( pMover->ShouldChangeState( *this ) )
@@ -1553,7 +1632,7 @@ namespace Enemy
 	#if USE_IMGUI
 		if ( wantRemoveByGui ) { return true; }
 	#endif // USE_IMGUI
-		return WillBurn( element );
+		return WasEndedDieMotion();
 	}
 	Kind GateKeeper::GetKind() const
 	{

@@ -139,6 +139,8 @@ namespace Enemy
 
 		int								oiledTimer = 0;
 
+		bool							nowDead = false;
+
 	#if USE_IMGUI
 		bool wantRemoveByGui = false;
 	#endif // USE_IMGUI
@@ -178,13 +180,17 @@ namespace Enemy
 		virtual void MakeDamage( const Element &effect ) const;
 		virtual void AcquireHitBoxes ( std::vector<Donya::AABB> *pAppendDest ) const;
 		virtual void AcquireHurtBoxes( std::vector<Donya::AABB> *pAppendDest ) const;
-	protected: // Hit/Hurt box acquisition method of open to outside is only whole hit/hurt boxes..
+	protected: // Hit/Hurt box acquisition method of open to outside is only whole hit/hurt boxes.
 		virtual Donya::AABB AcquireHitBox( bool wantWorldSpace ) const;
 		virtual Donya::AABB AcquireHurtBox( bool wantWorldSpace ) const;
 	protected:
 		virtual void OiledUpdate();
 		virtual void BurningUpdate();
 		virtual void UpdateMotion( float elapsedTime, int useMotionIndex );
+		virtual void AssignDieState();
+		virtual void AssignDieMotion();
+		virtual void UpdateDieMotion( float elapsedTime );
+		virtual bool WasEndedDieMotion() const;
 		virtual Donya::Vector4		CalcDrawColor() const;
 		virtual	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox, bool useForHurtBox, bool useForDrawing ) const;
 	protected:
