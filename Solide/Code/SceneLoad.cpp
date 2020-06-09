@@ -322,16 +322,28 @@ void SceneLoad::Init()
 		const std::array<Bundle, ID::MUSIC_COUNT> bundles
 		{
 			// ID, FilePath, isEnableLoop
-			Bundle{ ID::BGM_Title,			u8"./Data/Sounds/BGM/アニマル・スマイル.mp3",		true	},
-			Bundle{ ID::BGM_Game,			"./Data/Sounds/BGM/Bouncy.mp3",					true	},
-			Bundle{ ID::BGM_Clear,			u8"./Data/Sounds/BGM/うきうき.mp3",				true	},
+			Bundle{ ID::BGM_Title,			u8"./Data/Sounds/BGM/アニマル・スマイル.wav",		true	},
+			Bundle{ ID::BGM_Stage1,			"./Data/Sounds/BGM/Bouncy.wav",					true	},
+			Bundle{ ID::BGM_Stage2,			u8"./Data/Sounds/BGM/アフリカ探検隊.wav",			true	},
+			Bundle{ ID::BGM_Stage3,			"./Data/Sounds/BGM/powdery_snow.wav",			true	},
+			Bundle{ ID::BGM_Stage4,			"./Data/Sounds/BGM/Sword_dance.wav",			true	},
+			Bundle{ ID::BGM_Boss,			"./Data/Sounds/BGM/Burning-Cavern_loop.wav",	true	},
+			Bundle{ ID::BGM_Clear,			u8"./Data/Sounds/BGM/うきうき.wav",				true	},
 
 			Bundle{ ID::UI_StartGame,		"./Data/Sounds/SE/Title/Start.wav",				false	},
 			Bundle{ ID::UI_Goal,			"./Data/Sounds/SE/Game/Goal.wav",				false	},
 
 			Bundle{ ID::PlayerJump,			"./Data/Sounds/SE/Player/Jump.wav",				false	},
 			Bundle{ ID::PlayerLanding,		"./Data/Sounds/SE/Player/Landing.wav",			false	},
+			Bundle{ ID::PlayerShot,			"./Data/Sounds/SE/Player/OilShot.wav",			false	},
+			Bundle{ ID::PlayerSliding,		"./Data/Sounds/SE/Player/Sliding.wav",			true	},
 			Bundle{ ID::PlayerTrans,		"./Data/Sounds/SE/Player/Trans.wav",			false	},
+			
+			Bundle{ ID::SprayCold,			"./Data/Sounds/SE/Obstacle/ColdSpay.wav",		false	},
+			Bundle{ ID::SprayFlame,			"./Data/Sounds/SE/Obstacle/FlameSpay.wav",		false	},
+			
+			Bundle{ ID::BossImpact,			"./Data/Sounds/SE/Boss/Impact.wav",				false	},
+			Bundle{ ID::BossStep,			"./Data/Sounds/SE/Boss/Step.wav",				false	},
 
 			Bundle{ ID::ItemChoose,			"./Data/Sounds/SE/UI/ChooseItem.wav",			false	},
 			Bundle{ ID::ItemDecision,		"./Data/Sounds/SE/UI/DecisionItem.wav",			false	},
