@@ -136,6 +136,8 @@ namespace
 
 		Donya::Vector4 oilColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 		RenderingHelper::AdjustColorConstant oilAdjustment;
+
+		float				defeatMotionSpeed = 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -158,6 +160,10 @@ namespace
 				);
 			}
 			if ( 2 <= version )
+			{
+				archive( CEREAL_NVP( defeatMotionSpeed ) );
+			}
+			if ( 3 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -234,7 +240,7 @@ namespace
 		}
 	};
 }
-CEREAL_CLASS_VERSION( DrawingParam,				1 )
+CEREAL_CLASS_VERSION( DrawingParam,				2 )
 CEREAL_CLASS_VERSION( CollisionParam,			0 )
 CEREAL_CLASS_VERSION( CollisionParam::PerKind,	0 )
 CEREAL_CLASS_VERSION( Member,					2 )
@@ -323,6 +329,9 @@ public:
 						caption = "[" + std::to_string( i ) + ":" + MODEL_NAMES[i] + "]";
 						ImGui::DragFloat( caption.c_str(), &m.drawer.accelerations[i], 0.001f );
 					}
+
+					caption = "[" + std::string{ DEFEAT_MODEL_NAME } +"]";
+					ImGui::DragFloat( caption.c_str(), &m.drawer.defeatMotionSpeed, 0.01f );
 
 					ImGui::TreePop();
 				}
