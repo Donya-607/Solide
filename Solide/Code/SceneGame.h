@@ -19,6 +19,7 @@
 #include "EnemyContainer.h"
 #include "Goal.h"
 #include "InfoDisplayer.h"
+#include "Music.h"
 #include "Numeric.h"
 #include "ObstacleContainer.h"
 #include "Player.h"
@@ -39,6 +40,8 @@
 class SceneGame : public Scene
 {
 private:
+	Music::ID							lastPlayMusic = Music::BGM_Title; // Prevent re-play a same sound. Default value is Title because I do not want stop the title bgm when initializing the game scene.
+
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 
@@ -108,7 +111,8 @@ public:
 	void	Draw( float elapsedTime ) override;
 private:
 	void	StopAllGameBGM();
-	void	PlayBGM( int stageNo );
+	Music::ID GetBGMID( int stageNo );
+	void	PlayBGM( Music::ID id );
 
 	void	InitStage( int stageNo, bool useSaveDataIfValid );
 	void	UninitStage();

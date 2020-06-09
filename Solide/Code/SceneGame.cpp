@@ -679,17 +679,34 @@ void SceneGame::Draw( float elapsedTime )
 void SceneGame::StopAllGameBGM()
 {
 	// Stop() will returns if not playing the bgm currently.
-	Donya::Sound::Stop( Music::BGM_Title	);
-	Donya::Sound::Stop( Music::BGM_Stage1	);
-	Donya::Sound::Stop( Music::BGM_Stage2	);
-	Donya::Sound::Stop( Music::BGM_Stage3	);
-	Donya::Sound::Stop( Music::BGM_Stage4	);
-	Donya::Sound::Stop( Music::BGM_Boss		);
-	Donya::Sound::Stop( Music::BGM_Clear	);
+	constexpr bool applyToAll = true;
+	Donya::Sound::Stop( Music::BGM_Title,	applyToAll );
+	Donya::Sound::Stop( Music::BGM_Stage1,	applyToAll );
+	Donya::Sound::Stop( Music::BGM_Stage2,	applyToAll );
+	Donya::Sound::Stop( Music::BGM_Stage3,	applyToAll );
+	Donya::Sound::Stop( Music::BGM_Stage4,	applyToAll );
+	Donya::Sound::Stop( Music::BGM_Boss,	applyToAll );
+	Donya::Sound::Stop( Music::BGM_Clear,	applyToAll );
 }
-void SceneGame::PlayBGM( int stageNo )
+Music::ID SceneGame::GetBGMID( int stageNo )
 {
-	
+	// Refer two digit.
+	stageNo /= 10;
+	stageNo =  std::min( 9, stageNo ); // I expect less-equal than two digits.
+
+	if ( stageNo == 1 ) { return Music::BGM_Stage1; }
+	if ( stageNo == 2 ) { return Music::BGM_Stage2; }
+	if ( stageNo == 3 ) { return Music::BGM_Stage3; }
+	if ( stageNo == 4 ) { return Music::BGM_Stage4; }
+	// else
+
+	// Also came the 0(SELECT_STAGE_NO)
+	return Music::BGM_Title;
+}
+void SceneGame::PlayBGM( Music::ID id )
+{
+	Donya::Sound::Play( id );
+	lastPlayMusic = id;
 }
 
 void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
@@ -708,6 +725,27 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	const SaveData nowData = SaveDataAdmin::Get().GetNowData();
 
 	bool result{};
+
+	// First, make a boss if exist.
+	// Because I am able to judge the playing sound early.
+	pBossIniter = std::make_unique<BossInitializer>();
+	pBossIniter->LoadParameter( stageNo );
+	BossInit( stageNo );
+
+	if ( pBoss ) // True if exist
+	{
+		StopAllGameBGM();
+		PlayBGM( Music::BGM_Boss );
+	}
+	else
+	{
+		const auto playID = GetBGMID( stageNo );
+		if ( playID != lastPlayMusic ) // If these are same, I do not want stop the BGM.
+		{
+			StopAllGameBGM();
+			PlayBGM( playID );
+		}
+	}
 
 	pBG = std::make_unique<BG>();
 	result = pBG->LoadSprites( GetSpritePath( Spr::BackGround ), GetSpritePath( Spr::Cloud ) );
@@ -785,10 +823,6 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	{
 		RevivePlayerRemains();
 	}
-
-	pBossIniter = std::make_unique<BossInitializer>();
-	pBossIniter->LoadParameter( stageNo );
-	BossInit( stageNo );
 
 	CameraInit();
 
@@ -1625,6 +1659,9 @@ void SceneGame::ClearInit()
 
 	stageNumber	= SELECT_STAGE_NO;
 	nowWaiting	= true;
+
+	StopAllGameBGM();
+	PlayBGM( Music::BGM_Clear );
 }
 void SceneGame::ClearUpdate( float elapsedTime )
 {

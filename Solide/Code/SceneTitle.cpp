@@ -324,7 +324,8 @@ void SceneTitle::Uninit()
 	ObstacleBase::ParameterUninit();
 	ParamTitle::Get().Uninit();
 
-	Donya::Sound::Stop( Music::BGM_Title );
+	// I wanna playing seamlessly between title-scene to game-scene(of select stage).
+	// Donya::Sound::Stop( Music::BGM_Title );
 }
 
 Scene::Result SceneTitle::Update( float elapsedTime )
