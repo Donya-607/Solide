@@ -1370,8 +1370,15 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 		// useOil			=  Donya::Keyboard::Trigger( 'X' );
 	}
 
-	// Restrict the operation.
-	if ( nowWaiting )
+	auto ShouldRestrict = [&]()
+	{
+		if ( nowWaiting ) { return true; }
+		if ( pBoss && pBoss->NowDiePerformance() ) { return true; }
+		// else
+
+		return false;
+	};
+	if ( ShouldRestrict() )
 	{
 		moveVector	= Donya::Vector2::Zero();
 		useJump		= false;

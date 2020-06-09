@@ -107,6 +107,7 @@ public:
 	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
 	virtual void MakeDamage( const Element &effect, const Donya::Vector3 &othersVelocity ) const;
+	virtual bool NowDiePerformance() const;
 public:
 	virtual bool						IsDead() const;
 	virtual BossType					GetType() const = 0;
@@ -187,6 +188,7 @@ private:
 		virtual bool IsDead( const BossFirst &instance ) const;
 		virtual bool AcceptDamage( const BossFirst &instance ) const;
 		virtual bool AcceptDraw( const BossFirst &instance ) const;
+		virtual bool NowDiePerformance( const BossFirst &instance ) const;
 		virtual bool ShouldChangeMover( BossFirst &instance ) const = 0;
 		virtual std::function<void()> GetChangeStateMethod( BossFirst &instance ) const = 0;
 		virtual std::string GetStateName() const = 0;
@@ -282,6 +284,7 @@ private:
 		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
 		bool AcceptDamage( const BossFirst &instance ) const override;
 		bool AcceptDraw( const BossFirst &instance ) const override;
+		bool NowDiePerformance( const BossFirst &instance ) const override;
 		bool ShouldChangeMover( BossFirst &instance ) const override;
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
@@ -296,6 +299,7 @@ private:
 		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
 		void PhysicUpdate( BossFirst &instance, const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 		bool IsDead( const BossFirst &instance ) const override;
+		bool NowDiePerformance( const BossFirst &instance ) const override;
 		bool ShouldChangeMover( BossFirst &instance ) const override;
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
@@ -321,6 +325,7 @@ public:
 	void Draw( RenderingHelper *pRenderer ) const override;
 public:
 	void MakeDamage( const Element &effect, const Donya::Vector3 &othersVelocity ) const override;
+	bool NowDiePerformance() const override;
 private:
 	template<class Mover, typename CtorArgument>
 	void AssignMover( const CtorArgument &arg )

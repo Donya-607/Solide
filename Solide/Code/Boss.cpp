@@ -1377,6 +1377,7 @@ void BossBase::MakeDamage( const Element &effect, const Donya::Vector3 &othersVe
 {
 	element.Add( effect.Get() );
 }
+bool BossBase::NowDiePerformance() const { return false; }
 bool BossBase::IsDead() const
 {
 	return ( hp <= 0 );
@@ -1599,6 +1600,7 @@ bool BossFirst::MoverBase::IsDead( const BossFirst &inst ) const
 }
 bool BossFirst::MoverBase::AcceptDamage( const BossFirst &inst ) const { return true; }
 bool BossFirst::MoverBase::AcceptDraw( const BossFirst &inst ) const { return true; }
+bool BossFirst::MoverBase::NowDiePerformance( BossFirst &inst ) const { return false; }
 
 void BossFirst::Ready::Init( BossFirst &inst )
 {
@@ -2021,6 +2023,10 @@ bool BossFirst::Damage::AcceptDraw( const BossFirst &inst ) const
 	const int rem = inst.timer % ( interval << 1 );
 	return ( rem < interval );
 }
+bool BossFirst::Damage::NowDiePerformance( const BossFirst &inst ) const
+{
+	return ( inst.hp <= 0 ) ? true : false;
+}
 bool BossFirst::Damage::ShouldChangeMover( BossFirst &inst ) const
 {
 	return gotoNext;
@@ -2077,6 +2083,7 @@ bool BossFirst::Die::IsDead( const BossFirst &inst ) const
 {
 	return wasFall;
 }
+bool BossFirst::Die::NowDiePerformance( const BossFirst &inst ) const { return true; }
 bool BossFirst::Die::ShouldChangeMover( BossFirst &inst ) const
 {
 	return false; // Don't revive.
@@ -2214,6 +2221,10 @@ void BossFirst::MakeDamage( const Element &effect, const Donya::Vector3 &othersV
 	{
 		element.Add( Element::Type::Oil );
 	}
+}
+bool BossFirst::NowDiePerformance() const
+{
+	return ( pMover ) ? pMover->NowDiePerformance( *this ) : false;
 }
 void BossFirst::AssignMoverByAction( ActionType type )
 {
