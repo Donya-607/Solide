@@ -288,14 +288,19 @@ private:
 	};
 	class Die : public MoverBase
 	{
+	private:
+		bool wasFall = false;
 	public:
 		void Init( BossFirst &instance ) override;
 		void Uninit( BossFirst &instance ) override;
 		void Update( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) override;
+		void PhysicUpdate( BossFirst &instance, const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr ) override;
 		bool IsDead( const BossFirst &instance ) const override;
 		bool ShouldChangeMover( BossFirst &instance ) const override;
 		std::function<void()> GetChangeStateMethod( BossFirst &instance ) const override;
 		std::string GetStateName() const override;
+	private:
+		Donya::Vector3 CalcVelocity( BossFirst &instance, float elapsedTime, const Donya::Vector3 &targetPos ) const;
 	};
 // region Mover
 #pragma endregion

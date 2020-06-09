@@ -9,6 +9,7 @@
 #include "Donya/Constant.h"		// For DEBUG_MODE macro.
 #include "Donya/Loader.h"
 #include "Donya/Model.h"
+#include "Donya/Random.h"
 #include "Donya/Shader.h"
 #include "Donya/Sound.h"
 #include "Donya/Useful.h"		// For ZeroEqual().
@@ -447,6 +448,38 @@ namespace
 				}
 			}
 		};
+		struct Die
+		{
+			float panicMoveSpeed		= 1.0f;
+			float gravity				= 1.0f;
+			float maxFallSpeed			= 1.0f;
+			float fallBorderHeight		= -1.0f;
+			float randomRotateRangeDeg	= 20.0f;
+			float maxDegreeDiff			= 90.0f;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( panicMoveSpeed			),
+					CEREAL_NVP( gravity					),
+					CEREAL_NVP( maxFallSpeed			),
+					CEREAL_NVP( fallBorderHeight		),
+					CEREAL_NVP( randomRotateRangeDeg	)
+				);
+
+				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( maxDegreeDiff ) );
+				}
+				if ( 2 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
 
 		Ready	ready;
 		Rush	rush;
@@ -465,6 +498,8 @@ namespace
 		Brake	brakeInFeint;
 
 		std::vector<float> motionSpeeds; // size() == MotionKind::MotionCount
+
+		Die		die;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -517,6 +552,10 @@ namespace
 			}
 			if ( 7 <= version )
 			{
+				archive( CEREAL_NVP( die ) );
+			}
+			if ( 8 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -568,7 +607,7 @@ namespace
 CEREAL_CLASS_VERSION( Member,					1 )
 CEREAL_CLASS_VERSION( DrawingParam,				0 )
 CEREAL_CLASS_VERSION( CollisionParam,			0 )
-CEREAL_CLASS_VERSION( FirstParam,				6 )
+CEREAL_CLASS_VERSION( FirstParam,				7 )
 CEREAL_CLASS_VERSION( FirstParam::Ready,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Rush,			0 )
 CEREAL_CLASS_VERSION( FirstParam::Brake,		0 )
@@ -577,6 +616,7 @@ CEREAL_CLASS_VERSION( FirstParam::Breath::PerHP,0 )
 CEREAL_CLASS_VERSION( FirstParam::Wait,			0 )
 CEREAL_CLASS_VERSION( FirstParam::Walk,			0 )
 CEREAL_CLASS_VERSION( FirstParam::Damage,		0 )
+CEREAL_CLASS_VERSION( FirstParam::Die,			1 )
 
 class ParamBoss : public ParameterBase<ParamBoss>
 {
@@ -975,6 +1015,23 @@ public:
 
 					ImGui::TreePop();
 				};
+				auto ShowDie	= [&]( const std::string &nodeCaption, FirstParam::Die *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+					// else
+
+					ImGui::DragFloat( u8"移動速度",								&p->panicMoveSpeed,			0.01f );
+					ImGui::DragFloat( u8"重力",									&p->gravity,				0.01f );
+					ImGui::DragFloat( u8"最大落下速度",							&p->maxFallSpeed,			0.01f );
+					ImGui::DragFloat( u8"死亡判定とするしきい値（Ｙ座標）",		&p->fallBorderHeight,		0.01f );
+					ImGui::DragFloat( u8"移動方向のずらし範囲（Degree）",			&p->randomRotateRangeDeg,	1.0f  );
+					ImGui::DragFloat( u8"自機方向からの最大差分角度（Degree）",	&p->maxDegreeDiff,			1.0f  );
+					Donya::Clamp( &p->panicMoveSpeed,	0.001f, p->panicMoveSpeed	);
+					Donya::Clamp( &p->gravity,			0.001f, p->gravity			);
+					Donya::Clamp( &p->maxFallSpeed,		0.001f, p->maxFallSpeed		);
+
+					ImGui::TreePop();
+				};
 
 				ShowReady	( u8"待機・軸あわせ",	&data.ready		);
 				ShowReady	( u8"待機・軸あわせ（フェイント）",	&data.readyInFeint );
@@ -985,6 +1042,7 @@ public:
 				ShowWait	( u8"待機",			&data.wait		);
 				ShowWalk	( u8"歩行",			&data.walk		);
 				ShowDamage	( u8"ダメージ",		&data.damage	);
+				ShowDie		( u8"死亡演出",		&data.die		);
 
 				if ( ImGui::TreeNode( u8"行動パターン設定" ) )
 				{
@@ -1985,19 +2043,39 @@ std::string BossFirst::Damage::GetStateName() const { return "Damage"; }
 void BossFirst::Die::Init( BossFirst &inst )
 {
 	MoverBase::Init( inst );
-	inst.velocity.x = 0.0f;
-	inst.velocity.z = 0.0f;
+	inst.velocity = 0.0f;
 
 	inst.motionManager.ChangeMotion( inst, MotionKind::Die );
+
+	wasFall = false;
 }
 void BossFirst::Die::Uninit( BossFirst &inst ) {}
 void BossFirst::Die::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
+	const auto data = FetchMember().forFirst.die;
 
+	const float oldHSpeed = inst.velocity.y;
+
+	inst.velocity = CalcVelocity( inst, elapsedTime, targetPos );
+
+	const float currentHSpeed = oldHSpeed - data.gravity;
+	inst.velocity.y = std::max( -data.maxFallSpeed, currentHSpeed );
+
+	Donya::Vector3 horizontalDirection = inst.velocity; horizontalDirection.y = 0.0f;
+	inst.orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), horizontalDirection.Unit(), Donya::Quaternion::Freeze::Up );
+}
+void BossFirst::Die::PhysicUpdate( BossFirst &inst, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainWorldMatrix )
+{
+	MoverBase::PhysicUpdate( inst, solids, pTerrain, pTerrainWorldMatrix );
+
+	if ( inst.GetPosition().y <= FetchMember().forFirst.die.fallBorderHeight )
+	{
+		wasFall = true;
+	}
 }
 bool BossFirst::Die::IsDead( const BossFirst &inst ) const
 {
-	return true;
+	return wasFall;
 }
 bool BossFirst::Die::ShouldChangeMover( BossFirst &inst ) const
 {
@@ -2008,6 +2086,35 @@ std::function<void()> BossFirst::Die::GetChangeStateMethod( BossFirst &inst ) co
 	return [&]() {}; // No op.
 }
 std::string BossFirst::Die::GetStateName() const { return "Die"; }
+Donya::Vector3 BossFirst::Die::CalcVelocity( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos ) const
+{
+	const auto data = FetchMember().forFirst.die;
+
+	const float rotDegree = Donya::Random::GenerateFloat( -1.0f, 1.0f ) * data.randomRotateRangeDeg;
+
+	Donya::Vector3 fromTargetDir = ( inst.GetPosition() - targetPos ).Unit();
+	fromTargetDir.y = 0.0f;
+
+	Donya::Vector3 baseDirection =	( inst.velocity.IsZero() )
+									? fromTargetDir
+									: inst.velocity.Unit();
+	baseDirection.y = 0.0f;
+
+	Donya::Quaternion	rotation		= Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( rotDegree ) );
+	Donya::Vector3		destDirection	= rotation.RotateVector( baseDirection );
+
+	const float diffTheta  = Donya::Dot( fromTargetDir, destDirection );
+	const float degreeDiff = acosf( std::max( -1.0f, std::min( 1.0f, diffTheta ) ) );
+	if ( data.maxDegreeDiff <= fabsf( ToDegree( degreeDiff ) ) )
+	{
+		const float rotSign = scast<float>( Donya::SignBit( rotDegree ) );
+		rotation		= Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( data.maxDegreeDiff * rotSign ) );
+		destDirection	= rotation.RotateVector( fromTargetDir );
+	}
+	// else
+
+	return destDirection * data.panicMoveSpeed;
+}
 
 void BossFirst::Init( const BossInitializer &parameter )
 {

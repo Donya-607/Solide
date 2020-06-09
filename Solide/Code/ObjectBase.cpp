@@ -538,9 +538,10 @@ Actor::MoveResult Actor::MoveYImpl( const Donya::Vector3 &yMovement, const std::
 	auto rayResult = CalcCorrectedVector( RECURSIVE_LIMIT, yMovement + extendSize, pTerrain, pTerrainMatrix );
 	rayResult.correctedVector -= extendSize;
 	
-	const Donya::Vector3 sizeOffset	= Donya::Vector3::Up() * hitBox.size.y * scast<float>( Donya::SignBit( yMovement.y ) );
+	const float moveSign = scast<float>( Donya::SignBit( yMovement.y ) );
+	const Donya::Vector3 sizeOffset	= Donya::Vector3::Up() * hitBox.size.y * moveSign;
 	const Donya::Vector3 destPos	= ( rayResult.raycastResult.wasHit )
-									? rayResult.raycastResult.intersection - sizeOffset
+									? rayResult.raycastResult.intersection - sizeOffset - ( 0.0001f * moveSign ) // Make more distance from intersection, I want do not start the raycast from a closest point.
 									: pos + rayResult.correctedVector;
 	const Donya::Vector3 actualMovement = destPos - pos;
 	
