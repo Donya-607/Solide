@@ -134,6 +134,8 @@ std::basic_string<EFK_CHAR> GetEffectPath( EffectAttribute attr )
 		return ToRelPath( u"Ice/Ice.efkefc" );
 	case EffectAttribute::ColdSmoke:
 		return ToRelPath( u"Smoke/Cold.efkefc" );
+	case EffectAttribute::PlayerSliding:
+		return ToRelPath( u"Player/Sliding.efkefc" );
 	default: break;
 	}
 

@@ -915,6 +915,8 @@ void Player::OilMover::Uninit( Player &player )
 	AssignToXZ( &player.velocity, Donya::Vector2::Zero() );
 
 	Donya::Sound::Stop( Music::PlayerSliding, /* isEnableForAll = */ true );
+
+	player.ReleaseSlidingFxIfHas();
 }
 void Player::OilMover::Update( Player &player, float elapsedTime )
 {
@@ -925,6 +927,8 @@ void Player::OilMover::Update( Player &player, float elapsedTime )
 		{
 			shouldPlaySE = false;
 			Donya::Sound::Play( Music::PlayerSliding );
+			
+			player.GenerateSlidingFx();
 		}
 
 		return;
@@ -933,6 +937,8 @@ void Player::OilMover::Update( Player &player, float elapsedTime )
 
 	shouldPlaySE = true;
 	Donya::Sound::Stop( Music::PlayerSliding, /* isEnableForAll = */ true );
+
+	player.ReleaseSlidingFxIfHas();
 }
 void Player::OilMover::Move( Player &player, float elapsedTime, Input input )
 {
@@ -1083,11 +1089,17 @@ void Player::Init( const PlayerInitializer &param )
 }
 void Player::Uninit()
 {
-	if ( pEffect )
+	auto ReleaseIfHas = []( std::shared_ptr<EffectHandle> &p )
 	{
-		pEffect->Stop();
-		pEffect.reset();
-	}
+		if ( p )
+		{
+			p->Stop();
+			p.reset();
+		}
+	};
+
+	ReleaseIfHas( pFxBurning );
+	ReleaseIfHas( pFxSliding );
 
 	pMover->Uninit( *this );
 	ParamPlayer::Get().Uninit();
@@ -1140,6 +1152,8 @@ void Player::Update( float elapsedTime, Input input )
 	}
 
 	motionManager.Update( *this, elapsedTime );
+
+	SlidingFxUpdateIfHas( elapsedTime );
 }
 
 void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMat )
@@ -1367,10 +1381,10 @@ void Player::Shot( float elapsedTime )
 		element.Subtract( Element::Type::Flame );
 		useParam.addElement.Add( Element::Type::Flame );
 
-		if ( pEffect )
+		if ( pFxBurning )
 		{
-			pEffect->Stop();
-			pEffect.reset();
+			pFxBurning->Stop();
+			pFxBurning.reset();
 		}
 	}
 
@@ -1430,17 +1444,43 @@ void Player::BurnUpdate( float elapsedTime )
 
 	burnTimer++;
 
-	if ( !pEffect )
+	if ( !pFxBurning )
 	{
-		pEffect = std::make_shared<EffectHandle>
+		pFxBurning = std::make_shared<EffectHandle>
 		(
 			EffectHandle::Generate( EffectAttribute::Fire, pos )
 		);
 	}
 	else
 	{
-		pEffect->SetPosition( pos );
+		pFxBurning->SetPosition( pos );
 	}
+}
+
+void Player::ReleaseSlidingFxIfHas()
+{
+	if ( pFxSliding )
+	{
+		pFxSliding->Stop();
+		pFxSliding.reset();
+	}
+}
+void Player::GenerateSlidingFx()
+{
+	ReleaseSlidingFxIfHas();
+	pFxSliding = std::make_shared<EffectHandle>
+	(
+		EffectHandle::Generate( EffectAttribute::PlayerSliding, GetPosition() )
+	);
+}
+void Player::SlidingFxUpdateIfHas( float elapsedTime )
+{
+	if ( !pFxSliding ) { return; }
+	// else
+
+	const auto radian = orientation.GetEulerAngles();
+	pFxSliding->SetRotation( radian.x, radian.y, radian.z );
+	pFxSliding->SetPosition( GetPosition() );
 }
 
 #if USE_IMGUI

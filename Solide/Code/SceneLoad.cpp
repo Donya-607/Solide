@@ -188,6 +188,7 @@ void SceneLoad::Init()
 			EffectAttribute::FlameCannon,
 			EffectAttribute::IceCannon,
 			EffectAttribute::ColdSmoke,
+			EffectAttribute::PlayerSliding,
 		};
 
 		bool succeeded = true;

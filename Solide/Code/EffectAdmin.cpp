@@ -31,6 +31,7 @@ namespace
 		case EffectAttribute::FlameCannon:	return "FlameCannon";
 		case EffectAttribute::IceCannon:	return "IceCannon";
 		case EffectAttribute::ColdSmoke:	return "ColdSmoke";
+		case EffectAttribute::PlayerSliding:return "PlayerSliding";
 		default: break;
 		}
 

@@ -129,9 +129,13 @@ void Framework::DebugShowInformation()
 		{
 			pHandle->SetPosition( setPos );
 		}
-		if ( ImGui::Button( u8"SetScale" ) && pHandle )
+		if ( ImGui::Button( u8"Scale = 1.0f" ) && pHandle )
 		{
-			pHandle->SetScale( 0.1f );
+			pHandle->SetScale( 1.0f );
+		}
+		if ( ImGui::Button( u8"Scale = 0.0f" ) && pHandle )
+		{
+			pHandle->SetScale( 0.0f );
 		}
 		if ( ImGui::Button( u8"ストップ" ) && pHandle )
 		{

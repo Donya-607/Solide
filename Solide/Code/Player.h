@@ -178,7 +178,8 @@ private:
 	std::unique_ptr<MoverBase>		pMover;
 	MotionManager					motionManager;
 	InputManager					inputManager;
-	std::shared_ptr<EffectHandle>	pEffect		= nullptr;	// Will used as burning effect.
+	std::shared_ptr<EffectHandle>	pFxBurning	= nullptr;
+	std::shared_ptr<EffectHandle>	pFxSliding	= nullptr;
 	bool							onGround	= false;
 	bool							onIce		= false;
 	bool							canUseOil	= true;		// Will recovery when landing.
@@ -254,6 +255,10 @@ private:
 	void UpdateHopping( float elapsedTime );
 
 	void BurnUpdate( float elapsedTime );
+
+	void ReleaseSlidingFxIfHas();
+	void GenerateSlidingFx();
+	void SlidingFxUpdateIfHas( float elapsedTime );
 private:
 #if USE_IMGUI
 	void UseImGui();

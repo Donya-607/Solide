@@ -6,6 +6,7 @@ enum class EffectAttribute
 	FlameCannon,
 	IceCannon,
 	ColdSmoke,
+	PlayerSliding,
 
 	AttributeCount
 };
