@@ -102,7 +102,7 @@ Donya::Vector4x4	Warp::CalcWorldMatrix( bool useForHitBox ) const
 	return W;
 }
 std::vector<Timer>	Warp::GetBorderTimes()			const { return borderTimes;				}
-Donya::Vector3		Warp::GetReturningPosition()	const { return returningPosOffset;		}
+Donya::Vector3		Warp::GetReturningPosition()	const { return GetPosition() + returningPosOffset; }
 Donya::Quaternion	Warp::GetReturningOrientation()	const { return returningOrientation;	}
 
 void Warp::Init() {}
@@ -222,7 +222,7 @@ void Warp::ShowImGuiNode( const std::string &nodeCaption, bool *wantRemoveMe )
 
 	if ( ImGui::TreeNode( u8"戻ってきたときの設定" ) )
 	{
-		ImGui::DragFloat3( u8"戻ってくる位置（自身からの相対）", &returningPosOffset.x, 0.01f );
+		ImGui::DragFloat3( u8"戻ってくる相対位置（自身からの相対）", &returningPosOffset.x, 0.01f );
 
 		Donya::Vector3 front = returningOrientation.LocalFront();
 		ImGui::SliderFloat3( u8"戻ってきたときの前方向", &front.x, -1.0f, 1.0f );
