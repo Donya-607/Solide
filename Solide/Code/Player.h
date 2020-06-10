@@ -40,6 +40,8 @@ private:
 	}
 	static constexpr const char *ID = "PlayerInit";
 public:
+	void OverwriteInitialPos( const Donya::Vector3 &newPos );
+	void OverwriteInitialOrientation( const Donya::Quaternion &newOrientation );
 	Donya::Vector3		GetInitialPos() const;
 	Donya::Quaternion	GetInitialOrientation() const;
 public:

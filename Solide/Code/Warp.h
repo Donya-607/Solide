@@ -22,6 +22,8 @@ private: // Serialize members.
 	Donya::Vector4		drawColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 	Donya::AABB			hitBox;
 	std::vector<Timer>	borderTimes;
+	Donya::Vector3		returningPosOffset;		// Used for decision a returning position of the player that warped by myself.
+	Donya::Quaternion	returningOrientation;	// Used for decision a returning orientation of the player that warped by myself.
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -42,6 +44,14 @@ private:
 		}
 		if ( 2 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( returningPosOffset		),
+				CEREAL_NVP( returningOrientation	)
+			);
+		}
+		if ( 3 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -54,12 +64,14 @@ public:
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
 public:
-	bool				IsUnlocked()			const;
-	int					GetDestinationStageNo()	const;
-	Donya::Vector3		GetPosition()			const;
-	Donya::AABB			GetHitBox()				const;
+	bool				IsUnlocked()				const;
+	int					GetDestinationStageNo()		const;
+	Donya::Vector3		GetPosition()				const;
+	Donya::AABB			GetHitBox()					const;
 	Donya::Vector4x4	CalcWorldMatrix( bool useForHitBox ) const;
-	std::vector<Timer>	GetBorderTimes()		const;
+	std::vector<Timer>	GetBorderTimes()			const;
+	Donya::Vector3		GetReturningPosition()		const;
+	Donya::Quaternion	GetReturningOrientation()	const;
 private:
 	Donya::Vector4		MakeDrawColor( const Donya::Vector4 &blendColor ) const;
 #if USE_IMGUI

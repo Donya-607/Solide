@@ -529,6 +529,14 @@ public:
 };
 
 
+void PlayerInitializer::OverwriteInitialPos( const Donya::Vector3 &newPos )
+{
+	wsInitialPos = newPos;
+}
+void PlayerInitializer::OverwriteInitialOrientation( const Donya::Quaternion &newOrientation )
+{
+	initialOrientation = newOrientation;
+}
 Donya::Vector3		PlayerInitializer::GetInitialPos() const { return wsInitialPos; }
 Donya::Quaternion	PlayerInitializer::GetInitialOrientation() const { return initialOrientation; }
 void PlayerInitializer::LoadParameter( int stageNo )

@@ -75,8 +75,8 @@ namespace
 }
 
 
-int					Warp::GetDestinationStageNo()	const { return destStageNo;	}
-Donya::Vector3		Warp::GetPosition()				const { return wsPos;		}
+int					Warp::GetDestinationStageNo()	const { return destStageNo;				}
+Donya::Vector3		Warp::GetPosition()				const { return wsPos;					}
 Donya::AABB			Warp::GetHitBox()				const
 {
 	Donya::AABB tmp = hitBox;
@@ -101,7 +101,9 @@ Donya::Vector4x4	Warp::CalcWorldMatrix( bool useForHitBox ) const
 	W._43 = translation.z;
 	return W;
 }
-std::vector<Timer>	Warp::GetBorderTimes()			const { return borderTimes; }
+std::vector<Timer>	Warp::GetBorderTimes()			const { return borderTimes;				}
+Donya::Vector3		Warp::GetReturningPosition()	const { return returningPosOffset;		}
+Donya::Quaternion	Warp::GetReturningOrientation()	const { return returningOrientation;	}
 
 void Warp::Init() {}
 void Warp::Uninit() {}
@@ -175,6 +177,7 @@ void Warp::ShowImGuiNode( const std::string &nodeCaption, bool *wantRemoveMe )
 	ParameterHelper::ShowAABBNode( u8"当たり判定", &hitBox );
 	ImGui::DragFloat( u8"描画スケール",	&drawScale, 0.01f );
 	ImGui::ColorEdit4( u8"描画色",		&drawColor.x );
+	ImGui::ColorEdit4( u8"描画色",		&drawColor.x );
 	drawScale = std::max( 0.0f, drawScale );
 
 	if ( ImGui::TreeNode( u8"ランクのボーダーラインとなる時間の設定" ) )
@@ -213,6 +216,21 @@ void Warp::ShowImGuiNode( const std::string &nodeCaption, bool *wantRemoveMe )
 		{
 			borderTimes.erase( borderTimes.begin() + eraseIndex );
 		}
+
+		ImGui::TreePop();
+	}
+
+	if ( ImGui::TreeNode( u8"戻ってきたときの設定" ) )
+	{
+		ImGui::DragFloat3( u8"戻ってくる位置（自身からの相対）", &returningPosOffset.x, 0.01f );
+
+		Donya::Vector3 front = returningOrientation.LocalFront();
+		ImGui::SliderFloat3( u8"戻ってきたときの前方向", &front.x, -1.0f, 1.0f );
+		returningOrientation = Donya::Quaternion::LookAt
+		(
+			Donya::Vector3::Front(), front.Unit(),
+			Donya::Quaternion::Freeze::Up
+		);
 
 		ImGui::TreePop();
 	}

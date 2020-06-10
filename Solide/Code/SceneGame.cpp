@@ -817,7 +817,26 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	}
 	else
 	{
-		pPlayerIniter->LoadParameter( stageNo );
+		bool shouldUseReturningData = false;
+		if ( 0 <= beforeWarpStageNumber )
+		{
+			if ( stageNo == beforeWarpStageNumber )
+			{
+				shouldUseReturningData = true;
+			}
+		}
+
+		if ( shouldUseReturningData && pReturningPlayerIniter )
+		{
+			*pPlayerIniter = *pReturningPlayerIniter;
+
+			pReturningPlayerIniter.reset();
+			beforeWarpStageNumber = -1;
+		}
+		else
+		{
+			pPlayerIniter->LoadParameter( stageNo );
+		}
 	}
 	PlayerInit( stageNo );
 
@@ -2104,9 +2123,15 @@ void SceneGame::ProcessWarpCollision()
 		warpBody = pWarp->GetHitBox();
 		if ( Donya::AABB::IsHitAABB( playerBody, warpBody ) )
 		{
-			stageNumber = pWarp->GetDestinationStageNo();
-			borderTimes = pWarp->GetBorderTimes();
 			nowWaiting  = true;
+
+			beforeWarpStageNumber	= stageNumber;
+			stageNumber				= pWarp->GetDestinationStageNo();
+			borderTimes				= pWarp->GetBorderTimes();
+			pReturningPlayerIniter	= std::make_unique<PlayerInitializer>();
+			pReturningPlayerIniter->OverwriteInitialPos( pWarp->GetReturningPosition() );
+			pReturningPlayerIniter->OverwriteInitialOrientation( pWarp->GetReturningOrientation() );
+
 			StartFade();
 			break;
 		}

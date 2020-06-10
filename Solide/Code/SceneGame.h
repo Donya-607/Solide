@@ -53,6 +53,7 @@ private:
 	std::unique_ptr<CheckPoint>			pCheckPoint;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
+	std::unique_ptr<PlayerInitializer>	pReturningPlayerIniter;
 	std::unique_ptr<BossBase>			pBoss;
 	std::unique_ptr<BossInitializer>	pBossIniter;
 	std::unique_ptr<Enemy::Container>	pEnemies;
@@ -60,7 +61,6 @@ private:
 	std::unique_ptr<Goal>				pGoal;
 	std::unique_ptr<WarpContainer>		pWarps;
 	std::unique_ptr<Shadow>				pShadow;
-	//std::unique_ptr<TutorialSentence>	pTutorialSentence;
 	std::unique_ptr<TutorialContainer>	pTutorialContainer;
 	std::unique_ptr<ClearSentence>		pClearSentence;
 	std::unique_ptr<ClearPerformance>	pClearPerformance;
@@ -72,6 +72,7 @@ private:
 	bool								shouldDrawCurrentTimer = false;
 
 	int  stageNumber	= 1;
+	int  beforeWarpStageNumber = -1; // -1 is invalid.
 	int  playerRemains	= 1;
 	int  gameTimer		= 0;
 	int  clearTimer		= 0;
