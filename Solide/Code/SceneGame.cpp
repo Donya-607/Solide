@@ -633,6 +633,8 @@ void SceneGame::Draw( float elapsedTime )
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
+		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+
 		Donya::Model::Cube::Constant constant;
 		constant.matViewProj	= VP;
 		constant.lightDirection	= data.directionalLight.direction.XYZ();

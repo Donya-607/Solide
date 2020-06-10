@@ -208,7 +208,8 @@ private:
 	class Rush : public MoverBase
 	{
 	private:
-		bool shouldStop = false;
+		int		SETimer		= 0;
+		bool	shouldStop	= false;
 	public:
 		void Init( BossFirst &instance ) override;
 		void Uninit( BossFirst &instance ) override;

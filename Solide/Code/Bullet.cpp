@@ -6,10 +6,12 @@
 #include "Donya/Loader.h"
 #include "Donya/Model.h"
 #include "Donya/ModelPose.h"
+#include "Donya/Sound.h"
 #include "Donya/Useful.h"
 
 #include "Effect.h"
 #include "FilePath.h"
+#include "Music.h"
 #include "Section.h" // Use for DrawHitBox.
 #include "Parameter.h"
 
@@ -1418,6 +1420,11 @@ namespace Bullet
 			const auto aabbResult		= CalcCorrectedVector( raycastResult.correctedVector, solids );
 			if ( raycastResult.raycastResult.wasHit || aabbResult.wasHit )
 			{
+				if ( !wasHitToObject )
+				{
+					Donya::Sound::Play( Music::BossImpact );
+				}
+
 				wasHitToObject = true;
 			}
 

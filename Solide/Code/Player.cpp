@@ -905,10 +905,12 @@ void Player::OilMover::Uninit( Player &player )
 	player.StartHopping();
 
 	AssignToXZ( &player.velocity, Donya::Vector2::Zero() );
+
+	Donya::Sound::Stop( Music::PlayerSliding, /* isEnableForAll = */ true );
 }
 void Player::OilMover::Update( Player &player, float elapsedTime )
 {
-	if ( player.OnGround() )
+	if ( player.OnGround() && player.velocity.y <= 0.0f ) // The velocity condition is used for prevent playing immediately after initialize the OilMover.
 	{
 		// This SE will be played with loop, so I should call only once time.
 		if ( shouldPlaySE )

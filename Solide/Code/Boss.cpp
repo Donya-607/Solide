@@ -275,11 +275,12 @@ namespace
 		};
 		struct Rush
 		{
-			float	initialSpeed	= 1.0f;
-			float	accel			= 1.0f;		// Per frame.
-			float	maxSpeed		= 1.0f;
-			float	movableRange	= 10.0f;
+			float	initialSpeed		= 1.0f;
+			float	accel				= 1.0f;		// Per frame.
+			float	maxSpeed			= 1.0f;
+			float	movableRange		= 10.0f;
 			std::vector<int> feintCountPerHP;	// [0:MAX - 0][1:MAX - 1]..., If a remains(e.g. if MAX is 3, but this contains only two values) are exist, please used as back() value.
+			int		playStepSEInterval	= 5;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -295,6 +296,10 @@ namespace
 				);
 
 				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( playStepSEInterval ) );
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -402,10 +407,11 @@ namespace
 		};
 		struct Walk
 		{
-			int		longFrame		= 1;
-			int		shortFrame		= 1;
-			float	maxAimDegree	= 180.0f;	// Per frame.
-			float	walkSpeed		= 1.0f;		// Per frame.
+			int		longFrame			= 1;
+			int		shortFrame			= 1;
+			float	maxAimDegree		= 180.0f;	// Per frame.
+			float	walkSpeed			= 1.0f;		// Per frame.
+			int		playStepSEInterval	= 10;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -420,6 +426,10 @@ namespace
 				);
 
 				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( playStepSEInterval ) );
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -609,12 +619,12 @@ CEREAL_CLASS_VERSION( DrawingParam,				0 )
 CEREAL_CLASS_VERSION( CollisionParam,			0 )
 CEREAL_CLASS_VERSION( FirstParam,				7 )
 CEREAL_CLASS_VERSION( FirstParam::Ready,		0 )
-CEREAL_CLASS_VERSION( FirstParam::Rush,			0 )
+CEREAL_CLASS_VERSION( FirstParam::Rush,			1 )
 CEREAL_CLASS_VERSION( FirstParam::Brake,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Breath,		1 )
 CEREAL_CLASS_VERSION( FirstParam::Breath::PerHP,0 )
 CEREAL_CLASS_VERSION( FirstParam::Wait,			0 )
-CEREAL_CLASS_VERSION( FirstParam::Walk,			0 )
+CEREAL_CLASS_VERSION( FirstParam::Walk,			1 )
 CEREAL_CLASS_VERSION( FirstParam::Damage,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Die,			1 )
 
@@ -850,14 +860,16 @@ public:
 					if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 					// else
 
-					ImGui::DragFloat( u8"初期速度",				&p->initialSpeed	);
-					ImGui::DragFloat( u8"加速度",				&p->accel			);
-					ImGui::DragFloat( u8"最高速度",				&p->maxSpeed		);
-					ImGui::DragFloat( u8"移動可能範囲（半分）",	&p->movableRange	);
-					p->initialSpeed	= std::max( 0.0f, p->initialSpeed	);
-					p->accel		= std::max( 0.0f, p->accel			);
-					p->maxSpeed		= std::max( 0.0f, p->maxSpeed		);
-					p->movableRange	= std::max( 0.0f, p->movableRange	);
+					ImGui::DragFloat( u8"初期速度",					&p->initialSpeed		);
+					ImGui::DragFloat( u8"加速度",					&p->accel				);
+					ImGui::DragFloat( u8"最高速度",					&p->maxSpeed			);
+					ImGui::DragFloat( u8"移動可能範囲（半分）",		&p->movableRange		);
+					ImGui::DragInt  ( u8"足音再生間隔（フレーム）",	&p->playStepSEInterval	);
+					p->initialSpeed			= std::max( 0.0f,	p->initialSpeed			);
+					p->accel				= std::max( 0.0f,	p->accel				);
+					p->maxSpeed				= std::max( 0.0f,	p->maxSpeed				);
+					p->movableRange			= std::max( 0.0f,	p->movableRange			);
+					p->playStepSEInterval	= std::max( 2,		p->playStepSEInterval	);
 
 					if ( ImGui::TreeNode( u8"フェイント回数設定" ) )
 					{
@@ -996,7 +1008,9 @@ public:
 					
 					ImGui::SliderFloat( u8"一度に曲がる最大角度（Degree）", &p->maxAimDegree, -180.0f, 180.0f );
 					ImGui::DragFloat( u8"歩行速度", &p->walkSpeed, 0.01f );
+					ImGui::DragInt( u8"足音再生間隔（フレーム）", &p->playStepSEInterval );
 					Donya::Clamp( &p->walkSpeed, 0.0f, p->walkSpeed );
+					Donya::Clamp( &p->playStepSEInterval, 2, p->playStepSEInterval );
 
 					ImGui::TreePop();
 				};
@@ -1675,7 +1689,8 @@ void BossFirst::Rush::Init( BossFirst &inst )
 		inst.remainFeintCount--;
 	}
 
-	shouldStop = false;
+	SETimer		= 0;
+	shouldStop	= false;
 
 	inst.motionManager.ChangeMotion( inst, MotionKind::RushProcess );
 }
@@ -1686,6 +1701,12 @@ void BossFirst::Rush::Update( BossFirst &inst, float elapsedTime, const Donya::V
 	// else
 
 	const auto data = FetchMember().forFirst.rush;
+
+	SETimer++;
+	if ( ( SETimer % data.playStepSEInterval ) == 1 )
+	{
+		Donya::Sound::Play( Music::BossStep );
+	}
 
 	float currentSpeed = inst.velocity.XZ().Length();
 	currentSpeed += data.accel;
@@ -1953,9 +1974,14 @@ void BossFirst::Walk::Init( BossFirst &inst )
 void BossFirst::Walk::Uninit( BossFirst &inst ) {}
 void BossFirst::Walk::Update( BossFirst &inst, float elapsedTime, const Donya::Vector3 &targetPos )
 {
-	inst.timer++;
-
 	const auto data = FetchMember().forFirst.walk;
+
+	inst.timer++;
+	if ( ( inst.timer % data.playStepSEInterval ) == 1 )
+	{
+		Donya::Sound::Play( Music::BossStep );
+	}
+
 	const Donya::Vector3 aimingVector = inst.CalcAimingVector( targetPos, data.maxAimDegree );
 	inst.orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), aimingVector.Unit(), Donya::Quaternion::Freeze::Up );
 
