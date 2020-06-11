@@ -29,7 +29,7 @@ EffectHandle EffectHandle::Generate( EffectAttribute attr, const Donya::Vector3 
 		// We should update this handle before SetScale().
 		// The SetScale() will throws an exception if we didn't call UpdateHandle() before that.
 		// Why??? :(
-		pManager->UpdateHandle( handle, 0.0f );
+		pManager->UpdateHandle( handle, 0.001f );
 		pManager->SetScale( handle, attrScale, attrScale, attrScale );
 	}
 	return EffectHandle{ handle };

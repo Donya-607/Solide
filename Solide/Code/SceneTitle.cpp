@@ -11,6 +11,7 @@
 #include "Donya/Useful.h"
 
 #include "Common.h"
+#include "EffectAdmin.h"
 #include "Fader.h"
 #include "FilePath.h"
 #include "Music.h"
@@ -369,6 +370,8 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	PlayerPhysicUpdate( pObstacles->GetHitBoxes(), &pTerrain );
 
 	CameraUpdate();
+	EffectAdmin::Get().SetViewMatrix( iCamera.CalcViewMatrix() );
+	EffectAdmin::Get().SetProjectionMatrix( iCamera.GetProjectionMatrix() );
 
 	UpdateByStatus( elapsedTime );
 
