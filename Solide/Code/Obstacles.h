@@ -13,6 +13,7 @@
 
 #include "Bullet.h"		// For FireDesc.
 #include "EffectAttribute.h"
+#include "Music.h"
 #include "ObjectBase.h"
 
 class EffectHandle;
@@ -253,6 +254,7 @@ public:
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
 	int GetKind() const override;
+	Donya::Vector4x4 GetWorldMatrix() const override;
 private:
 	void UpdateHitBox();
 	void UpdateShot( float elapsedTime );
@@ -261,6 +263,7 @@ private:
 	void UpdateCooldown( float elapsedTime );
 	void GenerateShot();
 	bool ShouldChangeMode() const;
+	Music::ID GetSpraySEIDOrInvalid() const;
 private:
 	void GenerateEffect();
 public:

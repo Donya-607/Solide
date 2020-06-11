@@ -10,6 +10,7 @@
 #include "Donya/ModelPose.h"
 #include "Donya/Random.h"		// Use at Water
 #include "Donya/Serializer.h"
+#include "Donya/Sound.h"
 #include "Donya/Useful.h"		// MultiByte char -> Wide char
 
 #include "Common.h"
@@ -571,6 +572,20 @@ int  Spray::GetKind() const
 {
 	return scast<int>( Kind::Spray );
 }
+Donya::Vector4x4 Spray::GetWorldMatrix() const
+{
+	const auto wsBody		= GetHitBox();
+	const auto drawScale	= GetModelDrawScale( scast<Kind>( GetKind() ), ParamObstacle::Get().Data() );
+	Donya::Vector4x4 W{};
+	W._11 = drawScale.x;
+	W._22 = drawScale.y;
+	W._33 = drawScale.z;
+	W *= orientation.MakeRotationMatrix();
+	W._41 = wsBody.pos.x;
+	W._42 = wsBody.pos.y;
+	W._43 = wsBody.pos.z;
+	return W;
+}
 void Spray::UpdateHitBox()
 {
 	hitBox = GetModelHitBox( Kind::Spray, ParamObstacle::Get().Data() );
@@ -613,6 +628,12 @@ void Spray::UpdateSpray( float elapsedTime )
 	if ( !pEffect && attachEffect != EffectAttribute::AttributeCount )
 	{
 		GenerateEffect();
+
+		const auto SE = GetSpraySEIDOrInvalid();
+		if ( SE != Music::MUSIC_COUNT )
+		{
+			Donya::Sound::Play( SE );
+		}
 	}
 }
 void Spray::UpdateCooldown( float elapsedTime )
@@ -621,6 +642,12 @@ void Spray::UpdateCooldown( float elapsedTime )
 	{
 		pEffect->Stop();
 		pEffect.reset();
+
+		const auto SE = GetSpraySEIDOrInvalid();
+		if ( SE != Music::MUSIC_COUNT )
+		{
+			Donya::Sound::Stop( SE );
+		}
 	}
 }
 void Spray::GenerateShot()
@@ -639,6 +666,17 @@ bool Spray::ShouldChangeMode() const
 	return	( nowSpraying )
 			? ( sprayingFrame < shotTimer )
 			: ( cooldownFrame < shotTimer );
+}
+Music::ID Spray::GetSpraySEIDOrInvalid() const
+{
+	switch ( attachEffect )
+	{
+	case EffectAttribute::FlameCannon:	return Music::SprayFlame;
+	case EffectAttribute::IceCannon:	return Music::SprayCold;
+	default: break;
+	}
+
+	return Music::MUSIC_COUNT; // Invalid ID
 }
 void Spray::GenerateEffect()
 {
@@ -702,6 +740,7 @@ void Spray::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
 					case EffectAttribute::FlameCannon:	return u8"放射・炎";
 					case EffectAttribute::IceCannon:	return u8"放射・冷気";
 					case EffectAttribute::ColdSmoke:	return u8"煙・冷気";
+					case EffectAttribute::PlayerSliding:return u8"自機の滑走";
 					default: break;
 					}
 					_ASSERT_EXPR( 0, L"Error: Unexpected type!" );
