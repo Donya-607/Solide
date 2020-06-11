@@ -1289,6 +1289,7 @@ void Player::JumpByStand()
 {
 	const float  strength = JumpStand::GetJumpPower();
 	velocity.y = strength;
+	canUseOil  = true;
 }
 void Player::KillMe()
 {

@@ -161,12 +161,12 @@ public:
 struct EffectAdmin::Impl
 {
 private:
-	const int				maxInstanceCount	= 4096;
-	const int32_t			maxSpriteCount		= 4096;
+	static constexpr int		maxInstanceCount	= 4096 << 2;
+	static constexpr int32_t	maxSpriteCount		= 4096 << 2;
 private:
-	Fx::Manager				*pManager			= nullptr;
-	FxRenderer::Renderer	*pRenderer			= nullptr;
-	bool					wasInitialized		= false;
+	Fx::Manager					*pManager			= nullptr;
+	FxRenderer::Renderer		*pRenderer			= nullptr;
+	bool						wasInitialized		= false;
 private:
 	std::unordered_map<std::basic_string<EFK_CHAR>, std::shared_ptr<EffectWrapper>> fxMap;
 public:
