@@ -137,6 +137,14 @@ void Tutorial::ShowImGuiNode( const std::string &nodeCaption )
 bool TutorialContainer::Init( int stageNumber )
 {
 	stageNo = stageNumber;
+
+	if ( SaveDataAdmin::Get().IsTutorialAlreadyDisplayed( stageNumber ) )
+	{
+		instances.clear();
+		return;
+	}
+	// else
+
 #if DEBUG_MODE
 	LoadJson( stageNumber );
 #else
@@ -189,6 +197,11 @@ void TutorialContainer::Update( float elapsedTime, const Donya::XInput &controll
 		ShouldRemove
 	);
 	instances.erase( result, instances.end() );
+
+	if ( instances.empty() )
+	{
+		SaveDataAdmin::Get().AddDisplayedTutorialStageNo( stageNo );
+	}
 }
 void TutorialContainer::Draw()
 {

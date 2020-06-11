@@ -47,6 +47,7 @@ public:
 	std::vector<CheckPoint::Instance>	remainingCheckPoints;
 	std::vector<int>					unlockedStageNumbers;
 	std::unordered_map<int, ClearData>	clearData; // Per stage.
+	std::vector<int>					displayedTutorialStages;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -67,6 +68,10 @@ private:
 		}
 		if ( 2 <= version )
 		{
+			archive( CEREAL_NVP( displayedTutorialStages ) );
+		}
+		if ( 3 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -77,8 +82,11 @@ public:
 	/// </summary>
 	bool RegisterClearDataIfFastOrNew( int stageNo, const ClearData &newData );
 	ClearData FetchRegisteredClearDataOrDefault( int stageNo ) const;
+
+	bool IsTutorialAlreadyDisplayed( int stageNo );
+	void AddDisplayedTutorialStageNo( int stageNo );
 };
-CEREAL_CLASS_VERSION( SaveData,				1 )
+CEREAL_CLASS_VERSION( SaveData,				2 )
 CEREAL_CLASS_VERSION( SaveData::ClearData,	0 )
 
 
@@ -113,6 +121,8 @@ public:
 	/// Returns true if data was updated, or newly added.
 	/// </summary>
 	bool RegisterIfFastOrNew( int stageNo, const SaveData::ClearData &newData );
+	bool IsTutorialAlreadyDisplayed( int stageNo );
+	void AddDisplayedTutorialStageNo( int stageNo );
 public:
 	void RequireGotoOtherStage( int destinationStageNo );
 	void RemoveChangeStageRequest();

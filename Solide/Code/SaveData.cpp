@@ -13,6 +13,7 @@ void SaveData::Clear()
 	remainingCheckPoints.clear();
 	unlockedStageNumbers.clear();
 	clearData.clear();
+	displayedTutorialStages.clear();
 }
 bool SaveData::RegisterClearDataIfFastOrNew( int stageNo, const ClearData &newData )
 {
@@ -42,6 +43,22 @@ SaveData::ClearData SaveData::FetchRegisteredClearDataOrDefault( int stageNo ) c
 	}
 	// else
 	return itr->second;
+}
+bool SaveData::IsTutorialAlreadyDisplayed( int stageNo )
+{
+	const auto result = std::find
+	(
+		displayedTutorialStages.begin(), displayedTutorialStages.end(),
+		stageNo
+	);
+	return ( result != displayedTutorialStages.end() );
+}
+void SaveData::AddDisplayedTutorialStageNo( int stageNo )
+{
+	if ( IsTutorialAlreadyDisplayed( stageNo ) ) { return; } // Except doubles
+	// else
+
+	displayedTutorialStages.emplace_back( stageNo );
 }
 
 SaveDataAdmin::SaveDataAdmin() = default;
@@ -152,6 +169,15 @@ bool SaveDataAdmin::RegisterIfFastOrNew( int stageNo, const SaveData::ClearData 
 {
 	savedata.isEmpty = false;
 	return savedata.RegisterClearDataIfFastOrNew( stageNo, newData );
+}
+bool SaveDataAdmin::IsTutorialAlreadyDisplayed( int stageNo )
+{
+	return savedata.IsTutorialAlreadyDisplayed( stageNo );
+}
+void SaveDataAdmin::AddDisplayedTutorialStageNo( int stageNo )
+{
+	savedata.isEmpty = false;
+	savedata.AddDisplayedTutorialStageNo( stageNo );
 }
 void SaveDataAdmin::RequireGotoOtherStage( int destNo )
 {
