@@ -818,6 +818,7 @@ void SceneTitle::SelectUpdate( float elapsedTime )
 		if ( chooseItem == Choice::NewGame )
 		{
 			SaveDataAdmin::Get().Clear();
+			SaveDataAdmin::Get().Save();
 		}
 
 		Donya::Sound::Play( Music::UI_StartGame );

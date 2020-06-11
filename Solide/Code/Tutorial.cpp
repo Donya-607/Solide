@@ -136,12 +136,17 @@ void Tutorial::ShowImGuiNode( const std::string &nodeCaption )
 
 bool TutorialContainer::Init( int stageNumber )
 {
+	using Spr = SpriteAttribute;
+	bool succeeded = true;
+	if ( !sprFrame.LoadSprite	( GetSpritePath( Spr::TutorialFrame		), 2U ) ) { succeeded = false; }
+	if ( !sprSentence.LoadSprite( GetSpritePath( Spr::TutorialSentence	), 4U ) ) { succeeded = false; }
+
 	stageNo = stageNumber;
 
 	if ( SaveDataAdmin::Get().IsTutorialAlreadyDisplayed( stageNumber ) )
 	{
 		instances.clear();
-		return;
+		return succeeded;
 	}
 	// else
 
@@ -155,11 +160,6 @@ bool TutorialContainer::Init( int stageNumber )
 	{
 		it.Init();
 	}
-
-	using Spr = SpriteAttribute;
-	bool succeeded = true;
-	if ( !sprFrame.LoadSprite	( GetSpritePath( Spr::TutorialFrame		), 2U ) ) { succeeded = false; }
-	if ( !sprSentence.LoadSprite( GetSpritePath( Spr::TutorialSentence	), 4U ) ) { succeeded = false; }
 
 	return succeeded;
 }
