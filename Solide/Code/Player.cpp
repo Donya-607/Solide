@@ -1171,7 +1171,7 @@ void Player::PhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::
 		it = orientation.RotateVector( it );
 	}
 
-	const auto result = Actor::Move( velocity, rotatedOffsets, solids, pTerrain, pTerrainMat );
+	const auto result = Actor::Move( velocity, rotatedOffsets, solids, pTerrain, pTerrainMat, OnGround() );
 	const Donya::Vector3 standingNormal = result.lastNormal;
 	// bool wasCorrectedV = WasCorrectedVertically( oldPos, pTerrain );
 

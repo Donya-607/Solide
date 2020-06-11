@@ -55,7 +55,7 @@ public:
 		Donya::Vector3				lastNormal; // Unit vector
 		Donya::Model::RaycastResult	lastResult;
 	};
-	virtual MoveResult Move( const Donya::Vector3 &wsMovement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr );
+	virtual MoveResult Move( const Donya::Vector3 &wsMovement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids = {}, const Donya::Model::PolygonGroup *pTerrain = nullptr, const Donya::Vector4x4 *pTerrainWorldMatrix = nullptr, bool onGround = true );
 public:
 	struct AABBResult
 	{

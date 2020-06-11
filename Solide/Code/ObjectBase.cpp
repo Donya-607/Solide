@@ -97,7 +97,7 @@ void Solid::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, 
 
 
 
-Actor::MoveResult Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
+Actor::MoveResult Actor::Move( const Donya::Vector3 &movement, const std::vector<Donya::Vector3> &wsRayOffsets, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix, bool onGround )
 {
 	Actor::MoveResult result;
 	result.lastResult.wasHit = false;
@@ -125,12 +125,13 @@ Actor::MoveResult Actor::Move( const Donya::Vector3 &movement, const std::vector
 		// This input velocity length should be serialized.
 		// Because if this is lower, the slope correction is not function,
 		// if this is larger, an actor will landing too hurry.
-		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y * 1.5001f, 0.0f };
-		auto resultV = CalcCorrectedVector( 1, checkUnderLength, pTerrain, pTerrainMatrix );
+		const float lengthBias = ( onGround ) ? 1.6f : 1.5001f; // Magic number :(
+		const Donya::Vector3 checkUnderLength{ 0.0f, -hitBox.size.y * lengthBias, 0.0f };
+		auto resultV = CalcCorrectedVector( pos + hitBox.pos, 1, checkUnderLength, pTerrain, pTerrainMatrix );
 		if ( resultV.raycastResult.wasHit )
 		{
 			const Donya::Vector3 verticalSize{ 0.0f, hitBox.size.y, 0.0f };
-			const Donya::Vector3 footPos = pos - verticalSize;
+			const Donya::Vector3 footPos = pos + hitBox.pos - verticalSize;
 			const Donya::Vector3 diff = resultV.raycastResult.intersection - footPos;
 			pos.y += diff.y;
 			result.lastNormal = resultV.raycastResult.nearestPolygon.normal;
@@ -531,18 +532,59 @@ void Actor::MoveXZImpl( const Donya::Vector3 &xzMovement, const std::vector<Dony
 Actor::MoveResult Actor::MoveYImpl( const Donya::Vector3 &yMovement, const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix )
 {
 	// The hit-box size of projected to movement component.
-	const Donya::Vector3 extendSize = MakeSizeOffset( hitBox.size, yMovement );
+	const Donya::Vector3 extendSize	= MakeSizeOffset( hitBox.size, yMovement );
+
+	// For prevent the ray-start overs a polygon, start from behind myself.
+	const Donya::Vector3 rayOffset	= yMovement * 0.5f;
+	const Donya::Vector3 rayStart	= pos + hitBox.pos - rayOffset;
+	const Donya::Vector3 rayVector	= yMovement + extendSize + rayOffset;
 
 	// Y moving does not need the correction recursively.
 	constexpr int RECURSIVE_LIMIT = 1;
-	auto rayResult = CalcCorrectedVector( RECURSIVE_LIMIT, yMovement + extendSize, pTerrain, pTerrainMatrix );
-	rayResult.correctedVector -= extendSize;
+	auto rayResult = CalcCorrectedVector( rayStart, RECURSIVE_LIMIT, rayVector, pTerrain, pTerrainMatrix );
+	if ( rayResult.raycastResult.wasHit )
+	{
+		// The "corrected-velocity is zero" means a wall places too nearly.
+		if ( rayResult.correctedVector.IsZero() )
+		{
+			MoveResult result;
+			result.lastNormal = rayResult.raycastResult.nearestPolygon.normal;
+			result.lastResult = rayResult.raycastResult;
+			return result;
+		}
+		// else
+
+		// Prevent the sign to be inverse by subtract.
+
+		const Donya::Int3 beforeSigns
+		{
+			Donya::SignBit( rayResult.correctedVector.x ),
+			Donya::SignBit( rayResult.correctedVector.y ),
+			Donya::SignBit( rayResult.correctedVector.z ),
+		};
+
+		rayResult.correctedVector -= extendSize + rayOffset;
+
+		const Donya::Int3 afterSigns
+		{
+			Donya::SignBit( rayResult.correctedVector.x ),
+			Donya::SignBit( rayResult.correctedVector.y ),
+			Donya::SignBit( rayResult.correctedVector.z ),
+		};
+		if ( afterSigns.x != beforeSigns.x ) { rayResult.correctedVector.x = 0.0f; }
+		if ( afterSigns.y != beforeSigns.y ) { rayResult.correctedVector.y = 0.0f; }
+		if ( afterSigns.z != beforeSigns.z ) { rayResult.correctedVector.z = 0.0f; }
+	}
+	else
+	{
+		rayResult.correctedVector -= extendSize + rayOffset;
+	}
 	
 	const float moveSign = scast<float>( Donya::SignBit( yMovement.y ) );
 	const float errorMargin = 0.0001f * moveSign; // Make more distance from intersection, I want do not start the raycast from a closest point.
 	const Donya::Vector3 sizeOffset	= Donya::Vector3::Up() * hitBox.size.y * moveSign;
 	const Donya::Vector3 destPos	= ( rayResult.raycastResult.wasHit )
-									? rayResult.raycastResult.intersection - sizeOffset - errorMargin
+									? rayResult.raycastResult.intersection - sizeOffset - hitBox.pos - errorMargin
 									: pos + rayResult.correctedVector;
 	const Donya::Vector3 actualMovement = destPos - pos;
 	
