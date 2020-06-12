@@ -78,6 +78,7 @@ private:
 	int  beforeWarpStageNumber = -1; // -1 is invalid.
 	int  playerRemains	= 1;
 	UIObject sprRemains;
+	int  reviveCameraOptionIndex = 0;
 	int  gameTimer		= 0;
 	int  clearTimer		= 0;
 	bool nowWaiting		= false;

@@ -124,9 +124,15 @@ CameraOption::Instance CameraOption::CalcCurrentOption( const Donya::Vector3 &ta
 
 	return current;
 }
-void CameraOption::ResetToInitialState()
+int  CameraOption::GetCurrentIndex()
 {
-	targetIndex = 0;
+	return targetIndex;
+}
+void CameraOption::SetCurrentIndex( int index )
+{
+	const int optionCount = scast<int>( GetOptionCount() );
+	index = std::max( 0, std::min( optionCount, index ) );
+	targetIndex = index;
 }
 
 void CameraOption::LoadBin ( int stageNo )

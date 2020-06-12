@@ -882,6 +882,7 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 		}
 	}
 	PlayerInit( stageNo );
+	reviveCameraOptionIndex = 0;
 
 	if ( stageNo == SELECT_STAGE_NO )
 	{
@@ -1443,8 +1444,7 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 		PlayerInit( stageNumber );
 		if ( pCameraOption )
 		{
-			// I must reset an internal index.
-			pCameraOption->ResetToInitialState();
+			pCameraOption->SetCurrentIndex( reviveCameraOptionIndex );
 		}
 	}
 
@@ -2281,6 +2281,12 @@ void SceneGame::ProcessCheckPointCollision()
 		{
 			*pPlayerIniter = pPoint->GetInitializer();
 			pCheckPoint->RemovePoint( i );
+			
+			if ( pCameraOption )
+			{
+				reviveCameraOptionIndex = pCameraOption->GetCurrentIndex();
+			}
+
 			break;
 		}
 	}
