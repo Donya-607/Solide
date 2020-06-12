@@ -381,10 +381,12 @@ public:
 // Internal utility.
 namespace
 {
-	static constexpr int MOTION_INDEX_BEGIN		= 0;
-	static constexpr int MOTION_INDEX_PROCESS	= 1;
-	static constexpr int MOTION_INDEX_END		= 2;
-	static constexpr int MOTION_INDEX_DEFEAT	= 0;
+	static constexpr int MOTION_INDEX_BEGIN			= 0;
+	static constexpr int MOTION_INDEX_PROCESS		= 1;
+	static constexpr int MOTION_INDEX_END			= 2;
+	static constexpr int MOTION_INDEX_DEFEAT		= 0;
+	static constexpr int MOTION_INDEX_RUN_TO_FRONT	= 0;
+	static constexpr int MOTION_INDEX_RUN_TO_TARGET	= 1;
 
 	static constexpr int RECURSION_RAY_COUNT	= 4;
 
@@ -1093,8 +1095,10 @@ namespace Enemy
 			}
 		}
 
-		constexpr int USE_MOTION_INDEX = 0;
-		UpdateMotion( elapsedTime, USE_MOTION_INDEX );
+		const int useMotionIndex =	( moveParam.alignToTarget )
+									? MOTION_INDEX_RUN_TO_TARGET
+									: MOTION_INDEX_RUN_TO_FRONT;
+		UpdateMotion( elapsedTime, useMotionIndex );
 		OiledUpdate();
 		BurningUpdate();
 	}
