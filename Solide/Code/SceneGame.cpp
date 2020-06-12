@@ -118,6 +118,8 @@ namespace
 		};
 
 		RemainsDraw remainsDraw;
+
+		TerrainDrawStates::Constant terrainDrawState;
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -184,12 +186,16 @@ namespace
 			}
 			if ( 9 <= version )
 			{
+				archive( CEREAL_NVP( terrainDrawState ) );
+			}
+			if ( 10 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 8 )
+CEREAL_CLASS_VERSION( Member, 9 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -284,6 +290,14 @@ public:
 				ImGui::TreePop();
 			}
 
+			if ( ImGui::TreeNode( u8"ステージ描画の模様設定" ) )
+			{
+				ImGui::DragFloat2 ( u8"描画間隔",		&m.terrainDrawState.interval.x,		0.01f );
+				ImGui::SliderFloat( u8"暗くする度合い",	&m.terrainDrawState.darkenAlpha,	0.0f, 1.0f );
+
+				ImGui::TreePop();
+			}
+
 			ShowIONode( m );
 
 			ImGui::TreePop();
@@ -332,6 +346,10 @@ void SceneGame::Init()
 
 	ParamGame::Get().Init();
 
+	pTerrainDrawState = std::make_unique<TerrainDrawStates>();
+	result = pTerrainDrawState->CreateStates();
+	assert( result );
+
 	pShadow = std::make_unique<Shadow>();
 	pShadow->LoadTexture();
 	pShadow->ClearInstances();
@@ -368,6 +386,7 @@ void SceneGame::Uninit()
 	if ( pShadow ) { pShadow->ClearInstances(); }
 	pShadow.reset();
 	pInfoDrawer.reset();
+	pTerrainDrawState.reset();
 
 	ObstacleBase::ParameterUninit();
 	ParamGame::Get().Uninit();
@@ -616,6 +635,16 @@ void SceneGame::Draw( float elapsedTime )
 		}
 		pRenderer->DeactivateShaderNormalSkinning();
 		
+		pRenderer->DeactivateConstantAdjustColor();
+		{
+			pTerrainDrawState->ActivateShader();
+			pTerrainDrawState->Update( data.terrainDrawState );
+			pTerrainDrawState->ActivateConstant();
+			pTerrain->Draw( pRenderer.get(), { 1.0f, 1.0f, 1.0f, 1.0f } );
+			pTerrainDrawState->DeactivateConstant();
+			pTerrainDrawState->DeactivateShader();
+		}
+		pRenderer->ActivateConstantAdjustColor();
 
 		pRenderer->ActivateShaderNormalStatic();
 		{

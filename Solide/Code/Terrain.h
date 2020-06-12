@@ -44,3 +44,44 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI
 };
+
+
+#include "Donya/Serializer.h"
+class TerrainDrawStates
+{
+public:
+	struct Constant
+	{
+		Donya::Vector2	interval{ 1.0f, 1.0f };
+		float			darkenAlpha = 0.95f; // 0.0f ~ 1.0f
+		float			_padding{};
+	};
+private:
+	Donya::CBuffer<Constant>	cbuffer;
+	Donya::VertexShader			VS;
+	Donya::PixelShader			PS;
+public:
+	bool CreateStates();
+	void Update( const Constant &constant );
+	void ActivateConstant();
+	void ActivateShader();
+	void DeactivateConstant();
+	void DeactivateShader();
+private:
+	bool CreateShader();
+};
+template<class Archive>
+void serialize( Archive &archive, TerrainDrawStates::Constant &constant, std::uint32_t version )
+{
+	archive
+	(
+		cereal::make_nvp( "interval",		constant.interval		),
+		cereal::make_nvp( "darkenAlpha",	constant.darkenAlpha	)
+	);
+
+	if ( 1 <= version )
+	{
+		// archive( CEREAL_NVP( x ) );
+	}
+}
+CEREAL_CLASS_VERSION( TerrainDrawStates::Constant, 0 )

@@ -122,3 +122,57 @@ void Terrain::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::TreePop();
 }
 #endif // USE_IMGUI
+
+
+bool TerrainDrawStates::CreateStates()
+{
+	bool succeeded = true;
+
+	if ( !cbuffer.Create() ) { succeeded = false; }
+	if ( !CreateShader() ) { succeeded = false; }
+
+	return succeeded;
+}
+void TerrainDrawStates::Update( const Constant &constant )
+{
+	cbuffer.data = constant;
+}
+void TerrainDrawStates::ActivateConstant()
+{
+	cbuffer.Activate( 5U, false, true );
+}
+void TerrainDrawStates::ActivateShader()
+{
+	VS.Activate();
+	PS.Activate();
+}
+void TerrainDrawStates::DeactivateConstant()
+{
+	cbuffer.Deactivate();
+}
+void TerrainDrawStates::DeactivateShader()
+{
+	VS.Deactivate();
+	PS.Deactivate();
+}
+bool TerrainDrawStates::CreateShader()
+{
+	constexpr const char *VSFilePath = "./Data/Shaders/ModelStaticVS.cso";
+	constexpr const char *PSFilePath = "./Data/Shaders/ModelTerrainPS.cso";
+	constexpr auto IEDescsPos = Donya::Model::Vertex::Pos::GenerateInputElements( 0 );
+	constexpr auto IEDescsTex = Donya::Model::Vertex::Tex::GenerateInputElements( 1 );
+
+	auto Append = []( auto &dest, const auto &source )
+	{
+		dest.insert( dest.end(), source.begin(), source.end() );
+	};
+
+	std::vector<D3D11_INPUT_ELEMENT_DESC> IEDescsStatic{};
+	Append( IEDescsStatic, IEDescsPos );
+	Append( IEDescsStatic, IEDescsTex );
+
+	bool succeeded = true;
+	if ( !VS.CreateByCSO( VSFilePath, IEDescsStatic	) ) { succeeded = false; }
+	if ( !PS.CreateByCSO( PSFilePath				) ) { succeeded = false; }
+	return succeeded;
+}

@@ -18,7 +18,9 @@ cbuffer CBForTransparency : register( b4 )
 	
 cbuffer CBForColorAdjustment : register( b5 )
 {
-	float4	cbAddSpecular;
+	float2	cbPatternInterval;
+	float	cbPatternDarken;	// 0.0f ~ 1.0f
+	float	cbPadding_Pattern;
 };
 
 float CalcTransparency( float3 pixelPos )
@@ -43,7 +45,7 @@ float3 CalcLightInfluence( float4 lightColor, float3 nwsPixelToLightVec, float3 
 	//		diffuseFactor	= pow( diffuseFactor, 2.0f );
 	float3	diffuseColor	= cbDiffuse.rgb * diffuseFactor;
 	
-	float4	inputSpecular	= cbSpecular + cbAddSpecular;
+	float4	inputSpecular	= cbSpecular;
 	float	specularFactor	= max( 0.0f, Phong( nwsPixelNormal, nwsPixelToLightVec, nwsEyeVector, inputSpecular.w ) );
 	float3	specularColor	= inputSpecular.rgb * specularFactor;
 	
@@ -52,6 +54,15 @@ float3 CalcLightInfluence( float4 lightColor, float3 nwsPixelToLightVec, float3 
 	float3	Ks				= specularColor;
 	float3	light			= lightColor.rgb * lightColor.w;
 	return	Ka + ( ( Kd + Ks ) * light );
+}
+
+float3 ApplyPattern( float3 wsPixelPos, float3 beforeColor )
+{
+	float2	remPos			= fmod( wsPixelPos.xz, cbPatternInterval * 2.0f );
+	float2	conditions		= step( 0.0f, remPos - ( cbPatternInterval * sign( remPos ) ) );
+	float	shouldRecord	= step( 0.5f, conditions.x + conditions.y );
+	float3	resultRGB		= beforeColor * max( cbPatternDarken, shouldRecord );
+	return	resultRGB;
 }
 
 Texture2D		diffuseMap			: register( t0 );
@@ -71,6 +82,7 @@ float4 main( VS_OUT pin ) : SV_TARGET
 	float3	totalLight		= CalcLightInfluence( cbDirLight.color, nLightVec, pin.normal.rgb, nEyeVector.rgb );
 
 	float3	resultColor		= diffuseMapColor.rgb * totalLight;
+			resultColor		= ApplyPattern( pin.wsPos.xyz, resultColor );
 	float4	outputColor		= float4( resultColor, diffuseMapAlpha * cbDiffuse.a );
 			outputColor		= outputColor * cbDrawColor;
 			outputColor.a	= outputColor.a * CalcTransparency( pin.wsPos.xyz );

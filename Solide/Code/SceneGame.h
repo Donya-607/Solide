@@ -50,6 +50,7 @@ private:
 
 	std::unique_ptr<BG>					pBG;
 	std::unique_ptr<Terrain>			pTerrain;
+	std::unique_ptr<TerrainDrawStates>	pTerrainDrawState;
 	std::unique_ptr<CameraOption>		pCameraOption;
 	std::unique_ptr<CheckPoint>			pCheckPoint;
 	std::unique_ptr<Player>				pPlayer;
