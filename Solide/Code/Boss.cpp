@@ -361,6 +361,8 @@ namespace
 			};
 			
 			std::vector<PerHP> paramPerHP;
+
+			Donya::Vector3 targetFootPosOffset; // targetFootPos = targetPos + this;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -379,6 +381,14 @@ namespace
 				if ( 1 <= version )
 				{
 					archive( CEREAL_NVP( paramPerHP ) );
+				}
+				if ( 2 <= version )
+				{
+					archive( CEREAL_NVP( targetFootPosOffset ) );
+				}
+				if ( 3 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
 				}
 			}
 		};
@@ -621,7 +631,7 @@ CEREAL_CLASS_VERSION( FirstParam,				7 )
 CEREAL_CLASS_VERSION( FirstParam::Ready,		0 )
 CEREAL_CLASS_VERSION( FirstParam::Rush,			1 )
 CEREAL_CLASS_VERSION( FirstParam::Brake,		0 )
-CEREAL_CLASS_VERSION( FirstParam::Breath,		1 )
+CEREAL_CLASS_VERSION( FirstParam::Breath,		2 )
 CEREAL_CLASS_VERSION( FirstParam::Breath::PerHP,0 )
 CEREAL_CLASS_VERSION( FirstParam::Wait,			0 )
 CEREAL_CLASS_VERSION( FirstParam::Walk,			1 )
@@ -979,6 +989,8 @@ public:
 						caption = u8"[残りＨＰ：" + std::to_string( hpCount - i ) + u8"]";
 						ShowPerHP( caption, &data[i] );
 					}
+
+					ImGui::DragFloat3( u8"ターゲットの中心点から足元までのオフセット", &p->targetFootPosOffset.x, 0.01f );
 
 					ImGui::TreePop();
 				};
@@ -1917,9 +1929,12 @@ void BossFirst::Breath::Fire( BossFirst &inst, const Donya::Vector3 &targetPos, 
 	tmp.generatePos	+= inst.GetPosition();
 	tmp.addElement	=  Element::Type::Flame;
 
+	const Donya::Vector3 targetFootPos = targetPos + FetchMember().forFirst.breath.targetFootPosOffset;
+
 	// I want vector that looking my front and Y of "to target vector".
 	// That is made by rotate front vector by proper radian.
-	const Donya::Vector3 targetVec = targetPos - tmp.generatePos;
+	// const Donya::Vector3 targetVec = targetPos - tmp.generatePos;
+	const Donya::Vector3 targetVec = targetFootPos - tmp.generatePos;
 	const Donya::Vector3 exceptY{ targetVec.x, 0.0f, targetVec.z };
 	float cosTheta = Donya::Dot( targetVec.Unit(), exceptY.Unit() );
 	Donya::Clamp( &cosTheta, -1.0f, 1.0f );
