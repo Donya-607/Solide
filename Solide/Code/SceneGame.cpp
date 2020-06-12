@@ -357,6 +357,9 @@ void SceneGame::Init()
 
 	WriteSaveData( stageNumber );
 	SaveDataAdmin::Get().Save();
+
+	// I must call this after initialize the warp objects.
+	ExploreBossContainStageNumbers();
 }
 void SceneGame::Uninit()
 {

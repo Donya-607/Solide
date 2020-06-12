@@ -41,8 +41,12 @@ void StageInfoDisplayer::DrawInfo( const Donya::Vector4x4 &matScreen, const Dony
 	if ( isBossStage )		{ DrawBossStage( ssPos, drawScale );				}
 	else					{ DrawStageNumber( ssPos, drawScale, drawStageNo );	}
 
-	if ( isUnlockedStage )	{ DrawRank( ssPos, drawScale, drawData );			}
-	else					{ DrawLockedStage( ssPos, drawScale );				}
+	DrawRank( ssPos, drawScale, drawData );
+
+	if ( isUnlockedStage )
+	{
+		DrawLockedStage( ssPos, drawScale );
+	}
 }
 float StageInfoDisplayer::CalcDrawScale( const Donya::Vector3 &playerPos, const Donya::Vector3 &basePos )
 {
