@@ -1,5 +1,6 @@
 #include "InfoDisplayer.h"
 
+#include "Donya/Sprite.h"
 #include "Donya/Useful.h"	// Use SeparateDigits()
 
 #include "FilePath.h"
@@ -112,6 +113,15 @@ void StageInfoDisplayer::DrawBossStage( const Donya::Vector2 &ssPos, float drawS
 }
 void StageInfoDisplayer::DrawLockedStage( const Donya::Vector2 &ssPos, float drawScale )
 {
+	Donya::Sprite::SetDrawDepth( baseDrawDepth );
+	Donya::Sprite::DrawRect
+	(
+		ssPos.x, ssPos.y,
+		baseDrawSize.x * drawScale,
+		baseDrawSize.y * drawScale,
+		Donya::Color::Code::BLACK, lockedDarkenAlpha
+	);
+
 	const float scale = drawScale * drawScaleLockedStage;
 	sprLockedStage.pos			= ssPos + ( ssDrawOffsetLockedStage * scale );
 	sprLockedStage.drawScale	= scale;
@@ -163,6 +173,8 @@ void StageInfoDisplayer::ShowImGuiNode( const std::string &nodeCaption )
 	ShowOffsetAndScale( u8"ランク",			&ssDrawOffsetRank,			&drawScaleRank			);
 	ShowOffsetAndScale( u8"ボスステージ",		&ssDrawOffsetBossStage,		&drawScaleBossStage		);
 	ShowOffsetAndScale( u8"未開放ステージ",	&ssDrawOffsetLockedStage,	&drawScaleLockedStage	);
+
+	ImGui::SliderFloat( u8"未開放ステージを暗くする度合い", &lockedDarkenAlpha, 0.0f, 1.0f );
 
 	auto ShowIONode = [&]()
 	{

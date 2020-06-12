@@ -34,6 +34,7 @@ private: // Serialize members.
 	Donya::Vector2		ssDrawOffsetLockedStage;
 	float				drawScaleBossStage		= 1.0f;
 	float				drawScaleLockedStage	= 1.0f;
+	float				lockedDarkenAlpha		= 0.1f;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -75,6 +76,10 @@ private:
 		}
 		if ( 4 <= version )
 		{
+			archive( CEREAL_NVP( lockedDarkenAlpha ) );
+		}
+		if ( 5 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -100,4 +105,4 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( StageInfoDisplayer, 3 )
+CEREAL_CLASS_VERSION( StageInfoDisplayer, 4 )
