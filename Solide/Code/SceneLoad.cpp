@@ -269,6 +269,7 @@ void SceneLoad::Init()
 
 		bool succeeded = true;
 		if ( !MakeTextureCache( Attr::BackGround,		2U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::BossStage,	   32U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::CircleShadow,		1U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::ClearDescription,	8U ) ) { succeeded = false; }
 		if ( !MakeTextureCache( Attr::ClearFrame,		2U ) ) { succeeded = false; }

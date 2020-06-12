@@ -31,6 +31,7 @@ enum class SpriteAttribute
 	FMODLogoWhite,
 
 	BackGround,
+	BossStage,
 	CircleShadow,
 	ClearDescription,
 	ClearFrame,

@@ -1702,8 +1702,9 @@ void SceneGame::DrawStageInfo()
 
 	struct Data
 	{
-		int targetStageNo = -1;
-		Donya::Vector3 pos{};
+		int				targetStageNo = -1;
+		Donya::Vector3	pos{};
+		bool			unlocked = false;
 	};
 	std::vector<Data> drawData{};
 
@@ -1716,8 +1717,9 @@ void SceneGame::DrawStageInfo()
 		// else
 
 		Data tmp;
-		tmp.pos = pWarp->GetPosition();
-		tmp.targetStageNo = pWarp->GetDestinationStageNo();
+		tmp.pos				= pWarp->GetPosition();
+		tmp.targetStageNo	= pWarp->GetDestinationStageNo();
+		tmp.unlocked		= pWarp->IsUnlocked();
 		drawData.emplace_back( std::move( tmp ) );
 	}
 
@@ -1727,17 +1729,30 @@ void SceneGame::DrawStageInfo()
 	};
 	std::sort( drawData.begin(), drawData.end(), IsGreaterDepth );
 
+	auto IsContainBoss = [&]( int stageNo )
+	{
+		const auto result = std::find
+		(
+			bossContainStages.begin(), bossContainStages.end(),
+			stageNo
+		);
+		return ( result != bossContainStages.end() );
+	};
+
 	const auto savedata = SaveDataAdmin::Get().GetNowData();
 	const Donya::Vector4x4 matScreen = MakeScreenTransformMatrix();
 	for ( const auto &it : drawData )
 	{
+		const bool isBossStage = IsContainBoss( it.targetStageNo );
 		pInfoDrawer->DrawInfo
 		(
 			matScreen,
 			plPos,
 			it.pos,
 			savedata.FetchRegisteredClearDataOrDefault( it.targetStageNo ),
-			it.targetStageNo
+			it.targetStageNo,
+			it.unlocked,
+			isBossStage
 		);
 	}
 }

@@ -15,13 +15,16 @@ bool StageInfoDisplayer::Init()
 
 	bool succeeded = true;
 
-	if ( !sprFrame.LoadSprite( GetSpritePath( SpriteAttribute::StageInfoFrame	), 32U	) ) { succeeded = false; }
-	if ( !numberDrawer.Init  ( GetSpritePath( SpriteAttribute::Number			)		) ) { succeeded = false; }
-	if ( !rankDrawer.Init    ( GetSpritePath( SpriteAttribute::ClearRank		)		) ) { succeeded = false; }
+	using Spr = SpriteAttribute;
+	if ( !sprFrame.LoadSprite		( GetSpritePath( Spr::StageInfoFrame	), 32U	) ) { succeeded = false; }
+	if ( !sprBossStage.LoadSprite	( GetSpritePath( Spr::BossStage			), 32U	) ) { succeeded = false; }
+	if ( !sprLockedStage.LoadSprite	( GetSpritePath( Spr::LockedStage		), 64U	) ) { succeeded = false; }
+	if ( !numberDrawer.Init			( GetSpritePath( Spr::Number			)		) ) { succeeded = false; }
+	if ( !rankDrawer.Init			( GetSpritePath( Spr::ClearRank			)		) ) { succeeded = false; }
 
 	return succeeded;
 }
-void StageInfoDisplayer::DrawInfo( const Donya::Vector4x4 &matScreen, const Donya::Vector3 &playerPos, const Donya::Vector3 &basePos, const SaveData::ClearData &drawData, int drawStageNo )
+void StageInfoDisplayer::DrawInfo( const Donya::Vector4x4 &matScreen, const Donya::Vector3 &playerPos, const Donya::Vector3 &basePos, const SaveData::ClearData &drawData, int drawStageNo, bool isUnlockedStage, bool isBossStage )
 {
 	const float drawScale = CalcDrawScale( playerPos, basePos );
 	if ( drawScale <= 0.0f ) { return; }
@@ -35,8 +38,11 @@ void StageInfoDisplayer::DrawInfo( const Donya::Vector4x4 &matScreen, const Dony
 	sprFrame.texSize	= baseDrawSize;
 	sprFrame.DrawPart( baseDrawDepth );
 
-	DrawStageNumber( ssPos, drawScale, drawStageNo );
-	DrawRank( ssPos, drawScale, drawData );
+	if ( isBossStage )		{ DrawBossStage( ssPos, drawScale );				}
+	else					{ DrawStageNumber( ssPos, drawScale, drawStageNo );	}
+
+	if ( isUnlockedStage )	{ DrawRank( ssPos, drawScale, drawData );			}
+	else					{ DrawLockedStage( ssPos, drawScale );				}
 }
 float StageInfoDisplayer::CalcDrawScale( const Donya::Vector3 &playerPos, const Donya::Vector3 &basePos )
 {
@@ -93,6 +99,20 @@ void StageInfoDisplayer::DrawRank( const Donya::Vector2 &ssPos, float drawScale,
 		baseDrawDepth
 	);
 }
+void StageInfoDisplayer::DrawBossStage( const Donya::Vector2 &ssPos, float drawScale )
+{
+	const float scale = drawScale * drawScaleBossStage;
+	sprBossStage.pos		= ssPos + ( ssDrawOffsetBossStage * scale );
+	sprBossStage.drawScale	= scale;
+	sprBossStage.Draw( baseDrawDepth );
+}
+void StageInfoDisplayer::DrawLockedStage( const Donya::Vector2 &ssPos, float drawScale )
+{
+	const float scale = drawScale * drawScaleLockedStage;
+	sprLockedStage.pos			= ssPos + ( ssDrawOffsetLockedStage * scale );
+	sprLockedStage.drawScale	= scale;
+	sprLockedStage.Draw( baseDrawDepth );
+}
 void StageInfoDisplayer::LoadBin()
 {
 	constexpr bool fromBinary = true;
@@ -129,10 +149,16 @@ void StageInfoDisplayer::ShowImGuiNode( const std::string &nodeCaption )
 
 	ImGui::DragFloat3( u8"表示位置のオフセット",			&basePosOffset.x,	0.01f	);
 	ImGui::DragFloat2( u8"描画スプライトサイズ",			&baseDrawSize.x				);
-	ImGui::DragFloat2( u8"ステージ番号・描画オフセット",	&ssDrawOffsetNumber.x		);
-	ImGui::DragFloat ( u8"ステージ番号・描画スケール",		&drawScaleNumber,	0.01f	);
-	ImGui::DragFloat2( u8"ランク・描画オフセット",		&ssDrawOffsetRank.x			);
-	ImGui::DragFloat ( u8"ランク・描画スケール",			&drawScaleRank,		0.01f	);
+
+	auto ShowOffsetAndScale = []( const std::string &itemName, Donya::Vector2 *pOffset, float *pScale )
+	{
+		ImGui::DragFloat2( ( itemName + u8"・描画オフセット"	).c_str(), &pOffset->x );
+		ImGui::DragFloat ( ( itemName + u8"・描画スケール"	).c_str(), pScale, 0.01f );
+	};
+	ShowOffsetAndScale( u8"ステージ番号",		&ssDrawOffsetNumber,		&drawScaleNumber		);
+	ShowOffsetAndScale( u8"ランク",			&ssDrawOffsetRank,			&drawScaleRank			);
+	ShowOffsetAndScale( u8"ボスステージ",		&ssDrawOffsetBossStage,		&drawScaleBossStage		);
+	ShowOffsetAndScale( u8"未開放ステージ",	&ssDrawOffsetLockedStage,	&drawScaleLockedStage	);
 
 	auto ShowIONode = [&]()
 	{
