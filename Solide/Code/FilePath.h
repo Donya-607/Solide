@@ -29,6 +29,7 @@ enum class SpriteAttribute
 {
 	FMODLogoBlack,
 	FMODLogoWhite,
+	EffekseerLogo,
 
 	BackGround,
 	BossStage,

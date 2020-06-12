@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+
+#include "FilePath.h"
 #include "Scene.h"
 
 /// <summary>
@@ -16,16 +19,21 @@ private:
 		END
 	};
 private:
-	State	status;
-	size_t	sprRightsLogo;
-	int		showIndex;		// 0-based.
-	int		showCount;		// 1-based.
-	int		timer;			// 0-based.
-	float	alpha;			// 0.0f ~ 1.0f.
-	float	scale;			// Use for magnification.
+	static constexpr std::array<SpriteAttribute, 2> showLogos
+	{
+		SpriteAttribute::FMODLogoBlack,
+		SpriteAttribute::EffekseerLogo,
+	};
+private:
+	State	status		= State::FADE_IN;
+	int		showIndex	= 0;	// 0-based.
+	int		timer		= 0;	// 0-based.
+	float	alpha		= 0.0f;	// 0.0f ~ 1.0f.
+	float	scale		= 1.0f;	// Use for magnification.
+	std::array<size_t, showLogos.size()> sprites{ 0 };
 public:
-	SceneLogo();
-	~SceneLogo();
+	SceneLogo() : Scene() {}
+	~SceneLogo() = default;
 public:
 	void	Init() override;
 	void	Uninit() override;
@@ -34,5 +42,15 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
+	void	InitFadeIn();
+	void	UpdateFadeIn( float elapsedTime );
+	void	InitWait();
+	void	UpdateWait( float elapsedTime );
+	void	InitFadeOut();
+	void	UpdateFadeOut( float elapsedTime );
+	void	InitEnd();
+private:
+	void	ClearBackGround() const;
+	void	StartFade() const;
 	Result	ReturnResult();
 };

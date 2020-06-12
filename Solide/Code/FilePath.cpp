@@ -74,6 +74,8 @@ std::wstring GetSpritePath( SpriteAttribute attr )
 		return ToRelPath( L"Rights/FMOD Logo Black - White Background.png" );
 	case SpriteAttribute::FMODLogoWhite:
 		return ToRelPath( L"Rights/FMOD Logo White - Black Background.png" );
+	case SpriteAttribute::EffekseerLogo:
+		return ToRelPath( L"Rights/EffekseerLogo.png" );
 
 	case SpriteAttribute::BackGround:
 		return ToRelPath( L"BG/Back.png" );
