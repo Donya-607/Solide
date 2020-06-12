@@ -543,6 +543,12 @@ Spray::~Spray()
 		pEffect->Stop();
 		pEffect.reset();
 	}
+
+	const auto SE = GetSpraySEIDOrInvalid();
+	if ( SE != Music::MUSIC_COUNT )
+	{
+		Donya::Sound::Stop( SE, /* isEnableForAll = */ true );
+	}
 }
 void Spray::Update( float elapsedTime )
 {
