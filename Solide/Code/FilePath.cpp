@@ -92,10 +92,14 @@ std::wstring GetSpritePath( SpriteAttribute attr )
 		return ToRelPath( L"Loading/Icon.png" );
 	case SpriteAttribute::LoadingSentence:
 		return ToRelPath( L"Loading/NowLoading.png" );
+	case SpriteAttribute::LockedStage:
+		return ToRelPath( L"UI/Locked.png" );
 	case SpriteAttribute::Number:
 		return ToRelPath( L"UI/Number.png" );
 	case SpriteAttribute::Pause:
 		return ToRelPath( L"Pause/Items.png" );
+	case SpriteAttribute::PlayerRemains:
+		return ToRelPath( L"UI/Remains.png" );
 	case SpriteAttribute::StageInfoFrame:
 		return ToRelPath( L"UI/StageInfoFrame.png" );
 	case SpriteAttribute::TutorialFrame:

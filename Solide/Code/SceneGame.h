@@ -31,6 +31,7 @@
 #include "Terrain.h"
 #include "Timer.h"
 #include "Tutorial.h"
+#include "UI.h"
 #include "Warp.h"
 
 #if DEBUG_MODE
@@ -74,6 +75,7 @@ private:
 	int  stageNumber	= 1;
 	int  beforeWarpStageNumber = -1; // -1 is invalid.
 	int  playerRemains	= 1;
+	UIObject sprRemains;
 	int  gameTimer		= 0;
 	int  clearTimer		= 0;
 	bool nowWaiting		= false;
@@ -153,6 +155,7 @@ private:
 	void	GridControl();
 
 	void	DrawCurrentTime();
+	void	DrawPlayerRemains();
 	void	DrawStageInfo();
 
 	void	TutorialUpdate( float elapsedTime );

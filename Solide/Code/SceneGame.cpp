@@ -90,6 +90,34 @@ namespace
 
 		Donya::Vector2	ssCurrentTimePos;
 		float			currentTimeScale = 1.0f;
+
+		struct RemainsDraw
+		{
+			Donya::Vector2	ssUIPos;
+			Donya::Vector2	ssNumberPos;
+			float			UIScale		= 1.0f;
+			float			numberScale	= 1.0f;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( ssUIPos		),
+					CEREAL_NVP( ssNumberPos	),
+					CEREAL_NVP( UIScale		),
+					CEREAL_NVP( numberScale	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+
+		RemainsDraw remainsDraw;
 	public: // Does not serialize members.
 		Donya::Vector3 selectingPos;
 	private:
@@ -152,12 +180,16 @@ namespace
 			}
 			if ( 8 <= version )
 			{
+				archive( CEREAL_NVP( remainsDraw ) );
+			}
+			if ( 9 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	};
 }
-CEREAL_CLASS_VERSION( Member, 7 )
+CEREAL_CLASS_VERSION( Member, 8 )
 
 class ParamGame : public ParameterBase<ParamGame>
 {
@@ -234,15 +266,20 @@ public:
 			if ( ImGui::TreeNode( u8"時間表示" ) )
 			{
 				ImGui::DragFloat2( u8"現在の時間描画位置",		&m.ssCurrentTimePos.x );
-				ImGui::DragFloat ( u8"現在の時間描画スケール",	&m.currentTimeScale );
+				ImGui::DragFloat ( u8"現在の時間描画スケール",	&m.currentTimeScale, 0.01f );
 
 				ImGui::TreePop();
 			}
 
-			if ( ImGui::TreeNode( u8"その他" ) )
+			if ( ImGui::TreeNode( u8"自機の残機" ) )
 			{
 				ImGui::DragInt( u8"自機の最大残機数", &m.maxPlayerRemains );
 				m.maxPlayerRemains = std::max( 0, m.maxPlayerRemains );
+
+				ImGui::DragFloat2( u8"UI・描画位置",			&m.remainsDraw.ssUIPos.x );
+				ImGui::DragFloat ( u8"UI・描画スケール",		&m.remainsDraw.UIScale, 0.01f );
+				ImGui::DragFloat2( u8"数字・描画位置",		&m.remainsDraw.ssNumberPos.x );
+				ImGui::DragFloat ( u8"数字・描画スケール",	&m.remainsDraw.numberScale, 0.01f );
 
 				ImGui::TreePop();
 			}
@@ -304,6 +341,9 @@ void SceneGame::Init()
 	
 	pInfoDrawer = std::make_unique<StageInfoDisplayer>();
 	result = pInfoDrawer->Init();
+	assert( result );
+
+	result = sprRemains.LoadSprite( GetSpritePath( SpriteAttribute::PlayerRemains ), 4U );
 	assert( result );
 
 	const SaveData nowData = SaveDataAdmin::Get().GetNowData();
@@ -621,7 +661,7 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		DrawCurrentTime();
 	}
-	
+	DrawPlayerRemains();
 	DrawStageInfo();
 
 	// A draw check of these sentences are doing at internal of these methods.
@@ -1588,8 +1628,35 @@ void SceneGame::GridControl()
 
 void SceneGame::DrawCurrentTime()
 {
+	constexpr float drawDepth = 0.1f; // < pauseDrawDepth
 	const auto data = FetchMember();
-	numberDrawer.DrawTime( currentTime, data.ssCurrentTimePos, data.currentTimeScale );
+	numberDrawer.DrawTime
+	(
+		currentTime,
+		data.ssCurrentTimePos,
+		data.currentTimeScale, 1.0f,
+		Donya::Vector2{ 0.5f, 0.5f },
+		drawDepth
+	);
+}
+void SceneGame::DrawPlayerRemains()
+{
+	constexpr float drawDepth = 0.1f; // < pauseDrawDepth
+	const auto data = FetchMember().remainsDraw;
+
+	sprRemains.drawScale	= data.UIScale;
+	sprRemains.pos			= data.ssUIPos;
+	sprRemains.Draw( drawDepth );
+
+	numberDrawer.DrawNumber
+	(
+		std::max( 0, std::min( 9, playerRemains ) ),
+		data.ssNumberPos,
+		data.numberScale,
+		1.0f, Donya::Vector2{ 0.5f, 0.5f },
+		drawDepth,
+		1
+	);
 }
 void SceneGame::DrawStageInfo()
 {

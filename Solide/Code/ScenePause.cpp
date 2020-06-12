@@ -243,7 +243,7 @@ void ScenePause::Draw( float elapsedTime )
 	};
 
 	// These number is anything okay that satisfies a very small value and near than a darken rectangle.
-	constexpr float defaultDepth = 0.08f;
+	constexpr float defaultDepth = 0.03f;
 	constexpr float chosenDepth  = defaultDepth * 0.5f;
 
 	const auto data = FetchMember();
@@ -348,7 +348,7 @@ void ScenePause::DrawBackGround() const
 {
 	// Darken.
 
-	Donya::Sprite::SetDrawDepth( 0.1f );
+	Donya::Sprite::SetDrawDepth( 0.05f );
 
 	Donya::Sprite::DrawRect
 	(
