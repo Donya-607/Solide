@@ -1466,7 +1466,13 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	{
 		using Pad		= Donya::Gamepad;
 
-		moveVector		= controller.LeftStick();
+		moveVector		=  controller.LeftStick();
+		moveVector.x	+= controller.Press( Pad::Button::RIGHT	) ? +1.0f : 0.0f;
+		moveVector.x	+= controller.Press( Pad::Button::LEFT	) ? -1.0f : 0.0f;
+		moveVector.y	+= controller.Press( Pad::Button::UP	) ? +1.0f : 0.0f; // Front is Plus.
+		moveVector.y	+= controller.Press( Pad::Button::DOWN	) ? -1.0f : 0.0f; // Front is Plus.
+		moveVector.Normalize();
+
 		useJump			= controller.Trigger( Pad::A );
 		useOil			= controller.Press( Pad::B ) || controller.Press( Pad::Y );
 		// useOil			= controller.Trigger( Pad::B ) || controller.Trigger( Pad::Y );
