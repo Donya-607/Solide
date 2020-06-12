@@ -43,7 +43,7 @@ void StageInfoDisplayer::DrawInfo( const Donya::Vector4x4 &matScreen, const Dony
 
 	DrawRank( ssPos, drawScale, drawData );
 
-	if ( isUnlockedStage )
+	if ( !isUnlockedStage )
 	{
 		DrawLockedStage( ssPos, drawScale );
 	}
