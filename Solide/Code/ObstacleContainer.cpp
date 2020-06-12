@@ -35,13 +35,14 @@ void ObstacleContainer::Uninit()
 	}
 }
 
-void ObstacleContainer::Update( float elapsedTime )
+void ObstacleContainer::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	for ( auto &pIt : pObstacles )
 	{
 		if ( !pIt ) { continue; }
 		// else
-		pIt->Update( elapsedTime );
+
+		pIt->Update( elapsedTime, wsTargetPos );
 		if ( pIt->ShouldRemove() )
 		{
 			// This element will be removed at below process

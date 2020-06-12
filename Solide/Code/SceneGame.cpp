@@ -475,8 +475,13 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	EnemyUpdate( elapsedTime );
 
-	pGoal->Update( elapsedTime );
-	pObstacles->Update( elapsedTime );
+	// Update obstacles.
+	{
+		const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3{ FLT_MAX, FLT_MAX, FLT_MAX };
+		pGoal->Update( elapsedTime );
+		pObstacles->Update( elapsedTime, playerPos );
+	}
+
 	pWarps->Update( elapsedTime );
 
 	PlayerUpdate( elapsedTime );

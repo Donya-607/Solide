@@ -72,7 +72,7 @@ public:
 		pos = wsInitialPos;
 	}
 	virtual void Uninit() {}
-	virtual void Update( float elapsedTime ) = 0;
+	virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) = 0;
 	virtual void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) = 0;
 	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color );
 public:
@@ -110,7 +110,7 @@ private:
 		}
 	}
 public:
-	void Update( float elapsedTime ) override;
+	void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
@@ -137,7 +137,7 @@ private:
 		}
 	}
 public:
-	void Update( float elapsedTime ) override;
+	void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
 	void Draw( RenderingHelper *pRenderer,const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
@@ -164,7 +164,7 @@ private:
 		}
 	}
 public:
-	void Update( float elapsedTime ) override;
+	void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
@@ -191,7 +191,7 @@ private:
 		}
 	}
 public:
-	void Update( float elapsedTime ) override;
+	void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
@@ -249,7 +249,7 @@ private:
 		}
 	}
 public:
-	void Update( float elapsedTime ) override;
+	void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
@@ -257,9 +257,9 @@ public:
 	Donya::Vector4x4 GetWorldMatrix() const override;
 private:
 	void UpdateHitBox();
-	void UpdateShot( float elapsedTime );
+	void UpdateShot( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 private:
-	void UpdateSpray( float elapsedTime );
+	void UpdateSpray( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 	void UpdateCooldown( float elapsedTime );
 	void GenerateShot();
 	bool ShouldChangeMode() const;
@@ -325,7 +325,7 @@ private:
 		}
 	}
 public:
-	void Update( float elapsedTime ) override;
+	void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
@@ -366,7 +366,7 @@ private:
 	}
 public:
 	void Init( const Donya::Vector3 &wsInitialPos ) override;
-	void Update( float elapsedTime ) override;
+	void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:
@@ -401,7 +401,7 @@ private:
 		}
 	}
 public:
-	void Update( float elapsedTime ) override;
+	void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color ) override;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &color ) override;
 public:

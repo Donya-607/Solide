@@ -41,7 +41,7 @@ public:
 	void Init( int stageNo );
 	void Uninit();
 
-	void Update( float elapsedTime );
+	void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 
 	void Draw( RenderingHelper *pRenderer, const Donya::Vector4 &color );
 	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color );

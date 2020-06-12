@@ -188,9 +188,11 @@ namespace
 			int		aliveFrame		= 1;
 		} hardened;
 
-		float jumpStandStrength		= 1.0f;
+		float jumpStandStrength	= 1.0f;
 
 		std::vector<Donya::Vector3> drawScales;
+
+		float playSERange		= 10.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -223,6 +225,10 @@ namespace
 			}
 			if ( 5 <= version )
 			{
+				archive( CEREAL_NVP( playSERange ) );
+			}
+			if ( 6 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -250,7 +256,7 @@ namespace
 		return data.drawScales[kind];
 	}
 }
-CEREAL_CLASS_VERSION( Member, 4 )
+CEREAL_CLASS_VERSION( Member, 5 )
 
 class ParamObstacle : public ParameterBase<ParamObstacle>
 {
@@ -362,6 +368,15 @@ public:
 				ImGui::TreePop();
 			}
 
+			if ( ImGui::TreeNode( u8"ÇªÇÃëº" ) )
+			{
+				ImGui::DragFloat( u8"ÇrÇdçƒê∂ÇçsÇ§ãóó£", &m.playSERange );
+				m.playSERange = std::max( 0.0f, m.playSERange );
+				ImGui::Text( u8"é©ã@Ç∆ÇÃãóó£Ç™Ç±ÇÍà»â∫ÇÃèÍçáÇ…ÇÃÇ›ÇrÇdçƒê∂ÇçsÇ¢Ç‹Ç∑" );
+
+				ImGui::TreePop();
+			}
+
 			ShowIONode( m );
 
 			ImGui::TreePop();
@@ -467,7 +482,7 @@ void ObstacleBase::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNo
 }
 #endif // USE_IMGUI
 
-void Stone::Update( float elapsedTime )
+void Stone::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	hitBox = GetModelHitBox( Kind::Stone, ParamObstacle::Get().Data() );
 }
@@ -484,7 +499,7 @@ int Stone::GetKind() const
 	return scast<int>( Kind::Stone );
 }
 
-void Log::Update( float elapsedTime )
+void Log::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	hitBox = GetModelHitBox( Kind::Log, ParamObstacle::Get().Data() );
 }
@@ -501,7 +516,7 @@ int Log::GetKind() const
 	return scast<int>( Kind::Log );
 }
 
-void Tree::Update( float elapsedTime )
+void Tree::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	hitBox = GetModelHitBox( Kind::Tree, ParamObstacle::Get().Data() );
 }
@@ -518,7 +533,7 @@ int Tree::GetKind() const
 	return scast<int>( Kind::Tree );
 }
 
-void Table::Update( float elapsedTime )
+void Table::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	hitBox = GetModelHitBox( Kind::Table, ParamObstacle::Get().Data() );
 }
@@ -550,11 +565,11 @@ Spray::~Spray()
 		Donya::Sound::Stop( SE, /* isEnableForAll = */ true );
 	}
 }
-void Spray::Update( float elapsedTime )
+void Spray::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	UpdateHitBox();
 
-	UpdateShot( elapsedTime );
+	UpdateShot( elapsedTime, wsTargetPos );
 
 	if ( pEffect )
 	{
@@ -596,7 +611,7 @@ void Spray::UpdateHitBox()
 {
 	hitBox = GetModelHitBox( Kind::Spray, ParamObstacle::Get().Data() );
 }
-void Spray::UpdateShot( float elapsedTime )
+void Spray::UpdateShot( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	if ( startupTimer <= startupFrame )
 	{
@@ -610,7 +625,7 @@ void Spray::UpdateShot( float elapsedTime )
 
 	if ( nowSpraying )
 	{
-		UpdateSpray( elapsedTime );
+		UpdateSpray( elapsedTime, wsTargetPos );
 	}
 	else
 	{
@@ -623,7 +638,7 @@ void Spray::UpdateShot( float elapsedTime )
 		nowSpraying	= !nowSpraying;
 	}
 }
-void Spray::UpdateSpray( float elapsedTime )
+void Spray::UpdateSpray( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	const bool generateTiming = ( shotGenInterval < 2 ) ? true : ( shotTimer % shotGenInterval ) == 1;
 	if ( generateTiming )
@@ -635,10 +650,14 @@ void Spray::UpdateSpray( float elapsedTime )
 	{
 		GenerateEffect();
 
-		const auto SE = GetSpraySEIDOrInvalid();
-		if ( SE != Music::MUSIC_COUNT )
+		const float distance = ( wsTargetPos - GetPosition() ).Length();
+		if ( distance <= ParamObstacle::Get().Data().playSERange )
 		{
-			Donya::Sound::Play( SE );
+			const auto SE = GetSpraySEIDOrInvalid();
+			if ( SE != Music::MUSIC_COUNT )
+			{
+				Donya::Sound::Play( SE );
+			}
 		}
 	}
 }
@@ -826,7 +845,7 @@ Water::~Water()
 		it.Uninit();
 	}
 }
-void Water::Update( float elapsedTime )
+void Water::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	hitBox = hurtBox;
 
@@ -943,7 +962,7 @@ void Hardened::Init( const Donya::Vector3 &wsInitialPos )
 	submergeAmount	= ParamObstacle::Get().Data().hardened.submergeAmount;
 	initialPos		= wsInitialPos;
 }
-void Hardened::Update( float elapsedTime )
+void Hardened::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	const auto data = ParamObstacle::Get().Data();
 
@@ -1001,7 +1020,7 @@ float JumpStand::GetJumpPower()
 {
 	return ParamObstacle::Get().Data().jumpStandStrength;
 }
-void JumpStand::Update( float elapsedTime )
+void JumpStand::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
 	const auto data = ParamObstacle::Get().Data();
 	hitBox = GetModelHitBox( Kind::JumpStand, data );

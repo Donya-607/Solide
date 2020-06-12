@@ -363,7 +363,8 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	pTerrain->BuildWorldMatrix();
 
-	pObstacles->Update( elapsedTime );
+	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3{ FLT_MAX, FLT_MAX, FLT_MAX };
+	pObstacles->Update( elapsedTime, playerPos );
 
 	PlayerUpdate( elapsedTime );
 
