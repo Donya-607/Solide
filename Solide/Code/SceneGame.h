@@ -72,6 +72,8 @@ private:
 	std::unique_ptr<StageInfoDisplayer>	pInfoDrawer;
 	bool								shouldDrawCurrentTimer = false;
 
+	std::vector<int>					bossContainStages;
+
 	int  stageNumber	= 1;
 	int  beforeWarpStageNumber = -1; // -1 is invalid.
 	int  playerRemains	= 1;
@@ -142,6 +144,7 @@ private:
 	void	PlayerUninit();
 	void	RevivePlayerRemains();
 
+	void	ExploreBossContainStageNumbers();
 	void	BossInit( int stageNo );
 	void	BossUpdate( float elapsedTime );
 	void	BossPhysicUpdate( const std::vector<Donya::AABB> &solids, const Donya::Model::PolygonGroup *pTerrain, const Donya::Vector4x4 *pTerrainMatrix );

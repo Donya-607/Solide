@@ -1543,6 +1543,41 @@ void SceneGame::RevivePlayerRemains()
 	playerRemains = FetchMember().maxPlayerRemains;
 }
 
+void SceneGame::ExploreBossContainStageNumbers()
+{
+	bossContainStages.clear();
+
+	if ( !pWarps ) { return; }
+	// else
+
+	std::vector<int> searchStageNumbers{};
+	{
+		const Warp *pWarp = nullptr;
+		const size_t warpCount = pWarps->GetWarpCount();
+		for ( size_t i = 0; i < warpCount; ++i )
+		{
+			pWarp = pWarps->GetWarpPtrOrNullptr( i );
+			if ( !pWarp ) { continue; }
+			// else
+
+			searchStageNumbers.emplace_back
+			(
+				pWarp->GetDestinationStageNo()
+			);
+		}
+	}
+
+	BossInitializer fileLoader{};
+	for ( const auto &it : searchStageNumbers )
+	{
+		fileLoader.LoadParameter( it );
+
+		if ( fileLoader.ShouldGenerateBoss() )
+		{
+			bossContainStages.emplace_back( it );
+		}
+	}
+}
 void SceneGame::BossInit( int stageNo )
 {
 	if ( !pBossIniter || !pBossIniter->ShouldGenerateBoss() ) { return; }
@@ -1678,6 +1713,7 @@ void SceneGame::DrawStageInfo()
 	{
 		pWarp = pWarps->GetWarpPtrOrNullptr( i );
 		if ( !pWarp ) { continue; }
+		// else
 
 		Data tmp;
 		tmp.pos = pWarp->GetPosition();
@@ -2332,7 +2368,7 @@ void SceneGame::StartFade() const
 {
 	Fader::Configuration config{};
 	config.type			= Fader::Type::Gradually;
-	config.closeFrame	= Fader::GetDefaultCloseFrame();;
+	config.closeFrame	= Fader::GetDefaultCloseFrame();
 	config.SetColor( Donya::Color::Code::BLACK );
 	Fader::Get().StartFadeOut( config );
 }
