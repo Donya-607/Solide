@@ -665,11 +665,12 @@ void SceneGame::Draw( float elapsedTime )
 	// Drawing to far for avoiding to trans the BG's blue.
 	pBG->Draw( elapsedTime );
 
-	if ( shouldDrawCurrentTimer )
+	if ( shouldDrawUI )
 	{
 		DrawCurrentTime();
+		DrawPlayerRemains();
 	}
-	DrawPlayerRemains();
+
 	DrawStageInfo();
 
 	// A draw check of these sentences are doing at internal of these methods.
@@ -908,11 +909,11 @@ void SceneGame::InitStage( int stageNo, bool useSaveDataIfValid )
 	currentTime.Set( 0, 0, 0 );
 	if ( stageNo == SELECT_STAGE_NO || stageNo == TITLE_STAGE_NO )
 	{
-		shouldDrawCurrentTimer = false;
+		shouldDrawUI = false;
 	}
 	else
 	{
-		shouldDrawCurrentTimer = true;
+		shouldDrawUI = true;
 	}
 
 	nowWaiting = false;

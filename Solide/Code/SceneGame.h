@@ -70,7 +70,7 @@ private:
 	std::vector<Timer>					borderTimes;
 	NumberDrawer						numberDrawer;
 	std::unique_ptr<StageInfoDisplayer>	pInfoDrawer;
-	bool								shouldDrawCurrentTimer = false;
+	bool								shouldDrawUI = false;
 
 	std::vector<int>					bossContainStages;
 
